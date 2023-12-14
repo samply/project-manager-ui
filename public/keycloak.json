@@ -1,0 +1,8 @@
+{
+  "realm": "test-realm-01",
+  "auth-server-url": "https://login.verbis.dkfz.de/",
+  "ssl-required": "external",
+  "resource": "bridgehead-test",
+  "public-client": true,
+  "confidential-port": 0
+}

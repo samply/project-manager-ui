@@ -2,6 +2,7 @@ import { h, createApp } from 'vue';
 import singleSpaVue from 'single-spa-vue';
 
 import App from './App.vue';
+import KeyCloakService from "@/services/keycloak";
 
 const vueLifecycles = singleSpaVue({
   createApp,
@@ -21,6 +22,19 @@ const vueLifecycles = singleSpaVue({
   },
 });
 
-export const bootstrap = vueLifecycles.bootstrap;
+// Call the Keycloak login function during bootstrap
+export const bootstrap = async () => {
+  // Assuming the onAuthenticatedCallback is handled here
+  const onAuthenticatedCallback = () => {
+    // Code to handle authentication success
+    console.log('Authenticated!');
+  };
+
+  // Call the Keycloak login function during bootstrap
+  await KeyCloakService.CallLogin(onAuthenticatedCallback);
+  return vueLifecycles.bootstrap;
+};
+
+//export const bootstrap = vueLifecycles.bootstrap;
 export const mount = vueLifecycles.mount;
 export const unmount = vueLifecycles.unmount;

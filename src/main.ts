@@ -1,4 +1,4 @@
-import { createApp, h } from 'vue';
+import {createApp, h} from 'vue';
 import singleSpaVue from 'single-spa-vue';
 import App from './App.vue';
 import KeyCloakService from "@/services/keycloak";
@@ -13,24 +13,25 @@ import 'bootstrap';
 const app = createApp(App);
 
 const vueLifecycles = singleSpaVue({
-  createApp: () => app,
-  appOptions: {
-    render() {
-      return h(App);
+    createApp: () => app,
+    appOptions: {
+        render() {
+            return h(App);
+        },
     },
-  },
 });
 
 app.use(router);
 
-
 export const bootstrap = async () => {
-  const onAuthenticatedCallback = () => {
-    console.log('Authenticated!');
-  };
+    return new Promise((resolve) => {
+        const onAuthenticatedCallback = () => {
+            console.log('Authenticated!');
+            resolve(vueLifecycles.bootstrap);
+        };
 
-  await KeyCloakService.CallLogin(onAuthenticatedCallback);
-  return vueLifecycles.bootstrap;
+        KeyCloakService.CallLogin(onAuthenticatedCallback);
+    });
 };
 
 export const mount = vueLifecycles.mount;

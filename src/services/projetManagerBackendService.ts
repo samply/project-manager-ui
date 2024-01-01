@@ -1,7 +1,9 @@
 // projetManagerBackendService.ts
 import axios, {AxiosResponse} from 'axios';
+import axiosRetry from "axios-retry";
+import KeyCloakService from "@/services/keycloak";
 
-const baseURL = process.env.PROJECT_MANAGER_BACKEND_URL
+const baseURL = process.env.VUE_APP_PROJECT_MANAGER_BACKEND_URL
 
 const bridgeheadParam = 'bridgehead'
 const projectCodeParam = 'project-code'
@@ -59,7 +61,7 @@ export class ProjectManagerContext {
 }
 
 export class ProjetManagerBackendService {
-    private baseURL: string;
+    private baseURL: string | undefined;
     private activeModuleActionsMetadata: Map<Module, Map<Action, ActionMetadata>> | undefined;
 
     constructor(context: ProjectManagerContext, site: Site) {
@@ -121,15 +123,30 @@ export class ProjetManagerBackendService {
 
     async doHttpRequest(httpMethod: HttpMethod, endpoint: string, httpParams: Map<string, string>): Promise<any> {
         try {
+            //const token = KeyCloakService.getToken();
             const url = `${this.baseURL}${endpoint}`
-            const params = {params: httpParams}
+            const config = {
+                /*headers: {
+                    Authorization: `Bearer ${token}`
+                },*/
+                params: this.convertToUrlSearchParams(httpParams),
+                withCredentials: true
+            }
+            axiosRetry(axios, {
+                retries: 2,
+                retryDelay: axiosRetry.exponentialDelay,
+                /*retryCondition: (error) => {
+                    return axiosRetry.isNetworkOrIdempotentRequestError(error) || error.code === 'ETIMEDOUT';
+                }*/
+            });
             let response: AxiosResponse<any, any>;
             switch (httpMethod) {
                 case HttpMethod.GET:
-                    response = await axios.get(url, params)
+                    response = await axios.get(url, config)
                     break;
                 case HttpMethod.POST:
-                    response = await axios.post(url, params)
+                    //TODO: data not null
+                    response = await axios.post(url, {}, config)
                 // Other methods for PUT, DELETE, etc. (Currently not used in Project Manager Backend)
             }
             return response.data;
@@ -137,6 +154,16 @@ export class ProjetManagerBackendService {
             console.error('Error fetching data:', error);
             throw error;
         }
+    }
+
+    convertToUrlSearchParams(map: Map<string, string>): URLSearchParams {
+        const result = new URLSearchParams();
+        if (map) {
+            for (const [key, value] of map) {
+                result.append(key, value);
+            }
+        }
+        return result;
     }
 
 }

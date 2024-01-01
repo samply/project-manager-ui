@@ -23,6 +23,7 @@ const Login = (onAuthenticatedCallback: CallbackOneParam) => {
 };
 
 const KeyCloakService = {
+    getToken: () => keycloakInstance.token,
     CallLogin: Login,
 };
 

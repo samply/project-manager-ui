@@ -72,6 +72,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import RequestForm from './requestForm.vue';
+import {ProjectManagerContext, ProjetManagerBackendService, Site} from "@/services/projetManagerBackendService";
 
 
 export default defineComponent({
@@ -80,6 +81,9 @@ export default defineComponent({
   },
   data() {
     return {
+      site: Site.PROJECT_VIEW_SITE,
+      context: undefined as ProjectManagerContext | undefined,
+      projectManagerBackendService: undefined as ProjetManagerBackendService | undefined,
       projectData: {
         projectId: '',
         drn: '',
@@ -88,7 +92,7 @@ export default defineComponent({
 
       },
       dummyData: {
-        cooperationPartner: true,
+        cooperationPartner: null,
         projectTitle: 'Dummy Project Title',
         projectDescription: 'Dummy Project Description',
         selectedChips: ['Dummy Chip 1', 'Dummy Chip 2'],
@@ -102,6 +106,8 @@ export default defineComponent({
     this.loadProjectData();
     this.dummyData.showTitle = false;
     this.dummyData.showSubmitButtons = false;
+    this.context = new ProjectManagerContext()
+    this.projectManagerBackendService = new ProjetManagerBackendService(this.context, this.site)
   },
   methods: {
     async loadProjectData(): Promise<void> {
@@ -175,4 +181,3 @@ export default defineComponent({
   margin-bottom: 8px;
 }
 </style>
-

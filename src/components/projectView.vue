@@ -1,6 +1,5 @@
 <template>
   <div class="flex-container">
-    <!-- Project Information Table -->
     <div class="container mt-4">
       <h2>Project Information</h2>
       <br/>
@@ -26,58 +25,76 @@
       </table>
 
       <div class="text-right mt-4">
-        <button class="btn btn-primary mr-2" @click="send">Send</button>
-        <button class="btn btn-danger btn-secondary mr-2" @click="reject" style="margin-left: 0.5%; margin-right: 0.5%">Reject</button>
+        <button class="btn btn-primary mr-2" @click="acceptProject">Accept</button>
+        <button class="btn btn-danger btn-secondary mr-2" @click="reject" style="margin-left: 0.5%; margin-right: 0.5%">
+          Reject
+        </button>
         <button class="btn btn-secondary" @click="archive">Archive</button>
       </div>
       <hr/>
     </div>
 
-    <div class="container mt-12" style="display: flex; flex-flow:row; ">
-      <div v-if="projectData.projectId" class="mt-lg-9">
-        <div style="padding-left: 0.5%">
-          <h3>Request Data</h3>
-          <request-form
-              :cooperationPartner="dummyData.cooperationPartner"
-              :projectTitle="dummyData.projectTitle"
-              :projectDescription="dummyData.projectDescription"
-              :selectedChips="dummyData.selectedChips"
-              :file="dummyData.file"
-              :showTitle="false"
-              :showSubmitButtons="false"
-              :showTemplate="false"
-              @sendCollaborationRequest="sendCollaborationRequest"
-          ></request-form>
+    <div class="container mt-12" style="margin-bottom: 10%">
+      <div v-if="projectData.projectId">
+        <br/>
+        <div class="table-responsive">
+          <h3>Requested Data</h3>
+          <br/>
+          <table class="table table-bordered custom-table">
+            <tbody>
+            <tr>
+              <td class="bold-text thinner-column">Cooperation Partner</td>
+              <td class="wider-column">{{ dummyData.cooperationPartner }}</td>
+              <td></td>
 
+            </tr>
+            <tr>
+              <td class="bold-text thinner-column">Project Title</td>
+              <td class="wider-column">{{ dummyData.projectTitle }}</td>
+              <td><i class="bi bi-pencil me-2"></i></td>
+            </tr>
+            <tr>
+              <td class="bold-text thinner-column">Project Description</td>
+              <td class="wider-column">{{ dummyData.projectDescription }}</td>
+              <td><i class="bi bi-pencil me-2"></i></td>
+
+            </tr>
+            <tr>
+              <td class="bold-text thinner-column">Selected Bridgeheads</td>
+              <td class="wider-column">
+                <ul>
+                  <li v-for="chip in dummyData.selectedChips" :key="chip">{{ chip }}</li>
+                </ul>
+              </td>
+              <td><i class="bi bi-pencil me-2"></i></td>
+            </tr>
+            <tr>
+              <td class="bold-text thinner-column">Script</td>
+              <td class="wider-column">script available</td>
+              <td><i class="bi bi-download"></i></td>
+            </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-      <div class="button-container-right row">
-        <button class="btn btn-secondary btn-block" @click="editTitle"><i class="bi bi-pencil me-2"></i> Title</button><br/>
-        <button class="btn btn-secondary btn-block" @click="editDescription"> <i class="bi bi-pencil me-2"></i> Description</button><br/>
-        <button class="btn btn-secondary btn-block" @click="editBridgeheads"> <i class="bi bi-pencil me-2"></i> Bridgeheads</button><br/>
-        <button class="btn btn-secondary btn-block" @click="editExportOutputFormat"> <i class="bi bi-pencil me-2"></i> Export-Output Format</button><br/>
-
-        <button class="btn btn-secondary btn-block me-2" @click="uploadDownloadScript" style="display: flex; gap:0.5%"> <i class="bi bi-upload"></i>Upload Script</button> <br/>
-        <button class="btn btn-secondary btn-block me-2" @click="downloadUploadForm" style="display: flex; gap:0.5%"> <i class="bi bi-upload"></i>Upload Form</button><br/>
-
-        <button class="btn btn-secondary btn-block me-2" @click="uploadDownloadScript" style="display: flex; gap:0.5%"><i class="bi bi-download"></i>Download Script</button> <br/>
-        <button class="btn btn-secondary btn-block me-2" @click="downloadUploadForm" > <i class="bi bi-download" style="margin-right:2%"></i>Download Form</button><br/>
-        <button class="btn btn-secondary btn-block me-2" @click="downloadAuthenticationScript" style="display: flex; gap:0.5%"> <i class="bi bi-download"></i>Download <br> Authentication Script <br>(DataSHIELD)</button><br/>
-
-        </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import RequestForm from './requestForm.vue';
-import {ProjectManagerContext, ProjetManagerBackendService, Site} from "@/services/projetManagerBackendService";
-
+import {defineComponent} from 'vue';
+// import RequestForm from './requestForm.vue';
+import {
+  Action,
+  Module,
+  ProjectManagerContext,
+  ProjetManagerBackendService,
+  Site
+} from "@/services/projetManagerBackendService";
 
 export default defineComponent({
   components: {
-    RequestForm,
+    // RequestForm,
   },
   data() {
     return {
@@ -89,13 +106,12 @@ export default defineComponent({
         drn: '',
         date: '',
         status: '',
-
       },
       dummyData: {
-        cooperationPartner: null,
-        projectTitle: 'Dummy Project Title',
-        projectDescription: 'Dummy Project Description',
-        selectedChips: ['Dummy Chip 1', 'Dummy Chip 2'],
+        cooperationPartner: ' Partner',
+        projectTitle: ' Project Title',
+        projectDescription: 'XYZ Project Description',
+        selectedChips: ['Bridgehead X', 'Bridgehead Y'],
         file: null,
         showTitle: false,
         showSubmitButtons: false,
@@ -106,15 +122,15 @@ export default defineComponent({
     this.loadProjectData();
     this.dummyData.showTitle = false;
     this.dummyData.showSubmitButtons = false;
-    this.context = new ProjectManagerContext()
-    this.projectManagerBackendService = new ProjetManagerBackendService(this.context, this.site)
+    this.context = new ProjectManagerContext();
+    this.projectManagerBackendService = new ProjetManagerBackendService(this.context, this.site);
   },
   methods: {
     async loadProjectData(): Promise<void> {
       try {
         const projectId = this.$route.params.projectId;
         const response = await fetch('/projects.json');
-        const { projects } = await response.json();
+        const {projects} = await response.json();
 
         const projectData = projects.find((project: { projectId: string }) => project.projectId === projectId);
 
@@ -127,9 +143,20 @@ export default defineComponent({
         console.error('Error loading project data:', error);
       }
     },
-    send() {
-      console.log('Send clicked');
-    },
+/*    async acceptProject(): Promise<void> {
+      try {
+        // Beispielhaftes Modell, pass die Methode und Parameter entsprechend an
+        const response = await this.projectManagerBackendService.fetchData(
+            Module.PROJECT_STATE,
+            Action.ACCEPT_PROJECT,
+            this.context,
+            new Map()
+        );
+
+      } catch (error) {
+        console.error('Error accepting project:', error);
+      }
+    },*/
     reject() {
       console.log('Reject clicked');
     },
@@ -179,5 +206,31 @@ export default defineComponent({
 
 .button-container-right button {
   margin-bottom: 8px;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.custom-table td.bold-text {
+  font-weight: bold;
+}
+
+.thinner-column {
+  width: 30%; /* Adjust the width as needed */
+}
+
+.wider-column {
+  width: 70%; /* Adjust the width as needed */
+}
+
+.table-and-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.buttons-container {
+  margin-top: 16px;
 }
 </style>

@@ -74,14 +74,15 @@
 
 <script lang="ts">
 import {defineComponent} from 'vue';
-import {ProjectManagerContext, ProjetManagerBackendService, Site} from "@/services/projetManagerBackendService";
+import {Action, Module, ProjectManagerContext, ProjetManagerBackendService, Site} from "@/services/projetManagerBackendService";
 
 export default defineComponent({
   data() {
     return {
       site: Site.PROJECT_DASHBOARD_SITE,
-      context: undefined as ProjectManagerContext | undefined,
-      projectManagerBackendService: undefined as ProjetManagerBackendService | undefined,
+      projects: [] as any[],
+      context: new ProjectManagerContext(),
+      projectManagerBackendService: new ProjetManagerBackendService( new ProjectManagerContext(), Site.PROJECT_VIEW_SITE),
       tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
       secondTableData: [
         {projectId: 'PR001', drn: '12345', user: 'User1', date: '2023-04-15', notification: 'Notification 1'},
@@ -96,6 +97,28 @@ export default defineComponent({
   },
 
   methods: {
+   /* async loadProjectData(): Promise<void> {
+      try {
+        const params = new Map<string, string>();
+        params.set('page', '0');
+        params.set('page-size', '2');
+
+        const module = Module.PROJECT_STATE;
+        const action = Action.FETCH_PROJECTS;
+
+        const projects = await this.projectManagerBackendService.fetchData(
+            module,
+            action,
+            this.context,
+            params
+        );
+
+        // Assuming the response contains an array of projects, update your component data
+        this.projects = projects;
+      } catch (error) {
+        console.error('Error loading projects:', error);
+      }
+    },*/
     async loadProjectData(): Promise<void> {
       try {
         const response = await fetch('/projects.json');

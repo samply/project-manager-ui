@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div class="container mt-4">
+  <div style="display: flex; min-height: 100vh;">
+    <div class="container custom-width-projects">
       <h1>Main Dashboard</h1>
       <br/>
       <div class="row">
@@ -41,40 +41,33 @@
       </table>
     </div>
 
-    <br/><br/><br/>
+    <div :class="{ 'custom-width-notifications': true, 'sidebar-closed': $store.state.isSidebarClosed }" ref="sidebar">
+      <h2 >Notifications</h2>
+      <div v-for="(item, index) in secondTableData" :key="index" class="card mb-3">
 
-    <div class="container mt-4">
-      <h2>Notifications</h2>
+        <div class="card-body">
+          <div style="display:flex; flex-flow: row; justify-content: space-between"><h5 class="card-title">{{ item.notification }}</h5>
+          <div class="notification-header">
+          <button type="button" class="btn-close" @click="removeNotification(index)" aria-label="Close"></button>
+        </div>
+          </div>
 
-      <table class="table table-bordered table-striped table-hover">
-        <thead>
-        <tr>
-          <th scope="col">Project ID</th>
-          <th scope="col">DRN</th>
-          <th scope="col">User</th>
-          <th scope="col">Date</th>
-          <th scope="col">Notification</th>
-        </tr>
-        </thead>
-        <!-- Table Body -->
-        <tbody>
-        <!-- Add rows with dummy data -->
-        <tr v-for="(item, index) in secondTableData" :key="index">
-          <td>{{ item.projectId }}</td>
-          <td>{{ item.drn }}</td>
-          <td>{{ item.user }}</td>
-          <td>{{ item.date }}</td>
-          <td>{{ item.notification }}</td>
-        </tr>
-        </tbody>
-      </table>
+          <p class="card-text">
+            <strong>Project ID:</strong> {{ item.projectId }}<br>
+            <strong>DRN:</strong> {{ item.drn }}<br>
+            <strong>User:</strong> {{ item.user }}<br>
+            <strong>Date:</strong> {{ item.date }}
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import {defineComponent} from 'vue';
-import {Action, Module, ProjectManagerContext, ProjetManagerBackendService, Site} from "@/services/projetManagerBackendService";
+import { defineComponent, ref, watchEffect } from 'vue';
+import { Action, Module, ProjectManagerContext, ProjetManagerBackendService, Site } from "@/services/projetManagerBackendService";
+import { useStore } from 'vuex';
 
 export default defineComponent({
   data() {
@@ -82,29 +75,56 @@ export default defineComponent({
       site: Site.PROJECT_DASHBOARD_SITE,
       projects: [] as any[],
       context: new ProjectManagerContext(),
-      projectManagerBackendService: new ProjetManagerBackendService( new ProjectManagerContext(), Site.PROJECT_VIEW_SITE),
+      projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(), Site.PROJECT_VIEW_SITE),
       tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
       secondTableData: [
-        {projectId: 'PR001', drn: '12345', user: 'User1', date: '2023-04-15', notification: 'Notification 1'},
-        {projectId: 'PR002', drn: '67890', user: 'User2', date: '2023-05-20', notification: 'Notification 2'},
+        { projectId: 'PR001', drn: '12345', user: 'User1', date: '2023-04-15', notification: 'Notification 1' },
+        { projectId: 'PR002', drn: '67890', user: 'User2', date: '2023-05-20', notification: 'Notification 2' },
       ],
     };
   },
   mounted() {
     this.loadProjectData();
     this.context = new ProjectManagerContext()
-    this.projectManagerBackendService = new ProjetManagerBackendService(this.context, this.site)
+    this.projectManagerBackendService = new ProjetManagerBackendService(this.context, this.site);
+  },
+  setup() {
+    const store = useStore();
+
+    const setSidebarState = (isClosed: boolean) => {
+      const sidebar = document.getElementById('sidebar');
+
+      if (sidebar) {
+        if (isClosed) {
+          sidebar.style.transform = 'translateX(100%)';
+        } else {
+          sidebar.style.transform = 'translateX(0)';
+        }
+      }
+    };
+
+    watchEffect(() => {
+      const isClosed = store.state.isSidebarClosed;
+      setSidebarState(isClosed);
+    });
+
+    return { setSidebarState };
   },
 
   methods: {
-   /* async loadProjectData(): Promise<void> {
+    removeNotification(index: number): void {
+      this.secondTableData.splice(index, 1);
+    },
+    /* async loadProjectData(): Promise<void> {
       try {
+        console.log('Hello World!')
         const params = new Map<string, string>();
         params.set('page', '0');
         params.set('page-size', '2');
+        params.set('site', Site.PROJECT_DASHBOARD_SITE)
 
-        const module = Module.PROJECT_STATE;
-        const action = Action.FETCH_PROJECTS;
+        const module = Module.PROJECT_STATE_MODULE;
+        const action = Action.FETCH_PROJECTS_ACTION;
 
         const projects = await this.projectManagerBackendService.fetchData(
             module,
@@ -113,8 +133,8 @@ export default defineComponent({
             params
         );
 
-        // Assuming the response contains an array of projects, update your component data
         this.projects = projects;
+        console.log("test"+this.projects)
       } catch (error) {
         console.error('Error loading projects:', error);
       }
@@ -122,7 +142,7 @@ export default defineComponent({
     async loadProjectData(): Promise<void> {
       try {
         const response = await fetch('/projects.json');
-        const {projects} = await response.json();
+        const { projects } = await response.json();
 
         this.tableData = projects;
         console.log("table" + this.tableData);
@@ -134,6 +154,37 @@ export default defineComponent({
 });
 </script>
 
-
 <style scoped>
+.custom-width-projects {
+  flex: 1;
+  padding-top: 2%;
+}
+
+.custom-width-notifications {
+  width: 18%;
+  background-color: #cccccc;
+  color: white;
+  padding: 15px;
+  order: 2;
+  position: relative;
+  z-index: 1;
+  font-family: "Calibri Light";
+  overflow-y: auto;
+  transition: transform 0.3s ease-in-out;
+}
+
+.sidebar-closed {
+  transform: translateX(100%);
+}
+
+.card {
+  border: none;
+  border-radius: 10px;
+}
+.notification-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
 </style>

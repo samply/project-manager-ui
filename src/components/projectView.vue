@@ -12,6 +12,8 @@
           <th scope="col">Data Request Number (DRN)</th>
           <th scope="col">Date</th>
           <th scope="col">Status</th>
+          <th scope="col">Votum</th>
+
         </tr>
         </thead>
         <tbody>

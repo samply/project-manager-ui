@@ -1,14 +1,15 @@
 <template>
   <div style="display: flex; min-height: 100vh;">
     <div class="container custom-width-projects">
-      <h1>Main Dashboard</h1>
+<!--      <h1>Project-Manager </h1>-->
       <br/>
       <div class="row">
         <div class="col-md-8">
           <h2>Requests</h2>
         </div>
         <div class="col-md-4 text-end">
-          <button class="btn btn-primary mb-3">Filter by Status</button>
+          <button @click="toggleSidebar" class="btn btn-dark" style="padding-right:2%; background:none; border:none; color:#007bff"><i class="bi bi-chat-right-text-fill"></i></button>
+          <button style="padding-right:2%; background:none; border:none; color:#007bff" class="btn btn-primary mb-3">Filter by Status</button>
         </div>
       </div>
 
@@ -33,19 +34,19 @@
 
           <td>
             <router-link :to="{ name: 'projectView', params: { projectId: item.projectId }}">
-              ➡️
-            </router-link>
+              <i class="bi bi-folder-fill"></i>            </router-link>
           </td>
         </tr>
         </tbody>
       </table>
     </div>
 
-    <div :class="{ 'custom-width-notifications': true, 'sidebar-closed': $store.state.isSidebarClosed }" ref="sidebar">
-      <h2 >Notifications</h2>
+    <div :class="{ 'custom-width-notifications': true, 'sidebar-closed': isSidebarClosed }" ref="sidebar">
+      <h2>Notifications</h2>
       <div v-for="(item, index) in secondTableData" :key="index" class="card mb-3">
 
-        <div class="card-body">
+
+      <div class="card-body">
           <div style="display:flex; flex-flow: row; justify-content: space-between"><h5 class="card-title">{{ item.notification }}</h5>
           <div class="notification-header">
           <button type="button" class="btn-close" @click="removeNotification(index)" aria-label="Close"></button>
@@ -65,9 +66,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watchEffect } from 'vue';
+import { defineComponent } from 'vue';
 import { Action, Module, ProjectManagerContext, ProjetManagerBackendService, Site } from "@/services/projetManagerBackendService";
-import { useStore } from 'vuex';
 
 export default defineComponent({
   data() {
@@ -81,39 +81,28 @@ export default defineComponent({
         { projectId: 'PR001', drn: '12345', user: 'User1', date: '2023-04-15', notification: 'Notification 1' },
         { projectId: 'PR002', drn: '67890', user: 'User2', date: '2023-05-20', notification: 'Notification 2' },
       ],
+      isSidebarClosed: false, // Zustand der Sidebar
     };
   },
   mounted() {
     this.loadProjectData();
-    this.context = new ProjectManagerContext()
+    this.context = new ProjectManagerContext();
     this.projectManagerBackendService = new ProjetManagerBackendService(this.context, this.site);
-  },
-  setup() {
-    const store = useStore();
-
-    const setSidebarState = (isClosed: boolean) => {
-      const sidebar = document.getElementById('sidebar');
-
-      if (sidebar) {
-        if (isClosed) {
-          sidebar.style.transform = 'translateX(100%)';
-        } else {
-          sidebar.style.transform = 'translateX(0)';
-        }
-      }
-    };
-
-    watchEffect(() => {
-      const isClosed = store.state.isSidebarClosed;
-      setSidebarState(isClosed);
-    });
-
-    return { setSidebarState };
   },
 
   methods: {
+    toggleSidebar() {
+      this.isSidebarClosed = !this.isSidebarClosed;
+      this.setSidebarState();
+    },
     removeNotification(index: number): void {
       this.secondTableData.splice(index, 1);
+    },
+    setSidebarState() {
+      const sidebar = this.$refs.sidebar as HTMLElement;
+      if (sidebar) {
+        sidebar.style.transform = this.isSidebarClosed ? 'translateX(100%)' : 'translateX(0)';
+      }
     },
     /* async loadProjectData(): Promise<void> {
       try {
@@ -162,7 +151,7 @@ export default defineComponent({
 
 .custom-width-notifications {
   width: 18%;
-  background-color: #cccccc;
+  background-color: #212529;
   color: white;
   padding: 15px;
   order: 2;

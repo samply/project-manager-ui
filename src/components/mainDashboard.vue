@@ -1,14 +1,13 @@
 <template>
   <div style="display: flex; min-height: 100vh;">
     <div class="container custom-width-projects">
-<!--      <h1>Project-Manager </h1>-->
       <br/>
       <div class="row">
         <div class="col-md-8">
           <h2>Requests</h2>
         </div>
         <div class="col-md-4 text-end">
-          <button @click="toggleSidebar" class="btn btn-dark" style="padding-right:2%; background:none; border:none; color:#007bff"><i class="bi bi-chat-right-text-fill"></i></button>
+          <button @click="toggleNotification" class="btn btn-dark" style="padding-right:2%; background:none; border:none; color:#007bff"><i class="bi bi-chat-right-text-fill"></i></button>
           <button style="padding-right:2%; background:none; border:none; color:#007bff" class="btn btn-primary mb-3">Filter by Status</button>
         </div>
       </div>
@@ -41,24 +40,29 @@
       </table>
     </div>
 
-    <div :class="{ 'custom-width-notifications': true, 'sidebar-closed': isSidebarClosed }" ref="sidebar">
+    <div v-if="showNotification" class="custom-width-notifications">
       <h2>Notifications</h2>
       <div v-for="(item, index) in secondTableData" :key="index" class="card mb-3">
-
-
-      <div class="card-body">
-          <div style="display:flex; flex-flow: row; justify-content: space-between"><h5 class="card-title">{{ item.notification }}</h5>
-          <div class="notification-header">
-          <button type="button" class="btn-close" @click="removeNotification(index)" aria-label="Close"></button>
-        </div>
+        <div class="card-body" :class="{ 'expanded': item.isExpanded }">
+          <div style="display:flex; flex-flow: row; justify-content: space-between">
+            <h5 class="card-title">{{ item.notification }}</h5>
+            <div class="notification-header">
+              <button type="button" class="btn-close" @click="removeNotification(index)" aria-label="Close"></button>
+            </div>
           </div>
 
-          <p class="card-text">
-            <strong>Project ID:</strong> {{ item.projectId }}<br>
-            <strong>DRN:</strong> {{ item.drn }}<br>
-            <strong>User:</strong> {{ item.user }}<br>
-            <strong>Date:</strong> {{ item.date }}
-          </p>
+          <div class="card-text">
+            <div style="font-size: small">{{ item.date }}</div>
+            <div style="display:flex; float: right; align-items: end; gap:10px">
+              <strong>Project ID:</strong> {{ item.projectId }}
+              <strong>User:</strong> {{ item.user }}
+            </div>
+          </div>
+          <br>
+
+          <div class="expand-icon" @click="toggleExpand(item)">
+            <i :class="['bi', 'bi-chevron-compact-down', { 'rotate': item.isExpanded }]"></i>
+          </div>
         </div>
       </div>
     </div>
@@ -78,10 +82,10 @@ export default defineComponent({
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(), Site.PROJECT_VIEW_SITE),
       tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
       secondTableData: [
-        { projectId: 'PR001', drn: '12345', user: 'User1', date: '2023-04-15', notification: 'Notification 1' },
-        { projectId: 'PR002', drn: '67890', user: 'User2', date: '2023-05-20', notification: 'Notification 2' },
+        {projectId: 'PR001', drn: '12345', user: 'User1', date: '2023-04-15', notification: 'Notification Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '},
+        {projectId: 'PR002', drn: '67890', user: 'User2', date: '2023-05-20', notification: 'Notification Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '},
       ],
-      isSidebarClosed: false, // Zustand der Sidebar
+      showNotification: false,
     };
   },
   mounted() {
@@ -91,19 +95,16 @@ export default defineComponent({
   },
 
   methods: {
-    toggleSidebar() {
-      this.isSidebarClosed = !this.isSidebarClosed;
-      this.setSidebarState();
+    toggleExpand(item: { isExpanded: boolean }) {
+      item.isExpanded = !item.isExpanded;
+    },
+    toggleNotification() {
+      this.showNotification = !this.showNotification;
     },
     removeNotification(index: number): void {
       this.secondTableData.splice(index, 1);
     },
-    setSidebarState() {
-      const sidebar = this.$refs.sidebar as HTMLElement;
-      if (sidebar) {
-        sidebar.style.transform = this.isSidebarClosed ? 'translateX(100%)' : 'translateX(0)';
-      }
-    },
+
     /* async loadProjectData(): Promise<void> {
       try {
         console.log('Hello World!')
@@ -176,4 +177,25 @@ export default defineComponent({
   margin-bottom: 10px;
 }
 
+.custom-width-notifications h2 {
+  margin-bottom: 15px;
+}
+
+.custom-width-notifications .card {
+  margin-bottom: 15px;
+}
+.card-body.expanded {
+  height: 300px;
+}
+
+.expand-icon {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.expand-icon i.rotate {
+  transform: rotate(180deg);
+}
 </style>

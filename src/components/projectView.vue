@@ -18,132 +18,171 @@
 
     <div class="right-container">
       <div style="display:flex; flex-flow: column; width:100%; padding-right:3%">
-      <div class="container" >
-        <br/>
-        <h2>Project Information</h2>
-        <br/>
-        <div style="display:flex; flex-flow:row; justify-content: space-between">
-          <router-link to="/"> <i class="bi bi-arrow-left-square-fill"></i></router-link>
-         <div><button @click="toggleSidebar" class="btn btn-dark" style="background: none; border:none; color:#007bff; width:auto;"><i class="bi bi-clipboard2-check-fill"></i></button>
-           <button @click="toggleSidebar" class="btn btn-dark" style="background: none; border:none; color:#007bff; width:auto;"><i class="bi bi-chat-right-text-fill"></i></button></div>
-        </div>
-
-        <table class="table table-bordered">
-          <thead>
-          <tr>
-            <th scope="col">Project ID</th>
-            <th scope="col">Data Request Number (DRN)</th>
-            <th scope="col">Date</th>
-            <th scope="col">Status</th>
-            <th scope="col">Votum</th>
-
-          </tr>
-          </thead>
-          <tbody>
-          <tr>
-            <td>{{ projectData.projectId }}</td>
-            <td>{{ projectData.drn }}</td>
-            <td>{{ projectData.date }}</td>
-            <td>{{ projectData.status }}</td>
-            <td></td>
-          </tr>
-          </tbody>
-        </table>
-
-        <div class="text-right mt-4">
-          <button class="btn btn-primary mr-2">Accept</button>
-          <button class="btn btn-danger btn-secondary mr-2" @click="reject"
-                  style="margin-left: 0.5%; margin-right: 0.5%">
-            Reject
-          </button>
-          <button class="btn btn-secondary" @click="archive">Archive</button>
-        </div>
-        <hr/>
-      </div>
-
-      <div class="container mt-12" style="margin-bottom: 10%;">
-        <div v-if="projectData.projectId">
+        <div class="container">
           <br/>
-          <div class="table-responsive">
-            <h3>Requested Data</h3>
-            <br/>
-            <table class="table table-bordered custom-table">
+          <h2>Project Information</h2>
+          <br/>
+          <div style="display:flex; flex-flow:row; justify-content: space-between">
+            <router-link to="/"><i class="bi bi-arrow-left-square-fill"></i></router-link>
+            <div>
+              <button @click="toggleProgress" class="btn btn-dark"
+                      style="background: none; border:none; color:#007bff; width:auto;">
+                <i class="bi bi-clipboard-check-fill"></i>
+              </button>
+              <button @click="toggleNotification" class="btn btn-dark"
+                      style="background: none; border:none; color:#007bff; width:auto;">
+                <i class="bi bi-chat-right-text-fill"></i>
+              </button>
+            </div>
+          </div>
+            <table class="table table-bordered">
+              <thead>
+              <tr>
+                <th scope="col">Project ID</th>
+                <th scope="col">Data Request Number (DRN)</th>
+                <th scope="col">Date</th>
+                <th scope="col">Status</th>
+                <th scope="col">Votum</th>
+
+              </tr>
+              </thead>
               <tbody>
               <tr>
-                <td class="bold-text thinner-column">Cooperation Partner</td>
-                <td class="wider-column">{{ dummyData.cooperationPartner }}</td>
+                <td>{{ projectData.projectId }}</td>
+                <td>{{ projectData.drn }}</td>
+                <td>{{ projectData.date }}</td>
+                <td>{{ projectData.status }}</td>
                 <td></td>
-
-              </tr>
-              <tr>
-                <td class="bold-text thinner-column">Project Title</td>
-                <td class="wider-column">{{ dummyData.projectTitle }}</td>
-                <td><i class="bi bi-pencil me-2"></i></td>
-              </tr>
-              <tr>
-                <td class="bold-text thinner-column">Project Description</td>
-                <td class="wider-column">{{ dummyData.projectDescription }}</td>
-                <td><i class="bi bi-pencil me-2"></i></td>
-
-              </tr>
-              <tr>
-                <td class="bold-text thinner-column">Selected Bridgeheads</td>
-                <td class="wider-column">
-                  <ul>
-                    <li v-for="chip in dummyData.selectedChips" :key="chip">{{ chip }}</li>
-                  </ul>
-                </td>
-                <td><i class="bi bi-pencil me-2"></i></td>
-              </tr>
-              <tr>
-                <td class="bold-text thinner-column">Script</td>
-                <td class="wider-column">script available</td>
-                <td><i class="bi bi-download"></i></td>
-              </tr>
-              <tr>
-                <td class="bold-text thinner-column">Query</td>
-                <td class="wider-column"></td>
-                <td><i class="bi bi-copy"></i></td>
-              </tr>
-              <tr>
-                <td class="bold-text thinner-column">Publications</td>
-                <td class="wider-column">no publication</td>
-                <td><i class="bi bi-link-45deg"></i></td>
-              </tr>
-              <tr>
-                <td class="bold-text thinner-column">output-format</td>
-                <td class="wider-column"></td>
-                <td><i class="bi bi-download"></i></td>
               </tr>
               </tbody>
             </table>
-          </div>
-        </div>
-      </div>
-      </div>
-      <div :class="{ 'custom-width-notifications': true, 'sidebar-closed': isSidebarClosed }" ref="sidebar">
-        <h2>Notifications</h2>
-        <div v-for="(item, index) in secondTableData" :key="index" class="card mb-3">
 
-        <div class="card-body">
-            <div style="display:flex; flex-flow: row; justify-content: space-between"><h5 class="card-title">
-              {{ item.notification }}</h5>
-              <div class="notification-header">
-                <button type="button" class="btn-close" @click="removeNotification(index)" aria-label="Close"></button>
+            <div class="text-right mt-4">
+              <button class="btn btn-primary mr-2">Accept</button>
+              <button class="btn btn-danger btn-secondary mr-2" @click="reject"
+                      style="margin-left: 0.5%; margin-right: 0.5%">
+                Reject
+              </button>
+              <button class="btn btn-secondary" @click="archive">Archive</button>
+            </div>
+            <hr/>
+          </div>
+
+          <div class="container mt-12" style="margin-bottom: 10%;">
+            <div v-if="projectData.projectId">
+              <br/>
+              <div class="table-responsive">
+                <h3>Requested Data</h3>
+                <br/>
+                <table class="table table-bordered custom-table">
+                  <tbody>
+                  <tr>
+                    <td class="bold-text thinner-column">Cooperation Partner</td>
+                    <td class="wider-column">{{ dummyData.cooperationPartner }}</td>
+                    <td></td>
+
+                  </tr>
+                  <tr>
+                    <td class="bold-text thinner-column">Project Title</td>
+                    <td class="wider-column">{{ dummyData.projectTitle }}</td>
+                    <td><i class="bi bi-pencil me-2"></i></td>
+                  </tr>
+                  <tr>
+                    <td class="bold-text thinner-column">Project Description</td>
+                    <td class="wider-column">{{ dummyData.projectDescription }}</td>
+                    <td><i class="bi bi-pencil me-2"></i></td>
+
+                  </tr>
+                  <tr>
+                    <td class="bold-text thinner-column">Selected Bridgeheads</td>
+                    <td class="wider-column">
+                      <ul>
+                        <li v-for="chip in dummyData.selectedChips" :key="chip">{{ chip }}</li>
+                      </ul>
+                    </td>
+                    <td><i class="bi bi-pencil me-2"></i></td>
+                  </tr>
+                  <tr>
+                    <td class="bold-text thinner-column">Script</td>
+                    <td class="wider-column">script available</td>
+                    <td><i class="bi bi-download"></i></td>
+                  </tr>
+                  <tr>
+                    <td class="bold-text thinner-column">Query</td>
+                    <td class="wider-column"></td>
+                    <td><i class="bi bi-copy"></i></td>
+                  </tr>
+                  <tr>
+                    <td class="bold-text thinner-column">Publications</td>
+                    <td class="wider-column">no publication</td>
+                    <td><i class="bi bi-link-45deg"></i></td>
+                  </tr>
+                  <tr>
+                    <td class="bold-text thinner-column">output-format</td>
+                    <td class="wider-column"></td>
+                    <td><i class="bi bi-download"></i></td>
+                  </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
+          </div>
+        </div>
+        <div v-if="showNotification" class="custom-width-notifications">
+          <div style="display:flex; flex-flow:row; justify-content:space-between ">
+            <h2>Notifications</h2>
+            <button style="padding:5px" @click="toggleNotification" class="btn btn-dark" v-if="showNotification">
+              <i style="font-size: 30px" class="bi bi-x"></i> <!-- Schließsymbol für Notification -->
+            </button>
+            </div>
+          <div v-for="(item, index) in secondTableData" :key="index" class="card mb-3">
+            <div class="card-body" :class="{ 'expanded': item.isExpanded }">
+              <div style="display:flex; flex-flow: row; justify-content: space-between">
+                <h5 class="card-title">{{ item.notification }}</h5>
+                <div class="notification-header">
+                  <button type="button" class="btn-close" @click="removeNotification(index)"
+                          aria-label="Close"></button>
+                </div>
+              </div>
 
-            <p class="card-text">
-              <strong>Project ID:</strong> {{ item.projectId }}<br>
-              <strong>DRN:</strong> {{ item.drn }}<br>
-              <strong>User:</strong> {{ item.user }}<br>
-              <strong>Date:</strong> {{ item.date }}
-            </p>
+              <div class="card-text">
+                <div style="font-size: small">{{ item.date }}</div>
+                <div style="display:flex; float: right; align-items: end; gap:10px">
+                  <strong>Project ID:</strong> {{ item.projectId }}
+                  <strong>User:</strong> {{ item.user }}
+                </div>
+              </div>
+              <br>
+
+              <div class="expand-icon" @click="toggleExpand(item)">
+                <i :class="['bi', 'bi-chevron-compact-down', { 'rotate': item.isExpanded }]"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-if="showProgress" class="custom-width-notifications">
+          <div style="display:flex; flex-flow:row; justify-content:space-between ">
+            <h2>Progress</h2>
+            <button style="padding:5px" @click="toggleProgress" class="btn btn-dark" v-if="showProgress">
+              <i style="font-size: 30px" class="bi bi-x"></i> <!-- Schließsymbol für Progress -->
+            </button>
+          </div>
+          <div style="padding-left:10%" v-if="projectData.projectId">
+            <div class="vertical-stepper">
+              <div v-for="(step, index) in stepperSteps" :key="index" class="stepper-step">
+                <div style="display: flex; flex-flow: row">
+                  <div class="step-circle">
+                    <span>{{ index + 1 }}</span>
+                  </div>
+                  <div class="step-title">{{ step.title }}</div>
+                </div>
+                <div v-if="index < stepperSteps.length - 1" class="stepper-line"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script lang="ts">
@@ -191,10 +230,23 @@ export default defineComponent({
         showSubmitButtons: false,
       },
       secondTableData: [
-        {projectId: 'PR001', drn: '12345', user: 'User1', date: '2023-04-15', notification: 'Notification 1'},
-        {projectId: 'PR002', drn: '67890', user: 'User2', date: '2023-05-20', notification: 'Notification 2'},
+        {
+          projectId: 'PR001',
+          drn: '12345',
+          user: 'User1',
+          date: '2023-04-15',
+          notification: 'Notification Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '
+        },
+        {
+          projectId: 'PR002',
+          drn: '67890',
+          user: 'User2',
+          date: '2023-05-20',
+          notification: 'Notification Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '
+        },
       ],
-      isSidebarClosed: false, // Zustand der Sidebar
+      showNotification: false,
+      showProgress: false,
 
     };
   },
@@ -207,19 +259,25 @@ export default defineComponent({
   },
 
   methods: {
-    toggleSidebar() {
-      this.isSidebarClosed = !this.isSidebarClosed;
-      this.setSidebarState();
+    toggleExpand(item: { isExpanded: boolean }) {
+      item.isExpanded = !item.isExpanded;
+    },
+    toggleNotification() {
+      this.showNotification = !this.showNotification;
+      if (this.showProgress) {
+        this.showProgress = false;
+      }
+    },
+    toggleProgress() {
+      this.showProgress = !this.showProgress;
+      if (this.showNotification) {
+        this.showNotification = false;
+      }
     },
     removeNotification(index: number): void {
       this.secondTableData.splice(index, 1);
     },
-    setSidebarState() {
-      const sidebar = this.$refs.sidebar as HTMLElement;
-      if (sidebar) {
-        sidebar.style.transform = this.isSidebarClosed ? 'translateX(100%)' : 'translateX(0)';
-      }
-    },
+
     async loadProjectData(): Promise<void> {
       try {
         const projectId = this.$route.params.projectId;
@@ -297,13 +355,13 @@ export default defineComponent({
 }
 
 .left-container {
-  flex:0.5;
+  flex: 0.5;
   padding-left: 5%;
 }
 
 .right-container {
   flex: 3;
-  display:flex;
+  display: flex;
   flex-flow: row;
 }
 
@@ -393,9 +451,7 @@ export default defineComponent({
 }
 
 
-.sidebar-closed {
-  transform: translateX(100%);
-}
+
 
 .card {
   border: none;
@@ -414,5 +470,20 @@ export default defineComponent({
 
 .custom-width-notifications .card {
   margin-bottom: 15px;
+}
+
+.card-body.expanded {
+  height: 300px;
+}
+
+.expand-icon {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.expand-icon i.rotate {
+  transform: rotate(180deg);
 }
 </style>

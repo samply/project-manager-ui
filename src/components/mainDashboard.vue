@@ -7,8 +7,12 @@
           <h2>Requests</h2>
         </div>
         <div class="col-md-4 text-end">
-          <button @click="toggleNotification" class="btn btn-dark" style="padding-right:2%; background:none; border:none; color:#007bff"><i class="bi bi-chat-right-text-fill"></i></button>
-          <button style="padding-right:2%; background:none; border:none; color:#007bff" class="btn btn-primary mb-3">Filter by Status</button>
+          <button @click="toggleNotification" class="btn btn-dark"
+                  style="padding-right:2%; background:none; border:none; color:#007bff"><i
+              class="bi bi-chat-right-text-fill"></i></button>
+          <button style="padding-right:2%; background:none; border:none; color:#007bff" class="btn btn-primary mb-3">
+            Filter by Status
+          </button>
         </div>
       </div>
 
@@ -26,14 +30,14 @@
         <tbody>
         <tr v-for="(item, index) in tableData" :key="index">
           <td>{{ item.title }}</td>
-          <td>{{ item.projectId }}</td>
-          <td>{{ item.drn }}</td>
-          <td>{{ item.date }}</td>
+          <!--          <td>{{ item.projectId }}</td>-->
+          <!--          <td>{{ item.drn }}</td>-->
+          <!--          <td>{{ item.date }}</td>-->
           <td>{{ item.status }}</td>
 
           <td>
             <router-link :to="{ name: 'projectView', params: { projectId: item.projectId }}">
-              <i class="bi bi-folder-fill"></i>            </router-link>
+              <i class="bi bi-folder-fill"></i></router-link>
           </td>
         </tr>
         </tbody>
@@ -70,29 +74,47 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import { Action, Module, ProjectManagerContext, ProjetManagerBackendService, Site } from "@/services/projetManagerBackendService";
+import {defineComponent} from 'vue';
+import {
+  Action,
+  Module,
+  ProjectManagerContext,
+  ProjetManagerBackendService,
+  Site
+} from "@/services/projetManagerBackendService";
 
 export default defineComponent({
+
   data() {
     return {
       site: Site.PROJECT_DASHBOARD_SITE,
-      projects: [] as any[],
       context: new ProjectManagerContext(),
-      projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(), Site.PROJECT_VIEW_SITE),
-      tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
+      projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(), Site.PROJECT_DASHBOARD_SITE),
+      //tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
+      tablaData: [],
       secondTableData: [
-        {projectId: 'PR001', drn: '12345', user: 'User1', date: '2023-04-15', notification: 'Notification Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '},
-        {projectId: 'PR002', drn: '67890', user: 'User2', date: '2023-05-20', notification: 'Notification Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '},
+        {
+          projectId: 'PR001',
+          drn: '12345',
+          user: 'User1',
+          date: '2023-04-15',
+          notification: 'Notification Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '
+        },
+        {
+          projectId: 'PR002',
+          drn: '67890',
+          user: 'User2',
+          date: '2023-05-20',
+          notification: 'Notification Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '
+        },
       ],
       showNotification: false,
     };
   },
   mounted() {
-    this.loadProjectData();
-    this.context = new ProjectManagerContext();
-    this.projectManagerBackendService = new ProjetManagerBackendService(this.context, this.site);
+    this.fetchProjects();
   },
+  computed: {},
 
   methods: {
     toggleExpand(item: { isExpanded: boolean }) {
@@ -105,31 +127,38 @@ export default defineComponent({
       this.secondTableData.splice(index, 1);
     },
 
-    /* async loadProjectData(): Promise<void> {
+    async fetchProjects() {
       try {
-        console.log('Hello World!')
         const params = new Map<string, string>();
         params.set('page', '0');
         params.set('page-size', '2');
-        params.set('site', Site.PROJECT_DASHBOARD_SITE)
+        params.set('site', Site.PROJECT_DASHBOARD_SITE);
 
-        const module = Module.PROJECT_STATE_MODULE;
+        const module = Module.PROJECTS_MODULE;
         const action = Action.FETCH_PROJECTS_ACTION;
 
-        const projects = await this.projectManagerBackendService.fetchData(
+        console.log(module);
+        console.log(action);
+        console.log(this.context);
+        console.log(params);
+        console.log('Fetching projects...');
+        await this.projectManagerBackendService.isInitialized();
+        return await this.projectManagerBackendService.fetchData(
             module,
             action,
             this.context,
             params
         );
 
-        this.projects = projects;
-        console.log("test"+this.projects)
+        //console.log('Projects fetched successfully:', projects);
+        //this.projects = projects;
+        //this.tableData = this.projects;
+
       } catch (error) {
         console.error('Error loading projects:', error);
       }
-    },*/
-    async loadProjectData(): Promise<void> {
+    },
+    /*async loadProjectData(): Promise<void> {
       try {
         const response = await fetch('/projects.json');
         const { projects } = await response.json();
@@ -139,7 +168,7 @@ export default defineComponent({
       } catch (error) {
         console.error('Error loading project data:', error);
       }
-    },
+    },*/
   },
 });
 </script>
@@ -171,6 +200,7 @@ export default defineComponent({
   border: none;
   border-radius: 10px;
 }
+
 .notification-header {
   display: flex;
   justify-content: flex-end;
@@ -184,6 +214,7 @@ export default defineComponent({
 .custom-width-notifications .card {
   margin-bottom: 15px;
 }
+
 .card-body.expanded {
   height: 300px;
 }

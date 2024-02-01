@@ -2,6 +2,7 @@
 import axios, {AxiosResponse} from 'axios';
 import axiosRetry from "axios-retry";
 
+
 const baseURL = process.env.VUE_APP_PROJECT_MANAGER_BACKEND_URL
 
 const bridgeheadParam = 'bridgehead'
@@ -94,30 +95,46 @@ export class ProjectManagerContext {
 
 export class ProjetManagerBackendService {
     private baseURL: string | undefined;
-    private activeModuleActionsMetadata: Map<Module, Map<Action, ActionMetadata>> | undefined;
+    //private activeModuleActionsMetadata: Map<Module, Map<Action, ActionMetadata>> | undefined;
+    private activeModuleActionsMetadata: any;
+    private _isInitialized: Promise<void> | undefined;
 
     constructor(context: ProjectManagerContext, site: Site) {
         this.baseURL = baseURL
         this.fetchActiveModuleActions(context, site)
     }
 
-    fetchActiveModuleActions(context: ProjectManagerContext, site: Site) {
-        const httpParams: Map<string, string> = new Map<string, string>()
-        this.addContextToMap(httpParams, context)
-        httpParams.set(siteParam, site)
-        this.doHttpRequest(HttpMethod.GET, actionsPath, httpParams).then(data => this.activeModuleActionsMetadata = data)
+    async fetchActiveModuleActions(context: ProjectManagerContext, site: Site) {
+        const httpParams: Map<string, string> = new Map<string, string>();
+        this.addContextToMap(httpParams, context);
+        httpParams.set(siteParam, site);
+        console.log('Fetching active module actions...');
+        this._isInitialized = this.doHttpRequest(HttpMethod.GET, actionsPath, httpParams)
+            .then(data => {
+                console.log('Active Module Actions Metadata:', data);
+                this.activeModuleActionsMetadata = data;
+            })
+            .catch(error => {
+                console.error('Error fetching active module actions:', error);
+            });
+    }
+
+    isInitialized(): Promise<void> | undefined {
+        return this._isInitialized;
     }
 
     isModuleActionActive(module: Module, action: Action): boolean {
-        return (this.getActionMetadata(module, action) !== undefined)
+        return this.getActionMetadata(module, action) !== undefined;
     }
 
     getActionMetadata(module: Module, action: Action): ActionMetadata | undefined {
-        const actionMetadataMap = this.activeModuleActionsMetadata?.get(module)
+        console.log(this.activeModuleActionsMetadata);
+        return this.activeModuleActionsMetadata[module][action];
+        /*const actionMetadataMap = this.activeModuleActionsMetadata?.get(module)
         if (actionMetadataMap) {
             return actionMetadataMap.get(action)
         }
-        return undefined;
+        return undefined;*/
     }
 
     addContextToMap(map: Map<string, string>, context: ProjectManagerContext) {
@@ -131,6 +148,8 @@ export class ProjetManagerBackendService {
 
     async fetchData(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, string>): Promise<any> {
         const actionMetadata = this.getActionMetadata(module, action);
+        console.log("getActionMetadata passed");
+        console.log(actionMetadata);
         if (actionMetadata) {
             return this.doHttpRequest(actionMetadata.method, actionMetadata.path, this.fetchHttpParams(module, action, context, params))
         } else {
@@ -181,6 +200,7 @@ export class ProjetManagerBackendService {
                     response = await axios.post(url, {}, config)
                 // Other methods for PUT, DELETE, etc. (Currently not used in Project Manager Backend)
             }
+            console.log('HTTP Response:', response.data);
             return response.data;
         } catch (error) {
             console.error('Error fetching data:', error);

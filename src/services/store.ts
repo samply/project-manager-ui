@@ -1,4 +1,5 @@
 // store.js
+// @ts-ignore
 import { createStore } from 'vuex';
 
 export default createStore({
@@ -6,6 +7,7 @@ export default createStore({
         isSidebarClosed: false,
     },
     mutations: {
+        // @ts-ignore
         toggleSidebar(state) {
             state.isSidebarClosed = !state.isSidebarClosed;
         },

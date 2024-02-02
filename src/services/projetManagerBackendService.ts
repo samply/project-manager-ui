@@ -16,6 +16,7 @@ export enum Site {
     PROJECT_VIEW_SITE = "project-view"
 }
 
+// TODO: Update Module and Action
 export enum Module {
     PROJECTS_MODULE = "PROJECTS",
     USER_MODULE = "USER",
@@ -27,6 +28,10 @@ export enum Module {
     VOTUM_ACTIONS_MODULE = "VOTUM_ACTIONS",
     EXPORT_MODULE = "EXPORT",
     TOKEN_MANAGER_MODULE = "TOKEN_MANAGER"
+}
+
+function getModuleFromString(value: string): Module | undefined {
+    return Object.values(Module).find((module) => module === value) as Module | undefined;
 }
 
 export enum Action {
@@ -74,7 +79,12 @@ export enum Action {
     ACCEPT_PROJECT_RESULTS_ACTION = "ACCEPT_PROJECT_RESULTS",
     REJECT_PROJECT_RESULTS_ACTION = "REJECT_PROJECT_RESULTS",
     REQUEST_CHANGES_IN_PROJECT_ACTION = "REQUEST_CHANGES_IN_PROJECT",
-    FETCH_NOTIFICATIONS_ACTION = "FETCH_NOTIFICATIONS"
+    FETCH_NOTIFICATIONS_ACTION = "FETCH_NOTIFICATIONS",
+    SET_NOTIFICATION_AS_READ = "SET_NOTIFICATION_AS_READ"
+}
+
+function getActionFromString(value: string): Action | undefined {
+    return Object.values(Action).find((action) => action === value) as Action | undefined;
 }
 
 export enum HttpMethod {
@@ -88,6 +98,23 @@ export type ActionMetadata = {
     params: string [];
 }
 
+function jsonToActionMetadata(json: any): ActionMetadata | undefined {
+    const methodMapping: Record<string, HttpMethod> = {
+        'GET': HttpMethod.GET,
+        'POST': HttpMethod.POST,
+        // Add more mappings if necessary
+    };
+    const method: HttpMethod | undefined = methodMapping[json.method];
+    if (method === undefined) {
+        return undefined; // or throw an error if you prefer
+    }
+    return {
+        path: json.path,
+        method: method,
+        params: json.params || []  // assuming params is an array, provide a default value if it's optional
+    };
+}
+
 export class ProjectManagerContext {
     projectCode: string | undefined;
     bridgehead: string | undefined;
@@ -95,8 +122,8 @@ export class ProjectManagerContext {
 
 export class ProjetManagerBackendService {
     private baseURL: string | undefined;
-    //private activeModuleActionsMetadata: Map<Module, Map<Action, ActionMetadata>> | undefined;
-    private activeModuleActionsMetadata: any;
+    private activeModuleActionsMetadata: Map<Module, Map<Action, ActionMetadata>> | undefined;
+    //private activeModuleActionsMetadata: any;
     private _isInitialized: Promise<void> | undefined;
 
     constructor(context: ProjectManagerContext, site: Site) {
@@ -104,7 +131,7 @@ export class ProjetManagerBackendService {
         this.fetchActiveModuleActions(context, site)
     }
 
-    async fetchActiveModuleActions(context: ProjectManagerContext, site: Site) {
+    private fetchActiveModuleActions(context: ProjectManagerContext, site: Site) {
         const httpParams: Map<string, string> = new Map<string, string>();
         this.addContextToMap(httpParams, context);
         httpParams.set(siteParam, site);
@@ -112,32 +139,58 @@ export class ProjetManagerBackendService {
         this._isInitialized = this.doHttpRequest(HttpMethod.GET, actionsPath, httpParams)
             .then(data => {
                 console.log('Active Module Actions Metadata:', data);
-                this.activeModuleActionsMetadata = data;
+                this.activeModuleActionsMetadata = this.fetchActiveModuleActionsFromHttpResponse(data);
             })
             .catch(error => {
                 console.error('Error fetching active module actions:', error);
             });
     }
 
-    isInitialized(): Promise<void> | undefined {
+    private fetchActiveModuleActionsFromHttpResponse(data: any): Map<Module, Map<Action, ActionMetadata>> {
+        const resultMap = new Map<Module, Map<Action, ActionMetadata>>();
+        for (const moduleName in data) {
+            if (Object.prototype.hasOwnProperty.call(data, moduleName)) {
+                const module = getModuleFromString(moduleName);
+                if (module) {
+                    const moduleMap = new Map<Action, ActionMetadata>();
+                    const moduleData = data[moduleName];
+                    for (const actionName in moduleData) {
+                        if (Object.prototype.hasOwnProperty.call(moduleData, actionName)) {
+                            const action = getActionFromString(actionName);
+                            if (action) {
+                                const actionMetaData = jsonToActionMetadata(moduleData[actionName]);
+                                if (actionMetaData) {
+                                    moduleMap.set(action, actionMetaData);
+                                }
+                            }
+                        }
+                    }
+                    resultMap.set(module, moduleMap);
+                }
+            }
+        }
+        return resultMap;
+    }
+
+    private isInitialized(): Promise<void> | undefined {
         return this._isInitialized;
     }
 
-    isModuleActionActive(module: Module, action: Action): boolean {
+    public async isModuleActionActive(module: Module, action: Action) {
+        await this.isInitialized()
         return this.getActionMetadata(module, action) !== undefined;
     }
 
-    getActionMetadata(module: Module, action: Action): ActionMetadata | undefined {
-        console.log(this.activeModuleActionsMetadata);
-        return this.activeModuleActionsMetadata[module][action];
-        /*const actionMetadataMap = this.activeModuleActionsMetadata?.get(module)
+    private getActionMetadata(module: Module, action: Action): ActionMetadata | undefined {
+        //return this.activeModuleActionsMetadata[module][action];
+        const actionMetadataMap = this.activeModuleActionsMetadata?.get(module)
         if (actionMetadataMap) {
             return actionMetadataMap.get(action)
         }
-        return undefined;*/
+        return undefined;
     }
 
-    addContextToMap(map: Map<string, string>, context: ProjectManagerContext) {
+    public addContextToMap(map: Map<string, string>, context: ProjectManagerContext) {
         if (context.projectCode) {
             map.set(projectCodeParam, context.projectCode)
         }
@@ -146,7 +199,8 @@ export class ProjetManagerBackendService {
         }
     }
 
-    async fetchData(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, string>): Promise<any> {
+    public async fetchData(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, string>): Promise<any> {
+        await this.isInitialized();
         const actionMetadata = this.getActionMetadata(module, action);
         console.log("getActionMetadata passed");
         console.log(actionMetadata);
@@ -157,7 +211,7 @@ export class ProjetManagerBackendService {
         }
     }
 
-    fetchHttpParams(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, string>): Map<string, string> {
+    private fetchHttpParams(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, string>): Map<string, string> {
         const result = new Map<string, string>()
         const actionMetadata = this.getActionMetadata(module, action);
         if (actionMetadata) {
@@ -172,7 +226,7 @@ export class ProjetManagerBackendService {
         return result
     }
 
-    async doHttpRequest(httpMethod: HttpMethod, endpoint: string, httpParams: Map<string, string>): Promise<any> {
+    private async doHttpRequest(httpMethod: HttpMethod, endpoint: string, httpParams: Map<string, string>): Promise<any> {
         try {
             //const token = KeyCloakService.getToken();
             const url = `${this.baseURL}${endpoint}`
@@ -208,7 +262,7 @@ export class ProjetManagerBackendService {
         }
     }
 
-    convertToUrlSearchParams(map: Map<string, string>): URLSearchParams {
+    private convertToUrlSearchParams(map: Map<string, string>): URLSearchParams {
         const result = new URLSearchParams();
         if (map) {
             for (const [key, value] of map) {

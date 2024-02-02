@@ -142,7 +142,6 @@ export default defineComponent({
         console.log(this.context);
         console.log(params);
         console.log('Fetching projects...');
-        await this.projectManagerBackendService.isInitialized();
         return await this.projectManagerBackendService.fetchData(
             module,
             action,

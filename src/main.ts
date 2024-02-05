@@ -8,6 +8,7 @@ import router from './router';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap';
+import store from './services/store';
 
 
 const app = createApp(App);
@@ -22,6 +23,8 @@ const vueLifecycles = singleSpaVue({
 });
 
 app.use(router);
+app.use(store);
+
 
 export const bootstrap = async () => {
     return new Promise((resolve) => {

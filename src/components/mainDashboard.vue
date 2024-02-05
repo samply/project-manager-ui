@@ -19,25 +19,24 @@
       <table class="table table-bordered table-striped table-hover">
         <thead>
         <tr>
-          <th scope="col">Title</th>
-          <th scope="col">Project ID</th>
           <th scope="col">Data Request Number (DRN)</th>
+          <th scope="col">Title</th>
           <th scope="col">Date</th>
           <th scope="col">Status</th>
           <th scope="col">Action</th>
         </tr>
         </thead>
         <tbody>
-        <tr v-for="(item, index) in tableData" :key="index">
-          <td>{{ item.title }}</td>
-          <!--          <td>{{ item.projectId }}</td>-->
-          <!--          <td>{{ item.drn }}</td>-->
-          <!--          <td>{{ item.date }}</td>-->
-          <td>{{ item.status }}</td>
+        <tr v-for="(item, index) in tablaData" :key="index">
+          <td>{{ item.code }}</td>
+          <td>{{ item.label }}</td>
+          <td>{{ item.createdAt }}</td>
+          <td>{{ item.state }}</td>
 
           <td>
-            <router-link :to="{ name: 'projectView', params: { projectId: item.projectId }}">
-              <i class="bi bi-folder-fill"></i></router-link>
+            <router-link :to="{ name: 'projectView', params: { projectId: item.code }}">
+              <i class="bi bi-folder-fill"></i>
+            </router-link>
           </td>
         </tr>
         </tbody>
@@ -112,7 +111,23 @@ export default defineComponent({
     };
   },
   mounted() {
-    this.fetchProjects();
+    this.fetchProjects().then((result) => {
+      console.log('Fetch Projects Result:', result);
+      this.tablaData = result.content;
+      console.log("TableData:", JSON.stringify(this.tablaData, null, 2));
+      console.log("First Project:", this.tablaData[0]);
+      for (let i = 0; i < this.tablaData.length; i++) {
+        const currentProject = this.tablaData[i];
+
+        // Iterate through the properties of each project object
+        for (const key in currentProject) {
+          if (Object.hasOwnProperty.call(currentProject, key)) {
+            const value = currentProject[key];
+            console.log(`${key}:`, value);
+          }
+        }
+      }
+    });
   },
   computed: {},
 
@@ -148,10 +163,6 @@ export default defineComponent({
             this.context,
             params
         );
-
-        //console.log('Projects fetched successfully:', projects);
-        //this.projects = projects;
-        //this.tableData = this.projects;
 
       } catch (error) {
         console.error('Error loading projects:', error);

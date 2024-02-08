@@ -1,6 +1,7 @@
 // projetManagerBackendService.ts
 import axios, {AxiosResponse} from 'axios';
 import axiosRetry from "axios-retry";
+import KeyCloakService from "@/services/keycloak";
 
 
 const baseURL = process.env.VUE_APP_PROJECT_MANAGER_BACKEND_URL
@@ -235,9 +236,9 @@ export class ProjetManagerBackendService {
             //const token = KeyCloakService.getToken();
             const url = `${this.baseURL}${endpoint}`
             const config = {
-                /*headers: {
-                    Authorization: `Bearer ${token}`
-                },*/
+                headers: {
+                    Authorization: `Bearer ${KeyCloakService.getToken()}`
+                },
                 params: this.convertToUrlSearchParams(httpParams),
                 withCredentials: true
             }

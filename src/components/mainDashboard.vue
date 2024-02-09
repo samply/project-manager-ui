@@ -27,14 +27,14 @@
         </tr>
         </thead>
         <tbody>
-        <tr v-for="(item, index) in tablaData" :key="index">
+        <tr v-for="(item, index) in tableData" :key="index">
           <td>{{ item.code }}</td>
           <td>{{ item.label }}</td>
           <td>{{ item.createdAt }}</td>
           <td>{{ item.state }}</td>
 
           <td>
-            <router-link :to="{ name: 'projectView', params: { projectId: item.code }}">
+            <router-link :to="{ name: 'projectView', params: { projectId: item.code }, props: { tableData: item } }">
               <i class="bi bi-folder-fill"></i>
             </router-link>
           </td>
@@ -90,7 +90,7 @@ export default defineComponent({
       context: new ProjectManagerContext(),
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(), Site.PROJECT_DASHBOARD_SITE),
       //tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
-      tablaData: [],
+      tableData: [],
       secondTableData: [
         {
           projectId: 'PR001',
@@ -113,11 +113,11 @@ export default defineComponent({
   mounted() {
     this.fetchProjects().then((result) => {
       console.log('Fetch Projects Result:', result);
-      this.tablaData = result.content;
-      console.log("TableData:", JSON.stringify(this.tablaData, null, 2));
-      console.log("First Project:", this.tablaData[0]);
-      for (let i = 0; i < this.tablaData.length; i++) {
-        const currentProject = this.tablaData[i];
+      this.tableData = result.content;
+      console.log("TableData:", JSON.stringify(this.tableData, null, 2));
+      console.log("First Project:", this.tableData[0]);
+      for (let i = 0; i < this.tableData.length; i++) {
+        const currentProject = this.tableData[i];
 
         // Iterate through the properties of each project object
         for (const key in currentProject) {

@@ -69,7 +69,7 @@
           </div>
 
           <div class="container mt-12" style="margin-bottom: 10%;">
-            <div v-if="projectData.projectId">
+            <div v-if="tableData.code">
               <br/>
               <div class="table-responsive">
                 <h3>Requested Data</h3>
@@ -78,7 +78,7 @@
                   <tbody>
                   <tr>
                     <td class="bold-text thinner-column">Cooperation Partner</td>
-                    <td class="wider-column">{{ dummyData.cooperationPartner }}</td>
+                    <td class="wider-column">{{ tableData.creatorEmail }}</td>
                     <td></td>
 
                   </tr>
@@ -187,7 +187,6 @@
 
 <script lang="ts">
 import {defineComponent, ref, watchEffect} from 'vue';
-import {useStore} from 'vuex';
 import {
   Action,
   Module,
@@ -202,6 +201,11 @@ export default defineComponent({
   },
   data() {
     return {
+      context: new ProjectManagerContext(),
+      projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(), Site.PROJECT_VIEW_SITE),
+      //tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
+      tableData: [],
+
       stepperSteps: [
         {title: 'CREATED'},
         {title: 'RESPOND PENDING'},
@@ -212,8 +216,6 @@ export default defineComponent({
         // Add more steps as needed
       ],
       site: Site.PROJECT_VIEW_SITE,
-      context: undefined as ProjectManagerContext | undefined,
-      projectManagerBackendService: undefined as ProjetManagerBackendService | undefined,
       projectData: {
         projectId: '',
         drn: '',
@@ -254,8 +256,23 @@ export default defineComponent({
     this.loadProjectData();
     this.dummyData.showTitle = false;
     this.dummyData.showSubmitButtons = false;
-    this.context = new ProjectManagerContext();
-    this.projectManagerBackendService = new ProjetManagerBackendService(this.context, this.site);
+    this.fetchProjects().then((result) => {
+      console.log('Fetch Projects Result:', result);
+      // this.tableData = result.content;
+      console.log("TableData:", JSON.stringify(this.tableData, null, 2));
+      console.log("First Project:", this.tableData[0]);
+      for (let i = 0; i < this.tableData.length; i++) {
+        const currentProject = this.tableData[i];
+
+        // Iterate through the properties of each project object
+        for (const key in currentProject) {
+          if (Object.hasOwnProperty.call(currentProject, key)) {
+            const value = currentProject[key];
+            console.log(`${key}:`, value);
+          }
+        }
+      }
+    });
   },
 
   methods: {
@@ -296,20 +313,33 @@ export default defineComponent({
       }
     },
 
-    /*    async acceptProject(): Promise<void> {
-          try {
-            // Beispielhaftes Modell, pass die Methode und Parameter entsprechend an
-            const response = await this.projectManagerBackendService.fetchData(
-                Module.PROJECT_STATE,
-                Action.ACCEPT_PROJECT,
-                this.context,
-                new Map()
-            );
+    async fetchProjects() {
+      try {
+        const params = new Map<string, string>();
+        params.set('page', '0');
+        params.set('page-size', '2');
+        params.set('site', Site.PROJECT_DASHBOARD_SITE);
 
-          } catch (error) {
-            console.error('Error accepting project:', error);
-          }
-        },*/
+        const module = Module.PROJECTS_MODULE;
+        const action = Action.FETCH_PROJECTS_ACTION;
+
+        console.log(module);
+        console.log(action);
+        console.log(this.context);
+        console.log(params);
+        console.log('Fetching projects...');
+        return await this.projectManagerBackendService.fetchData(
+            module,
+            action,
+            this.context,
+            params
+        );
+
+      } catch (error) {
+        console.error('Error loading projects:', error);
+      }
+    },
+
     reject() {
       console.log('Reject clicked');
     },

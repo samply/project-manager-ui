@@ -35,158 +35,158 @@
               </button>
             </div>
           </div>
-            <table class="table table-bordered">
-              <thead>
-              <tr>
-                <th scope="col">Project ID</th>
-                <th scope="col">Data Request Number (DRN)</th>
-                <th scope="col">Date</th>
-                <th scope="col">Status</th>
-                <th scope="col">Votum</th>
+          <table class="table table-bordered">
+            <thead>
+            <tr>
+              <th scope="col">Project ID</th>
+              <th scope="col">Data Request Number (DRN)</th>
+              <th scope="col">Date</th>
+              <th scope="col">Status</th>
+              <th scope="col">Votum</th>
 
-              </tr>
-              </thead>
-              <tbody>
-              <tr>
-                <td>{{ projectData.projectId }}</td>
-                <td>{{ projectData.drn }}</td>
-                <td>{{ projectData.date }}</td>
-                <td>{{ projectData.status }}</td>
-                <td></td>
-              </tr>
-              </tbody>
-            </table>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+              <td>{{ projectData.projectId }}</td>
+              <td>{{ projectData.drn }}</td>
+              <td>{{ projectData.date }}</td>
+              <td>{{ projectData.status }}</td>
+              <td></td>
+            </tr>
+            </tbody>
+          </table>
 
-            <div class="text-right mt-4">
-              <button class="btn btn-primary mr-2">Accept</button>
-              <button class="btn btn-danger btn-secondary mr-2" @click="reject"
-                      style="margin-left: 0.5%; margin-right: 0.5%">
-                Reject
-              </button>
-              <button class="btn btn-secondary" @click="archive">Archive</button>
-            </div>
-            <hr/>
+          <div class="text-right mt-4">
+            <button class="btn btn-primary mr-2">Accept</button>
+            <button class="btn btn-danger btn-secondary mr-2" @click="reject"
+                    style="margin-left: 0.5%; margin-right: 0.5%">
+              Reject
+            </button>
+            <button class="btn btn-secondary" @click="archive">Archive</button>
           </div>
+          <hr/>
+        </div>
 
-          <div class="container mt-12" style="margin-bottom: 10%;">
-            <div v-if="tableData.code">
+        <div class="container mt-12" style="margin-bottom: 10%;">
+          <div v-if="tableData">
+            <br/>
+            <div class="table-responsive">
+              <h3>Requested Data</h3>
               <br/>
-              <div class="table-responsive">
-                <h3>Requested Data</h3>
-                <br/>
-                <table class="table table-bordered custom-table">
-                  <tbody>
-                  <tr>
-                    <td class="bold-text thinner-column">Cooperation Partner</td>
-                    <td class="wider-column">{{ tableData.creatorEmail }}</td>
-                    <td></td>
+              <table class="table table-bordered custom-table">
+                <tbody>
+                <tr>
+                  <td class="bold-text thinner-column">Cooperation Partner</td>
+                  <td class="wider-column">{{ tableData }}</td>
+                  <td></td>
 
-                  </tr>
-                  <tr>
-                    <td class="bold-text thinner-column">Project Title</td>
-                    <td class="wider-column">{{ dummyData.projectTitle }}</td>
-                    <td><i class="bi bi-pencil me-2"></i></td>
-                  </tr>
-                  <tr>
-                    <td class="bold-text thinner-column">Project Description</td>
-                    <td class="wider-column">{{ dummyData.projectDescription }}</td>
-                    <td><i class="bi bi-pencil me-2"></i></td>
+                </tr>
+                <tr>
+                  <td class="bold-text thinner-column">Project Title</td>
+                  <td class="wider-column">{{ dummyData.projectTitle }}</td>
+                  <td><i class="bi bi-pencil me-2"></i></td>
+                </tr>
+                <tr>
+                  <td class="bold-text thinner-column">Project Description</td>
+                  <td class="wider-column">{{ dummyData.projectDescription }}</td>
+                  <td><i class="bi bi-pencil me-2"></i></td>
 
-                  </tr>
-                  <tr>
-                    <td class="bold-text thinner-column">Selected Bridgeheads</td>
-                    <td class="wider-column">
-                      <ul>
-                        <li v-for="chip in dummyData.selectedChips" :key="chip">{{ chip }}</li>
-                      </ul>
-                    </td>
-                    <td><i class="bi bi-pencil me-2"></i></td>
-                  </tr>
-                  <tr>
-                    <td class="bold-text thinner-column">Script</td>
-                    <td class="wider-column">script available</td>
-                    <td><i class="bi bi-download"></i></td>
-                  </tr>
-                  <tr>
-                    <td class="bold-text thinner-column">Query</td>
-                    <td class="wider-column"></td>
-                    <td><i class="bi bi-copy"></i></td>
-                  </tr>
-                  <tr>
-                    <td class="bold-text thinner-column">Publications</td>
-                    <td class="wider-column">no publication</td>
-                    <td><i class="bi bi-link-45deg"></i></td>
-                  </tr>
-                  <tr>
-                    <td class="bold-text thinner-column">output-format</td>
-                    <td class="wider-column"></td>
-                    <td><i class="bi bi-download"></i></td>
-                  </tr>
-                  </tbody>
-                </table>
-              </div>
+                </tr>
+                <tr>
+                  <td class="bold-text thinner-column">Selected Bridgeheads</td>
+                  <td class="wider-column">
+                    <ul>
+                      <li v-for="chip in dummyData.selectedChips" :key="chip">{{ chip }}</li>
+                    </ul>
+                  </td>
+                  <td><i class="bi bi-pencil me-2"></i></td>
+                </tr>
+                <tr>
+                  <td class="bold-text thinner-column">Script</td>
+                  <td class="wider-column">script available</td>
+                  <td><i class="bi bi-download"></i></td>
+                </tr>
+                <tr>
+                  <td class="bold-text thinner-column">Query</td>
+                  <td class="wider-column"></td>
+                  <td><i class="bi bi-copy"></i></td>
+                </tr>
+                <tr>
+                  <td class="bold-text thinner-column">Publications</td>
+                  <td class="wider-column">no publication</td>
+                  <td><i class="bi bi-link-45deg"></i></td>
+                </tr>
+                <tr>
+                  <td class="bold-text thinner-column">output-format</td>
+                  <td class="wider-column"></td>
+                  <td><i class="bi bi-download"></i></td>
+                </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
-        <div v-if="showNotification" class="custom-width-notifications">
-          <div style="display:flex; flex-flow:row; justify-content:space-between ">
-            <h2>Notifications</h2>
-            <button style="padding:5px" @click="toggleNotification" class="btn btn-dark" v-if="showNotification">
-              <i style="font-size: 30px" class="bi bi-x"></i> <!-- Schließsymbol für Notification -->
-            </button>
+      </div>
+      <div v-if="showNotification" class="custom-width-notifications">
+        <div style="display:flex; flex-flow:row; justify-content:space-between ">
+          <h2>Notifications</h2>
+          <button style="padding:5px" @click="toggleNotification" class="btn btn-dark" v-if="showNotification">
+            <i style="font-size: 30px" class="bi bi-x"></i> <!-- Schließsymbol für Notification -->
+          </button>
+        </div>
+        <div v-for="(item, index) in secondTableData" :key="index" class="card mb-3">
+          <div class="card-body" :class="{ 'expanded': item.isExpanded }">
+            <div style="display:flex; flex-flow: row; justify-content: space-between">
+              <h5 class="card-title">{{ item.notification }}</h5>
+              <div class="notification-header">
+                <button type="button" class="btn-close" @click="removeNotification(index)"
+                        aria-label="Close"></button>
+              </div>
             </div>
-          <div v-for="(item, index) in secondTableData" :key="index" class="card mb-3">
-            <div class="card-body" :class="{ 'expanded': item.isExpanded }">
-              <div style="display:flex; flex-flow: row; justify-content: space-between">
-                <h5 class="card-title">{{ item.notification }}</h5>
-                <div class="notification-header">
-                  <button type="button" class="btn-close" @click="removeNotification(index)"
-                          aria-label="Close"></button>
-                </div>
-              </div>
 
-              <div class="card-text">
-                <div style="font-size: small">{{ item.date }}</div>
-                <div style="display:flex; float: right; align-items: end; gap:10px">
-                  <strong>Project ID:</strong> {{ item.projectId }}
-                  <strong>User:</strong> {{ item.user }}
-                </div>
+            <div class="card-text">
+              <div style="font-size: small">{{ item.date }}</div>
+              <div style="display:flex; float: right; align-items: end; gap:10px">
+                <strong>Project ID:</strong> {{ item.projectId }}
+                <strong>User:</strong> {{ item.user }}
               </div>
-              <br>
+            </div>
+            <br>
 
-              <div class="expand-icon" @click="toggleExpand(item)">
-                <i :class="['bi', 'bi-chevron-compact-down', { 'rotate': item.isExpanded }]"></i>
-              </div>
+            <div class="expand-icon" @click="toggleExpand(item)">
+              <i :class="['bi', 'bi-chevron-compact-down', { 'rotate': item.isExpanded }]"></i>
             </div>
           </div>
         </div>
-        <div v-if="showProgress" class="custom-width-notifications">
-          <div style="display:flex; flex-flow:row; justify-content:space-between ">
-            <h2>Progress</h2>
-            <button style="padding:5px" @click="toggleProgress" class="btn btn-dark" v-if="showProgress">
-              <i style="font-size: 30px" class="bi bi-x"></i> <!-- Schließsymbol für Progress -->
-            </button>
-          </div>
-          <div style="padding-left:10%" v-if="projectData.projectId">
-            <div class="vertical-stepper">
-              <div v-for="(step, index) in stepperSteps" :key="index" class="stepper-step">
-                <div style="display: flex; flex-flow: row">
-                  <div class="step-circle">
-                    <span>{{ index + 1 }}</span>
-                  </div>
-                  <div class="step-title">{{ step.title }}</div>
+      </div>
+      <div v-if="showProgress" class="custom-width-notifications">
+        <div style="display:flex; flex-flow:row; justify-content:space-between ">
+          <h2>Progress</h2>
+          <button style="padding:5px" @click="toggleProgress" class="btn btn-dark" v-if="showProgress">
+            <i style="font-size: 30px" class="bi bi-x"></i> <!-- Schließsymbol für Progress -->
+          </button>
+        </div>
+        <div style="padding-left:10%" v-if="projectData.projectId">
+          <div class="vertical-stepper">
+            <div v-for="(step, index) in stepperSteps" :key="index" class="stepper-step">
+              <div style="display: flex; flex-flow: row">
+                <div class="step-circle">
+                  <span>{{ index + 1 }}</span>
                 </div>
-                <div v-if="index < stepperSteps.length - 1" class="stepper-line"></div>
+                <div class="step-title">{{ step.title }}</div>
               </div>
+              <div v-if="index < stepperSteps.length - 1" class="stepper-line"></div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
 </template>
 
 <script lang="ts">
-import {defineComponent, ref, watchEffect} from 'vue';
+import {defineComponent} from 'vue';
 import {
   Action,
   Module,
@@ -196,16 +196,23 @@ import {
 } from "@/services/projetManagerBackendService";
 
 export default defineComponent({
+  props: {
+    projectId: {
+      type: String,
+      required: true
+    }
+  },
   components: {
     // RequestForm,
   },
   data() {
     return {
-      context: new ProjectManagerContext(),
-      projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(), Site.PROJECT_VIEW_SITE),
+      brigeheadList: [],
+      context: new ProjectManagerContext(this.projectId, 'jusrassic-park'),
+      //context: new ProjectManagerContext(this.projectId, undefined),
+      projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectId, undefined), Site.PROJECT_VIEW_SITE),
       //tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
       tableData: [],
-
       stepperSteps: [
         {title: 'CREATED'},
         {title: 'RESPOND PENDING'},
@@ -252,28 +259,42 @@ export default defineComponent({
 
     };
   },
+  watch: {
+    context(newValue, oldValue) {
+      this.projectManagerBackendService = new ProjetManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
+    }
+  },
   mounted() {
-    this.loadProjectData();
+    // this.loadProjectData();
     this.dummyData.showTitle = false;
     this.dummyData.showSubmitButtons = false;
-    this.fetchProjects().then((result) => {
-      console.log('Fetch Projects Result:', result);
-      // this.tableData = result.content;
-      console.log("TableData:", JSON.stringify(this.tableData, null, 2));
-      console.log("First Project:", this.tableData[0]);
-      for (let i = 0; i < this.tableData.length; i++) {
-        const currentProject = this.tableData[i];
 
-        // Iterate through the properties of each project object
-        for (const key in currentProject) {
-          if (Object.hasOwnProperty.call(currentProject, key)) {
-            const value = currentProject[key];
-            console.log(`${key}:`, value);
+    this.fetchBridgeheads().then((result) => {
+      console.log('Fetch Bridgehead List:', result);
+      this.brigeheadList = result;
+      this.context = new ProjectManagerContext(this.projectId, result[0].bridgehead);
+      this.projectManagerBackendService = new ProjetManagerBackendService(this.context, Site.PROJECT_VIEW_SITE);
+      this.fetchProject().then((result) => {
+        console.log('Fetch ProjectView Result:', result);
+        this.tableData = result.content;
+        console.log("ProjectViewTableData:", JSON.stringify(this.tableData, null, 2));
+        console.log("ProjectView First Project:", this.tableData[0]);
+        for (let i = 0; i < this.tableData.length; i++) {
+          const currentProject = this.tableData[i];
+
+          // Iterate through the properties of each project object
+          for (const key in currentProject) {
+            if (Object.hasOwnProperty.call(currentProject, key)) {
+              const value = currentProject[key];
+              console.log(`${key}:`, value);
+            }
           }
         }
-      }
-    });
+      });
+
+    })
   },
+
 
   methods: {
     toggleExpand(item: { isExpanded: boolean }) {
@@ -295,48 +316,66 @@ export default defineComponent({
       this.secondTableData.splice(index, 1);
     },
 
-    async loadProjectData(): Promise<void> {
+    /*    async loadProjectData(): Promise<void> {
+          try {
+            const projectId = this.$route.params.projectId;
+            const response = await fetch('/projects.json');
+            const {projects} = await response.json();
+
+            const projectData = projects.find((project: { projectId: string }) => project.projectId === projectId);
+
+            if (projectData) {
+              this.projectData = projectData;
+            } else {
+              console.error(`Project with ID ${projectId} not found`);
+            }
+          } catch (error) {
+            console.error('Error loading project data:', error);
+          }
+        },*/
+
+    async fetchProject() {
       try {
-        const projectId = this.$route.params.projectId;
-        const response = await fetch('/projects.json');
-        const {projects} = await response.json();
+        const module = Module.PROJECT_BRIDGEHEAD_MODULE;
+        const action = Action.FETCH_PROJECT_ACTION;
 
-        const projectData = projects.find((project: { projectId: string }) => project.projectId === projectId);
-
-        if (projectData) {
-          this.projectData = projectData;
-        } else {
-          console.error(`Project with ID ${projectId} not found`);
-        }
-      } catch (error) {
-        console.error('Error loading project data:', error);
-      }
-    },
-
-    async fetchProjects() {
-      try {
-        const params = new Map<string, string>();
-        params.set('page', '0');
-        params.set('page-size', '2');
-        params.set('site', Site.PROJECT_DASHBOARD_SITE);
-
-        const module = Module.PROJECTS_MODULE;
-        const action = Action.FETCH_PROJECTS_ACTION;
 
         console.log(module);
         console.log(action);
         console.log(this.context);
-        console.log(params);
-        console.log('Fetching projects...');
+        console.log('Fetching single project...');
+
         return await this.projectManagerBackendService.fetchData(
             module,
             action,
             this.context,
-            params
+            new Map()
         );
 
       } catch (error) {
-        console.error('Error loading projects:', error);
+        console.error('Error loading single project:', error);
+      }
+    },
+
+    async fetchBridgeheads() {
+      try {
+        const module = Module.PROJECT_BRIDGEHEAD_MODULE;
+        const action = Action.FETCH_PROJECT_BRIDGEHEADS_ACTION;
+
+        console.log(module);
+        console.log(action);
+        console.log(this.context);
+        console.log('Fetching single project...');
+
+        return await this.projectManagerBackendService.fetchData(
+            module,
+            action,
+            this.context,
+            new Map()
+        );
+
+      } catch (error) {
+        console.error('Error loading BridgeheadList:', error);
       }
     },
 
@@ -479,8 +518,6 @@ export default defineComponent({
   transition: transform 0.3s ease-in-out;
   height: 100vh;
 }
-
-
 
 
 .card {

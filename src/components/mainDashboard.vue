@@ -34,7 +34,7 @@
           <td>{{ item.state }}</td>
 
           <td>
-            <router-link :to="{ name: 'projectView', params: { projectId: item.code }, props: { tableData: item } }">
+            <router-link :to="{ name: 'projectView', params: { projectId: item.code } }">
               <i class="bi bi-folder-fill"></i>
             </router-link>
           </td>
@@ -87,8 +87,8 @@ export default defineComponent({
   data() {
     return {
       site: Site.PROJECT_DASHBOARD_SITE,
-      context: new ProjectManagerContext(),
-      projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(), Site.PROJECT_DASHBOARD_SITE),
+      context: new ProjectManagerContext(undefined, undefined),
+      projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.PROJECT_DASHBOARD_SITE),
       //tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
       tableData: [],
       secondTableData: [

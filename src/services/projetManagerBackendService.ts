@@ -82,7 +82,7 @@ export enum Action {
     REQUEST_CHANGES_IN_PROJECT_ACTION = "REQUEST_CHANGES_IN_PROJECT",
     FETCH_NOTIFICATIONS_ACTION = "FETCH_NOTIFICATIONS",
     SET_NOTIFICATION_AS_READ_ACTION = "SET_NOTIFICATION_AS_READ",
-    FETCH_PROJECT_ACTION = "FETCH_PROJECT_ACTION",
+    FETCH_PROJECT_ACTION = "FETCH_PROJECT",
     FETCH_PROJECT_STATES_ACTION = "FETCH_PROJECT_STATES",
     FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION = "FETCH_ALL_REGISTERED_BRIDGEHEADS",
     FETCH_DATASHIELD_STATUS_ACTION = "FETCH_DATASHIELD_STATUS",
@@ -124,6 +124,12 @@ function jsonToActionMetadata(json: any): ActionMetadata | undefined {
 export class ProjectManagerContext {
     projectCode: string | undefined;
     bridgehead: string | undefined;
+
+
+    constructor(projectCode: string | undefined, bridgehead: string | undefined) {
+        this.projectCode = projectCode;
+        this.bridgehead = bridgehead;
+    }
 }
 
 export class ProjetManagerBackendService {

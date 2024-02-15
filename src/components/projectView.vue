@@ -208,7 +208,7 @@ export default defineComponent({
   data() {
     return {
       brigeheadList: [],
-      context: new ProjectManagerContext(this.projectId, 'jusrassic-park'),
+      context: new ProjectManagerContext(this.projectId, undefined),
       //context: new ProjectManagerContext(this.projectId, undefined),
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectId, undefined), Site.PROJECT_VIEW_SITE),
       //tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
@@ -273,21 +273,14 @@ export default defineComponent({
       console.log('Fetch Bridgehead List:', result);
       this.brigeheadList = result;
       this.context = new ProjectManagerContext(this.projectId, result[0].bridgehead);
-      this.projectManagerBackendService = new ProjetManagerBackendService(this.context, Site.PROJECT_VIEW_SITE);
-      this.fetchProject().then((result) => {
-        console.log('Fetch ProjectView Result:', result);
-        this.tableData = result.content;
+      this.fetchProject().then((project) => {
+        console.log('Fetch ProjectView Result:', project);
+        this.tableData = project;
         console.log("ProjectViewTableData:", JSON.stringify(this.tableData, null, 2));
-        console.log("ProjectView First Project:", this.tableData[0]);
-        for (let i = 0; i < this.tableData.length; i++) {
-          const currentProject = this.tableData[i];
-
-          // Iterate through the properties of each project object
-          for (const key in currentProject) {
-            if (Object.hasOwnProperty.call(currentProject, key)) {
-              const value = currentProject[key];
-              console.log(`${key}:`, value);
-            }
+        for (const key in project) {
+          if (Object.hasOwnProperty.call(project, key)) {
+            const value = project[key];
+            console.log(`${key}:`, value);
           }
         }
       });

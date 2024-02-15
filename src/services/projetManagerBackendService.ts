@@ -125,11 +125,11 @@ export class ProjectManagerContext {
     projectCode: string | undefined;
     bridgehead: string | undefined;
 
-
     constructor(projectCode: string | undefined, bridgehead: string | undefined) {
         this.projectCode = projectCode;
         this.bridgehead = bridgehead;
     }
+
 }
 
 export class ProjetManagerBackendService {

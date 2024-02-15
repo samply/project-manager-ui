@@ -8,6 +8,7 @@ const routes: Array<RouteRecordRaw> = [
         path: '/project-view/:projectId',
         name: 'projectView',
         component: ProjectView,
+        props: true
     },
     {
         path: '/',

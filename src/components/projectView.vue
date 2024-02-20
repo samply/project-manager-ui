@@ -56,7 +56,7 @@
             </tr>
             </tbody>
           </table>
-
+<!--
           <div class="text-right mt-4">
             <button class="btn btn-primary mr-2">Accept</button>
             <button class="btn btn-danger btn-secondary mr-2" @click="reject"
@@ -64,7 +64,45 @@
               Reject
             </button>
             <button class="btn btn-secondary" @click="archive">Archive</button>
+          </div> -->
+          <div class="text-right mt-4">
+
+            <!-- Project State Module-->
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.CREATE_PROJECT_ACTION"
+                                  :context="context" text="Create"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ACTION"
+                                  :context="context" text="Accept"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ACTION"
+                                  :context="context" text="Reject"
+                                  button-class="btn btn-danger btn-secondary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_DEVELOP_STAGE_ACTION"
+                                  :context="context" text="Start develop stage"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_PILOT_STAGE_ACTION"
+                                  :context="context" text="Start final stage"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_FINAL_STAGE_ACTION"
+                                  :context="context" text="Start final stage"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.FINISH_PROJECT_ACTION"
+                                  :context="context" text="Finish"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ARCHIVE_PROJECT_ACTION"
+                                  :context="context" text="Archive"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+
           </div>
+
           <hr/>
         </div>
 
@@ -183,6 +221,7 @@
       </div>
     </div>
   </div>
+
 </template>
 
 <script lang="ts">
@@ -194,8 +233,17 @@ import {
   ProjetManagerBackendService,
   Site
 } from "@/services/projetManagerBackendService";
+import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 
 export default defineComponent({
+  computed: {
+    Action() {
+      return Action
+    },
+    Module() {
+      return Module
+    }
+  },
   props: {
     projectId: {
       type: String,
@@ -203,13 +251,13 @@ export default defineComponent({
     }
   },
   components: {
+    ProjectManagerButton
     // RequestForm,
   },
   data() {
     return {
       brigeheadList: [],
       context: new ProjectManagerContext(this.projectId, undefined),
-      //context: new ProjectManagerContext(this.projectId, undefined),
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectId, undefined), Site.PROJECT_VIEW_SITE),
       //tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
       tableData: [],

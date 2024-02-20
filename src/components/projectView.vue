@@ -38,33 +38,25 @@
           <table class="table table-bordered">
             <thead>
             <tr>
-              <th scope="col">Project ID</th>
               <th scope="col">Data Request Number (DRN)</th>
-              <th scope="col">Date</th>
-              <th scope="col">Status</th>
+              <th scope="col">Creator</th>
+              <th scope="col">Created at</th>
+              <th scope="col">Expires at</th>
+              <th scope="col">Last modified</th>
               <th scope="col">Votum</th>
-
             </tr>
             </thead>
             <tbody>
             <tr>
-              <td>{{ projectData.projectId }}</td>
-              <td>{{ projectData.drn }}</td>
-              <td>{{ projectData.date }}</td>
-              <td>{{ projectData.status }}</td>
-              <td></td>
+              <td>{{ project ? project.code : '' }}</td>
+              <td>{{ project ? project.creatorEmail : '' }}</td>
+              <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
+              <td>{{ project && project.expiresAt ? convertDate(project.expiresAt) : '' }}</td>
+              <td>{{ project && project.modifiedAt ? convertDate(project.modifiedAt) : '' }}</td>
+              <td>Votum</td> <!-- TODO -->
             </tr>
             </tbody>
           </table>
-<!--
-          <div class="text-right mt-4">
-            <button class="btn btn-primary mr-2">Accept</button>
-            <button class="btn btn-danger btn-secondary mr-2" @click="reject"
-                    style="margin-left: 0.5%; margin-right: 0.5%">
-              Reject
-            </button>
-            <button class="btn btn-secondary" @click="archive">Archive</button>
-          </div> -->
           <div class="text-right mt-4">
 
             <!-- Project State Module: Creator View -->
@@ -99,15 +91,17 @@
                                   :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ARCHIVE_PROJECT_ACTION"
                                   :context="context" text="Archive"
-                                  button-class="btn btn-primary mr-2"
+                                  button-class="btn btn-secondary"
                                   :project-manager-backend-service="projectManagerBackendService"/>
 
             <!-- Project State Module: BK-ADMIN View -->
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION"
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
+                                  :action="Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION"
                                   :context="context" text="Accept"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_BRIDGEHEAD_PROJECT_ACTION"
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
+                                  :action="Action.REJECT_BRIDGEHEAD_PROJECT_ACTION"
                                   :context="context" text="Reject"
                                   button-class="btn btn-danger btn-secondary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
@@ -133,7 +127,8 @@
                                   :context="context" text="Reject"
                                   button-class="btn btn-danger btn-secondary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REQUEST_CHANGES_IN_PROJECT_ACTION"
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
+                                  :action="Action.REQUEST_CHANGES_IN_PROJECT_ACTION"
                                   :context="context" text="Request changes"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
@@ -143,7 +138,8 @@
                                   :context="context" text="Reject"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.EXPORT_MODULE" :action="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"
+            <ProjectManagerButton :module="Module.EXPORT_MODULE"
+                                  :action="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"
                                   :context="context" text="Request changes"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
@@ -153,7 +149,7 @@
         </div>
 
         <div class="container mt-12" style="margin-bottom: 10%;">
-          <div v-if="tableData">
+          <div v-if="project">
             <br/>
             <div class="table-responsive">
               <h3>Requested Data</h3>
@@ -161,49 +157,55 @@
               <table class="table table-bordered custom-table">
                 <tbody>
                 <tr>
-                  <td class="bold-text thinner-column">Cooperation Partner</td>
-                  <td class="wider-column">{{ tableData }}</td>
-                  <td></td>
-
-                </tr>
-                <tr>
-                  <td class="bold-text thinner-column">Project Title</td>
-                  <td class="wider-column">{{ dummyData.projectTitle }}</td>
+                  <td class="bold-text thinner-column">Title</td>
+                  <td class="wider-column">{{ project.label }}</td>
                   <td><i class="bi bi-pencil me-2"></i></td>
                 </tr>
                 <tr>
-                  <td class="bold-text thinner-column">Project Description</td>
-                  <td class="wider-column">{{ dummyData.projectDescription }}</td>
+                  <td class="bold-text thinner-column">Description</td>
+                  <td class="wider-column">{{ project.description }}</td>
                   <td><i class="bi bi-pencil me-2"></i></td>
-
                 </tr>
                 <tr>
-                  <td class="bold-text thinner-column">Selected Bridgeheads</td>
+                  <td class="bold-text thinner-column">State</td>
+                  <td class="wider-column">{{ project.state }}</td>
+                  <td><i class="bi bi-pencil me-2"></i></td>
+                </tr>
+                <tr>
+                  <td class="bold-text thinner-column">Type</td>
+                  <td class="wider-column">{{ project.type }}</td>
+                  <td><i class="bi bi-pencil me-2"></i></td>
+                </tr>
+                <tr>
+                  <td class="bold-text thinner-column">Query</td>
                   <td class="wider-column">
-                    <ul>
-                      <li v-for="chip in dummyData.selectedChips" :key="chip">{{ chip }}</li>
-                    </ul>
+                    {{ project.humanReadable ? project.humanReadable : project.query}}
                   </td>
                   <td><i class="bi bi-pencil me-2"></i></td>
                 </tr>
                 <tr>
+                  <td class="bold-text thinner-column">Query Format</td>
+                  <td class="wider-column">{{ project.queryFormat }}</td>
+                  <td><i class="bi bi-pencil me-2"></i></td>
+                </tr>
+                <tr>
+                  <td class="bold-text thinner-column">Query context</td>
+                  <td class="wider-column">{{ project.queryContext }}</td>
+                  <td><i class="bi bi-pencil me-2"></i></td>
+                </tr>
+                <tr>
+                  <td class="bold-text thinner-column">Output Format</td>
+                  <td class="wider-column">{{ project.outputFormat }}</td>
+                  <td><i class="bi bi-pencil me-2"></i></td>
+                </tr>
+                <tr>
+                  <td class="bold-text thinner-column">Template ID</td>
+                  <td class="wider-column">{{ project.templateId }}</td>
+                  <td><i class="bi bi-pencil me-2"></i></td>
+                </tr>
+                <tr>
                   <td class="bold-text thinner-column">Script</td>
-                  <td class="wider-column">script available</td>
-                  <td><i class="bi bi-download"></i></td>
-                </tr>
-                <tr>
-                  <td class="bold-text thinner-column">Query</td>
-                  <td class="wider-column"></td>
-                  <td><i class="bi bi-copy"></i></td>
-                </tr>
-                <tr>
-                  <td class="bold-text thinner-column">Publications</td>
-                  <td class="wider-column">no publication</td>
-                  <td><i class="bi bi-link-45deg"></i></td>
-                </tr>
-                <tr>
-                  <td class="bold-text thinner-column">output-format</td>
-                  <td class="wider-column"></td>
+                  <td class="wider-column">script available</td> <!-- TODO -->
                   <td><i class="bi bi-download"></i></td>
                 </tr>
                 </tbody>
@@ -212,6 +214,7 @@
           </div>
         </div>
       </div>
+
       <div v-if="showNotification" class="custom-width-notifications">
         <div style="display:flex; flex-flow:row; justify-content:space-between ">
           <h2>Notifications</h2>
@@ -275,11 +278,13 @@ import {defineComponent} from 'vue';
 import {
   Action,
   Module,
+  Project,
   ProjectManagerContext,
   ProjetManagerBackendService,
   Site
 } from "@/services/projetManagerBackendService";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
+import {format} from "date-fns";
 
 export default defineComponent({
   computed: {
@@ -306,7 +311,7 @@ export default defineComponent({
       context: new ProjectManagerContext(this.projectId, undefined),
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectId, undefined), Site.PROJECT_VIEW_SITE),
       //tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
-      tableData: [],
+      project: undefined as Project | undefined,
       stepperSteps: [
         {title: 'CREATED'},
         {title: 'RESPOND PENDING'},
@@ -322,15 +327,6 @@ export default defineComponent({
         drn: '',
         date: '',
         status: '',
-      },
-      dummyData: {
-        cooperationPartner: ' Partner',
-        projectTitle: ' Project Title',
-        projectDescription: 'XYZ Project Description',
-        selectedChips: ['Bridgehead X', 'Bridgehead Y'],
-        file: null,
-        showTitle: false,
-        showSubmitButtons: false,
       },
       secondTableData: [
         {
@@ -359,24 +355,14 @@ export default defineComponent({
     }
   },
   mounted() {
-    // this.loadProjectData();
-    this.dummyData.showTitle = false;
-    this.dummyData.showSubmitButtons = false;
-
     this.fetchBridgeheads().then((result) => {
       console.log('Fetch Bridgehead List:', result);
       this.brigeheadList = result;
       this.context = new ProjectManagerContext(this.projectId, result[0].bridgehead);
       this.fetchProject().then((project) => {
         console.log('Fetch ProjectView Result:', project);
-        this.tableData = project;
-        console.log("ProjectViewTableData:", JSON.stringify(this.tableData, null, 2));
-        for (const key in project) {
-          if (Object.hasOwnProperty.call(project, key)) {
-            const value = project[key];
-            console.log(`${key}:`, value);
-          }
-        }
+        this.project = project;
+        console.log("ProjectViewTableData:", JSON.stringify(this.project, null, 2));
       });
 
     })
@@ -403,25 +389,7 @@ export default defineComponent({
       this.secondTableData.splice(index, 1);
     },
 
-    /*    async loadProjectData(): Promise<void> {
-          try {
-            const projectId = this.$route.params.projectId;
-            const response = await fetch('/projects.json');
-            const {projects} = await response.json();
-
-            const projectData = projects.find((project: { projectId: string }) => project.projectId === projectId);
-
-            if (projectData) {
-              this.projectData = projectData;
-            } else {
-              console.error(`Project with ID ${projectId} not found`);
-            }
-          } catch (error) {
-            console.error('Error loading project data:', error);
-          }
-        },*/
-
-    async fetchProject() {
+    async fetchProject(): Promise<Project> {
       try {
         const module = Module.PROJECT_BRIDGEHEAD_MODULE;
         const action = Action.FETCH_PROJECT_ACTION;
@@ -432,15 +400,20 @@ export default defineComponent({
         console.log(this.context);
         console.log('Fetching single project...');
 
-        return await this.projectManagerBackendService.fetchData(
+        const response = await this.projectManagerBackendService.fetchData(
             module,
             action,
             this.context,
             new Map()
         );
+        if (response === undefined) {
+          throw new Error('Received undefined response');
+        }
+        return response;
 
       } catch (error) {
         console.error('Error loading single project:', error);
+        throw error;
       }
     },
 
@@ -466,36 +439,9 @@ export default defineComponent({
       }
     },
 
-    reject() {
-      console.log('Reject clicked');
-    },
-    archive() {
-      console.log('Archive clicked');
-    },
-    editTitle() {
-      console.log('Edit Title clicked');
-    },
-    editDescription() {
-      console.log('Edit Description clicked');
-    },
-    uploadDownloadScript() {
-      console.log('Upload/Download Script clicked');
-    },
-    viewCriteria() {
-      console.log('View Criteria clicked');
-    },
-    editBridgeheads() {
-      console.log('Edit Bridgeheads clicked');
-    },
-    downloadUploadForm() {
-      console.log('Download/Upload Form clicked');
-    },
-    editExportOutputFormat() {
-      console.log('Edit Export-Output Format clicked');
-    },
-    downloadAuthenticationScript() {
-      console.log('Download Authentication Script (DataSHIELD) clicked');
-    },
+    convertDate(date: Date) {
+      return format(date, 'yyyy-MM-dd HH:mm:ss')
+    }
   },
 });
 </script>

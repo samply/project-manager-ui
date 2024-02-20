@@ -89,6 +89,26 @@ export enum Action {
     FETCH_USERS_FOR_AUTOCOMPLETE_ACTION = "FETCH_USERS_FOR_AUTOCOMPLETE",
 }
 
+export interface Project {
+    code: string | null;
+    creatorEmail: string | null;
+    createdAt: Date | null;
+    expiresAt: Date | null;
+    archivedAt: Date | null;
+    modifiedAt: Date | null;
+    state: string | null;
+    type: string | null;
+    query: string | null;
+    humanReadable: string | null;
+    queryFormat: string | null;
+    outputFormat: string | null;
+    templateId: string | null;
+    label: string | null;
+    description: string | null;
+    explorerUrl: string | null;
+    queryContext: string | null;
+}
+
 function getActionFromString(value: string): Action | undefined {
     return Object.values(Action).find((action) => action === value) as Action | undefined;
 }

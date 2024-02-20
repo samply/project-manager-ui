@@ -67,7 +67,7 @@
           </div> -->
           <div class="text-right mt-4">
 
-            <!-- Project State Module-->
+            <!-- Project State Module: Creator View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.CREATE_PROJECT_ACTION"
                                   :context="context" text="Create"
                                   button-class="btn btn-primary mr-2"
@@ -138,6 +138,15 @@
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
 
+            <!-- Export Module -->
+            <ProjectManagerButton :module="Module.EXPORT_MODULE" :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
+                                  :context="context" text="Reject"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.EXPORT_MODULE" :action="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"
+                                  :context="context" text="Request changes"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
           </div>
 
           <hr/>

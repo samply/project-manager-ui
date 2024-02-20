@@ -16,3 +16,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Token Bearer to doHttpRequest
 - Project Manager Button
 - Project Manager Button: Developer, Pilot, Final and BK-Admin Views
+- 

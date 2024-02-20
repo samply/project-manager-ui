@@ -72,6 +72,7 @@
                                   :context="context" text="Create"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+            <!-- Project State Module: PM-ADMIN View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ACTION"
                                   :context="context" text="Accept"
                                   button-class="btn btn-primary mr-2"
@@ -98,6 +99,42 @@
                                   :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ARCHIVE_PROJECT_ACTION"
                                   :context="context" text="Archive"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+
+            <!-- Project State Module: BK-ADMIN View -->
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION"
+                                  :context="context" text="Accept"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_BRIDGEHEAD_PROJECT_ACTION"
+                                  :context="context" text="Reject"
+                                  button-class="btn btn-danger btn-secondary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <!-- Project State Module: Developer/Pilot View -->
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_SCRIPT_ACTION"
+                                  :context="context" text="Accept"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_SCRIPT_ACTION"
+                                  :context="context" text="Reject"
+                                  button-class="btn btn-danger btn-secondary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REQUEST_SCRIPT_CHANGES_ACTION"
+                                  :context="context" text="Request changes"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <!-- Project State Module: Final View -->
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_RESULTS_ACTION"
+                                  :context="context" text="Accept"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_RESULTS_ACTION"
+                                  :context="context" text="Reject"
+                                  button-class="btn btn-danger btn-secondary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REQUEST_CHANGES_IN_PROJECT_ACTION"
+                                  :context="context" text="Request changes"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
 

@@ -163,7 +163,7 @@
                 </tr>
                 <tr>
                   <td class="bold-text thinner-column">Description</td>
-                  <td class="wider-column">{{ project.description }}</td>
+                  <td class="wider-column">{{ project && project.description && project.description.length > 10 ? project.description.substring(0, 9) : project.description }}</td>
                   <td><i class="bi bi-pencil me-2"></i></td>
                 </tr>
                 <tr>
@@ -179,7 +179,7 @@
                 <tr>
                   <td class="bold-text thinner-column">Query</td>
                   <td class="wider-column">
-                    {{ project.humanReadable ? project.humanReadable : project.query}}
+                    {{ project.humanReadable ? project.humanReadable : project.query }}
                   </td>
                   <td><i class="bi bi-pencil me-2"></i></td>
                 </tr>
@@ -222,28 +222,32 @@
             <i style="font-size: 30px" class="bi bi-x"></i> <!-- Schließsymbol für Notification -->
           </button>
         </div>
-        <div v-for="(item, index) in secondTableData" :key="index" class="card mb-3">
-          <div class="card-body" :class="{ 'expanded': item.isExpanded }">
+        <div v-for="(notification,index) in notifications" :key="index" class="card mb-3">
+          <!--<div class="card-body" :class="{ 'expanded': true }">-->
+          <div class="card-body" v-if="!notification.read">
             <div style="display:flex; flex-flow: row; justify-content: space-between">
-              <h5 class="card-title">{{ item.notification }}</h5>
+              <h5 class="card-title">{{ notification.details }}</h5>
               <div class="notification-header">
-                <button type="button" class="btn-close" @click="removeNotification(index)"
+                <button type="button" class="btn-close"
+                        @click="removeNotification(notification && notification.id ? notification.id : 0)"
                         aria-label="Close"></button>
               </div>
             </div>
 
             <div class="card-text">
-              <div style="font-size: small">{{ item.date }}</div>
+              <div style="font-size: small">{{
+                  notification && notification.timestamp ? convertDate(notification.timestamp) : ''
+                }}
+              </div>
               <div style="display:flex; float: right; align-items: end; gap:10px">
-                <strong>Project ID:</strong> {{ item.projectId }}
-                <strong>User:</strong> {{ item.user }}
+                <strong>User:</strong> {{ notification.email }}
               </div>
             </div>
             <br>
 
-            <div class="expand-icon" @click="toggleExpand(item)">
-              <i :class="['bi', 'bi-chevron-compact-down', { 'rotate': item.isExpanded }]"></i>
-            </div>
+            <!--            <div class="expand-icon" @click="toggleExpand(notification)">
+                          <i :class="['bi', 'bi-chevron-compact-down', { 'rotate': notification.isExpanded }]"></i>
+                        </div>-->
           </div>
         </div>
       </div>
@@ -278,6 +282,7 @@ import {defineComponent} from 'vue';
 import {
   Action,
   Module,
+  Notification,
   Project,
   ProjectManagerContext,
   ProjetManagerBackendService,
@@ -307,7 +312,8 @@ export default defineComponent({
   },
   data() {
     return {
-      brigeheadList: [],
+      activeBridgehead: undefined as string | undefined,
+      brigeheads: [] as string[],
       context: new ProjectManagerContext(this.projectId, undefined),
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectId, undefined), Site.PROJECT_VIEW_SITE),
       //tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
@@ -328,89 +334,64 @@ export default defineComponent({
         date: '',
         status: '',
       },
-      secondTableData: [
-        {
-          projectId: 'PR001',
-          drn: '12345',
-          user: 'User1',
-          date: '2023-04-15',
-          notification: 'Notification Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '
-        },
-        {
-          projectId: 'PR002',
-          drn: '67890',
-          user: 'User2',
-          date: '2023-05-20',
-          notification: 'Notification Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '
-        },
-      ],
+      notifications: [] as Notification[],
       showNotification: false,
-      showProgress: false,
-
+      showProgress: false
     };
   },
   watch: {
+    activeBridgehead(newValue, oldValue){
+      this.context = new ProjectManagerContext(this.projectId, newValue);
+    },
     context(newValue, oldValue) {
       this.projectManagerBackendService = new ProjetManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
+      this.fetchProject();
+    },
+    project(newValue, oldValue) {
+      this.fetchNotifications();
     }
   },
   mounted() {
-    this.fetchBridgeheads().then((result) => {
-      console.log('Fetch Bridgehead List:', result);
-      this.brigeheadList = result;
-      this.context = new ProjectManagerContext(this.projectId, result[0].bridgehead);
-      this.fetchProject().then((project) => {
-        console.log('Fetch ProjectView Result:', project);
-        this.project = project;
-        console.log("ProjectViewTableData:", JSON.stringify(this.project, null, 2));
-      });
-
-    })
+    this.fetchBridgeheads();
   },
 
 
   methods: {
-    toggleExpand(item: { isExpanded: boolean }) {
+    /*toggleExpand(item: { isExpanded: boolean }) {
       item.isExpanded = !item.isExpanded;
-    },
+    },*/
+
     toggleNotification() {
       this.showNotification = !this.showNotification;
       if (this.showProgress) {
         this.showProgress = false;
       }
     },
+
     toggleProgress() {
       this.showProgress = !this.showProgress;
       if (this.showNotification) {
         this.showNotification = false;
       }
     },
-    removeNotification(index: number): void {
-      this.secondTableData.splice(index, 1);
+
+    removeNotification(notificationId: number): void {
+      const params = new Map<string, string>;
+      params.set('notification-id', '' + notificationId)
+      this.projectManagerBackendService.fetchData(Module.NOTIFICATIONS_MODULE, Action.SET_NOTIFICATION_AS_READ_ACTION, this.context, params)
+      // TODO: refresh after removing notification
     },
 
-    async fetchProject(): Promise<Project> {
+    async fetchProject() {
       try {
-        const module = Module.PROJECT_BRIDGEHEAD_MODULE;
-        const action = Action.FETCH_PROJECT_ACTION;
-
-
-        console.log(module);
-        console.log(action);
-        console.log(this.context);
-        console.log('Fetching single project...');
-
-        const response = await this.projectManagerBackendService.fetchData(
-            module,
-            action,
+        this.projectManagerBackendService.fetchData(
+            Module.PROJECT_BRIDGEHEAD_MODULE,
+            Action.FETCH_PROJECT_ACTION,
             this.context,
             new Map()
-        );
-        if (response === undefined) {
-          throw new Error('Received undefined response');
-        }
-        return response;
-
+        ).then(project => {
+          this.project = project;
+        })
       } catch (error) {
         console.error('Error loading single project:', error);
         throw error;
@@ -419,29 +400,38 @@ export default defineComponent({
 
     async fetchBridgeheads() {
       try {
-        const module = Module.PROJECT_BRIDGEHEAD_MODULE;
-        const action = Action.FETCH_PROJECT_BRIDGEHEADS_ACTION;
-
-        console.log(module);
-        console.log(action);
-        console.log(this.context);
-        console.log('Fetching single project...');
-
         return await this.projectManagerBackendService.fetchData(
-            module,
-            action,
+            Module.PROJECT_BRIDGEHEAD_MODULE,
+            Action.FETCH_PROJECT_BRIDGEHEADS_ACTION,
             this.context,
             new Map()
-        );
-
+        ).then(bridgeheads => {
+          this.brigeheads = bridgeheads;
+          this.activeBridgehead = bridgeheads[0].bridgehead;
+        });
       } catch (error) {
         console.error('Error loading BridgeheadList:', error);
+      }
+    },
+
+    async fetchNotifications(){
+      try {
+        const response = await this.projectManagerBackendService.fetchData(
+            Module.NOTIFICATIONS_MODULE,
+            Action.FETCH_NOTIFICATIONS_ACTION,
+            this.context,
+            new Map()
+        ).then(notifications => this.notifications = notifications);
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+        throw error;
       }
     },
 
     convertDate(date: Date) {
       return format(date, 'yyyy-MM-dd HH:mm:ss')
     }
+
   },
 });
 </script>

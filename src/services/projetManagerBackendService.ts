@@ -109,6 +109,19 @@ export interface Project {
     queryContext: string | null;
 }
 
+export interface Notification {
+    id: number | null;
+    email: string | null;
+    timestamp: Date | null;
+    projectCode: string | null;
+    bridgehead: string | null;
+    operationType: string | null;
+    details: string | null;
+    error: string | null;
+    httpStatus: number | null;
+    read: boolean | null;
+}
+
 function getActionFromString(value: string): Action | undefined {
     return Object.values(Action).find((action) => action === value) as Action | undefined;
 }

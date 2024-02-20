@@ -17,3 +17,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Project Manager Button
 - Project Manager Button: Developer, Pilot, Final and BK-Admin Views
 - Project information in project view
+- Notifications in project view

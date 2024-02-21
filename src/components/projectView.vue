@@ -156,26 +156,20 @@
               <br/>
               <table class="table table-bordered custom-table">
                 <tbody>
-                <tr>
-                  <td class="bold-text thinner-column">Title</td>
-                  <td class="wider-column">{{ project.label }}</td>
-                  <td><i class="bi bi-pencil me-2"></i></td>
-                </tr>
-                <tr>
-                  <td class="bold-text thinner-column">Description</td>
-                  <td class="wider-column">{{ project && project.description && project.description.length > 10 ? project.description.substring(0, 9) : project.description }}</td>
-                  <td><i class="bi bi-pencil me-2"></i></td>
-                </tr>
+                <ProjectFieldRow field-key="Title" edit-project-param="label"
+                                 :field-value="project.label"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                <ProjectFieldRow field-key="Description" edit-project-param="description"
+                                 :field-value="project && project.description && project.description.length > 10 ? project.description.substring(0, 9) : project.description"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <tr>
                   <td class="bold-text thinner-column">State</td>
                   <td class="wider-column">{{ project.state }}</td>
                   <td><i class="bi bi-pencil me-2"></i></td>
                 </tr>
-                <tr>
-                  <td class="bold-text thinner-column">Type</td>
-                  <td class="wider-column">{{ project.type }}</td>
-                  <td><i class="bi bi-pencil me-2"></i></td>
-                </tr>
+                <ProjectFieldRow field-key="Type" edit-project-param="project-type"
+                                 :field-value="project.type"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <tr>
                   <td class="bold-text thinner-column">Query</td>
                   <td class="wider-column">
@@ -233,7 +227,7 @@
                         aria-label="Close"></button>
               </div>
             </div>
-
+            <!-- TODO: Add rest of notification information -->
             <div class="card-text">
               <div style="font-size: small">{{
                   notification && notification.timestamp ? convertDate(notification.timestamp) : ''
@@ -290,6 +284,7 @@ import {
 } from "@/services/projetManagerBackendService";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import {format} from "date-fns";
+import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
 
 export default defineComponent({
   computed: {
@@ -307,6 +302,7 @@ export default defineComponent({
     }
   },
   components: {
+    ProjectFieldRow,
     ProjectManagerButton
     // RequestForm,
   },
@@ -340,7 +336,7 @@ export default defineComponent({
     };
   },
   watch: {
-    activeBridgehead(newValue, oldValue){
+    activeBridgehead(newValue, oldValue) {
       this.context = new ProjectManagerContext(this.projectId, newValue);
     },
     context(newValue, oldValue) {
@@ -384,11 +380,15 @@ export default defineComponent({
 
     async fetchProject() {
       try {
+        const params = new Map<string, string>();
+        // TODO: Control page size
+        params.set('page', '' + 0);
+        params.set('page-size', '' + 10);
         this.projectManagerBackendService.fetchData(
             Module.PROJECT_BRIDGEHEAD_MODULE,
             Action.FETCH_PROJECT_ACTION,
             this.context,
-            new Map()
+            params
         ).then(project => {
           this.project = project;
         })
@@ -414,7 +414,7 @@ export default defineComponent({
       }
     },
 
-    async fetchNotifications(){
+    async fetchNotifications() {
       try {
         const response = await this.projectManagerBackendService.fetchData(
             Module.NOTIFICATIONS_MODULE,

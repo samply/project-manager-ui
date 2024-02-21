@@ -142,11 +142,12 @@ export default defineComponent({
       this.secondTableData.splice(index, 1);
     },
 
+    // TODO: Fetch several pages of projects
     async fetchProjects() {
       try {
         const params = new Map<string, string>();
         params.set('page', '0');
-        params.set('page-size', '2');
+        params.set('page-size', '10');
         params.set('site', Site.PROJECT_DASHBOARD_SITE);
 
         const module = Module.PROJECTS_MODULE;

@@ -59,6 +59,7 @@
           </table>
           <div class="text-right mt-4">
 
+            <!-- TODO: Edit only if authorized -->
             <!-- Project State Module: Creator View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.CREATE_PROJECT_ACTION"
                                   :context="context" text="Create"
@@ -156,47 +157,40 @@
               <br/>
               <table class="table table-bordered custom-table">
                 <tbody>
-                <ProjectFieldRow field-key="Title" edit-project-param="label"
+                <ProjectFieldRow field-key="Title" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="Description" edit-project-param="description"
-                                 :field-value="project && project.description && project.description.length > 10 ? project.description.substring(0, 9) : project.description"
+                <ProjectFieldRow field-key="Description" edit-project-param="description" :is-editable="true"
+                                 :field-value="project.description"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <tr>
-                  <td class="bold-text thinner-column">State</td>
-                  <td class="wider-column">{{ project.state }}</td>
-                  <td><i class="bi bi-pencil me-2"></i></td>
-                </tr>
-                <ProjectFieldRow field-key="Type" edit-project-param="project-type"
+                <ProjectFieldRow field-key="State" :is-editable="false"
+                                 :field-value="project.state"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                <ProjectFieldRow field-key="Type" edit-project-param="project-type" :is-editable="true"
                                  :field-value="project.type"
+                                 :possible-values="projectTypes"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <tr>
-                  <td class="bold-text thinner-column">Query</td>
-                  <td class="wider-column">
-                    {{ project.humanReadable ? project.humanReadable : project.query }}
-                  </td>
-                  <td><i class="bi bi-pencil me-2"></i></td>
-                </tr>
-                <tr>
-                  <td class="bold-text thinner-column">Query Format</td>
-                  <td class="wider-column">{{ project.queryFormat }}</td>
-                  <td><i class="bi bi-pencil me-2"></i></td>
-                </tr>
-                <tr>
-                  <td class="bold-text thinner-column">Query context</td>
-                  <td class="wider-column">{{ project.queryContext }}</td>
-                  <td><i class="bi bi-pencil me-2"></i></td>
-                </tr>
-                <tr>
-                  <td class="bold-text thinner-column">Output Format</td>
-                  <td class="wider-column">{{ project.outputFormat }}</td>
-                  <td><i class="bi bi-pencil me-2"></i></td>
-                </tr>
-                <tr>
-                  <td class="bold-text thinner-column">Template ID</td>
-                  <td class="wider-column">{{ project.templateId }}</td>
-                  <td><i class="bi bi-pencil me-2"></i></td>
-                </tr>
+                <!-- TODO: Edit Query -->
+                <ProjectFieldRow field-key="Query" :is-editable="false"
+                                 :field-value="project.humanReadable ? project.humanReadable : project.query"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                <ProjectFieldRow field-key="Query Format" edit-project-param="query-format" :is-editable="true"
+                                 :field-value="project.queryFormat"
+                                 :possible-values="queryFormats"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                <!-- TODO: Separate queries in pairs Key-Values + encrpyt and decrypt in base64-->
+                <ProjectFieldRow field-key="Query Context" edit-project-param="query-context" :is-editable="true"
+                                 :field-value="project?.queryContext"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                <ProjectFieldRow field-key="Output Format" edit-project-param="output-format" :is-editable="true"
+                                 :field-value="project.outputFormat"
+                                 :possible-values="outputFormats"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                <ProjectFieldRow field-key="Template ID" edit-project-param="template-id" :is-editable="true"
+                                 :field-value="project.templateId"
+                                 :possible-values="exporterTemplateIds"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                <!-- TODO -->
                 <tr>
                   <td class="bold-text thinner-column">Script</td>
                   <td class="wider-column">script available</td> <!-- TODO -->
@@ -314,6 +308,11 @@ export default defineComponent({
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectId, undefined), Site.PROJECT_VIEW_SITE),
       //tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
       project: undefined as Project | undefined,
+      projectTypes: [] as string[],
+      outputFormats: [] as string[],
+      queryFormats: [] as string[],
+      exporterTemplateIds: [] as string[],
+      allBridgeheads: [] as string[],
       stepperSteps: [
         {title: 'CREATED'},
         {title: 'RESPOND PENDING'},
@@ -345,6 +344,7 @@ export default defineComponent({
     },
     project(newValue, oldValue) {
       this.fetchNotifications();
+      this.initializeEnums();
     }
   },
   mounted() {
@@ -430,8 +430,41 @@ export default defineComponent({
 
     convertDate(date: Date) {
       return format(date, 'yyyy-MM-dd HH:mm:ss')
-    }
+    },
 
+    initializeEnums() {
+      if (this.project) {
+        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION).then(condition => {
+          if (condition) {
+            this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, this.context, new Map()).then(projectTypes => this.projectTypes = projectTypes);
+          }
+        })
+        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION).then(condition => {
+          if (condition) {
+            this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, this.context, new Map()).then(queryFormats => this.queryFormats = queryFormats);
+          }
+        })
+        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION).then(condition => {
+          if (condition) {
+            this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, this.context, new Map()).then(outputFormats => this.outputFormats = outputFormats);
+          }
+        })
+        if (this.project.type) {
+          const params = new Map<string, string>;
+          params.set('project-type', this.project.type)
+          this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION).then(condition => {
+            if (condition) {
+              this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, this.context, params).then(exporterTemplateIds => this.exporterTemplateIds = exporterTemplateIds);
+            }
+          })
+        }
+        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION).then(condition => {
+          if (condition) {
+            this.projectManagerBackendService.fetchData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, this.context, new Map()).then(allBridgeheads => this.allBridgeheads = allBridgeheads);
+          }
+        })
+      }
+    }
   },
 });
 </script>

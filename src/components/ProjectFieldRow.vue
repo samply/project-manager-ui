@@ -1,6 +1,6 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Emit, Prop} from "vue-property-decorator";
+import {Prop} from "vue-property-decorator";
 import {
   Action,
   Module,
@@ -17,19 +17,27 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly editProjectParam!: string;
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
   @Prop() readonly context!: ProjectManagerContext;
+  @Prop() readonly possibleValues!: string[];
+  @Prop() readonly isEditable!: boolean;
 
   editing = false; // Flag to indicate if the field is being edited
   editedValue = ''; // Store edited value temporarily
   tempFieldValue = ''; // Initialize tempFieldValue with empty string
+  isActionEnabled = false;
 
   // Initialize tempFieldValue with the initial value of fieldValue
   created() {
     this.tempFieldValue = this.fieldValue;
+    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION).then(isActive => this.isActionEnabled = isActive);
   }
 
   editField() {
     this.editing = true; // Set editing flag to true
     this.editedValue = this.tempFieldValue; // Initialize editedValue with current fieldValue
+  }
+
+  isFieldValueEditable(){
+    return !this.editing && this.isEditable && this.isActionEnabled;
   }
 
   saveField() {
@@ -44,6 +52,16 @@ export default class ProjectFieldRow extends Vue {
   cancelEdit() {
     this.editing = false; // Cancel editing, reset editing flag
   }
+
+  getSelectedOption() {
+    if (this.tempFieldValue && this.tempFieldValue.trim().length > 0){
+      return this.tempFieldValue;
+    }
+    if (this.possibleValues && this.possibleValues.length > 0){
+      return this.possibleValues[0];
+    }
+    return '';
+  }
 }
 </script>
 
@@ -52,9 +70,17 @@ export default class ProjectFieldRow extends Vue {
     <td class="bold-text thinner-column">{{ fieldKey }}</td>
     <td class="wider-column">
       <div class="input-container">
-        <!-- Show input field if editing is true, otherwise display fieldValue -->
-        <template v-if="editing">
+        <template v-if="editing && !possibleValues">
           <input type="text" v-model="editedValue"/>
+          <div class="button-container">
+            <button @click="saveField">Save</button>
+            <button @click="cancelEdit">Cancel</button>
+          </div>
+        </template>
+        <template v-else-if="editing && possibleValues">
+          <select v-model="editedValue">
+            <option v-for="value in possibleValues" :key="value" :value="value" :selected="getSelectedOption">{{ value }}</option>
+          </select>
           <div class="button-container">
             <button @click="saveField">Save</button>
             <button @click="cancelEdit">Cancel</button>
@@ -65,11 +91,11 @@ export default class ProjectFieldRow extends Vue {
         </template>
       </div>
     </td>
-    <template v-if="!editing">
+    <template v-if="isFieldValueEditable()">
       <td><i class="bi bi-pencil me-2" @click="editField"></i></td>
     </template>
     <template v-else>
-      <td></td>
+      <td/>
     </template>
   </tr>
 </template>

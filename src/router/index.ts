@@ -1,18 +1,18 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
-import ProjectView from '../components/projectView.vue';
-import MainDashboard from '../components/mainDashboard.vue';
-import RequestForm from '../components/requestForm.vue';
+import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router';
+import ProjectView from '../components/ProjectView.vue';
+import MainDashboard from '../components/MainDashboard.vue';
+
 
 const routes: Array<RouteRecordRaw> = [
     {
         path: '/project-view/:projectId',
-        name: 'projectView',
+        name: 'ProjectView',
         component: ProjectView,
         props: true
     },
     {
         path: '/',
-        name: 'mainDashboard',
+        name: 'MainDashboard',
         component: MainDashboard,
     }
 ];

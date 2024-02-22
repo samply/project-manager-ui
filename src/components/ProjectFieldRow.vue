@@ -19,6 +19,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly possibleValues!: string[];
   @Prop() readonly isEditable!: boolean;
+  @Prop({ type: Function, required: true }) readonly callRefrehContext!: () => void;
 
   editing = false; // Flag to indicate if the field is being edited
   editedValue = ''; // Store edited value temporarily
@@ -45,9 +46,16 @@ export default class ProjectFieldRow extends Vue {
     this.editing = false; // Reset editing flag
     this.tempFieldValue = this.editedValue;
     const params = new Map<string, string>();
+
+    // Attention: HardCoded. Be very careful with it!
+    if (this.fieldKey === 'Type' && this.tempFieldValue === 'DATASHIELD'){
+      params.set('output-format', 'OPAL');
+      params.set('template-id','opal-ccp');
+    }
     params.set(this.editProjectParam, this.editedValue);
-    this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params);
+    this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params).then(result => this.callRefrehContext());
   }
+
 
   cancelEdit() {
     this.editing = false; // Cancel editing, reset editing flag

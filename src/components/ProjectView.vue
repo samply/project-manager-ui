@@ -169,33 +169,34 @@
               <table class="table table-bordered custom-table">
                 <tbody>
                 <ProjectFieldRow field-key="Title" edit-project-param="label" :is-editable="true"
-                                 :field-value="project.label"
+                                 :field-value="project.label" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Description" edit-project-param="description" :is-editable="true"
-                                 :field-value="project.description"
+                                 :field-value="project.description" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Type" edit-project-param="project-type" :is-editable="true"
-                                 :field-value="project.type"
+                                 :field-value="project.type" :call-refreh-context="refreshContext"
                                  :possible-values="projectTypes"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <!-- TODO: Edit Query -->
                 <ProjectFieldRow field-key="Query" :is-editable="false"
                                  :field-value="project.humanReadable ? project.humanReadable : project.query"
+                                 :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Query Format" edit-project-param="query-format" :is-editable="true"
-                                 :field-value="project.queryFormat"
+                                 :field-value="project.queryFormat" :call-refreh-context="refreshContext"
                                  :possible-values="queryFormats"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <!-- TODO: Separate queries in pairs Key-Values + encrpyt and decrypt in base64-->
                 <ProjectFieldRow field-key="Query Context" edit-project-param="query-context" :is-editable="true"
-                                 :field-value="project?.queryContext"
+                                 :field-value="project?.queryContext" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Output Format" edit-project-param="output-format" :is-editable="true"
-                                 :field-value="project.outputFormat"
+                                 :field-value="project.outputFormat" :call-refreh-context="refreshContext"
                                  :possible-values="outputFormats"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Template ID" edit-project-param="template-id" :is-editable="true"
-                                 :field-value="project.templateId"
+                                 :field-value="project.templateId" :call-refreh-context="refreshContext"
                                  :possible-values="exporterTemplateIds"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <!-- TODO -->

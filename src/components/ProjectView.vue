@@ -73,86 +73,86 @@
             <!-- TODO: Edit only if authorized -->
             <!-- Project State Module: Creator View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.CREATE_PROJECT_ACTION"
-                                  :context="context" text="Create"
+                                  :context="context" :call-refreh-context="refreshContext" text="Create"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
             <!-- Project State Module: PM-ADMIN View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ACTION"
-                                  :context="context" text="Accept"
+                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ACTION"
-                                  :context="context" text="Reject"
+                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
                                   button-class="btn btn-danger btn-secondary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_DEVELOP_STAGE_ACTION"
-                                  :context="context" text="Start develop stage"
+                                  :context="context" :call-refreh-context="refreshContext" text="Start develop stage"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_PILOT_STAGE_ACTION"
-                                  :context="context" text="Start final stage"
+                                  :context="context" :call-refreh-context="refreshContext" text="Start final stage"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_FINAL_STAGE_ACTION"
-                                  :context="context" text="Start final stage"
+                                  :context="context" :call-refreh-context="refreshContext" text="Start final stage"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.FINISH_PROJECT_ACTION"
-                                  :context="context" text="Finish"
+                                  :context="context" :call-refreh-context="refreshContext" text="Finish"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ARCHIVE_PROJECT_ACTION"
-                                  :context="context" text="Archive"
+                                  :context="context" :call-refreh-context="refreshContext" text="Archive"
                                   button-class="btn btn-secondary"
                                   :project-manager-backend-service="projectManagerBackendService"/>
 
             <!-- Project State Module: BK-ADMIN View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
                                   :action="Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION"
-                                  :context="context" text="Accept"
+                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
                                   :action="Action.REJECT_BRIDGEHEAD_PROJECT_ACTION"
-                                  :context="context" text="Reject"
+                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
                                   button-class="btn btn-danger btn-secondary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <!-- Project State Module: Developer/Pilot View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_SCRIPT_ACTION"
-                                  :context="context" text="Accept"
+                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_SCRIPT_ACTION"
-                                  :context="context" text="Reject"
+                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
                                   button-class="btn btn-danger btn-secondary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REQUEST_SCRIPT_CHANGES_ACTION"
-                                  :context="context" text="Request changes"
+                                  :context="context" :call-refreh-context="refreshContext" text="Request changes"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <!-- Project State Module: Final View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_RESULTS_ACTION"
-                                  :context="context" text="Accept"
+                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_RESULTS_ACTION"
-                                  :context="context" text="Reject"
+                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
                                   button-class="btn btn-danger btn-secondary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
                                   :action="Action.REQUEST_CHANGES_IN_PROJECT_ACTION"
-                                  :context="context" text="Request changes"
+                                  :context="context" :call-refreh-context="refreshContext" text="Request changes"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
 
             <!-- Export Module -->
             <ProjectManagerButton :module="Module.EXPORT_MODULE" :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                  :context="context" text="Reject"
+                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.EXPORT_MODULE"
                                   :action="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                  :context="context" text="Request changes"
+                                  :context="context" :call-refreh-context="refreshContext" text="Request changes"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
           </div>
@@ -310,10 +310,10 @@ export default defineComponent({
     context(newValue, oldValue) {
       this.projectManagerBackendService = new ProjetManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
       this.fetchProject();
-      this.fetchProjectStates();
     },
     project(newValue, oldValue) {
       this.fetchNotifications();
+      this.fetchProjectStates();
       this.initializeEnums();
       if (this.project && this.project.type == 'DATASHIELD') {
         this.fetchDataShieldStatus();
@@ -342,6 +342,10 @@ export default defineComponent({
       if (this.showNotification) {
         this.showNotification = false;
       }
+    },
+
+    refreshContext(){
+      this.context = new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
     },
 
     async fetchProject() {

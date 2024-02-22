@@ -24,6 +24,7 @@ export default class ProjectManagerButton extends Vue {
   @Prop() readonly text!: string;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly params: Map<string, string> = new Map();
+  @Prop({ type: Function, required: true }) readonly callRefrehContext!: () => void;
 
   isActive = false;
 
@@ -40,7 +41,7 @@ export default class ProjectManagerButton extends Vue {
   }
 
   async handleButtonClick() {
-    this.projectManagerBackendService.fetchData(this.module, this.action, this.context, this.params);
+    this.projectManagerBackendService.fetchData(this.module, this.action, this.context, this.params).then(result => this.callRefrehContext());
   }
 
 }

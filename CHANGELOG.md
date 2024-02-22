@@ -22,3 +22,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Notifications in project dashboard
 - Fetch project states
 - DataSHIELD status
+- Filter draft projects to project manager admin

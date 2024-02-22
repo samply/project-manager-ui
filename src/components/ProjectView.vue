@@ -50,6 +50,7 @@
               <th scope="col">Created at</th>
               <th scope="col">Expires at</th>
               <th scope="col">Last modified</th>
+              <th v-if="dataShieldStatus" scope="col">DataSHIELD Status</th>
               <th scope="col">Votum</th>
             </tr>
             </thead>
@@ -60,6 +61,7 @@
               <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
               <td>{{ project && project.expiresAt ? convertDate(project.expiresAt) : '' }}</td>
               <td>{{ project && project.modifiedAt ? convertDate(project.modifiedAt) : '' }}</td>
+              <td v-if="dataShieldStatus">{{ dataShieldStatus }}</td>
               <td>Votum</td> <!-- TODO -->
             </tr>
             </tbody>
@@ -289,6 +291,7 @@ export default defineComponent({
       exporterTemplateIds: [] as string[],
       allBridgeheads: [] as string[],
       projectStates: [] as string[],
+      dataShieldStatus: undefined as string | undefined,
       site: Site.PROJECT_VIEW_SITE,
       projectData: {
         projectId: '',
@@ -313,6 +316,9 @@ export default defineComponent({
     project(newValue, oldValue) {
       this.fetchNotifications();
       this.initializeEnums();
+      if (this.project && this.project.type == 'DATASHIELD') {
+        this.fetchDataShieldStatus();
+      }
     }
   },
   mounted() {
@@ -373,6 +379,27 @@ export default defineComponent({
         console.error('Error loading BridgeheadList:', error);
       }
     },
+
+    async fetchDataShieldStatus() {
+      try {
+        this.projectManagerBackendService.isModuleActionActive(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION)
+            .then(condition => {
+              if (condition) {
+                this.projectManagerBackendService.fetchData(
+                    Module.TOKEN_MANAGER_MODULE,
+                    Action.FETCH_DATASHIELD_STATUS_ACTION,
+                    this.context,
+                    new Map()
+                ).then(dataShieldStatus => {
+                  this.dataShieldStatus = dataShieldStatus;
+                });
+              }
+            });
+      } catch (error) {
+        console.error('Error loading BridgeheadList:', error);
+      }
+    },
+
 
     async fetchBridgeheads() {
       try {

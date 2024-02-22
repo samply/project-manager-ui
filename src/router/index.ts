@@ -14,12 +14,7 @@ const routes: Array<RouteRecordRaw> = [
         path: '/',
         name: 'mainDashboard',
         component: MainDashboard,
-    },
-    {
-        path: '/request-form',
-        name: 'requestForm',
-        component: RequestForm,
-    },
+    }
 ];
 
 const router = createRouter({

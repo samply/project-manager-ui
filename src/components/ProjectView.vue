@@ -3,14 +3,14 @@
     <div class="left-container">
       <div v-if="projectData.projectId">
         <div class="vertical-stepper">
-          <div v-for="(step, index) in stepperSteps" :key="index" class="stepper-step">
+          <div v-for="(projectState, index) in projectStates" :key="index" class="stepper-step">
             <div style="display: flex; flex-flow: row">
               <div class="step-circle">
                 <span>{{ index + 1 }}</span>
               </div>
-              <div class="step-title">{{ step.title }}</div>
+              <div class="step-title">{{ projectState }}</div>
             </div>
-            <div v-if="index < stepperSteps.length - 1" class="stepper-line"></div>
+            <div v-if="index < projectStates.length - 1" class="stepper-line"></div>
           </div>
         </div>
       </div>
@@ -223,14 +223,14 @@
         </div>
         <div style="padding-left:10%" v-if="projectData.projectId">
           <div class="vertical-stepper">
-            <div v-for="(step, index) in stepperSteps" :key="index" class="stepper-step">
+            <div v-for="(projectState, index) in projectStates" :key="index" class="stepper-step">
               <div style="display: flex; flex-flow: row">
                 <div class="step-circle">
                   <span>{{ index + 1 }}</span>
                 </div>
-                <div class="step-title">{{ step.title }}</div>
+                <div class="step-title">{{ projectState }}</div>
               </div>
-              <div v-if="index < stepperSteps.length - 1" class="stepper-line"></div>
+              <div v-if="index < projectStates.length - 1" class="stepper-line"></div>
             </div>
           </div>
         </div>
@@ -288,15 +288,7 @@ export default defineComponent({
       queryFormats: [] as string[],
       exporterTemplateIds: [] as string[],
       allBridgeheads: [] as string[],
-      stepperSteps: [
-        {title: 'CREATED'},
-        {title: 'RESPOND PENDING'},
-        {title: 'DEVELOP'},
-        {title: 'PILOT'},
-        {title: 'APPROVED'},
-        {title: 'FINISHED'},
-        // Add more steps as needed
-      ],
+      projectStates: [] as string[],
       site: Site.PROJECT_VIEW_SITE,
       projectData: {
         projectId: '',
@@ -316,6 +308,7 @@ export default defineComponent({
     context(newValue, oldValue) {
       this.projectManagerBackendService = new ProjetManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
       this.fetchProject();
+      this.fetchProjectStates();
     },
     project(newValue, oldValue) {
       this.fetchNotifications();
@@ -363,6 +356,21 @@ export default defineComponent({
       } catch (error) {
         console.error('Error loading single project:', error);
         throw error;
+      }
+    },
+
+    async fetchProjectStates() {
+      try {
+        return await this.projectManagerBackendService.fetchData(
+            Module.PROJECT_BRIDGEHEAD_MODULE,
+            Action.FETCH_PROJECT_STATES_ACTION,
+            this.context,
+            new Map()
+        ).then(projectStates => {
+          this.projectStates = projectStates;
+        });
+      } catch (error) {
+        console.error('Error loading BridgeheadList:', error);
       }
     },
 

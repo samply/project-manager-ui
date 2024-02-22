@@ -20,3 +20,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Notifications in project view
 - Project Field Row
 - Notifications in project dashboard
+- Fetch project states

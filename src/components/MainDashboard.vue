@@ -21,20 +21,22 @@
         <tr>
           <th scope="col">Data Request Number (DRN)</th>
           <th scope="col">Title</th>
+          <th scope="col">Creator</th>
           <th scope="col">Date</th>
           <th scope="col">Status</th>
           <th scope="col">Action</th>
         </tr>
         </thead>
         <tbody>
-        <tr v-for="(item, index) in projects" :key="index">
-          <td>{{ item.code }}</td>
-          <td>{{ item.label }}</td>
-          <td>{{ item.createdAt }}</td>
-          <td>{{ item.state }}</td>
+        <tr v-for="(project, index) in projects" :key="index">
+          <td>{{ project.code }}</td>
+          <td>{{ project.label }}</td>
+          <td>{{ project.creatorEmail }}</td>
+          <td>{{ project.createdAt }}</td>
+          <td>{{ project.state }}</td>
 
           <td>
-            <router-link :to="{ name: 'ProjectView', params: { projectId: item.code } }">
+            <router-link :to="{ name: 'ProjectView', params: { projectId: project.code } }">
               <i class="bi bi-folder-fill"></i>
             </router-link>
           </td>
@@ -55,6 +57,7 @@ import {defineComponent} from 'vue';
 import {
   Action,
   Module,
+  Project,
   ProjectManagerContext,
   ProjetManagerBackendService,
   Site
@@ -69,7 +72,7 @@ export default defineComponent({
       site: Site.PROJECT_DASHBOARD_SITE,
       context: new ProjectManagerContext(undefined, undefined),
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.PROJECT_DASHBOARD_SITE),
-      projects: [],
+      projects: [] as Project[],
       notifications: [],
       showNotification: false,
     };
@@ -109,7 +112,9 @@ export default defineComponent({
             Action.FETCH_PROJECTS_ACTION,
             this.context,
             params
-        ).then(projects => {this.projects = projects.content;});
+        ).then(projects => {
+          this.projects = projects.content;
+        });
       } catch (error) {
         console.error('Error loading projects:', error);
       }

@@ -24,3 +24,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - DataSHIELD status
 - Filter draft projects to project manager admin
 - If type is DataSHIELD, use template opal-ccp and output format Opal
+- Creator in main dashboard

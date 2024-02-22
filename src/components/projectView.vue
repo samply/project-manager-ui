@@ -18,6 +18,13 @@
 
     <div class="right-container">
       <div style="display:flex; flex-flow: column; width:100%; padding-right:3%">
+        <div v-if="brigeheads && brigeheads.length > 1">
+          <select v-model="activeBridgehead">
+            <option v-for="bridgeheadOption in brigeheads" :key="bridgeheadOption" :value="bridgeheadOption.bridgehead"
+                    :selected="activeBridgehead">{{ bridgeheadOption["bridgehead"] }}
+            </option>
+          </select>
+        </div>
         <div class="container">
           <br/>
           <h2>Project Information</h2>
@@ -203,42 +210,10 @@
         </div>
       </div>
 
-      <div v-if="showNotification" class="custom-width-notifications">
-        <div style="display:flex; flex-flow:row; justify-content:space-between ">
-          <h2>Notifications</h2>
-          <button style="padding:5px" @click="toggleNotification" class="btn btn-dark" v-if="showNotification">
-            <i style="font-size: 30px" class="bi bi-x"></i> <!-- Schließsymbol für Notification -->
-          </button>
-        </div>
-        <div v-for="(notification,index) in notifications" :key="index" class="card mb-3">
-          <!--<div class="card-body" :class="{ 'expanded': true }">-->
-          <div class="card-body" v-if="!notification.read">
-            <div style="display:flex; flex-flow: row; justify-content: space-between">
-              <h5 class="card-title">{{ notification.details }}</h5>
-              <div class="notification-header">
-                <button type="button" class="btn-close"
-                        @click="removeNotification(notification && notification.id ? notification.id : 0)"
-                        aria-label="Close"></button>
-              </div>
-            </div>
-            <!-- TODO: Add rest of notification information -->
-            <div class="card-text">
-              <div style="font-size: small">{{
-                  notification && notification.timestamp ? convertDate(notification.timestamp) : ''
-                }}
-              </div>
-              <div style="display:flex; float: right; align-items: end; gap:10px">
-                <strong>User:</strong> {{ notification.email }}
-              </div>
-            </div>
-            <br>
+      <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
+                       :show-notification="showNotification" :call-toggle-notification="toggleNotification"
+                       :notifications="notifications" :call-update-notifications="fetchNotifications"/>
 
-            <!--            <div class="expand-icon" @click="toggleExpand(notification)">
-                          <i :class="['bi', 'bi-chevron-compact-down', { 'rotate': notification.isExpanded }]"></i>
-                        </div>-->
-          </div>
-        </div>
-      </div>
       <div v-if="showProgress" class="custom-width-notifications">
         <div style="display:flex; flex-flow:row; justify-content:space-between ">
           <h2>Progress</h2>
@@ -279,6 +254,7 @@ import {
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import {format} from "date-fns";
 import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
+import NotificationBox from "@/components/Notification.vue";
 
 export default defineComponent({
   computed: {
@@ -296,9 +272,9 @@ export default defineComponent({
     }
   },
   components: {
+    NotificationBox,
     ProjectFieldRow,
     ProjectManagerButton
-    // RequestForm,
   },
   data() {
     return {
@@ -306,7 +282,6 @@ export default defineComponent({
       brigeheads: [] as string[],
       context: new ProjectManagerContext(this.projectId, undefined),
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectId, undefined), Site.PROJECT_VIEW_SITE),
-      //tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
       project: undefined as Project | undefined,
       projectTypes: [] as string[],
       outputFormats: [] as string[],
@@ -369,13 +344,6 @@ export default defineComponent({
       if (this.showNotification) {
         this.showNotification = false;
       }
-    },
-
-    removeNotification(notificationId: number): void {
-      const params = new Map<string, string>;
-      params.set('notification-id', '' + notificationId)
-      this.projectManagerBackendService.fetchData(Module.NOTIFICATIONS_MODULE, Action.SET_NOTIFICATION_AS_READ_ACTION, this.context, params)
-      // TODO: refresh after removing notification
     },
 
     async fetchProject() {
@@ -556,11 +524,6 @@ export default defineComponent({
 }
 
 
-.custom-width-projects {
-  flex: 1;
-  padding-top: 2%;
-}
-
 .custom-width-notifications {
   width: 28%;
   background-color: #212529;
@@ -576,17 +539,6 @@ export default defineComponent({
 }
 
 
-.card {
-  border: none;
-  border-radius: 10px;
-}
-
-.notification-header {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-}
-
 .custom-width-notifications h2 {
   margin-bottom: 15px;
 }
@@ -595,18 +547,5 @@ export default defineComponent({
   margin-bottom: 15px;
 }
 
-.card-body.expanded {
-  height: 300px;
-}
 
-.expand-icon {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.expand-icon i.rotate {
-  transform: rotate(180deg);
-}
 </style>

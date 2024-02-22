@@ -27,7 +27,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr v-for="(item, index) in tableData" :key="index">
+        <tr v-for="(item, index) in projects" :key="index">
           <td>{{ item.code }}</td>
           <td>{{ item.label }}</td>
           <td>{{ item.createdAt }}</td>
@@ -43,32 +43,10 @@
       </table>
     </div>
 
-    <div v-if="showNotification" class="custom-width-notifications">
-      <h2>Notifications</h2>
-      <div v-for="(item, index) in secondTableData" :key="index" class="card mb-3">
-        <div class="card-body" :class="{ 'expanded': item.isExpanded }">
-          <div style="display:flex; flex-flow: row; justify-content: space-between">
-            <h5 class="card-title">{{ item.notification }}</h5>
-            <div class="notification-header">
-              <button type="button" class="btn-close" @click="removeNotification(index)" aria-label="Close"></button>
-            </div>
-          </div>
+    <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
+                     :show-notification="showNotification" :call-toggle-notification="toggleNotification"
+                     :notifications="notifications" :call-update-notifications="fetchNotifications"/>
 
-          <div class="card-text">
-            <div style="font-size: small">{{ item.date }}</div>
-            <div style="display:flex; float: right; align-items: end; gap:10px">
-              <strong>Project ID:</strong> {{ item.projectId }}
-              <strong>User:</strong> {{ item.user }}
-            </div>
-          </div>
-          <br>
-
-          <div class="expand-icon" @click="toggleExpand(item)">
-            <i :class="['bi', 'bi-chevron-compact-down', { 'rotate': item.isExpanded }]"></i>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -81,56 +59,33 @@ import {
   ProjetManagerBackendService,
   Site
 } from "@/services/projetManagerBackendService";
+import NotificationBox from "@/components/Notification.vue";
 
 export default defineComponent({
+  components: {NotificationBox},
 
   data() {
     return {
       site: Site.PROJECT_DASHBOARD_SITE,
       context: new ProjectManagerContext(undefined, undefined),
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.PROJECT_DASHBOARD_SITE),
-      //tableData: [] as { title: string; projectId: string; drn: string; date: string; status: string }[],
-      tableData: [],
-      secondTableData: [
-        {
-          projectId: 'PR001',
-          drn: '12345',
-          user: 'User1',
-          date: '2023-04-15',
-          notification: 'Notification Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '
-        },
-        {
-          projectId: 'PR002',
-          drn: '67890',
-          user: 'User2',
-          date: '2023-05-20',
-          notification: 'Notification Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. '
-        },
-      ],
+      projects: [],
+      notifications: [],
       showNotification: false,
     };
   },
-  mounted() {
-    this.fetchProjects().then((result) => {
-      console.log('Fetch Projects Result:', result);
-      this.tableData = result.content;
-      console.log("TableData:", JSON.stringify(this.tableData, null, 2));
-      console.log("First Project:", this.tableData[0]);
-      for (let i = 0; i < this.tableData.length; i++) {
-        const currentProject = this.tableData[i];
-
-        // Iterate through the properties of each project object
-        for (const key in currentProject) {
-          if (Object.hasOwnProperty.call(currentProject, key)) {
-            const value = currentProject[key];
-            console.log(`${key}:`, value);
-          }
-        }
-      }
-    });
+  watch: {
+    context(newValue, oldValue) {
+      this.projectManagerBackendService = new ProjetManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
+      this.fetchProjects();
+    },
+    projects(newValue, oldValue) {
+      this.fetchNotifications();
+    }
   },
-  computed: {},
-
+  mounted() {
+    this.fetchProjects();
+  },
   methods: {
     toggleExpand(item: { isExpanded: boolean }) {
       item.isExpanded = !item.isExpanded;
@@ -139,7 +94,7 @@ export default defineComponent({
       this.showNotification = !this.showNotification;
     },
     removeNotification(index: number): void {
-      this.secondTableData.splice(index, 1);
+      this.notifications.splice(index, 1);
     },
 
     // TODO: Fetch several pages of projects
@@ -149,37 +104,31 @@ export default defineComponent({
         params.set('page', '0');
         params.set('page-size', '10');
         params.set('site', Site.PROJECT_DASHBOARD_SITE);
-
-        const module = Module.PROJECTS_MODULE;
-        const action = Action.FETCH_PROJECTS_ACTION;
-
-        console.log(module);
-        console.log(action);
-        console.log(this.context);
-        console.log(params);
-        console.log('Fetching projects...');
-        return await this.projectManagerBackendService.fetchData(
-            module,
-            action,
+        this.projectManagerBackendService.fetchData(
+            Module.PROJECTS_MODULE,
+            Action.FETCH_PROJECTS_ACTION,
             this.context,
             params
-        );
-
+        ).then(projects => {this.projects = projects.content;});
       } catch (error) {
         console.error('Error loading projects:', error);
       }
     },
-    /*async loadProjectData(): Promise<void> {
-      try {
-        const response = await fetch('/projects.json');
-        const { projects } = await response.json();
 
-        this.tableData = projects;
-        console.log("table" + this.tableData);
+    async fetchNotifications() {
+      try {
+        const response = await this.projectManagerBackendService.fetchData(
+            Module.NOTIFICATIONS_MODULE,
+            Action.FETCH_NOTIFICATIONS_ACTION,
+            this.context,
+            new Map()
+        ).then(notifications => this.notifications = notifications);
       } catch (error) {
-        console.error('Error loading project data:', error);
+        console.error('Error loading notifications:', error);
+        throw error;
       }
-    },*/
+    },
+
   },
 });
 </script>

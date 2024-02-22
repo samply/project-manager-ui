@@ -18,19 +18,20 @@
 
     <div class="right-container">
       <div style="display:flex; flex-flow: column; width:100%; padding-right:3%">
-        <div v-if="brigeheads && brigeheads.length > 1">
-          <select v-model="activeBridgehead">
-            <option v-for="bridgeheadOption in brigeheads" :key="bridgeheadOption" :value="bridgeheadOption.bridgehead"
-                    :selected="activeBridgehead">{{ bridgeheadOption["bridgehead"] }}
-            </option>
-          </select>
-        </div>
         <div class="container">
           <br/>
           <h2>Project Information</h2>
           <br/>
           <div style="display:flex; flex-flow:row; justify-content: space-between">
             <router-link to="/"><i class="bi bi-arrow-left-square-fill"></i></router-link>
+            <div v-if="brigeheads && brigeheads.length > 1">
+              <span class="bold-text">Bridgehead:</span>&nbsp;
+              <select v-model="activeBridgehead">
+                <option v-for="bridgeheadOption in brigeheads" :key="bridgeheadOption" :value="bridgeheadOption.bridgehead"
+                        :selected="activeBridgehead">{{ bridgeheadOption["bridgehead"] }}
+                </option>
+              </select>
+            </div>
             <div>
               <button @click="toggleProgress" class="btn btn-dark"
                       style="background: none; border:none; color:#007bff; width:auto;">

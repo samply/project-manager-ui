@@ -47,6 +47,7 @@
             <tr>
               <th scope="col">Data Request Number (DRN)</th>
               <th scope="col">Creator</th>
+              <th scope="col">State</th>
               <th scope="col">Created at</th>
               <th scope="col">Expires at</th>
               <th scope="col">Last modified</th>
@@ -58,6 +59,7 @@
             <tr>
               <td>{{ project ? project.code : '' }}</td>
               <td>{{ project ? project.creatorEmail : '' }}</td>
+              <td>{{ project ? project.state : '' }}</td>
               <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
               <td>{{ project && project.expiresAt ? convertDate(project.expiresAt) : '' }}</td>
               <td>{{ project && project.modifiedAt ? convertDate(project.modifiedAt) : '' }}</td>
@@ -171,9 +173,6 @@
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Description" edit-project-param="description" :is-editable="true"
                                  :field-value="project.description"
-                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="State" :is-editable="false"
-                                 :field-value="project.state"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Type" edit-project-param="project-type" :is-editable="true"
                                  :field-value="project.type"

@@ -319,9 +319,10 @@ export default defineComponent({
     project(newValue, oldValue) {
       this.fetchNotifications();
       this.fetchProjectStates();
+      //this.fetchDataShieldStatus(); //TODO: Reactivate
       this.initializeEnums();
       if (this.project && this.project.type == 'DATASHIELD') {
-        //this.fetchDataShieldStatus();
+        this.fetchDataShieldStatus();
       }
     }
   },
@@ -399,7 +400,7 @@ export default defineComponent({
                     this.context,
                     new Map()
                 ).then(dataShieldStatus => {
-                  this.dataShieldStatus = dataShieldStatus;
+                  this.dataShieldStatus = dataShieldStatus.project_status;
                 });
               }
             });

@@ -47,24 +47,24 @@
             <thead>
             <tr>
               <th scope="col">Data Request Number (DRN)</th>
-              <th scope="col">Creator</th>
               <th scope="col">State</th>
+              <th v-if="dataShieldStatus" scope="col">DataSHIELD Status</th>
+              <th scope="col">Creator</th>
               <th scope="col">Created at</th>
               <th scope="col">Expires at</th>
               <th scope="col">Last modified</th>
-              <th v-if="dataShieldStatus" scope="col">DataSHIELD Status</th>
               <th scope="col">Votum</th>
             </tr>
             </thead>
             <tbody>
             <tr>
               <td>{{ project ? project.code : '' }}</td>
-              <td>{{ project ? project.creatorEmail : '' }}</td>
               <td>{{ project ? project.state : '' }}</td>
+              <td v-if="dataShieldStatus">{{ dataShieldStatus }}</td>
+              <td>{{ project ? project.creatorEmail : '' }}</td>
               <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
               <td>{{ project && project.expiresAt ? convertDate(project.expiresAt) : '' }}</td>
               <td>{{ project && project.modifiedAt ? convertDate(project.modifiedAt) : '' }}</td>
-              <td v-if="dataShieldStatus">{{ dataShieldStatus }}</td>
               <td>Votum</td> <!-- TODO -->
             </tr>
             </tbody>

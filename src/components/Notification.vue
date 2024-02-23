@@ -63,6 +63,7 @@ export default class NotificationBox extends Vue {
             }}
           </div>
           <div style="display:flex; float: right; align-items: end; gap:10px">
+            <strong>Project:</strong> {{ notification.projectCode }}
             <strong>User:</strong> {{ notification.email }}
           </div>
         </div>

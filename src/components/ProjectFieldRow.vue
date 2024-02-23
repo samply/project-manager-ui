@@ -77,7 +77,7 @@ export default class ProjectFieldRow extends Vue {
   <tr>
     <td class="bold-text thinner-column">{{ fieldKey }}</td>
     <td class="wider-column">
-      <div class="input-container">
+      <div class="user-input-container">
         <template v-if="editing && !possibleValues">
           <input type="text" v-model="editedValue"/>
           <div class="button-container">
@@ -113,7 +113,7 @@ export default class ProjectFieldRow extends Vue {
   font-weight: bold;
 }
 
-.input-container {
+.user-input-container {
   display: flex;
   align-items: center;
 }

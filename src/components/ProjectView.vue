@@ -209,6 +209,7 @@
                 </tbody>
               </table>
             </div>
+            <UserInput :project="project" :context="context" :project-manager-backend-service="projectManagerBackendService" />
           </div>
         </div>
       </div>
@@ -258,6 +259,7 @@ import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import {format} from "date-fns";
 import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
 import NotificationBox from "@/components/Notification.vue";
+import UserInput from "@/components/UserInput.vue";
 
 export default defineComponent({
   computed: {
@@ -275,6 +277,7 @@ export default defineComponent({
     }
   },
   components: {
+    UserInput,
     NotificationBox,
     ProjectFieldRow,
     ProjectManagerButton
@@ -318,7 +321,7 @@ export default defineComponent({
       this.fetchProjectStates();
       this.initializeEnums();
       if (this.project && this.project.type == 'DATASHIELD') {
-        this.fetchDataShieldStatus();
+        //this.fetchDataShieldStatus();
       }
     }
   },

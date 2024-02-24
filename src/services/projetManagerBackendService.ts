@@ -1,5 +1,5 @@
 // projetManagerBackendService.ts
-import axios, {AxiosResponse} from 'axios';
+import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
 import axiosRetry from "axios-retry";
 import KeyCloakService from "@/services/keycloak";
 
@@ -183,9 +183,8 @@ export class ProjetManagerBackendService {
         httpParams.set(siteParam, site);
         console.log('Fetching active module actions...');
         this._isInitialized = this.doHttpRequest(HttpMethod.GET, actionsPath, httpParams)
-            .then(data => {
-                console.log('Active Module Actions Metadata:', data);
-                this.activeModuleActionsMetadata = this.fetchActiveModuleActionsFromHttpResponse(data);
+            .then(httpResponse => {
+                this.activeModuleActionsMetadata = this.fetchActiveModuleActionsFromHttpResponse(httpResponse.data);
             })
             .catch(error => {
                 console.error('Error fetching active module actions:', error);
@@ -228,7 +227,6 @@ export class ProjetManagerBackendService {
     }
 
     private getActionMetadata(module: Module, action: Action): ActionMetadata | undefined {
-        //return this.activeModuleActionsMetadata[module][action];
         const actionMetadataMap = this.activeModuleActionsMetadata?.get(module)
         if (actionMetadataMap) {
             return actionMetadataMap.get(action)
@@ -245,11 +243,39 @@ export class ProjetManagerBackendService {
         }
     }
 
+    public downloadFile(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, string>) {
+        this.fetchHttpResponse(module, action, context, params).then(httpResponse => {
+            const url = window.URL.createObjectURL(new Blob([httpResponse.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            // Extract filename from Content-Disposition header if available
+            const contentDisposition = httpResponse.headers['content-disposition'];
+            let fileName = 'downloaded-file';
+            if (contentDisposition) {
+                const fileNameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = fileNameRegex.exec(contentDisposition);
+                if (matches != null && matches[1]) {
+                    fileName = matches[1].replace(/['"]/g, '');
+                }
+            }
+            link.setAttribute('download', fileName);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        })
+            .catch(error => {
+                console.error('Error downloading file:', error);
+            });
+    }
+
+
     public async fetchData(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, string>): Promise<any> {
+        return (await this.fetchHttpResponse(module, action, context, params)).data;
+    }
+
+    public async fetchHttpResponse(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, string>): Promise<AxiosResponse<any, any>> {
         await this.isInitialized();
         const actionMetadata = this.getActionMetadata(module, action);
-        console.log("getActionMetadata passed");
-        console.log(actionMetadata);
         if (actionMetadata) {
             return this.doHttpRequest(actionMetadata.method, actionMetadata.path, this.fetchHttpParams(module, action, context, params))
         } else {
@@ -272,16 +298,20 @@ export class ProjetManagerBackendService {
         return result
     }
 
-    private async doHttpRequest(httpMethod: HttpMethod, endpoint: string, httpParams: Map<string, string>): Promise<any> {
+
+    private async doHttpRequest(httpMethod: HttpMethod, endpoint: string, httpParams: Map<string, string>): Promise<AxiosResponse<any, any>> {
         try {
             //const token = KeyCloakService.getToken();
             const url = `${this.baseURL}${endpoint}`
-            const config = {
+            const config: AxiosRequestConfig = {
                 headers: {
                     Authorization: `Bearer ${KeyCloakService.getToken()}`
                 },
                 params: this.convertToUrlSearchParams(httpParams),
                 withCredentials: true
+            }
+            if (endpoint.includes('download')) {
+                config.responseType = 'blob';
             }
             axiosRetry(axios, {
                 retries: 2,
@@ -300,8 +330,7 @@ export class ProjetManagerBackendService {
                     response = await axios.post(url, {}, config)
                 // Other methods for PUT, DELETE, etc. (Currently not used in Project Manager Backend)
             }
-            console.log('HTTP Response:', response.data);
-            return response.data;
+            return response;
         } catch (error) {
             console.error('Error fetching data:', error);
             throw error;
@@ -317,5 +346,6 @@ export class ProjetManagerBackendService {
         }
         return result;
     }
+
 
 }

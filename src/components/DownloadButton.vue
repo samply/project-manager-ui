@@ -19,6 +19,8 @@ export default class DownloadButton extends Vue {
   @Prop() readonly module!: Module;
   @Prop() readonly action!: Action;
   @Prop() readonly filename: string | undefined = undefined;
+  @Prop() readonly iconClass: string | undefined = undefined;
+  @Prop() readonly text: string | undefined = undefined;
   isActive = false;
 
   @Watch('projectManagerBackendService', { immediate: true, deep: true })
@@ -49,7 +51,13 @@ export default class DownloadButton extends Vue {
 
 <template>
   <div v-if="isActive">
-    <button @click="downloadFile">Download</button>
+    <span v-if="text">{{text}}</span>
+    <div v-if="!iconClass">
+      <button @click="downloadFile">Download</button>
+    </div>
+    <div v-if="iconClass">
+      <i class="bi bi-download" @click="downloadFile" ></i>
+    </div>
   </div>
 </template>
 

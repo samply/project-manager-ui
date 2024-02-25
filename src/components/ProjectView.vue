@@ -200,11 +200,14 @@
                                  :field-value="project.templateId" :call-refreh-context="refreshContext"
                                  :possible-values="exporterTemplateIds"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <!-- TODO -->
-                <tr>
+                <tr v-if="dataShieldStatus">
                   <td class="bold-text thinner-column">Script</td>
-                  <td class="wider-column">script available</td> <!-- TODO -->
-                  <td><i class="bi bi-download"></i></td>
+                  <td class="wider-column"></td>
+                  <td>
+                    <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                                    :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION"
+                                    :call-refreh-context="refreshContext" icon-class="bi bi-download"/>
+                  </td>
                 </tr>
                 </tbody>
               </table>
@@ -213,15 +216,15 @@
                        :project-manager-backend-service="projectManagerBackendService"/>
             <br/><br/>
             <!-- Application Form -->
-            <span>Download application form template: </span><DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+            <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION"
-                            :call-refreh-context="refreshContext" />
+                            :call-refreh-context="refreshContext" text="Download application form template" />
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
                           text="Upload application form" :call-refreh-context="refreshContext" />
-            <span>Download application form: </span><DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+            <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
-                            :call-refreh-context="refreshContext" />
+                            :call-refreh-context="refreshContext" text="Download application form"/>
 
             <!-- Other documents -->
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"

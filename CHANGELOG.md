@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2024-02-08]
+## [1.1.0 - 2024-02-24]
 ### Added
 - Dockerfile
 - Single Spa
@@ -14,3 +14,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - HTTPS Support
 - fetchActiveModuleActionsFromHttpResponse
 - Token Bearer to doHttpRequest
+- Project Manager Button
+- Project Manager Button: Developer, Pilot, Final and BK-Admin Views
+- Project information in project view
+- Notifications in project view
+- Project Field Row
+- Notifications in project dashboard
+- Fetch project states
+- DataSHIELD status
+- Filter draft projects to project manager admin
+- If type is DataSHIELD, use template opal-ccp and output format Opal
+- Creator in main dashboard
+- Invite users to project
+- Downloads
+- Upload Button

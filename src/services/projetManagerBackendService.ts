@@ -123,6 +123,13 @@ export interface Notification {
     read: boolean | null;
 }
 
+export interface Bridgehead {
+    projectCode: string;
+    bridgehead: string;
+    state: string;
+    modifiedAt: string;
+}
+
 function getActionFromString(value: string): Action | undefined {
     return Object.values(Action).find((action) => action === value) as Action | undefined;
 }
@@ -165,6 +172,8 @@ export class ProjectManagerContext {
     }
 
 }
+
+export const UPLOAD_DOCUMENT_PARAM = 'document';
 
 export class ProjetManagerBackendService {
     private baseURL: string | undefined;
@@ -234,7 +243,7 @@ export class ProjetManagerBackendService {
         return undefined;
     }
 
-    public addContextToMap(map: Map<string, string>, context: ProjectManagerContext) {
+    public addContextToMap(map: Map<string, unknown>, context: ProjectManagerContext) {
         if (context.projectCode) {
             map.set(projectCodeParam, context.projectCode)
         }
@@ -243,7 +252,7 @@ export class ProjetManagerBackendService {
         }
     }
 
-    public downloadFile(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, string>) {
+    public downloadFile(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, unknown>) {
         this.fetchHttpResponse(module, action, context, params).then(httpResponse => {
             const url = window.URL.createObjectURL(new Blob([httpResponse.data]));
             const link = document.createElement('a');
@@ -269,11 +278,11 @@ export class ProjetManagerBackendService {
     }
 
 
-    public async fetchData(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, string>): Promise<any> {
+    public async fetchData(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, unknown>): Promise<any> {
         return (await this.fetchHttpResponse(module, action, context, params)).data;
     }
 
-    public async fetchHttpResponse(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, string>): Promise<AxiosResponse<any, any>> {
+    public async fetchHttpResponse(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, unknown>): Promise<AxiosResponse<any, any>> {
         await this.isInitialized();
         const actionMetadata = this.getActionMetadata(module, action);
         if (actionMetadata) {
@@ -283,8 +292,8 @@ export class ProjetManagerBackendService {
         }
     }
 
-    private fetchHttpParams(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, string>): Map<string, string> {
-        const result = new Map<string, string>()
+    private fetchHttpParams(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, unknown>): Map<string, unknown> {
+        const result = new Map<string, unknown>()
         const actionMetadata = this.getActionMetadata(module, action);
         if (actionMetadata) {
             this.addContextToMap(result, context)
@@ -299,7 +308,7 @@ export class ProjetManagerBackendService {
     }
 
 
-    private async doHttpRequest(httpMethod: HttpMethod, endpoint: string, httpParams: Map<string, string>): Promise<AxiosResponse<any, any>> {
+    private async doHttpRequest(httpMethod: HttpMethod, endpoint: string, httpParams: Map<string, unknown>): Promise<AxiosResponse<any, any>> {
         try {
             //const token = KeyCloakService.getToken();
             const url = `${this.baseURL}${endpoint}`
@@ -312,6 +321,22 @@ export class ProjetManagerBackendService {
             }
             if (endpoint.includes('download')) {
                 config.responseType = 'blob';
+            }
+            let data = {};
+            if (endpoint.includes('upload')) {
+                if (!config.headers) {
+                    config.headers = {};
+                }
+                config.headers["Content-Type"] = 'multipart/form-data';
+                const uploadFile = httpParams.get(UPLOAD_DOCUMENT_PARAM);
+                if (!uploadFile) {
+                    throw new Error("Upload file not provided for action " + actionsPath);
+                }
+                httpParams.delete(UPLOAD_DOCUMENT_PARAM);
+                data = new FormData();
+                if (data instanceof FormData) {
+                    data.append('document', uploadFile as File);
+                }
             }
             axiosRetry(axios, {
                 retries: 2,
@@ -327,7 +352,7 @@ export class ProjetManagerBackendService {
                     break;
                 case HttpMethod.POST:
                     //TODO: data not null
-                    response = await axios.post(url, {}, config)
+                    response = await axios.post(url, data, config)
                 // Other methods for PUT, DELETE, etc. (Currently not used in Project Manager Backend)
             }
             return response;
@@ -337,11 +362,11 @@ export class ProjetManagerBackendService {
         }
     }
 
-    private convertToUrlSearchParams(map: Map<string, string>): URLSearchParams {
+    private convertToUrlSearchParams(map: Map<string, unknown>): URLSearchParams {
         const result = new URLSearchParams();
         if (map) {
             for (const [key, value] of map) {
-                result.append(key, value);
+                result.append(key, value as string);
             }
         }
         return result;

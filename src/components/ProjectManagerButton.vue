@@ -1,7 +1,3 @@
-<template>
-  <button :class="buttonClass" v-if="isActive" @click="handleButtonClick">{{ text }}</button>
-</template>
-
 <script lang="ts">
 
 import {Prop, Watch} from 'vue-property-decorator';
@@ -46,3 +42,11 @@ export default class ProjectManagerButton extends Vue {
 
 }
 </script>
+
+<template>
+  <button :class="buttonClass" v-if="isActive" @click="handleButtonClick">{{ text }}</button>
+</template>
+
+<style scoped>
+
+</style>

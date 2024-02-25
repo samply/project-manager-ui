@@ -27,3 +27,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Creator in main dashboard
 - Invite users to project
 - Downloads
+- Upload Button

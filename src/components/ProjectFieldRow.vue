@@ -61,11 +61,11 @@ export default class ProjectFieldRow extends Vue {
     this.editing = false; // Cancel editing, reset editing flag
   }
 
-  getSelectedOption() {
+  getSelectedOption(): string {
     if (this.tempFieldValue && this.tempFieldValue.trim().length > 0){
       return this.tempFieldValue;
     }
-    if (this.possibleValues && this.possibleValues.length > 0){
+    if (this.possibleValues && this.possibleValues.length > 0 && this.possibleValues[0]){
       return this.possibleValues[0];
     }
     return '';
@@ -87,7 +87,7 @@ export default class ProjectFieldRow extends Vue {
         </template>
         <template v-else-if="editing && possibleValues">
           <select v-model="editedValue">
-            <option v-for="value in possibleValues" :key="value" :value="value" :selected="getSelectedOption">{{ value }}</option>
+            <option v-for="value in possibleValues" :key="value" :value="value" :selected="value === getSelectedOption()">{{ value }}</option>
           </select>
           <div class="button-container">
             <button @click="saveField">Save</button>

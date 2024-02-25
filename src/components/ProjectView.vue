@@ -27,8 +27,8 @@
             <div v-if="brigeheads && brigeheads.length > 1">
               <span class="bold-text">Bridgehead:</span>&nbsp;
               <select v-model="activeBridgehead">
-                <option v-for="bridgeheadOption in brigeheads" :key="bridgeheadOption" :value="bridgeheadOption.bridgehead"
-                        :selected="activeBridgehead">{{ bridgeheadOption["bridgehead"] }}
+                <option v-for="bridgehead in brigeheads" :key="bridgehead.bridgehead" :value="bridgehead"
+                        :selected="bridgehead === activeBridgehead">{{ bridgehead.bridgehead }}
                 </option>
               </select>
             </div>
@@ -209,7 +209,24 @@
                 </tbody>
               </table>
             </div>
-            <UserInput :project="project" :context="context" :project-manager-backend-service="projectManagerBackendService" />
+            <UserInput :project="project" :context="context"
+                       :project-manager-backend-service="projectManagerBackendService"/>
+            <br/><br/>
+            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
+                          text="Upload application form" :call-refreh-context="refreshContext"/>
+            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_VOTUM_ACTION"
+                          text="Upload votum" :call-refreh-context="refreshContext" />
+            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_SCRIPT_ACTION"
+                          text="Upload script" :call-refreh-context="refreshContext"/>
+            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
+                          text="Upload publication" :call-refreh-context="refreshContext"/>
+            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
+                          text="Upload other document" :call-refreh-context="refreshContext" />
           </div>
         </div>
       </div>
@@ -248,6 +265,7 @@
 import {defineComponent} from 'vue';
 import {
   Action,
+  Bridgehead,
   Module,
   Notification,
   Project,
@@ -260,6 +278,7 @@ import {format} from "date-fns";
 import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
 import NotificationBox from "@/components/Notification.vue";
 import UserInput from "@/components/UserInput.vue";
+import UploadButton from "@/components/UploadButton.vue";
 
 export default defineComponent({
   computed: {
@@ -277,6 +296,7 @@ export default defineComponent({
     }
   },
   components: {
+    UploadButton,
     UserInput,
     NotificationBox,
     ProjectFieldRow,
@@ -284,8 +304,8 @@ export default defineComponent({
   },
   data() {
     return {
-      activeBridgehead: undefined as string | undefined,
-      brigeheads: [] as string[],
+      activeBridgehead: undefined as Bridgehead | undefined,
+      brigeheads: [] as Bridgehead[],
       context: new ProjectManagerContext(this.projectId, undefined),
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectId, undefined), Site.PROJECT_VIEW_SITE),
       project: undefined as Project | undefined,
@@ -310,7 +330,7 @@ export default defineComponent({
   },
   watch: {
     activeBridgehead(newValue, oldValue) {
-      this.context = new ProjectManagerContext(this.projectId, newValue);
+      this.context = new ProjectManagerContext(this.projectId, newValue.bridgehead);
     },
     context(newValue, oldValue) {
       this.projectManagerBackendService = new ProjetManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
@@ -350,7 +370,7 @@ export default defineComponent({
       }
     },
 
-    refreshContext(){
+    refreshContext() {
       this.context = new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
     },
 
@@ -419,7 +439,7 @@ export default defineComponent({
             new Map()
         ).then(bridgeheads => {
           this.brigeheads = bridgeheads;
-          this.activeBridgehead = bridgeheads[0].bridgehead;
+          this.activeBridgehead = bridgeheads[0];
         });
       } catch (error) {
         console.error('Error loading BridgeheadList:', error);

@@ -212,9 +212,18 @@
             <UserInput :project="project" :context="context"
                        :project-manager-backend-service="projectManagerBackendService"/>
             <br/><br/>
+            <!-- Application Form -->
+            <span>Download application form template: </span><DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION"
+                            :call-refreh-context="refreshContext" />
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
-                          text="Upload application form" :call-refreh-context="refreshContext"/>
+                          text="Upload application form" :call-refreh-context="refreshContext" />
+            <span>Download application form: </span><DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
+                            :call-refreh-context="refreshContext" />
+
+            <!-- Other documents -->
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_VOTUM_ACTION"
                           text="Upload votum" :call-refreh-context="refreshContext" />
@@ -279,6 +288,7 @@ import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
 import NotificationBox from "@/components/Notification.vue";
 import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
+import DownloadButton from "@/components/DownloadButton.vue";
 
 export default defineComponent({
   computed: {
@@ -296,6 +306,7 @@ export default defineComponent({
     }
   },
   components: {
+    DownloadButton,
     UploadButton,
     UserInput,
     NotificationBox,

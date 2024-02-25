@@ -252,8 +252,8 @@ export class ProjetManagerBackendService {
         }
     }
 
-    public downloadFile(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, unknown>) {
-        this.fetchHttpResponse(module, action, context, params).then(httpResponse => {
+    public async downloadFile(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, unknown>) {
+        return this.fetchHttpResponse(module, action, context, params).then(httpResponse => {
             const url = window.URL.createObjectURL(new Blob([httpResponse.data]));
             const link = document.createElement('a');
             link.href = url;
@@ -271,8 +271,7 @@ export class ProjetManagerBackendService {
             document.body.appendChild(link);
             link.click();
             link.remove();
-        })
-            .catch(error => {
+        }).catch(error => {
                 console.error('Error downloading file:', error);
             });
     }

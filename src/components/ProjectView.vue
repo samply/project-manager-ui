@@ -204,12 +204,21 @@
                                  :field-value="project.templateId" :call-refreh-context="refreshContext"
                                  :possible-values="exporterTemplateIds"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <tr v-if="dataShieldStatus">
-                  <td class="bold-text thinner-column">Script</td>
+                <tr v-if="dataShieldStatus === 'WITH_DATA'">
+                  <td class="bold-text thinner-column">Authentication Script</td>
                   <td class="wider-column"></td>
                   <td>
                     <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                                     :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION"
+                                    :call-refreh-context="refreshContext" icon-class="bi bi-download"/>
+                  </td>
+                </tr>
+                <tr v-if="existsScript">
+                  <td class="bold-text thinner-column">Script</td>
+                  <td class="wider-column"></td>
+                  <td>
+                    <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                                    :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_SCRIPT_ACTION"
                                     :call-refreh-context="refreshContext" icon-class="bi bi-download"/>
                   </td>
                 </tr>
@@ -347,6 +356,7 @@ export default defineComponent({
       showProgress: false,
       existsVotum: false,
       existsApplicationForm: false,
+      existsScript: false
     };
   },
   watch: {
@@ -526,6 +536,12 @@ export default defineComponent({
             this.projectManagerBackendService.fetchData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, this.context, new Map()).then(existsApplicationForm => this.existsApplicationForm = existsApplicationForm)
           }
         })
+        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION).then(condition => {
+          if (condition){
+            this.projectManagerBackendService.fetchData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, this.context, new Map()).then(existsScript => this.existsScript = existsScript)
+          }
+        })
+
       }
     }
   },

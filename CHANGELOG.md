@@ -31,3 +31,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Download Button
 - Download authentication script
 - Exists Votum and Application Form
+- Exists Script

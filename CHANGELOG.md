@@ -30,3 +30,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Upload Button
 - Download Button
 - Download authentication script
+- Exists Votum and Application Form

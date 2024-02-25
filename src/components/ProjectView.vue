@@ -53,7 +53,7 @@
               <th scope="col">Created at</th>
               <th scope="col">Expires at</th>
               <th scope="col">Last modified</th>
-              <th scope="col">Votum</th>
+              <th scope="col" v-if="existsVotum">Votum</th>
             </tr>
             </thead>
             <tbody>
@@ -65,7 +65,11 @@
               <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
               <td>{{ project && project.expiresAt ? convertDate(project.expiresAt) : '' }}</td>
               <td>{{ project && project.modifiedAt ? convertDate(project.modifiedAt) : '' }}</td>
-              <td>Votum</td> <!-- TODO -->
+              <td v-if="existsVotum">
+                <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                                :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_VOTUM_ACTION"
+                                :call-refreh-context="refreshContext" icon-class="bi bi-download"/>
+              </td>
             </tr>
             </tbody>
           </table>
@@ -224,7 +228,8 @@
                           text="Upload application form" :call-refreh-context="refreshContext" />
             <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
-                            :call-refreh-context="refreshContext" text="Download application form"/>
+                            :call-refreh-context="refreshContext" text="Download application form"
+                            v-if="existsApplicationForm" />
 
             <!-- Other documents -->
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
@@ -339,7 +344,9 @@ export default defineComponent({
       },
       notifications: [] as Notification[],
       showNotification: false,
-      showProgress: false
+      showProgress: false,
+      existsVotum: false,
+      existsApplicationForm: false,
     };
   },
   watch: {
@@ -507,6 +514,16 @@ export default defineComponent({
         this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION).then(condition => {
           if (condition) {
             this.projectManagerBackendService.fetchData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, this.context, new Map()).then(allBridgeheads => this.allBridgeheads = allBridgeheads);
+          }
+        })
+        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION).then(condition => {
+          if (condition){
+            this.projectManagerBackendService.fetchData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, this.context, new Map()).then(existsVotum => this.existsVotum = existsVotum)
+          }
+        })
+        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION).then(condition => {
+          if (condition){
+            this.projectManagerBackendService.fetchData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, this.context, new Map()).then(existsApplicationForm => this.existsApplicationForm = existsApplicationForm)
           }
         })
       }

@@ -60,7 +60,7 @@
             <tr>
               <td>{{ project ? project.code : '' }}</td>
               <td>{{ project ? project.state : '' }}</td>
-              <td v-if="dataShieldStatus">{{ dataShieldStatus }}</td>
+              <td v-if="dataShieldStatus">{{ dataShieldStatus.project_status }}</td>
               <td>{{ project ? project.creatorEmail : '' }}</td>
               <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
               <td>{{ project && project.expiresAt ? convertDate(project.expiresAt) : '' }}</td>
@@ -204,12 +204,13 @@
                                  :field-value="project.templateId" :call-refreh-context="refreshContext"
                                  :possible-values="exporterTemplateIds"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <tr v-if="dataShieldStatus === 'WITH_DATA'">
+                <tr v-if="dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA'">
                   <td class="bold-text thinner-column">Authentication Script</td>
                   <td class="wider-column"></td>
                   <td>
                     <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                    :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION"
+                                    :module="Module.PROJECT_DOCUMENTS_MODULE"
+                                    :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION"
                                     :call-refreh-context="refreshContext" icon-class="bi bi-download"/>
                   </td>
                 </tr>
@@ -230,20 +231,21 @@
             <br/><br/>
             <!-- Application Form -->
             <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION"
-                            :call-refreh-context="refreshContext" text="Download application form template" />
+                            :module="Module.PROJECT_DOCUMENTS_MODULE"
+                            :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION"
+                            :call-refreh-context="refreshContext" text="Download application form template"/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
-                          text="Upload application form" :call-refreh-context="refreshContext" />
+                          text="Upload application form" :call-refreh-context="refreshContext"/>
             <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
                             :call-refreh-context="refreshContext" text="Download application form"
-                            v-if="existsApplicationForm" />
+                            v-if="existsApplicationForm"/>
 
             <!-- Other documents -->
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_VOTUM_ACTION"
-                          text="Upload votum" :call-refreh-context="refreshContext" />
+                          text="Upload votum" :call-refreh-context="refreshContext"/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_SCRIPT_ACTION"
                           text="Upload script" :call-refreh-context="refreshContext"/>
@@ -252,7 +254,7 @@
                           text="Upload publication" :call-refreh-context="refreshContext"/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
-                          text="Upload other document" :call-refreh-context="refreshContext" />
+                          text="Upload other document" :call-refreh-context="refreshContext"/>
           </div>
         </div>
       </div>
@@ -292,9 +294,11 @@ import {defineComponent} from 'vue';
 import {
   Action,
   Bridgehead,
+  DataShieldProjectStatus,
   Module,
   Notification,
   Project,
+  ProjectDocument,
   ProjectManagerContext,
   ProjetManagerBackendService,
   Site
@@ -343,7 +347,7 @@ export default defineComponent({
       exporterTemplateIds: [] as string[],
       allBridgeheads: [] as string[],
       projectStates: [] as string[],
-      dataShieldStatus: undefined as string | undefined,
+      dataShieldStatus: undefined as DataShieldProjectStatus | undefined,
       site: Site.PROJECT_VIEW_SITE,
       projectData: {
         projectId: '',
@@ -356,7 +360,9 @@ export default defineComponent({
       showProgress: false,
       existsVotum: false,
       existsApplicationForm: false,
-      existsScript: false
+      existsScript: false,
+      publications: [] as ProjectDocument[],
+      otherDocuments: [] as ProjectDocument[]
     };
   },
   watch: {
@@ -368,13 +374,7 @@ export default defineComponent({
       this.fetchProject();
     },
     project(newValue, oldValue) {
-      this.fetchNotifications();
-      this.fetchProjectStates();
-      //this.fetchDataShieldStatus(); //TODO: Reactivate
-      this.initializeEnums();
-      if (this.project && this.project.type == 'DATASHIELD') {
-        this.fetchDataShieldStatus();
-      }
+      this.initializeProjectRelatedData();
     }
   },
   mounted() {
@@ -405,62 +405,6 @@ export default defineComponent({
       this.context = new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
     },
 
-    async fetchProject() {
-      try {
-        const params = new Map<string, string>();
-        // TODO: Control page size
-        params.set('page', '' + 0);
-        params.set('page-size', '' + 10);
-        this.projectManagerBackendService.fetchData(
-            Module.PROJECT_BRIDGEHEAD_MODULE,
-            Action.FETCH_PROJECT_ACTION,
-            this.context,
-            params
-        ).then(project => {
-          this.project = project;
-        })
-      } catch (error) {
-        console.error('Error loading single project:', error);
-        throw error;
-      }
-    },
-
-    async fetchProjectStates() {
-      try {
-        return await this.projectManagerBackendService.fetchData(
-            Module.PROJECT_BRIDGEHEAD_MODULE,
-            Action.FETCH_PROJECT_STATES_ACTION,
-            this.context,
-            new Map()
-        ).then(projectStates => {
-          this.projectStates = projectStates;
-        });
-      } catch (error) {
-        console.error('Error loading BridgeheadList:', error);
-      }
-    },
-
-    async fetchDataShieldStatus() {
-      try {
-        this.projectManagerBackendService.isModuleActionActive(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION)
-            .then(condition => {
-              if (condition) {
-                this.projectManagerBackendService.fetchData(
-                    Module.TOKEN_MANAGER_MODULE,
-                    Action.FETCH_DATASHIELD_STATUS_ACTION,
-                    this.context,
-                    new Map()
-                ).then(dataShieldStatus => {
-                  this.dataShieldStatus = dataShieldStatus.project_status;
-                });
-              }
-            });
-      } catch (error) {
-        console.error('Error loading BridgeheadList:', error);
-      }
-    },
-
-
     async fetchBridgeheads() {
       try {
         return await this.projectManagerBackendService.fetchData(
@@ -477,75 +421,64 @@ export default defineComponent({
       }
     },
 
-    async fetchNotifications() {
-      try {
-        const response = await this.projectManagerBackendService.fetchData(
-            Module.NOTIFICATIONS_MODULE,
-            Action.FETCH_NOTIFICATIONS_ACTION,
-            this.context,
-            new Map()
-        ).then(notifications => this.notifications = notifications);
-      } catch (error) {
-        console.error('Error loading notifications:', error);
-        throw error;
-      }
+    async fetchProject() {
+      const params = new Map<string, string>();
+      // TODO: Control page size
+      params.set('page', '' + 0);
+      params.set('page-size', '' + 10);
+      this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_ACTION, params, 'project');
     },
 
     convertDate(date: Date) {
       return format(date, 'yyyy-MM-dd HH:mm:ss')
     },
 
-    initializeEnums() {
+    initializeProjectRelatedData() {
       if (this.project) {
-        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION).then(condition => {
-          if (condition) {
-            this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, this.context, new Map()).then(projectTypes => this.projectTypes = projectTypes);
-          }
-        })
-        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION).then(condition => {
-          if (condition) {
-            this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, this.context, new Map()).then(queryFormats => this.queryFormats = queryFormats);
-          }
-        })
-        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION).then(condition => {
-          if (condition) {
-            this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, this.context, new Map()).then(outputFormats => this.outputFormats = outputFormats);
-          }
-        })
+        this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_STATES_ACTION, new Map(), 'projectStates');
+        this.fetchNotifications();
+        this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, new Map(), 'projectTypes');
+        this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, new Map(), 'queryFormats');
+        this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, new Map(), 'outputFormats');
         if (this.project.type) {
           const params = new Map<string, string>;
           params.set('project-type', this.project.type)
-          this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION).then(condition => {
-            if (condition) {
-              this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, this.context, params).then(exporterTemplateIds => this.exporterTemplateIds = exporterTemplateIds);
-            }
-          })
+          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, params, 'exporterTemplateIds');
+          if (this.project.type == 'DATASHIELD') {
+            this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, new Map(), 'dataShieldStatus');
+          }
         }
-        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION).then(condition => {
-          if (condition) {
-            this.projectManagerBackendService.fetchData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, this.context, new Map()).then(allBridgeheads => this.allBridgeheads = allBridgeheads);
-          }
-        })
-        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION).then(condition => {
-          if (condition){
-            this.projectManagerBackendService.fetchData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, this.context, new Map()).then(existsVotum => this.existsVotum = existsVotum)
-          }
-        })
-        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION).then(condition => {
-          if (condition){
-            this.projectManagerBackendService.fetchData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, this.context, new Map()).then(existsApplicationForm => this.existsApplicationForm = existsApplicationForm)
-          }
-        })
-        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION).then(condition => {
-          if (condition){
-            this.projectManagerBackendService.fetchData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, this.context, new Map()).then(existsScript => this.existsScript = existsScript)
-          }
-        })
+        this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads');
+        this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, new Map(), 'existsVotum');
+        this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), 'existsApplicationForm');
+        this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), 'existsScript');
+        this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_PUBLICATIONS_ACTION, new Map(), 'publications');
+      }
+    },
 
+    fetchNotifications() {
+      this.initializeData(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(), 'notifications');
+    },
+
+    initializeData(module: Module, action: Action, params: Map<string, unknown>, dataVariable: string) {
+      try {
+        this.projectManagerBackendService.isModuleActionActive(module, action).then(condition => {
+          if (condition) {
+            this.projectManagerBackendService.fetchData(module, action, this.context, params)
+                .then(result => (this.$data as any)[dataVariable] = result);
+          }
+        })
+      } catch (error) {
+        console.error('Error loading ' + dataVariable + ':', error);
+        throw error;
       }
     }
+
   },
+
 });
+
+
 </script>
 
 <style scoped>

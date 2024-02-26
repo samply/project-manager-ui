@@ -133,6 +133,23 @@ export interface Bridgehead {
     modifiedAt: string;
 }
 
+export interface ProjectDocument {
+    projectCode: string;
+    originalFilename: string;
+    url: string;
+    createdAt: string;
+    bridgehead: string;
+    creatorEmail: string;
+    label: string;
+    type: string;
+}
+
+export interface DataShieldProjectStatus {
+    project_id: string;
+    bk: string;
+    project_status: string;
+}
+
 function getActionFromString(value: string): Action | undefined {
     return Object.values(Action).find((action) => action === value) as Action | undefined;
 }
@@ -275,8 +292,8 @@ export class ProjetManagerBackendService {
             link.click();
             link.remove();
         }).catch(error => {
-                console.error('Error downloading file:', error);
-            });
+            console.error('Error downloading file:', error);
+        });
     }
 
 

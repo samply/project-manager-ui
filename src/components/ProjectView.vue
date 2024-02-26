@@ -115,12 +115,12 @@
             <!-- Project State Module: BK-ADMIN View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
                                   :action="Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
+                                  :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
                                   :action="Action.REJECT_BRIDGEHEAD_PROJECT_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
+                                  :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Reject"
                                   button-class="btn btn-danger btn-secondary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <!-- Project State Module: Developer/Pilot View -->
@@ -351,6 +351,7 @@ export default defineComponent({
   data() {
     return {
       activeBridgehead: undefined as Bridgehead | undefined,
+      activeBridgeheadIndex: 0,
       brigeheads: [] as Bridgehead[],
       context: new ProjectManagerContext(this.projectCode, undefined),
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
@@ -381,6 +382,7 @@ export default defineComponent({
   },
   watch: {
     activeBridgehead(newValue, oldValue) {
+      this.activeBridgeheadIndex = this.brigeheads.findIndex(bridgehead => bridgehead === newValue);
       this.context = new ProjectManagerContext(this.projectCode, newValue.bridgehead);
     },
     context(newValue, oldValue) {
@@ -415,6 +417,15 @@ export default defineComponent({
       }
     },
 
+    refreshBridgeheadsAndContext(){
+      const activeBridgehead = this.activeBridgehead;
+      this.fetchBridgeheads().then(result => {
+        if (this.activeBridgehead === activeBridgehead){
+          this.refreshContext();
+        }
+      })
+    },
+
     refreshContext() {
       this.context = new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
     },
@@ -428,7 +439,7 @@ export default defineComponent({
             new Map()
         ).then(bridgeheads => {
           this.brigeheads = bridgeheads;
-          this.activeBridgehead = bridgeheads[0];
+          this.activeBridgehead = bridgeheads[this.activeBridgeheadIndex];
         });
       } catch (error) {
         console.error('Error loading BridgeheadList:', error);

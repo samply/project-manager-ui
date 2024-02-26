@@ -36,7 +36,7 @@
           <td>{{ project.state }}</td>
 
           <td>
-            <router-link :to="{ name: 'ProjectView', params: { projectId: project.code } }">
+            <router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }">
               <i class="bi bi-folder-fill"></i>
             </router-link>
           </td>

@@ -5,10 +5,12 @@ import MainDashboard from '../components/MainDashboard.vue';
 
 const routes: Array<RouteRecordRaw> = [
     {
-        path: '/project-view/:projectId',
+        path: '/project-view',
         name: 'ProjectView',
         component: ProjectView,
-        props: true
+        props: (route) => ({
+            projectCode: route.query['project-code'] // Accessing the project-code query parameter
+        })
     },
     {
         path: '/',

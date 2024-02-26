@@ -326,7 +326,7 @@ export default defineComponent({
     }
   },
   props: {
-    projectId: {
+    projectCode: {
       type: String,
       required: true
     }
@@ -344,8 +344,8 @@ export default defineComponent({
     return {
       activeBridgehead: undefined as Bridgehead | undefined,
       brigeheads: [] as Bridgehead[],
-      context: new ProjectManagerContext(this.projectId, undefined),
-      projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectId, undefined), Site.PROJECT_VIEW_SITE),
+      context: new ProjectManagerContext(this.projectCode, undefined),
+      projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
       project: undefined as Project | undefined,
       projectTypes: [] as string[],
       outputFormats: [] as string[],
@@ -373,7 +373,7 @@ export default defineComponent({
   },
   watch: {
     activeBridgehead(newValue, oldValue) {
-      this.context = new ProjectManagerContext(this.projectId, newValue.bridgehead);
+      this.context = new ProjectManagerContext(this.projectCode, newValue.bridgehead);
     },
     context(newValue, oldValue) {
       this.projectManagerBackendService = new ProjetManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);

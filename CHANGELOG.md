@@ -33,3 +33,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Exists Votum and Application Form
 - Exists Script
 - Fetch publications and other documents
+- Documents Table

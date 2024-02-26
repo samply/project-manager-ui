@@ -1,6 +1,6 @@
 import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router';
 import ProjectView from '../components/ProjectView.vue';
-import MainDashboard from '../components/MainDashboard.vue';
+import ProjectDashboard from "@/components/ProjectDashboard.vue";
 
 
 const routes: Array<RouteRecordRaw> = [
@@ -14,8 +14,8 @@ const routes: Array<RouteRecordRaw> = [
     },
     {
         path: '/',
-        name: 'MainDashboard',
-        component: MainDashboard,
+        name: 'ProjectDashboard',
+        component: ProjectDashboard,
     }
 ];
 

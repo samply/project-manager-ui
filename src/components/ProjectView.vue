@@ -453,6 +453,7 @@ export default defineComponent({
         this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), 'existsApplicationForm');
         this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), 'existsScript');
         this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_PUBLICATIONS_ACTION, new Map(), 'publications');
+        this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_OTHER_DOCUMENTS_ACTION, new Map(), 'otherDocuments');
       }
     },
 

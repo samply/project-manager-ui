@@ -36,3 +36,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Documents Table
 - project-code as parameter in project-view
 - Bridgehead state
+- Add URL to publications and other documents

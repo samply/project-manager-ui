@@ -42,7 +42,7 @@ export default class DocumentsTable extends Vue {
 
 <template>
   <div v-if="projectDocuments && projectDocuments.length > 0" class="project-document-table">
-    <span v-if="text">{{text}}</span>
+    <span v-if="text">{{ text }}</span>
     <br/>
     <table>
       <thead>
@@ -67,9 +67,11 @@ export default class DocumentsTable extends Vue {
         <td>{{ projectDocument.creatorEmail }}</td>
         <td>{{ projectDocument.label }}</td>
         <td>{{ projectDocument.type }}</td>
-        <td v-if="canDownload">
-          <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                          :module="module" :action="action" :icon-class="iconClass" :filename="projectDocument.originalFilename"/>
+        <td>
+          <DownloadButton v-if="canDownload && projectDocument.originalFilename"
+                          :context="context" :project-manager-backend-service="projectManagerBackendService"
+                          :module="module" :action="action" :icon-class="iconClass"
+                          :filename="projectDocument.originalFilename"/>
         </td>
       </tr>
       </tbody>

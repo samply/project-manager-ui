@@ -194,6 +194,7 @@ export class ProjectManagerContext {
 }
 
 export const UPLOAD_DOCUMENT_PARAM = 'document';
+export const UPLOAD_DOCUMENT_URL_PARAM = 'document-url';
 
 export class ProjetManagerBackendService {
     private baseURL: string | undefined;

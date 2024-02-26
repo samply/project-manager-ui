@@ -6,7 +6,7 @@ import {
   Module,
   ProjectManagerContext,
   ProjetManagerBackendService,
-  UPLOAD_DOCUMENT_PARAM
+  UPLOAD_DOCUMENT_PARAM, UPLOAD_DOCUMENT_URL_PARAM
 } from "@/services/projetManagerBackendService";
 
 @Options({
@@ -14,25 +14,28 @@ import {
 })
 
 export default class UploadButton extends Vue {
-  @Prop({ type: Function, required: true }) readonly callRefrehContext!: () => void;
+  @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
   @Prop() readonly module!: Module;
   @Prop() readonly action!: Action;
   @Prop() readonly text!: string;
+  @Prop() readonly isFile!: boolean;
   file: File | undefined = undefined;
   label = '';
+  url = '';
   isActive = false;
 
-  @Watch('projectManagerBackendService', { immediate: true, deep: true })
+  @Watch('projectManagerBackendService', {immediate: true, deep: true})
   onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
     this.updateIsActive()
   }
+
   async created() {
     this.updateIsActive()
   }
 
-  updateIsActive(){
+  updateIsActive() {
     this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result)
   }
 
@@ -45,16 +48,21 @@ export default class UploadButton extends Vue {
   }
 
   uploadFile(): void {
-    if (!this.file) {
-      console.error('No file selected.');
-      return;
+    const params = new Map<string, unknown>();
+    if (this.isFile){
+      if (!this.file) {
+        console.error('No file selected.');
+        return;
+      }
+      params.set(UPLOAD_DOCUMENT_PARAM, this.file);
+    } else {
+      params.set(UPLOAD_DOCUMENT_URL_PARAM, this.url);
     }
-    const params = new Map<string,unknown>();
-    params.set(UPLOAD_DOCUMENT_PARAM, this.file);
     params.set('label', this.label);
     this.projectManagerBackendService.fetchHttpResponse(this.module, this.action, this.context, params).then(httpResponse => {
       this.file = undefined;
       this.label = '';
+      this.url = '';
       this.callRefrehContext();
       this.updateIsActive();
     });
@@ -65,9 +73,14 @@ export default class UploadButton extends Vue {
 
 <template>
   <div v-if="isActive">
-    <span>{{ text}}:</span>&nbsp;
+    <span>{{ text }}:</span>&nbsp;
     <input type="text" v-model="label" placeholder="Enter label">
-    <input type="file" ref="fileInput" @change="handleFileChange">
+    <div v-if="isFile">
+      <input type="file" ref="fileInput" @change="handleFileChange">
+    </div>
+    <div v-if="!isFile">
+      <input type="text" v-model="url" placeholder="Enter URL">
+    </div>
     <button @click="uploadFile">Upload</button>
   </div>
 </template>

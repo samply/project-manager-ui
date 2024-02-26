@@ -234,7 +234,7 @@
                             :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION" text="Download application form template"/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
-                          text="Upload application form" :call-refreh-context="refreshContext"/>
+                          text="Upload application form" :call-refreh-context="refreshContext" :is-file="true" />
             <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION" text="Download application form"
                             v-if="existsApplicationForm"/>
@@ -242,24 +242,30 @@
             <!-- Other documents -->
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_VOTUM_ACTION"
-                          text="Upload votum" :call-refreh-context="refreshContext"/>
+                          text="Upload votum" :call-refreh-context="refreshContext" :is-file="true"/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_SCRIPT_ACTION"
-                          text="Upload script" :call-refreh-context="refreshContext"/>
+                          text="Upload script" :call-refreh-context="refreshContext" :is-file="true"/>
             <br/><br/>
             <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_PUBLICATION_ACTION"
                             :project-documents="publications" icon-class="bi bi-download" text="Publications: " />
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
-                          text="Upload publication" :call-refreh-context="refreshContext"/>
+                          text="Upload publication" :call-refreh-context="refreshContext" :is-file="true"/>
+            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
+                          text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false" />
             <br/> <br/>
             <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
                             :project-documents="otherDocuments" icon-class="bi bi-download" text="Other documents: "/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
-                          text="Upload other document" :call-refreh-context="refreshContext"/>
+                          text="Upload other document" :call-refreh-context="refreshContext" :is-file="true" />
+            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
+                          text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false" />
 
           </div>
         </div>

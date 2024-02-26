@@ -47,7 +47,8 @@
             <thead>
             <tr>
               <th scope="col">Data Request Number (DRN)</th>
-              <th scope="col">State</th>
+              <th scope="col">Project State</th>
+              <th scope="col">Bridgehead State</th>
               <th v-if="dataShieldStatus" scope="col">DataSHIELD Status</th>
               <th scope="col">Creator</th>
               <th scope="col">Created at</th>
@@ -60,6 +61,7 @@
             <tr>
               <td>{{ project ? project.code : '' }}</td>
               <td>{{ project ? project.state : '' }}</td>
+              <td>{{ activeBridgehead ? activeBridgehead.state : '' }}</td>
               <td v-if="dataShieldStatus">{{ dataShieldStatus.project_status }}</td>
               <td>{{ project ? project.creatorEmail : '' }}</td>
               <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>

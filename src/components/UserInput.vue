@@ -13,6 +13,8 @@ import {
 interface User {
   email: string;
   bridgehead: string;
+  projectRole: string;
+  projectState: string;
 }
 
 @Options({
@@ -105,14 +107,25 @@ export default class UserInput extends Vue {
           {{ suggestion.email }}
         </li>
       </ul>&nbsp;
-    <button @click="handleSave" v-if="partialEmail.length > 0 && this.canInvite">Invite</button>
+    <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite">Invite</button>
     </div>
   </div>
   <div v-if="currentUsers.length > 0">
     <span>Current users involved in this stage:</span>
-    <ul>
-      <li v-for="(user, index) in currentUsers" :key="index">{{ user.email }}</li>
-    </ul>
+    <table class="user-table">
+      <thead>
+      <tr>
+        <th>Email</th>
+        <th>State</th> <!-- New column for user state -->
+      </tr>
+      </thead>
+      <tbody>
+      <tr v-for="(user, index) in currentUsers" :key="index">
+        <td>{{ user.email }}</td>
+        <td>{{ user.projectState }}</td> <!-- Display user's state in the second column -->
+      </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
@@ -136,6 +149,21 @@ export default class UserInput extends Vue {
   background-color: #fff; /* Add background color */
   border-radius: 5px; /* Optional: Add border-radius for rounded corners */
   box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* Optional: Add box shadow for a raised effect */
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-table th, .user-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.user-table th {
+  background-color: #f2f2f2;
 }
 
 </style>

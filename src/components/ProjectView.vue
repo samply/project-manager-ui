@@ -153,12 +153,12 @@
 
             <!-- Export Module -->
             <ProjectManagerButton :module="Module.EXPORT_MODULE" :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
+                                  :context="context" :call-refreh-context="refreshContext" text="Save query in bridgehead"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.EXPORT_MODULE"
                                   :action="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Request changes"
+                                  :context="context" :call-refreh-context="refreshContext" text="Save and execute query in bridgehead"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
           </div>

@@ -210,7 +210,7 @@
                   <td class="wider-column"></td>
                   <td>
                     <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                    :module="Module.PROJECT_DOCUMENTS_MODULE"
+                                    :module="Module.TOKEN_MANAGER_MODULE"
                                     :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION" icon-class="bi bi-download"/>
                   </td>
                 </tr>

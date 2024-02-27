@@ -96,7 +96,7 @@
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_PILOT_STAGE_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Start final stage"
+                                  :context="context" :call-refreh-context="refreshContext" text="Start pilot stage"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_FINAL_STAGE_ACTION"

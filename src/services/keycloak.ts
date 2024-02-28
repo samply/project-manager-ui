@@ -14,7 +14,13 @@ const Login = (onAuthenticatedCallback: CallbackOneParam) => {
     keycloakInstance
         .init({ onLoad: "login-required" })
         .then(function (authenticated) {
-            authenticated ? onAuthenticatedCallback() : alert("non authenticated");
+            if (authenticated) {
+                keycloakInstance.loadUserProfile().then(() => {
+                    onAuthenticatedCallback();
+                });
+            } else {
+                alert("Non-authenticated");
+            }
         })
         .catch((e) => {
             console.dir(e);
@@ -24,6 +30,7 @@ const Login = (onAuthenticatedCallback: CallbackOneParam) => {
 
 const KeyCloakService = {
     getToken: () => keycloakInstance.token,
+    getEmail: () => (keycloakInstance && keycloakInstance.profile) ? keycloakInstance.profile.email : 'Hello',
     CallLogin: Login,
 };
 

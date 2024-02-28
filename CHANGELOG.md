@@ -38,3 +38,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Bridgehead state
 - Add URL to publications and other documents
 - User State
+- Keycloak profile

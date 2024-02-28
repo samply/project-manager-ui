@@ -227,11 +227,11 @@
             </div>
             <UserInput :project="project" :context="context"
                        :project-manager-backend-service="projectManagerBackendService"/>
-            <br/><br/>
+            <br/>
             <!-- Application Form -->
             <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE"
-                            :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION" text="Download application form template"/>
+                            :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION" text="Download application form template"/> <br/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
                           text="Upload application form" :call-refreh-context="refreshContext" :is-file="true" />
@@ -246,7 +246,7 @@
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_SCRIPT_ACTION"
                           text="Upload script" :call-refreh-context="refreshContext" :is-file="true"/>
-            <br/><br/>
+            <br/>
             <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_PUBLICATION_ACTION"
                             :project-documents="publications" icon-class="bi bi-download" text="Publications: " />
@@ -256,13 +256,13 @@
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
                           text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false" />
-            <br/> <br/>
+            <br/>
             <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
                             :project-documents="otherDocuments" icon-class="bi bi-download" text="Other documents: "/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
-                          text="Upload other document" :call-refreh-context="refreshContext" :is-file="true" />
+                          text="Upload other document" :call-refreh-context="refreshContext" :is-file="true" /><br/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
                           text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false" />

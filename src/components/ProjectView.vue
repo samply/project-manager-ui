@@ -32,6 +32,9 @@
                 </option>
               </select>
             </div>
+            <div v-if="brigeheads && brigeheads.length == 1">
+              <span>{{context.bridgehead}}</span>
+            </div>
             <div>
               <button @click="toggleProgress" class="btn btn-dark"
                       style="background: none; border:none; color:#007bff; width:auto;">

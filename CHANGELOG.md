@@ -39,3 +39,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add URL to publications and other documents
 - User State
 - Keycloak profile
+- Bridgehead for profile with only one bridgehead in project view

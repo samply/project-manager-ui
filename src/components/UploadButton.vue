@@ -67,23 +67,36 @@ export default class UploadButton extends Vue {
       this.updateIsActive();
     });
   }
-
 }
 </script>
 
 <template>
   <div v-if="isActive">
-    <span>{{ text }}:</span>&nbsp;
-    <input type="text" v-model="label" placeholder="Enter label">
-    <div v-if="isFile">
-      <input type="file" ref="fileInput" @change="handleFileChange">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <div class="form-group">
+          <label for="labelInput" style="font-weight: bold;">{{ text }}:</label>
+          <input id="labelInput" type="text" v-model="label" placeholder="Enter label" class="form-control">
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="form-group">
+          <label for="fileInput" class="btn btn-primary" style="margin-top:3%">
+            Datei auswählen
+            <input id="fileInput" type="file" ref="fileInput" @change="handleFileChange" style="display: none;">
+          </label>
+        </div>
+      </div>
     </div>
-    <div v-if="!isFile">
-      <input type="text" v-model="url" placeholder="Enter URL">
-    </div>
-    <button @click="uploadFile">Upload</button>
+    <button @click="uploadFile" class="btn btn-primary mt-2">Upload</button>
   </div>
 </template>
+
+
+
+
+
+
 
 <style scoped>
 

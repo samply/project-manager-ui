@@ -108,7 +108,7 @@ export default class ProjectFieldRow extends Vue {
 
 <template>
   <tr>
-    <td class="bold-text thinner-column">{{ fieldKey }}</td>
+    <td class="bold-text thinner-column" style="background-color: #f2f2f2;">{{ fieldKey }}</td>
     <td class="wider-column">
       <div class="user-input-container">
         <template v-if="editing && !possibleValues">

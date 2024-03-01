@@ -34,7 +34,6 @@
           <td>{{ project.creatorEmail }}</td>
           <td>{{ project.createdAt }}</td>
           <td>{{ project.state }}</td>
-
           <td>
             <router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }">
               <i class="bi bi-folder-fill"></i>
@@ -48,7 +47,6 @@
     <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
                      :show-notification="showNotification" :call-toggle-notification="toggleNotification"
                      :notifications="notifications" :call-update-notifications="fetchNotifications"/>
-
   </div>
 </template>
 

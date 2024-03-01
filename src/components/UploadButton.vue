@@ -88,7 +88,8 @@ export default class UploadButton extends Vue {
         </div>
       </div>
     </div>
-    <button @click="uploadFile" class="btn btn-primary mt-2">Upload</button>
+    <button style="background: none; color:black; border: none" @click="uploadFile" class="btn btn-primary mt-2"><i class="bi bi-cloud-upload"></i>
+    </button>
   </div>
 </template>
 

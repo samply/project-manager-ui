@@ -7,9 +7,11 @@ import {
   ProjectManagerContext,
   ProjetManagerBackendService
 } from "@/services/projetManagerBackendService";
+import DownloadButton from "@/components/DownloadButton.vue";
 
 @Options({
-  name: "ProjectFieldRow"
+  name: "ProjectFieldRow",
+  components: {DownloadButton}
 })
 export default class ProjectFieldRow extends Vue {
   @Prop() readonly fieldKey!: string;
@@ -111,14 +113,14 @@ export default class ProjectFieldRow extends Vue {
     <td class="bold-text thinner-column" style="background-color: #f2f2f2;">{{ fieldKey }}</td>
     <td class="wider-column">
       <div class="user-input-container">
-        <template v-if="editing && !possibleValues">
-          <input type="text" v-model="editedValue" />
+        <div v-if="editing && !possibleValues">
+          <input type="text" v-model="editedValue"/>
           <div class="button-container">
             <button @click="saveField">Save</button>
             <button @click="cancelEdit">Cancel</button>
           </div>
-        </template>
-        <template v-else-if="editing && possibleValues">
+        </div>
+        <div v-else-if="editing && possibleValues">
           <select v-model="editedValue">
             <option v-for="value in possibleValues" :key="value" :value="value" :selected="value === getSelectedOption()">{{ value }}</option>
           </select>
@@ -126,22 +128,21 @@ export default class ProjectFieldRow extends Vue {
             <button @click="saveField">Save</button>
             <button @click="cancelEdit">Cancel</button>
           </div>
-        </template>
-        <template v-else>
-          <!--<div class="field-value">{{ tempFieldValue }}</div>-->
+        </div>
+        <div v-else>
           <div class="field-value truncate">{{ tempFieldValue }}</div>
-        </template>
+        </div>
       </div>
     </td>
-    <template v-if="isFieldValueEditable() && redirectUrl === null">
+    <div v-if="isFieldValueEditable() && redirectUrl === null">
       <td><i class="bi bi-pencil me-2" @click="editField"></i></td>
-    </template>
-    <template v-else-if="isFieldValueEditable() && redirectUrl !== null">
+    </div>
+    <div v-else-if="isFieldValueEditable() && redirectUrl !== null">
       <td><i class="bi bi-arrow-right-circle" @click="redirectToURL"></i></td>
-    </template>
-    <template v-else>
+    </div>
+    <div v-else>
       <td/>
-    </template>
+    </div>
   </tr>
 </template>
 

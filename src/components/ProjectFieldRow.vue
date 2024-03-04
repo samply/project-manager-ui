@@ -1,6 +1,6 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop} from "vue-property-decorator";
+import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   Module,
@@ -26,9 +26,23 @@ export default class ProjectFieldRow extends Vue {
   tempFieldValue = ''; // Initialize tempFieldValue with empty string
   isActionEnabled = false;
 
+  @Watch('projectManagerBackendService', { immediate: true, deep: true })
+  onProjetManagerBackendServiceChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
+    this.resetIsActionEnabled();
+  }
+
+  @Watch('fieldValue', { immediate: true, deep: true })
+  onFieldValueChange(newValue: string, oldValue: string) {
+    this.tempFieldValue = this.fieldValue;
+  }
+
   // Initialize tempFieldValue with the initial value of fieldValue
   created() {
     this.tempFieldValue = this.fieldValue;
+    this.resetIsActionEnabled();
+  }
+
+  resetIsActionEnabled(){
     this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION).then(isActive => this.isActionEnabled = isActive);
   }
 
@@ -53,7 +67,12 @@ export default class ProjectFieldRow extends Vue {
       params.set('template-id','opal-ccp');
     }
     params.set(this.editProjectParam, this.editedValue);
-    this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params).then(result => this.callRefrehContext());
+    if (this.fieldKey === 'Configuration'){
+      this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.SET_PROJECT_CONFIGURATION_ACTION, this.context, params).then(result => this.callRefrehContext());
+    } else {
+      this.projectManagerBackendService.fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params).then(result => this.callRefrehContext());
+    }
+
   }
 
 

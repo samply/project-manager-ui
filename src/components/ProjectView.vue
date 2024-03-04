@@ -33,7 +33,7 @@
               </select>
             </div>
             <div v-if="brigeheads && brigeheads.length == 1">
-              <span>{{context.bridgehead}}</span>
+              <span>{{ context.bridgehead }}</span>
             </div>
             <div>
               <button @click="toggleProgress" class="btn btn-dark"
@@ -72,7 +72,8 @@
               <td>{{ project && project.modifiedAt ? convertDate(project.modifiedAt) : '' }}</td>
               <td v-if="existsVotum">
                 <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_VOTUM_ACTION" icon-class="bi bi-download"/>
+                                :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_VOTUM_ACTION"
+                                icon-class="bi bi-download"/>
               </td>
             </tr>
             </tbody>
@@ -156,12 +157,14 @@
 
             <!-- Export Module -->
             <ProjectManagerButton :module="Module.EXPORT_MODULE" :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Save query in bridgehead"
+                                  :context="context" :call-refreh-context="refreshContext"
+                                  text="Save query in bridgehead"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.EXPORT_MODULE"
                                   :action="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Save and execute query in bridgehead"
+                                  :context="context" :call-refreh-context="refreshContext"
+                                  text="Save and execute query in bridgehead"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
           </div>
@@ -183,7 +186,11 @@
                 <ProjectFieldRow field-key="Description" edit-project-param="description" :is-editable="true"
                                  :field-value="project.description" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="Type" edit-project-param="project-type" :is-editable="true"
+                <ProjectFieldRow field-key="Configuration" edit-project-param="project-configuration" :is-editable="true"
+                                 :field-value="currentProjectConfiguration" :call-refreh-context="refreshContext"
+                                 :possible-values="projectConfigurations"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                <ProjectFieldRow field-key="Type" edit-project-param="project-type" :is-editable="isNotIncludedInCurrentProjectConfiguration('type')"
                                  :field-value="project.type" :call-refreh-context="refreshContext"
                                  :possible-values="projectTypes"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
@@ -197,14 +204,14 @@
                                  :possible-values="queryFormats"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <!-- TODO: Separate queries in pairs Key-Values + encrpyt and decrypt in base64-->
-                <ProjectFieldRow field-key="Query Context" edit-project-param="query-context" :is-editable="true"
+                <ProjectFieldRow field-key="Query Context" edit-project-param="query-context" :is-editable="isNotIncludedInCurrentProjectConfiguration('queryContext')"
                                  :field-value="project?.queryContext" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="Output Format" edit-project-param="output-format" :is-editable="true"
+                <ProjectFieldRow field-key="Output Format" edit-project-param="output-format" :is-editable="isNotIncludedInCurrentProjectConfiguration('outputFormat')"
                                  :field-value="project.outputFormat" :call-refreh-context="refreshContext"
                                  :possible-values="outputFormats"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="Template ID" edit-project-param="template-id" :is-editable="true"
+                <ProjectFieldRow field-key="Template ID" edit-project-param="template-id" :is-editable="isNotIncludedInCurrentProjectConfiguration('templateId')"
                                  :field-value="project.templateId" :call-refreh-context="refreshContext"
                                  :possible-values="exporterTemplateIds"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
@@ -214,7 +221,8 @@
                   <td>
                     <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                                     :module="Module.TOKEN_MANAGER_MODULE"
-                                    :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION" icon-class="bi bi-download"/>
+                                    :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION" icon-class="bi bi-download"
+                                    v-if="existsAuthenticationScript"/>
                   </td>
                 </tr>
                 <tr v-if="existsScript">
@@ -222,7 +230,8 @@
                   <td class="wider-column"></td>
                   <td>
                     <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                    :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_SCRIPT_ACTION" icon-class="bi bi-download"/>
+                                    :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_SCRIPT_ACTION"
+                                    icon-class="bi bi-download"/>
                   </td>
                 </tr>
                 </tbody>
@@ -234,12 +243,14 @@
             <!-- Application Form -->
             <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE"
-                            :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION" text="Download application form template"/>
+                            :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION"
+                            text="Download application form template"/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
-                          text="Upload application form" :call-refreh-context="refreshContext" :is-file="true" />
+                          text="Upload application form" :call-refreh-context="refreshContext" :is-file="true"/>
             <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION" text="Download application form"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
+                            text="Download application form"
                             v-if="existsApplicationForm"/>
 
             <!-- Other documents -->
@@ -252,23 +263,23 @@
             <br/><br/>
             <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_PUBLICATION_ACTION"
-                            :project-documents="publications" icon-class="bi bi-download" text="Publications: " />
+                            :project-documents="publications" icon-class="bi bi-download" text="Publications: "/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
                           text="Upload publication" :call-refreh-context="refreshContext" :is-file="true"/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
-                          text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false" />
+                          text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false"/>
             <br/> <br/>
             <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
                             :project-documents="otherDocuments" icon-class="bi bi-download" text="Other documents: "/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
-                          text="Upload other document" :call-refreh-context="refreshContext" :is-file="true" />
+                          text="Upload other document" :call-refreh-context="refreshContext" :is-file="true"/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
-                          text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false" />
+                          text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false"/>
 
           </div>
         </div>
@@ -377,10 +388,14 @@ export default defineComponent({
       showNotification: false,
       showProgress: false,
       existsVotum: false,
+      existsAuthenticationScript: false,
       existsApplicationForm: false,
       existsScript: false,
       publications: [] as ProjectDocument[],
-      otherDocuments: [] as ProjectDocument[]
+      otherDocuments: [] as ProjectDocument[],
+      projectConfigurations: [] as string[],
+      currentProjectConfiguration: '',
+      currentProjectConfigurationFields: [] as string[]
     };
   },
   watch: {
@@ -420,10 +435,10 @@ export default defineComponent({
       }
     },
 
-    refreshBridgeheadsAndContext(){
+    refreshBridgeheadsAndContext() {
       const activeBridgehead = this.activeBridgehead;
       this.fetchBridgeheads().then(result => {
-        if (this.activeBridgehead === activeBridgehead){
+        if (this.activeBridgehead === activeBridgehead) {
           this.refreshContext();
         }
       })
@@ -468,6 +483,8 @@ export default defineComponent({
         this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, new Map(), 'projectTypes');
         this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, new Map(), 'queryFormats');
         this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, new Map(), 'outputFormats');
+        this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), 'projectConfigurations');
+        this.initializeCurrentProjectConfiguration();
         if (this.project.type) {
           const params = new Map<string, string>;
           params.set('project-type', this.project.type)
@@ -480,25 +497,52 @@ export default defineComponent({
         this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, new Map(), 'existsVotum');
         this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), 'existsApplicationForm');
         this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), 'existsScript');
+        this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript');
         this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_PUBLICATIONS_ACTION, new Map(), 'publications');
         this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_OTHER_DOCUMENTS_ACTION, new Map(), 'otherDocuments');
       }
+    },
+
+    initializeCurrentProjectConfiguration(){
+      this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION, new Map(), (result: Record<string,Project>) => {
+        if (result){
+          const currentProjectConfigKeys = Object.keys(result);
+          if (currentProjectConfigKeys && currentProjectConfigKeys.length > 0){
+            this.currentProjectConfiguration = currentProjectConfigKeys[0];
+            const currentProjectConfig = result[this.currentProjectConfiguration];
+            if (currentProjectConfig){
+              this.currentProjectConfigurationFields = Object.keys(currentProjectConfig).filter(key => (currentProjectConfig as any)[key] !== null)
+            }
+          }
+        } else {
+          this.currentProjectConfiguration = '';
+          this.currentProjectConfigurationFields = [];
+        }
+      });
+    },
+
+    isNotIncludedInCurrentProjectConfiguration(field: string){
+      return this.currentProjectConfiguration === 'CUSTOM' || !this.currentProjectConfigurationFields.includes(field);
     },
 
     fetchNotifications() {
       this.initializeData(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(), 'notifications');
     },
 
-    initializeData(module: Module, action: Action, params: Map<string, unknown>, dataVariable: string) {
+    async initializeData(module: Module, action: Action, params: Map<string, unknown>, dataVariable: string) {
+      this.initializeDataInCallback(module, action, params, (result) => (this.$data as any)[dataVariable] = result)
+    },
+
+    async initializeDataInCallback(module: Module, action: Action, params: Map<string, unknown>, callback: (result: any) => void) {
       try {
         this.projectManagerBackendService.isModuleActionActive(module, action).then(condition => {
           if (condition) {
             this.projectManagerBackendService.fetchData(module, action, this.context, params)
-                .then(result => (this.$data as any)[dataVariable] = result);
+                .then(result => callback(result));
           }
         })
       } catch (error) {
-        console.error('Error loading ' + dataVariable + ':', error);
+        console.error('Error calling action ' + action + ' of module ' + module + ':', error);
         throw error;
       }
     }

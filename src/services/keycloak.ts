@@ -28,6 +28,24 @@ const Login = (onAuthenticatedCallback: CallbackOneParam) => {
         });
 };
 
+const refreshToken = () => {
+    keycloakInstance
+        .updateToken()
+        .then((refreshed) => {
+            if (refreshed) {
+                console.log('Token refreshed');
+            } else {
+                console.log('Token not refreshed, or the token is still valid');
+            }
+        })
+        .catch((error) => {
+            console.error('Token refresh failed:', error);
+        });
+};
+
+// Set up timer to refresh token periodically
+const tokenRefreshInterval = setInterval(refreshToken, process.env.VUE_APP_KEYCLOAK_REFRESH_TOKEN_TIME_IN_MINUTES * 60 * 1000); // Refresh token every 5 minutes
+
 const KeyCloakService = {
     getToken: () => keycloakInstance.token,
     getEmail: () => (keycloakInstance && keycloakInstance.profile) ? keycloakInstance.profile.email : 'Hello',

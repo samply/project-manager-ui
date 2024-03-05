@@ -48,8 +48,13 @@ const tokenRefreshInterval = setInterval(refreshToken, process.env.VUE_APP_KEYCL
 
 const KeyCloakService = {
     getToken: () => keycloakInstance.token,
-    getEmail: () => (keycloakInstance && keycloakInstance.profile) ? keycloakInstance.profile.email : 'Hello',
+    getEmail: () => (keycloakInstance && keycloakInstance.profile && keycloakInstance.profile.email) ? keycloakInstance.profile.email : '',
+    getFirstName: () => (keycloakInstance && keycloakInstance.profile && keycloakInstance.profile.firstName) ? keycloakInstance.profile.firstName : '',
+    getLastName: () => (keycloakInstance && keycloakInstance.profile && keycloakInstance.profile.firstName) ? keycloakInstance.profile.lastName : '',
     CallLogin: Login,
+    logout: () => {
+        keycloakInstance.logout();
+    }
 };
 
 export default KeyCloakService;

@@ -24,15 +24,15 @@
           <br/>
           <div style="display:flex; flex-flow:row; justify-content: space-between">
             <router-link to="/"><i class="bi bi-arrow-left-square-fill"></i></router-link>
-            <div v-if="brigeheads && brigeheads.length > 1">
+            <div v-if="visibleBridgeheads && visibleBridgeheads.length > 1">
               <span class="bold-text">Bridgehead:</span>&nbsp;
               <select v-model="activeBridgehead">
-                <option v-for="bridgehead in brigeheads" :key="bridgehead.bridgehead" :value="bridgehead"
+                <option v-for="bridgehead in visibleBridgeheads" :key="bridgehead.bridgehead" :value="bridgehead"
                         :selected="bridgehead === activeBridgehead">{{ bridgehead.bridgehead }}
                 </option>
               </select>
             </div>
-            <div v-if="brigeheads && brigeheads.length == 1">
+            <div v-if="visibleBridgeheads && visibleBridgeheads.length == 1">
               <span>{{ context.bridgehead }}</span>
             </div>
             <div>
@@ -185,6 +185,9 @@
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Description" edit-project-param="description" :is-editable="true"
                                  :field-value="project.description" :call-refreh-context="refreshContext"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                <ProjectFieldRow field-key="Bridgeheads" edit-project-param="bridgeheads" :is-editable="true"
+                                 :field-value="bridgeheads" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Configuration" edit-project-param="project-configuration" :is-editable="true"
                                  :field-value="currentProjectConfiguration" :call-refreh-context="refreshContext"
@@ -366,7 +369,8 @@ export default defineComponent({
     return {
       activeBridgehead: undefined as Bridgehead | undefined,
       activeBridgeheadIndex: 0,
-      brigeheads: [] as Bridgehead[],
+      bridgeheads: [] as string[],
+      visibleBridgeheads: [] as Bridgehead[],
       context: new ProjectManagerContext(this.projectCode, undefined),
       projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
       project: undefined as Project | undefined,
@@ -400,7 +404,7 @@ export default defineComponent({
   },
   watch: {
     activeBridgehead(newValue, oldValue) {
-      this.activeBridgeheadIndex = this.brigeheads.findIndex(bridgehead => bridgehead === newValue);
+      this.activeBridgeheadIndex = this.visibleBridgeheads.findIndex(bridgehead => bridgehead === newValue);
       this.context = new ProjectManagerContext(this.projectCode, newValue.bridgehead);
     },
     context(newValue, oldValue) {
@@ -412,7 +416,7 @@ export default defineComponent({
     }
   },
   mounted() {
-    this.fetchBridgeheads();
+    this.fetchVisibleBridgeheads();
   },
 
 
@@ -437,7 +441,7 @@ export default defineComponent({
 
     refreshBridgeheadsAndContext() {
       const activeBridgehead = this.activeBridgehead;
-      this.fetchBridgeheads().then(result => {
+      this.fetchVisibleBridgeheads().then(result => {
         if (this.activeBridgehead === activeBridgehead) {
           this.refreshContext();
         }
@@ -448,15 +452,15 @@ export default defineComponent({
       this.context = new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
     },
 
-    async fetchBridgeheads() {
+    async fetchVisibleBridgeheads() {
       try {
         return await this.projectManagerBackendService.fetchData(
             Module.PROJECT_BRIDGEHEAD_MODULE,
-            Action.FETCH_PROJECT_BRIDGEHEADS_ACTION,
+            Action.FETCH_VISIBLE_PROJECT_BRIDGEHEADS_ACTION,
             this.context,
             new Map()
         ).then(bridgeheads => {
-          this.brigeheads = bridgeheads;
+          this.visibleBridgeheads = bridgeheads;
           this.activeBridgehead = bridgeheads[this.activeBridgeheadIndex];
         });
       } catch (error) {
@@ -478,6 +482,10 @@ export default defineComponent({
 
     initializeProjectRelatedData() {
       if (this.project) {
+        this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), (result: Bridgehead[]) => {
+          this.bridgeheads = [];
+          result.forEach(bridgehead => this.bridgeheads.push(bridgehead.bridgehead));
+        });
         this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_STATES_ACTION, new Map(), 'projectStates');
         this.fetchNotifications();
         this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, new Map(), 'projectTypes');

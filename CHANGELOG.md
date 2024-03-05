@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2024-02-27]
+## [1.1.0 - 2024-03-05]
 ### Added
 - Dockerfile
 - Single Spa
@@ -41,3 +41,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Keycloak profile
 - Bridgehead for profile with only one bridgehead in project view
 - Project configuration
+- Fetch visible bridgeheads and fetch project bridgeheads

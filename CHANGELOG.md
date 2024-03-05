@@ -43,3 +43,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Project configuration
 - Fetch visible bridgeheads and fetch project bridgeheads
 - Refresh Keycloak token
+- Redirect to explorer Url for editing bridgeheads or query

@@ -17,6 +17,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly editProjectParam!: string;
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
   @Prop() readonly context!: ProjectManagerContext;
+  @Prop({default: null}) readonly redirectUrl!: string | null;
   @Prop() readonly possibleValues!: string[];
   @Prop() readonly isEditable!: boolean;
   @Prop({ type: Function, required: true }) readonly callRefrehContext!: () => void;
@@ -25,6 +26,8 @@ export default class ProjectFieldRow extends Vue {
   editedValue = ''; // Store edited value temporarily
   tempFieldValue = ''; // Initialize tempFieldValue with empty string
   isActionEnabled = false;
+  progress = 0;
+
 
   @Watch('projectManagerBackendService', { immediate: true, deep: true })
   onProjetManagerBackendServiceChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
@@ -34,6 +37,11 @@ export default class ProjectFieldRow extends Vue {
   @Watch('fieldValue', { immediate: true, deep: true })
   onFieldValueChange(newValue: string, oldValue: string) {
     this.tempFieldValue = this.fieldValue;
+  }
+
+  @Watch('redirectUrl', { immediate: true, deep: true })
+  onRedirectUrlChange(newValue: string, oldValue: string) {
+    console.log('redirectURL:' + newValue)
   }
 
   // Initialize tempFieldValue with the initial value of fieldValue
@@ -75,7 +83,6 @@ export default class ProjectFieldRow extends Vue {
 
   }
 
-
   cancelEdit() {
     this.editing = false; // Cancel editing, reset editing flag
   }
@@ -89,6 +96,13 @@ export default class ProjectFieldRow extends Vue {
     }
     return '';
   }
+
+  redirectToURL() {
+    if (this.redirectUrl){
+      window.location.href = this.redirectUrl;
+    }
+  }
+
 }
 </script>
 
@@ -98,7 +112,7 @@ export default class ProjectFieldRow extends Vue {
     <td class="wider-column">
       <div class="user-input-container">
         <template v-if="editing && !possibleValues">
-          <input type="text" v-model="editedValue"/>
+          <input type="text" v-model="editedValue" />
           <div class="button-container">
             <button @click="saveField">Save</button>
             <button @click="cancelEdit">Cancel</button>
@@ -114,12 +128,16 @@ export default class ProjectFieldRow extends Vue {
           </div>
         </template>
         <template v-else>
-          <div class="field-value">{{ tempFieldValue }}</div>
+          <!--<div class="field-value">{{ tempFieldValue }}</div>-->
+          <div class="field-value truncate">{{ tempFieldValue }}</div>
         </template>
       </div>
     </td>
-    <template v-if="isFieldValueEditable()">
+    <template v-if="isFieldValueEditable() && redirectUrl === null">
       <td><i class="bi bi-pencil me-2" @click="editField"></i></td>
+    </template>
+    <template v-else-if="isFieldValueEditable() && redirectUrl !== null">
+      <td><i class="bi bi-arrow-right-circle" @click="redirectToURL"></i></td>
     </template>
     <template v-else>
       <td/>
@@ -148,6 +166,25 @@ export default class ProjectFieldRow extends Vue {
 .bi-pencil {
   width: 100%; /* Make bi-pencil icon occupy all available space */
   text-align: center; /* Center the icon */
+}
+
+.progress-container {
+  width: 100%;
+  height: 5px;
+  background-color: #ddd;
+  margin-top: 5px;
+}
+
+.progress {
+  height: 100%;
+  background-color: #4caf50;
+}
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100 * 1ch); /* 1ch is the width of one character */
 }
 
 </style>

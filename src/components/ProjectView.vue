@@ -188,6 +188,7 @@
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Bridgeheads" edit-project-param="bridgeheads" :is-editable="true"
                                  :field-value="bridgeheads" :call-refreh-context="refreshContext"
+                                 :redirect-url="project.explorerUrl"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Configuration" edit-project-param="project-configuration" :is-editable="true"
                                  :field-value="currentProjectConfiguration" :call-refreh-context="refreshContext"
@@ -198,16 +199,27 @@
                                  :possible-values="projectTypes"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <!-- TODO: Edit Query -->
-                <ProjectFieldRow field-key="Query" :is-editable="false"
-                                 :field-value="project.humanReadable ? project.humanReadable : project.query"
+                <ProjectFieldRow field-key="Query"
+                                 :field-value="project.query"
+                                 edit-project-param="query"
                                  :call-refreh-context="refreshContext"
+                                 :redirect-url="project.explorerUrl"
+                                 :is-editable="true"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                <ProjectFieldRow field-key="Query (Human readable)"
+                                 :field-value="project.humanReadable"
+                                 edit-project-param="human-readable"
+                                 :call-refreh-context="refreshContext"
+                                 :redirect-url="project.explorerUrl"
+                                 :is-editable="true"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Query Format" edit-project-param="query-format" :is-editable="true"
                                  :field-value="project.queryFormat" :call-refreh-context="refreshContext"
                                  :possible-values="queryFormats"
+                                 :redirect-url="project.explorerUrl"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <!-- TODO: Separate queries in pairs Key-Values + encrpyt and decrypt in base64-->
-                <ProjectFieldRow field-key="Query Context" edit-project-param="query-context" :is-editable="isNotIncludedInCurrentProjectConfiguration('queryContext')"
+                <ProjectFieldRow field-key="Environment Variables" edit-project-param="query-context" :is-editable="isNotIncludedInCurrentProjectConfiguration('queryContext')"
                                  :field-value="project?.queryContext" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Output Format" edit-project-param="output-format" :is-editable="isNotIncludedInCurrentProjectConfiguration('outputFormat')"

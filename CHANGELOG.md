@@ -45,3 +45,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Refresh Keycloak token
 - Redirect to explorer Url for editing bridgeheads or query
 - Keycloak logout
+- Bridgehead Overview

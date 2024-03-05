@@ -55,7 +55,7 @@ export default class DownloadButton extends Vue {
       <button @click="downloadFile">Download</button>
     </div>
     <div v-if="iconClass">
-      <i class="bi bi-download" @click="downloadFile"></i>
+      <i :class="iconClass" @click="downloadFile"></i>
     </div>
   </div>
 </template>

@@ -22,6 +22,10 @@
           <br/>
           <h2>Project Information</h2>
           <br/>
+          <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
+              :project-manager-backend-service="projectManagerBackendService"
+                              :context="context" :bridgeheads="visibleBridgeheads" />
+          <br/>
           <div style="display:flex; flex-flow:row; justify-content: space-between">
             <router-link to="/"><i class="bi bi-arrow-left-square-fill"></i></router-link>
             <div v-if="visibleBridgeheads && visibleBridgeheads.length > 1">
@@ -352,6 +356,7 @@ import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
+import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
 
 export default defineComponent({
   computed: {
@@ -369,6 +374,7 @@ export default defineComponent({
     }
   },
   components: {
+    BridgeheadOverview,
     DocumentsTable,
     DownloadButton,
     UploadButton,

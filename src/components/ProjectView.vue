@@ -222,19 +222,27 @@
                                     :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_SCRIPT_ACTION" icon-class="bi bi-download"/>
                   </td>
                 </tr>
+
                 <ProjectFieldRow field-key="Application form" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+
+
                 <ProjectFieldRow field-key="Votum" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+
+                <ProjectFieldRow field-key="Publications" edit-project-param="label" :is-editable="true"
+                                 :field-value="project.label" :call-refreh-context="refreshContext"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+
                 <ProjectFieldRow field-key="Other Documents" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="Other URL" edit-project-param="label" :is-editable="true"
-                                 :field-value="project.label" :call-refreh-context="refreshContext"
-                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <tr>
+
+
+
+<!--                <tr>
                   <td>{{project && project.createdAt ? 'application form': ''}}</td>
                   <td>{{project && project.createdAt ? project.templateId:''}}</td>
                   <td>
@@ -248,8 +256,8 @@
                                     :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION" text="Download application form"
                                     v-if="existsApplicationForm"/>
                   </td>
-                </tr>
-                <tr>
+                </tr>-->
+<!--                <tr>
                   <td>{{project && project.createdAt ? 'Votum': ''}}</td>
                   <td>{{project && project.createdAt ? project.templateId:''}}</td>
                   <td>
@@ -292,51 +300,14 @@
                                   :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
                                   text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false" />
                   </td>
-                </tr>
+                </tr>-->
                 </tbody>
               </table>
             </div>
             <UserInput :project="project" :context="context"
                        :project-manager-backend-service="projectManagerBackendService"/>
             <br/>
-            <!-- Application Form -->
-<!--            <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE"
-                            :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION" text="Download application form template"/> <br/>
-            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
-                          text="Upload application form" :call-refreh-context="refreshContext" :is-file="true" />
-            <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION" text="Download application form"
-                            v-if="existsApplicationForm"/>-->
 
-            <!-- Other documents -->
-<!--            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_VOTUM_ACTION"
-                          text="Upload votum" :call-refreh-context="refreshContext" :is-file="true"/>
-            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_SCRIPT_ACTION"
-                          text="Upload script" :call-refreh-context="refreshContext" :is-file="true"/>-->
-            <br/>
-<!--            <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_PUBLICATION_ACTION"
-                            :project-documents="publications" icon-class="bi bi-download" text="Publications: " />
-            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
-                          text="Upload publication" :call-refreh-context="refreshContext" :is-file="true"/>
-            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
-                          text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false" />-->
-            <br/>
-<!--            <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
-                            :project-documents="otherDocuments" icon-class="bi bi-download" text="Other documents: "/>
-            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
-                          text="Upload other document" :call-refreh-context="refreshContext" :is-file="true" /><br/>
-            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
-                          text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false" />-->
 
           </div>
         </div>
@@ -391,9 +362,11 @@ import {format} from "date-fns";
 import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
 import NotificationBox from "@/components/Notification.vue";
 import UserInput from "@/components/UserInput.vue";
-import UploadButton from "@/components/UploadButton.vue";
-import DownloadButton from "@/components/DownloadButton.vue";
+/*import UploadButton from "@/components/UploadButton.vue";
+import DownloadButton from "@/components/DownloadButton.vue";*/
+/*
 import DocumentsTable from "@/components/DocumentsTable.vue";
+*/
 
 export default defineComponent({
   computed: {
@@ -411,9 +384,7 @@ export default defineComponent({
     }
   },
   components: {
-    DocumentsTable,
-    DownloadButton,
-    UploadButton,
+
     UserInput,
     NotificationBox,
     ProjectFieldRow,

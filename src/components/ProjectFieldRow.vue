@@ -8,25 +8,41 @@ import {
   ProjetManagerBackendService
 } from "@/services/projetManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
+import UploadButton from "@/components/UploadButton.vue";
+import DocumentsTable from "@/components/DocumentsTable.vue";
+import UserInput from "@/components/UserInput.vue";
 
 @Options({
+  computed: {
+
+  },
   name: "ProjectFieldRow",
-  components: {DownloadButton}
+  components: {
+    DocumentsTable,
+    DownloadButton,
+    UploadButton,
+    UserInput}
 })
 export default class ProjectFieldRow extends Vue {
   @Prop() readonly fieldKey!: string;
   @Prop() readonly fieldValue!: string;
   @Prop() readonly editProjectParam!: string;
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
-  @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly possibleValues!: string[];
   @Prop() readonly isEditable!: boolean;
   @Prop({ type: Function, required: true }) readonly callRefrehContext!: () => void;
+  @Prop() readonly module!: Module;
+  @Prop() readonly action!: Action;
+  @Prop() readonly existsApplicationForm!: boolean;
+
 
   editing = false; // Flag to indicate if the field is being edited
   editedValue = ''; // Store edited value temporarily
   tempFieldValue = ''; // Initialize tempFieldValue with empty string
   isActionEnabled = false;
+  context = new ProjectManagerContext('', undefined);
+  Module = Module; // Bind the Module enum to the component instance
+  Action = Action; // Bind the Action enum to the component instance
 
   // Initialize tempFieldValue with the initial value of fieldValue
   created() {
@@ -72,43 +88,103 @@ export default class ProjectFieldRow extends Vue {
     }
     return '';
   }
-}
+
+  refreshContext() {
+    this.context = new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
+  }}
+
+
 </script>
 
 <template>
   <tr>
-    <td class="bold-text thinner-column" style="background-color: #f2f2f2;">{{ fieldKey }}</td>
+    <!-- FIRST COLUMN TITLE-->
+    <td class="bold-text thinner-column"  style="background-color: #f2f2f2;">{{ fieldKey }}</td>
+
+
+    <!-- MIDDLE COLUMN VALUES-->
+
     <td class="wider-column">
       <div class="user-input-container">
-        <div v-if="editing && !possibleValues">
-          <input type="text" v-model="editedValue"/>
+
+        <div style="display:flex; flex-flow: row" v-if="editing && !possibleValues && fieldKey!='Application form' && fieldKey!='Other Documents' && fieldKey!='Other URL'  && fieldKey!='Publications'">
+            <input id="labelInput" type="text" v-model="editedValue"  class="form-control">
           <div class="button-container">
-            <button @click="saveField">Save</button>
-            <button @click="cancelEdit">Cancel</button>
+            <button @click="saveField" class="btn btn-primary">Save</button>
+            <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
           </div>
         </div>
-        <div v-else-if="editing && possibleValues">
-          <select v-model="editedValue">
-            <option v-for="value in possibleValues" :key="value" :value="value" :selected="value === getSelectedOption()">{{ value }}</option>
+
+        <div v-else-if="editing && fieldKey!='Application form' && fieldKey!='Other Documents' && fieldKey!='Other URL' && fieldKey!='Publications'">
+          <select v-model="editedValue" class="form-select">
+            <option v-for="value in possibleValues" :key="value" :value="value">{{ value }}</option>
           </select>
+
           <div class="button-container">
-            <button @click="saveField">Save</button>
-            <button @click="cancelEdit">Cancel</button>
+            <button @click="saveField" class="btn btn-primary">Save</button>
+            <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
           </div>
         </div>
-        <div v-else>
+
+        <div style="display:flex; flex-flow:row; width:100%;" v-if="editing && fieldKey === 'Application form'">
+        <div><DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                             :module="Module.PROJECT_DOCUMENTS_MODULE"
+                             :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION" text="Download application form template:"/> <br/>
+          <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                        :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
+                        text="Upload application form" :call-refreh-context="refreshContext" :is-file="true" />
+        </div>
+          <div class="button-container">
+            <button @click="saveField" class="btn btn-primary">Save</button>
+            <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
+          </div>
+        </div>
+
+        <div v-if="editing && fieldKey === 'Publications'">
+          <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                        :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
+                        text="Upload publication" :call-refreh-context="refreshContext" :is-file="true" />
+
+          <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                        :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
+                        text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false" />
+          <button @click="saveField" class="btn btn-primary">Save</button>
+          <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
+        </div>
+        <div style="display:flex; flex-flow:row; width:100%" v-if="editing && fieldKey === 'Other Documents'">
+        <div>  <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                        :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
+                        text="Upload Document" :call-refreh-context="refreshContext" :is-file="true"/>
+
+          <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                        :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
+                        text="Add URL" :call-refreh-context="refreshContext" :is-file="false" />
+        </div>
+          <div class="button-container">
+            <button @click="saveField" class="btn btn-primary">Save</button>
+            <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
+          </div>
+        </div>
+
+
+
+        <div v-if="!editing ">
           <div class="field-value">{{ tempFieldValue }}</div>
         </div>
+
       </div>
     </td>
+
+    <!-- LAST COLUMN ACTION BUTTONS-->
+
     <td>
+      <div v-if="fieldKey==='Application form'">
+        <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                        :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION" text="Download application form"
+                        v-if="existsApplicationForm"/>
+      </div>
     <div v-if="isFieldValueEditable()">
       <i class="bi bi-pencil me-2" @click="editField"></i>
-    </div>
-    <div v-if="isFieldValueEditable()">
-<!--      <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                  :module="Module.TOKEN_MANAGER_MODULE"
-                                  :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION" icon-class="bi bi-download"/>-->
     </div>
     <div v-else>
     </div>
@@ -124,19 +200,27 @@ export default class ProjectFieldRow extends Vue {
 .user-input-container {
   display: flex;
   align-items: center;
+  width:100%;
 }
 
 .button-container {
-  margin-left: auto; /* Push buttons to the right */
+  margin-left: auto;
+  floast:right;
+  display:flex;
+  flex-flow: row;
+  width:100%;
+  float:right;
+  justify-content: flex-end;
+  align-items: end;
 }
 
 .field-value {
-  flex-grow: 1; /* Allow fieldValue to grow and occupy available space */
+  flex-grow: 1;
 }
 
 .bi-pencil {
-  width: 100%; /* Make bi-pencil icon occupy all available space */
-  text-align: center; /* Center the icon */
+  width: 100%;
+  text-align: center;
 }
 
 </style>

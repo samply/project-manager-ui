@@ -250,6 +250,7 @@
                                     icon-class="bi bi-download"/>
                   </td>
                 </tr>
+                <!--
                 <ProjectFieldRow field-key="Application form" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
@@ -261,7 +262,7 @@
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <ProjectFieldRow field-key="Other URL" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label" :call-refreh-context="refreshContext"
-                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/> -->
                 <tr>
                   <td>{{project && project.createdAt ? 'application form': ''}}</td>
                   <td>{{project && project.createdAt ? project.templateId:''}}</td>

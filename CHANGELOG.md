@@ -46,3 +46,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Redirect to explorer Url for editing bridgeheads or query
 - Keycloak logout
 - Bridgehead Overview
+- Document Tables for all visible bridgeheads

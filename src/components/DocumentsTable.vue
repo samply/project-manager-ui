@@ -3,6 +3,7 @@ import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
+  Bridgehead,
   Module,
   ProjectDocument,
   ProjectManagerContext,
@@ -17,24 +18,41 @@ import DownloadButton from "@/components/DownloadButton.vue";
 export default class DocumentsTable extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
-  @Prop() readonly module!: Module;
-  @Prop() readonly action!: Action;
-  @Prop() readonly projectDocuments!: ProjectDocument[];
+  @Prop() readonly downloadAction!: Action;
+  @Prop() readonly fetchListAction!: Action;
   @Prop() readonly iconClass: string | undefined = undefined;
   @Prop() readonly text!: string;
+  @Prop() readonly bridgeheads!: Bridgehead[];
+
+  module = Module.PROJECT_DOCUMENTS_MODULE;
+  projectDocuments: ProjectDocument[] = [];
   canDownload = false;
+
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
   onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
     this.updateCanDownload()
+    this.fetchProjectDocuments();
   }
 
   async created() {
-    this.updateCanDownload()
+    this.updateCanDownload();
+    this.fetchProjectDocuments();
   }
 
   updateCanDownload() {
-    this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.canDownload = result)
+    this.projectManagerBackendService.isModuleActionActive(this.module, this.downloadAction).then(result => this.canDownload = result)
+  }
+
+  fetchProjectDocuments() {
+    this.projectDocuments = [];
+    this.bridgeheads.forEach(bridgehead => this.projectManagerBackendService
+        .fetchData(this.module, this.fetchListAction, this.fetchContext(bridgehead.bridgehead), new Map())
+        .then(result => this.projectDocuments.push(result)));
+  }
+
+  fetchContext(bridgehead: string){
+    return new ProjectManagerContext(this.context.projectCode, bridgehead);
   }
 
 }
@@ -69,8 +87,8 @@ export default class DocumentsTable extends Vue {
         <td>{{ projectDocument.type }}</td>
         <td>
           <DownloadButton v-if="canDownload && projectDocument.originalFilename"
-                          :context="context" :project-manager-backend-service="projectManagerBackendService"
-                          :module="module" :action="action" :icon-class="iconClass"
+                          :context="fetchContext(projectDocument.bridgehead)" :project-manager-backend-service="projectManagerBackendService"
+                          :module="module" :action="downloadAction" :icon-class="iconClass"
                           :filename="projectDocument.originalFilename"/>
         </td>
       </tr>

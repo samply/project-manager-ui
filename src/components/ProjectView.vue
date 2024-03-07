@@ -83,8 +83,6 @@
             </tbody>
           </table>
           <div class="text-right mt-4">
-
-            <!-- TODO: Edit only if authorized -->
             <!-- Project State Module: Creator View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.CREATE_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Create"
@@ -158,7 +156,6 @@
                                   :context="context" :call-refreh-context="refreshContext" text="Request changes"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
-
             <!-- Export Module -->
             <ProjectManagerButton :module="Module.EXPORT_MODULE" :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
                                   :context="context" :call-refreh-context="refreshContext"
@@ -281,11 +278,6 @@
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_SCRIPT_ACTION"
                           text="Upload script" :call-refreh-context="refreshContext" :is-file="true"/>
             <br/><br/>
-            <!--
-                    this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_PUBLICATIONS_ACTION, new Map(), 'publications');
-        this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_OTHER_DOCUMENTS_ACTION, new Map(), 'otherDocuments');
-
-            -->
             <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
                             :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"

@@ -4,6 +4,7 @@ import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
+  Bridgehead,
   Module,
   Project,
   ProjectManagerContext,
@@ -24,8 +25,10 @@ export default class UserInput extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly project!: Project;
+  @Prop() readonly bridgeheads!: Bridgehead[];
 
   partialEmail = '';
+  selectedBridgehead: Bridgehead | undefined = undefined;
   suggestions: User[] = [];
   isActive = false;
   currentUsers: User[] = [];
@@ -33,10 +36,12 @@ export default class UserInput extends Vue {
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
   onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
+    this.selectedBridgehead = this.bridgeheads[0];
     this.updateIsActive()
   }
 
   created() {
+    this.selectedBridgehead = this.bridgeheads[0];
     this.updateIsActive();
   }
 
@@ -52,8 +57,8 @@ export default class UserInput extends Vue {
   handleInput(event: Event): void {
     this.partialEmail = (event.target as HTMLInputElement).value;
     this.canInvite = true;
-    for (let user of this.currentUsers){
-      if (user.email === this.partialEmail){
+    for (let user of this.currentUsers) {
+      if (user.email === this.partialEmail) {
         this.canInvite = false;
       }
     }
@@ -69,7 +74,8 @@ export default class UserInput extends Vue {
     }
     const params = new Map<string, string>();
     params.set('email', this.partialEmail);
-    this.projectManagerBackendService.fetchData(Module.USER_MODULE, action, this.context, params).then(result => {
+    const context = (this.selectedBridgehead) ? this.createContext(this.selectedBridgehead) : this.context;
+    this.projectManagerBackendService.fetchData(Module.USER_MODULE, action, context, params).then(result => {
       this.partialEmail = '';
       this.updateCurrentUsers();
     });
@@ -79,14 +85,21 @@ export default class UserInput extends Vue {
     const params = new Map<string, string>();
     if (partialEmail && partialEmail.length > 0) {
       params.set('partial-email', partialEmail);
-      this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_ACTION, this.context, params).then(users => this.suggestions = users);
+      this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_ACTION, this.createContext(this.selectedBridgehead), params).then(users => this.suggestions = users);
     } else {
       this.suggestions = [];
     }
   }
 
   updateCurrentUsers() {
-    this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, this.context, new Map()).then(currentUsers => this.currentUsers = currentUsers)
+    this.currentUsers = [];
+    this.bridgeheads.forEach(bridgehead => this.projectManagerBackendService
+        .fetchData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, this.createContext(bridgehead), new Map())
+        .then(currentUsers => this.currentUsers.push(...currentUsers)));
+  }
+
+  createContext(bridgehead: Bridgehead | undefined) {
+    return (bridgehead) ? new ProjectManagerContext(this.context.projectCode, bridgehead.bridgehead) : this.context;
   }
 
   selectSuggestion(suggestion: User) {
@@ -102,12 +115,17 @@ export default class UserInput extends Vue {
     <span>Invite user to this stage:</span>&nbsp;
     <div class="user-input-container">
       <input class="user-input" type="text" v-model="partialEmail" @input="handleInput" @keyup.enter="handleSave"/>
+      <select v-model="selectedBridgehead">
+        <option v-for="bridgehead in bridgeheads" :key="bridgehead.bridgehead" :value="bridgehead"
+                :selected="bridgehead === selectedBridgehead">{{ bridgehead.bridgehead }}
+        </option>
+      </select>
       <ul class="suggestions" v-if="suggestions.length > 0">
         <li v-for="(suggestion, index) in suggestions" :key="index" @click="selectSuggestion(suggestion)">
           {{ suggestion.email }}
         </li>
       </ul>&nbsp;
-    <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite">Invite</button>
+      <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite">Invite</button>
     </div>
   </div>
   <div v-if="currentUsers.length > 0">
@@ -116,12 +134,14 @@ export default class UserInput extends Vue {
       <thead>
       <tr>
         <th>Email</th>
+        <th v-if="bridgeheads.length > 0">Bridgehead</th>
         <th>State</th> <!-- New column for user state -->
       </tr>
       </thead>
       <tbody>
       <tr v-for="(user, index) in currentUsers" :key="index">
         <td>{{ user.email }}</td>
+        <td v-if="bridgeheads.length > 0">{{ user.bridgehead }}</td>
         <td>{{ user.projectState }}</td> <!-- Display user's state in the second column -->
       </tr>
       </tbody>

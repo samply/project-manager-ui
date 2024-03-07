@@ -257,6 +257,7 @@
               </table>
             </div>
             <UserInput :project="project" :context="context"
+                       :bridgeheads="visibleBridgeheads"
                        :project-manager-backend-service="projectManagerBackendService"/>
             <br/><br/>
             <!-- Application Form -->
@@ -280,9 +281,15 @@
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_SCRIPT_ACTION"
                           text="Upload script" :call-refreh-context="refreshContext" :is-file="true"/>
             <br/><br/>
+            <!--
+                    this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_PUBLICATIONS_ACTION, new Map(), 'publications');
+        this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_OTHER_DOCUMENTS_ACTION, new Map(), 'otherDocuments');
+
+            -->
             <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_PUBLICATION_ACTION"
-                            :project-documents="publications" icon-class="bi bi-download" text="Publications: "/>
+                            :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
+                            :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
+                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Publications: "/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
                           text="Upload publication" :call-refreh-context="refreshContext" :is-file="true"/>
@@ -291,8 +298,9 @@
                           text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false"/>
             <br/> <br/>
             <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
-                            :project-documents="otherDocuments" icon-class="bi bi-download" text="Other documents: "/>
+                            :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
+                            :fetch-list-action="Action.FETCH_OTHER_DOCUMENTS_ACTION"
+                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Other documents: "/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
                           text="Upload other document" :call-refreh-context="refreshContext" :is-file="true"/>
@@ -413,8 +421,6 @@ export default defineComponent({
       existsAuthenticationScript: false,
       existsApplicationForm: false,
       existsScript: false,
-      publications: [] as ProjectDocument[],
-      otherDocuments: [] as ProjectDocument[],
       projectConfigurations: [] as string[],
       currentProjectConfiguration: '',
       currentProjectConfigurationFields: [] as string[]
@@ -524,8 +530,6 @@ export default defineComponent({
         this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), 'existsApplicationForm');
         this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), 'existsScript');
         this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript');
-        this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_PUBLICATIONS_ACTION, new Map(), 'publications');
-        this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_OTHER_DOCUMENTS_ACTION, new Map(), 'otherDocuments');
       }
     },
 

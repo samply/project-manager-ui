@@ -107,22 +107,25 @@ export default class ProjectFieldRow extends Vue {
     <td class="wider-column">
       <div class="user-input-container">
 
-        <div style="display:flex; flex-flow: row" v-if="editing && !possibleValues && fieldKey!='Application form' && fieldKey!='Other Documents' && fieldKey!='Other URL'  && fieldKey!='Publications'">
-            <input id="labelInput" type="text" v-model="editedValue"  class="form-control">
-          <div class="button-container">
-            <button @click="saveField" class="btn btn-primary">Save</button>
-            <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
+        <div style="display:flex; flex-flow:row; width:100%;" v-if="editing && !possibleValues && fieldKey!='Application form' && fieldKey!='Other Documents' && fieldKey!='Other URL'  && fieldKey!='Publications' && fieldKey!='Votum'">
+          <div style="width:75%">
+            <input id="labelInput" type="text" v-model="editedValue"  class="form-control"></div>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
           </div>
         </div>
 
-        <div v-else-if="editing && fieldKey!='Application form' && fieldKey!='Other Documents' && fieldKey!='Other URL' && fieldKey!='Publications'">
-          <select v-model="editedValue" class="form-select">
-            <option v-for="value in possibleValues" :key="value" :value="value">{{ value }}</option>
-          </select>
+        <div style="display:flex; flex-flow:row; width:100%;" v-else-if="editing && fieldKey!='Application form' && fieldKey!='Other Documents' && fieldKey!='Other URL' && fieldKey!='Publications' && fieldKey!='Votum'">
+          <div style="width:75%">
+           <select v-model="editedValue" class="form-select">
+           <option v-for="value in possibleValues" :key="value" :value="value">{{ value }}</option>
+         </select>
+         </div>
 
-          <div class="button-container">
-            <button @click="saveField" class="btn btn-primary">Save</button>
-            <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
           </div>
         </div>
 
@@ -138,12 +141,12 @@ export default class ProjectFieldRow extends Vue {
           <div class="button-container" style="width:25%; gap:3%">
             <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
             <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
-
           </div>
         </div>
 
         <div v-if="editing && fieldKey === 'Publications'">
-         <div style="width:75%"> <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+         <div style="width:75%">
+           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
                         text="Upload publication" :call-refreh-context="refreshContext" :is-file="true" />
 
@@ -152,23 +155,39 @@ export default class ProjectFieldRow extends Vue {
                         text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false" />
          </div>
           <div class="button-container" style="width:25%; gap:3%">
-            <button @click="saveField" class="btn btn-primary">Save</button>
-            <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
           </div>
         </div>
+
+        <div style="display:flex; flex-flow:row; width:100%" v-if="editing && fieldKey === 'Votum'">
+          <div style="width:75%">
+            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
+                          text="Upload Votum" :call-refreh-context="refreshContext" :is-file="true"/>
+
+          </div>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
+          </div>
+        </div>
+
+
         <div style="display:flex; flex-flow:row; width:100%" v-if="editing && fieldKey === 'Other Documents'">
-        <div>
+          <div style="width:75%">
           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
                         text="Upload Document" :call-refreh-context="refreshContext" :is-file="true"/>
+            <br/>
 
           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
                         text="Add URL" :call-refreh-context="refreshContext" :is-file="false" />
         </div>
-          <div class="button-container">
-            <button @click="saveField" class="btn btn-primary">Save</button>
-            <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
           </div>
         </div>
 

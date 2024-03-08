@@ -74,20 +74,21 @@ export default class UploadButton extends Vue {
 
 <template>
   <div v-if="isActive">
-    <div class="row align-items-center" style="display:flex; width:100%">
-      <div style="display:flex; width:50%">
-        <div class="form-group">
-        <label for="labelInput" class="form-label font-weight-bold">{{ text }}:</label>
-        <input id="labelInput" type="text" v-model="label" placeholder="Enter label" class="form-control">
-      </div>
+    <div class=" row align-items-center" style="display:flex; width:100%;">
+      <div style="display:flex;">
+        <div class="form-group" style="display:flex;  width:100%; flex-flow:column">
+        <label for="labelInput" class="form-label font-weight-bold" style="display:flex; width:70%">{{ text }}:</label>
 
-      </div>
-      <div class="col-md-6">
-        <div class="form-group">
-          <label for="fileInput" class="btn btn-primary" style="margin-top:3%">
-             <i class="bi bi-cloud-upload"></i>
+       <div style="display:flex; flex-flow:row;">
+         <input id="labelInput" type="text" v-model="label" placeholder="Enter label" class="form-control">
+
+        <div style="padding-left: 2%">
+          <label for="fileInput" class="btn btn-primary" style="background-color:white; color:black; border:none; margin-top:8%; font-size: larger" >
+            <i class="bi bi-cloud-upload"></i>
             <input id="fileInput" type="file" ref="fileInput" @change="handleFileChange" style="display: none;">
           </label>
+        </div>
+       </div>
         </div>
       </div>
     </div>

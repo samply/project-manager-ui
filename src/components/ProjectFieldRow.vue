@@ -127,32 +127,38 @@ export default class ProjectFieldRow extends Vue {
         </div>
 
         <div style="display:flex; flex-flow:row; width:100%;" v-if="editing && fieldKey === 'Application form'">
-        <div><DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+        <div style="width:75%">
+          <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                              :module="Module.PROJECT_DOCUMENTS_MODULE"
                              :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION" text="Download application form template:"/> <br/>
           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
                         text="Upload application form" :call-refreh-context="refreshContext" :is-file="true" />
         </div>
-          <div class="button-container">
-            <button @click="saveField" class="btn btn-primary">Save</button>
-            <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
+
           </div>
         </div>
 
         <div v-if="editing && fieldKey === 'Publications'">
-          <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+         <div style="width:75%"> <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
                         text="Upload publication" :call-refreh-context="refreshContext" :is-file="true" />
 
           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
                         text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false" />
-          <button @click="saveField" class="btn btn-primary">Save</button>
-          <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
+         </div>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="saveField" class="btn btn-primary">Save</button>
+            <button @click="cancelEdit" class="btn btn-secondary">Cancel</button>
+          </div>
         </div>
         <div style="display:flex; flex-flow:row; width:100%" v-if="editing && fieldKey === 'Other Documents'">
-        <div>  <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+        <div>
+          <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
                         text="Upload Document" :call-refreh-context="refreshContext" :is-file="true"/>
 
@@ -204,11 +210,8 @@ export default class ProjectFieldRow extends Vue {
 }
 
 .button-container {
-  margin-left: auto;
-  floast:right;
   display:flex;
   flex-flow: row;
-  width:100%;
   float:right;
   justify-content: flex-end;
   align-items: end;

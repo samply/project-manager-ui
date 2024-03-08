@@ -8,11 +8,11 @@
         </div>
         <div class="col-md-4 text-end">
           <button @click="toggleNotification" class="btn btn-dark"
-                  style="padding-right:2%; background:none; border:none; color:#007bff"><i
+                  style="padding-right:2%; background:none; border:none; color:#007bff" data-toggle="tooltip" title="Notifications"><i
               class="bi bi-chat-right-text-fill"></i></button>
-          <button style="padding-right:2%; background:none; border:none; color:#007bff" class="btn btn-primary mb-3">
+<!--          <button style="padding-right:2%; background:none; border:none; color:#007bff" class="btn btn-primary mb-3">
             Filter by Status
-          </button>
+          </button>-->
         </div>
       </div>
 

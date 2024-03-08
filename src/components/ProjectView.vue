@@ -23,7 +23,7 @@
           <h2>Project Information</h2>
           <br/>
           <div style="display:flex; flex-flow:row; justify-content: space-between">
-            <router-link to="/"><i class="bi bi-arrow-left-square-fill"></i></router-link>
+            <router-link to="/" data-toggle="tooltip" title="Back to Project Dashboard"><i style="font-size: larger" class="bi bi-arrow-left-square-fill"></i></router-link>
             <div v-if="brigeheads && brigeheads.length > 1">
               <span class="bold-text">Bridgehead:</span>&nbsp;
               <select v-model="activeBridgehead">
@@ -33,28 +33,28 @@
               </select>
             </div>
             <div>
-              <button @click="toggleProgress" class="btn btn-dark"
+              <button data-toggle="tooltip" title="Progress" @click="toggleProgress" class="btn btn-dark"
                       style="background: none; border:none; color:#007bff; width:auto;">
-                <i class="bi bi-clipboard-check-fill"></i>
+                <i style="font-size: larger" class="bi bi-clipboard-check-fill"></i>
               </button>
-              <button @click="toggleNotification" class="btn btn-dark"
+              <button data-toggle="tooltip" title="Notifications" @click="toggleNotification" class="btn btn-dark"
                       style="background: none; border:none; color:#007bff; width:auto;">
-                <i class="bi bi-chat-right-text-fill"></i>
+                <i style="font-size: larger" class="bi bi-chat-right-text-fill"></i>
               </button>
             </div>
           </div>
           <table class="table table-bordered">
-            <thead>
+            <thead >
             <tr>
-              <th scope="col">Data Request Number (DRN)</th>
-              <th scope="col">Project State</th>
-              <th scope="col">Bridgehead State</th>
+              <th style="background-color: #f2f2f2" scope="col">Data Request Number (DRN)</th>
+              <th style="background-color: #f2f2f2" scope="col">Project State</th>
+              <th style="background-color: #f2f2f2" scope="col">Bridgehead State</th>
               <th v-if="dataShieldStatus" scope="col">DataSHIELD Status</th>
-              <th scope="col">Creator</th>
-              <th scope="col">Created at</th>
-              <th scope="col">Expires at</th>
-              <th scope="col">Last modified</th>
-              <th scope="col" v-if="existsVotum">Votum</th>
+              <th style="background-color: #f2f2f2" scope="col">Creator</th>
+              <th style="background-color: #f2f2f2" scope="col">Created at</th>
+              <th style="background-color: #f2f2f2" scope="col">Expires at</th>
+              <th style="background-color: #f2f2f2" scope="col">Last modified</th>
+              <th style="background-color: #f2f2f2" scope="col" v-if="existsVotum">Votum</th>
             </tr>
             </thead>
             <tbody>

@@ -83,7 +83,7 @@ export default class UploadButton extends Vue {
          <input id="labelInput" type="text" v-model="label" placeholder="Enter label" class="form-control">
 
         <div style="padding-left: 2%">
-          <label for="fileInput" class="btn btn-primary" style="background-color:white; color:black; border:none; margin-top:8%; font-size: larger" >
+          <label for="fileInput" class="btn btn-primary" style="background:none; color:black; border:none; margin-top:8%; font-size: larger" >
             <i class="bi bi-cloud-upload"></i>
             <input id="fileInput" type="file" ref="fileInput" @change="handleFileChange" style="display: none;">
           </label>

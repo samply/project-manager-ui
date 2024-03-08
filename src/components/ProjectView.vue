@@ -172,7 +172,7 @@
             <div class="table-responsive">
               <h3>Requested Data</h3>
               <br/>
-              <table class="table table-bordered custom-table">
+              <table class="table table-hover table-bordered" >
                 <tbody>
                 <ProjectFieldRow field-key="Title" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label" :call-refreh-context="refreshContext"
@@ -521,10 +521,10 @@ export default defineComponent({
 .button-container-right button {
   margin-bottom: 8px;
 }
-
+/*
 .table-responsive {
   overflow-x: auto;
-}
+}*/
 
 .custom-table td.bold-text {
   font-weight: bold;

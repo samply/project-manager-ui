@@ -99,15 +99,15 @@ export default class ProjectFieldRow extends Vue {
 <template>
   <tr>
     <!-- FIRST COLUMN TITLE-->
-    <td class="bold-text thinner-column"  style="background-color: #f2f2f2;">{{ fieldKey }}</td>
+    <td class="bold-text thinner-column"  style="background-color: #f2f2f2; width:20%">{{ fieldKey }}</td>
 
 
     <!-- MIDDLE COLUMN VALUES-->
 
-    <td class="wider-column">
+    <td style="width:70%">
       <div class="user-input-container">
 
-        <div style="display:flex; flex-flow:row; width:100%;" v-if="editing && !possibleValues && fieldKey!='Application form' && fieldKey!='Other Documents' && fieldKey!='Other URL'  && fieldKey!='Publications' && fieldKey!='Votum'">
+        <div style="display:flex; flex-flow:row; width:100%;" v-if="editing && !possibleValues && fieldKey!='Application form' && fieldKey!='Other Documents' && fieldKey!='Other URL'  && fieldKey!='Publications' && fieldKey!='Votum'  && fieldKey!='Description'">
           <div style="width:75%">
             <input id="labelInput" type="text" v-model="editedValue"  class="form-control"></div>
           <div class="button-container" style="width:25%; gap:3%">
@@ -116,7 +116,8 @@ export default class ProjectFieldRow extends Vue {
           </div>
         </div>
 
-        <div style="display:flex; flex-flow:row; width:100%;" v-else-if="editing && fieldKey!='Application form' && fieldKey!='Other Documents' && fieldKey!='Other URL' && fieldKey!='Publications' && fieldKey!='Votum'">
+
+        <div style="display:flex; flex-flow:row; width:100%;" v-else-if="editing && fieldKey!='Application form' && fieldKey!='Other Documents' && fieldKey!='Other URL' && fieldKey!='Publications' && fieldKey!='Votum'  && fieldKey!='Description'">
           <div style="width:75%">
            <select v-model="editedValue" class="form-select">
            <option v-for="value in possibleValues" :key="value" :value="value">{{ value }}</option>
@@ -128,6 +129,17 @@ export default class ProjectFieldRow extends Vue {
             <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
           </div>
         </div>
+
+        <div style="display:flex; flex-flow:row; width:100%;" v-if="editing && fieldKey === 'Description'">
+          <div style="width:75%">
+            <textarea  id="labelInput" type="text" v-model="editedValue"  class="form-control"></textarea></div>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
+          </div>
+        </div>
+
+
 
         <div style="display:flex; flex-flow:row; width:100%;" v-if="editing && fieldKey === 'Application form'">
         <div style="width:75%">
@@ -193,7 +205,7 @@ export default class ProjectFieldRow extends Vue {
 
 
 
-        <div v-if="!editing ">
+        <div style="width:70%" v-if="!editing ">
           <div class="field-value">{{ tempFieldValue }}</div>
         </div>
 

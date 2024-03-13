@@ -3,7 +3,7 @@ import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
-  Bridgehead,
+  Bridgehead, DataShieldProjectStatus,
   Module,
   ProjectManagerContext,
   ProjetManagerBackendService
@@ -23,20 +23,22 @@ export default class BridgeheadOverview extends Vue {
   Module = Module;
   Action = Action;
 
-  headers = ['Bridgeheads', 'Votum', 'State'];
+  headers = ['Bridgeheads', 'Votum', 'Project State', 'DataSHIELD Status' ];
   existsVotums: boolean[] = [];
+  dataShieldStatusArray: DataShieldProjectStatus[] = [];
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
   onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
-    this.updateExistVotums();
+    this.updateBridgeheadExtraInfo();
   }
 
   async created() {
-    this.updateExistVotums();
+    this.updateBridgeheadExtraInfo();
   }
 
-  async updateExistVotums() {
+  async updateBridgeheadExtraInfo() {
     this.existsVotums = await this.fetchExistsVotums();
+    this.dataShieldStatusArray = await this.fetchDataShieldStates();
   }
 
   fetchContext(bridgehead: Bridgehead) {
@@ -50,6 +52,20 @@ export default class BridgeheadOverview extends Vue {
 
   async existsVotum(bridgehead: Bridgehead): Promise<boolean> {
     return this.projectManagerBackendService.fetchData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, this.fetchContext(bridgehead), new Map());
+  }
+
+  async fetchDataShieldStates(): Promise<DataShieldProjectStatus[]> {
+    const promises = this.bridgeheads.map(bridgehead => this.fetchDataShieldState(bridgehead));
+    return Promise.all(promises);
+  }
+
+  async fetchDataShieldState(bridgehead: Bridgehead): Promise<DataShieldProjectStatus> {
+    return this.projectManagerBackendService.isModuleActionActive(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION).then(condition =>
+          (condition) ? this.projectManagerBackendService.fetchData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, this.fetchContext(bridgehead), new Map()) : {
+            project_id: this.context.projectCode,
+            bk: bridgehead.bridgehead,
+            project_status: 'NOT AVAILABLE'
+          });
   }
 
 
@@ -78,7 +94,13 @@ export default class BridgeheadOverview extends Vue {
             <div v-else class="exist-votum red"></div>
           </div>
           <!-- Third row: bridgehead.state -->
-          <div v-else :class="{ 'accepted-state': bridgehead.state === 'ACCEPTED' }">{{ bridgehead.state }}</div>
+          <div v-else-if="index === 2" :class="{ 'accepted-state': bridgehead.state === 'ACCEPTED' }">{{ bridgehead.state }}</div>
+          <div v-else>
+            <div v-if="dataShieldStatusArray[bridgeheadIndex]">
+              {{ dataShieldStatusArray[bridgeheadIndex].project_status}}
+            </div>
+            <div v-else></div>
+          </div>
         </td>
       </tr>
       </tbody>

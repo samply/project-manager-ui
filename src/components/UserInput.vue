@@ -92,10 +92,16 @@ export default class UserInput extends Vue {
   }
 
   updateCurrentUsers() {
-    this.currentUsers = [];
+    let index = 0;
     this.bridgeheads.forEach(bridgehead => this.projectManagerBackendService
         .fetchData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, this.createContext(bridgehead), new Map())
-        .then(currentUsers => this.currentUsers.push(...currentUsers)));
+        .then(currentUsers => {
+          if (index == 0){
+            this.currentUsers = [];
+          }
+          index += 1;
+          this.currentUsers.push(...currentUsers)
+        }));
   }
 
   createContext(bridgehead: Bridgehead | undefined) {

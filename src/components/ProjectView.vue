@@ -389,7 +389,7 @@ import {
   Notification,
   Project,
   ProjectDocument,
-  ProjectManagerContext,
+  ProjectManagerContext, ProjectRole,
   ProjetManagerBackendService,
   Site
 } from "@/services/projetManagerBackendService";
@@ -460,7 +460,8 @@ export default defineComponent({
       existsScript: false,
       projectConfigurations: [] as string[],
       currentProjectConfiguration: '',
-      currentProjectConfigurationFields: [] as string[]
+      currentProjectConfigurationFields: [] as string[],
+      projectRoles: [] as ProjectRole[]
     };
   },
   watch: {
@@ -567,6 +568,7 @@ export default defineComponent({
         this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), 'existsApplicationForm');
         this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), 'existsScript');
         this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript');
+        this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, new Map(), 'projectRoles');
       }
     },
 

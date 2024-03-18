@@ -2,16 +2,18 @@
 import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
-  Action,
-  Module,
+  Action, Bridgehead,
+  Module, ProjectDocument,
   ProjectManagerContext,
   ProjetManagerBackendService
 } from "@/services/projetManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
+import UploadButton from "@/components/UploadButton.vue";
 
 @Options({
   name: "ProjectFieldRow",
-  components: {DownloadButton}
+  components: {DownloadButton, UploadButton}
+
 })
 export default class ProjectFieldRow extends Vue {
   @Prop() readonly fieldKey!: string;
@@ -23,12 +25,24 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly possibleValues!: string[];
   @Prop() readonly isEditable!: boolean;
   @Prop({ type: Function, required: true }) readonly callRefrehContext!: () => void;
+  @Prop() readonly module!: Module;
+  @Prop() readonly action!: Action;
+  @Prop() readonly existsApplicationForm!: boolean;
+  @Prop() readonly bridgeheads!: string[];
+  @Prop() readonly fetchListAction!: Action;
+
+
 
   editing = false; // Flag to indicate if the field is being edited
   editedValue = ''; // Store edited value temporarily
   tempFieldValue = ''; // Initialize tempFieldValue with empty string
   isActionEnabled = false;
   progress = 0;
+  Module = Module; // Bind the Module enum to the component instance
+  Action = Action; // Bind the Action enum to the component instance
+  projectDocuments: ProjectDocument[] = [];
+  projectDocumentIds = new Set<string>();
+
 
 
   @Watch('projectManagerBackendService', { immediate: true, deep: true })
@@ -45,10 +59,27 @@ export default class ProjectFieldRow extends Vue {
   onRedirectUrlChange(newValue: string, oldValue: string) {
     console.log('redirectURL:' + newValue)
   }
+  createContext(bridgehead: Bridgehead) {
+    return new ProjectManagerContext(this.context.projectCode, bridgehead.bridgehead);
+  }
+/*  fetchProjectDocuments() {
+    this.projectDocuments = [];
+    this.projectDocumentIds = new Set<string>();
+    this.bridgeheads.forEach(bridgehead => this.projectManagerBackendService
+        .fetchData(Module.PROJECT_DOCUMENTS_MODULE, this.fetchListAction, this.createContext(bridgehead), new Map())
+        .then(results => (results as ProjectDocument[]).forEach(result => {
+          let key = JSON.stringify(result);
+          if (!this.projectDocumentIds.has(key)){
+            this.projectDocuments.push(result);
+            this.projectDocumentIds.add(key);
+          }
+        })));
+  }*/
 
   // Initialize tempFieldValue with the initial value of fieldValue
   created() {
     this.tempFieldValue = this.fieldValue;
+    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION).then(isActive => this.isActionEnabled = isActive);
     this.resetIsActionEnabled();
   }
 
@@ -105,44 +136,120 @@ export default class ProjectFieldRow extends Vue {
     }
   }
 
+  getBridgeheadsArray(string: string) {
+    if (typeof string === 'string') {
+      const array = string.replace(/^\[|\]$/g, '').split(',').map(item => item.trim());
+      return array;
+    } else {
+      return [];
+    }
+  }
+
 }
 </script>
 
 <template>
   <tr>
     <td class="bold-text thinner-column" style="background-color: #f2f2f2;">{{ fieldKey }}</td>
-    <td class="wider-column">
+
+    <td style="width:70%">
       <div class="user-input-container">
-        <div v-if="editing && !possibleValues">
-          <input type="text" v-model="editedValue"/>
-          <div class="button-container">
-            <button @click="saveField">Save</button>
-            <button @click="cancelEdit">Cancel</button>
+        <!-- FOR CELL THAT ARE JUST TEXT-FIELDS EDITABLE-->
+        <div style="display:flex; flex-flow:row; width:100%;"  v-if="editing && !possibleValues && fieldKey!='Application form' && fieldKey!='Votum'  && fieldKey!='Description'">
+          <div style="width:75%;">
+            <input id="labelInput" type="text" v-model="editedValue" class="form-control"/>
+          </div>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
           </div>
         </div>
-        <div v-else-if="editing && possibleValues">
-          <select v-model="editedValue">
-            <option v-for="value in possibleValues" :key="value" :value="value" :selected="value === getSelectedOption()">{{ value }}</option>
-          </select>
-          <div class="button-container">
-            <button @click="saveField">Save</button>
-            <button @click="cancelEdit">Cancel</button>
+        <!-- CELL FOR DROPDOWNS EDITABLE-->
+        <div style="display:flex; flex-flow:row; width:100%;"  v-else-if="editing && possibleValues && fieldKey!='Application form' && fieldKey!='Votum'  && fieldKey!='Description'">
+          <div style="width:75%">
+            <select v-model="editedValue" class="form-select">
+              <option v-for="value in possibleValues" :key="value" :value="value" :selected="value === getSelectedOption()">{{ value }}</option>
+            </select>
+            </div>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
           </div>
         </div>
-        <div v-else>
+        <!-- CELL FOR DESCRIPTION WITH TEXTAREA EDITABLE-->
+        <div style="display:flex; flex-flow:row; width:100%;" v-if="editing && fieldKey === 'Description'">
+          <div style="width:75%">
+            <textarea  id="labelInput" type="text" v-model="editedValue"  class="form-control"></textarea></div>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
+          </div>
+        </div>
+        <!-- CELL FOR APPLICATION FORM EDITABLE-->
+        <div style="display:flex; flex-flow:row; width:100%;" v-if="editing && fieldKey === 'Application form'">
+          <div style="width:75%">
+            <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE"
+                            :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION"
+                            text="Download application form template" /> <br/>
+            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
+                          text="Upload application form" :call-refreh-context="callRefrehContext" :is-file="true" />
+          </div>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
+          </div>
+        </div>
+
+        <!--CELL FOR VOTUMN EDITABLE-->
+        <div style="display:flex; flex-flow:row; width:100%" v-if="editing && fieldKey === 'Votum'">
+          <div style="width:75%">
+            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
+                          text="Upload Votum" :call-refreh-context="callRefrehContext" :is-file="true"/>
+          </div>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
+          </div>
+        </div>
+
+        <!-- CELL ALL VALUES READONLY -->
+        <div style="width:70%" v-if="!editing && fieldKey !== 'Bridgeheads' ">
           <div class="field-value truncate">{{ tempFieldValue }}</div>
+        </div>
+
+        <div style="width:70%" v-if="!editing && fieldKey === 'Application form' ">
+          <div class="field-value truncate"  v-for="(projectDocument, index) in projectDocuments" :key="index"> {{ projectDocument.label }}</div>
+        </div>
+
+
+        <div style="width:70%" v-if="!editing && fieldKey === 'Bridgeheads'">
+          <div class="field-value">
+            <span v-for="(bridgehead, index) in context.bridgehead" :key="index" class="btn btn-primary" style="margin-right: 2%; margin-bottom: 1%">{{ context.bridgehead }}</span>
+          </div>
         </div>
       </div>
     </td>
-    <div v-if="isFieldValueEditable() && redirectUrl === null">
-      <td><i class="bi bi-pencil me-2" @click="editField"></i></td>
+
+    <!-- THIRD COLUMN ACTION TOOLS -->
+    <td>
+      <div v-if="isFieldValueEditable() && redirectUrl === null && fieldKey != 'Application form' ">
+        <i class="bi bi-pencil me-2" @click="editField"></i>
+      </div>
+      <div v-if="isFieldValueEditable() && redirectUrl === null && fieldKey === 'Application form'" style="display:flex; flex-flow:row; align-items: center;">
+        <i class="bi bi-pencil me-2" @click="editField"></i>
+        <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                        :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
+        />
+      </div>
+
+      <div v-else-if="isFieldValueEditable() && redirectUrl !== null">
+      <i class="bi bi-arrow-right-circle" @click="redirectToURL"></i>
     </div>
-    <div v-else-if="isFieldValueEditable() && redirectUrl !== null">
-      <td><i class="bi bi-arrow-right-circle" @click="redirectToURL"></i></td>
-    </div>
-    <div v-else>
-      <td/>
-    </div>
+    <div v-else></div>
+      </td>
   </tr>
 </template>
 
@@ -185,7 +292,7 @@ export default class ProjectFieldRow extends Vue {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: calc(100 * 1ch); /* 1ch is the width of one character */
+  max-width: calc(50 * 1ch); /* 1ch is the width of one character */
 }
 
 </style>

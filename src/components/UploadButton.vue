@@ -77,10 +77,11 @@ export default class UploadButton extends Vue {
         <div class="form-group" style="display:flex;  width:80%; flex-flow:column">
           <label for="labelInput" class="form-label font-weight-bold" style="display:flex; width:70%"><strong>{{ text }}:</strong></label>
 
-          <div style="display:flex; width: 100%; flex-flow: row;">
-          <div style="display: flex; flex-flow: row; align-items: center;">
+          <div  style="display:flex; width: 100%; flex-flow: row;">
+
+          <div  v-if="isFile" style="display: flex; flex-flow: row; align-items: center;">
             <input id="labelInput" type="text" v-model="label" placeholder="Enter label" class="form-control" style="border-radius: 5px 0px 0px 5px">
-            <label for="fileInput" class="btn btn-primary" style="background:none; height:100%; border: solid 0.5px lightgrey; color:black; border-radius: 0px 5px 5px 0px">
+            <label  for="fileInput" class="btn btn-primary" style="background:none; height:100%; border: solid 0.5px lightgrey; color:black; border-radius: 0px 5px 5px 0px">
               <i class="bi bi-file-plus"></i>
               <input id="fileInput" type="file" ref="fileInput" @change="handleFileChange" style="display: none;">
             </label>
@@ -89,7 +90,9 @@ export default class UploadButton extends Vue {
             </button>
           </div>
 
-          <div v-if="!isFile" style="display: flex; flex-flow: row; align-items: center;">
+          <div v-if="!isFile" style="display: flex; flex-flow: row; align-items: center; ">
+            <input id="labelInput" type="text" v-model="label" placeholder="Enter label" class="form-control" style="border-radius: 5px 5px 5px 5px; margin-right:2%">
+
             <input id="labelInput"  type="text" v-model="url" placeholder="Enter URL" class="form-control" style="border-radius: 5px 0px 0px 5px">
             <label for="fileInput" class="btn btn-primary" style="background:none; height:100%; border: solid 0.5px lightgrey; color:black; border-radius: 0px 5px 5px 0px">
               <i class="bi bi-file-plus"></i>

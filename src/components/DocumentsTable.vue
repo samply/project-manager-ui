@@ -71,7 +71,7 @@ export default class DocumentsTable extends Vue {
 
 <template>
   <div v-if="projectDocuments && projectDocuments.length > 0" class="project-document-table">
-    <span v-if="text">{{ text }}</span>
+    <span v-if="text"><strong>{{ text }}</strong></span>
     <br/>
     <table>
       <thead>

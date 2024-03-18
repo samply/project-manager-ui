@@ -44,21 +44,25 @@ export default class DownloadButton extends Vue {
       this.updateIsActive();
     });
   }
-
 }
 </script>
 
 <template>
-  <div v-if="isActive">
-    <span v-if="text" style="font-weight: bold; margin-bottom: 1%">{{ text }}</span>
+  <div v-if="isActive" style="display:flex; flex-flow: row">
+    <span v-if="text" style=" margin-bottom: 1%; padding-right:10px">{{ text }}</span>
+
     <div v-if="!iconClass">
-      <button style="background: none; border:none; color: black" @click="downloadFile" class="btn btn-primary">Download</button>
-    </div>
-    <div v-if="iconClass">
-      <button @click="downloadFile" class="btn btn-primary">
-        <i class="iconClass"></i>
+      <button  @click="downloadFile" class="btn btn-primary" style="background:none; border:black; color:black;  ">
+        <i class="bi bi-download"></i>
       </button>
     </div>
+
+    <div v-if="iconClass">
+      <button :class="iconClass" @click="downloadFile" class="btn btn-primary" style="background:none; border:none; color:black">
+        <i class="bi bi-download"></i>
+      </button>
+    </div>
+
   </div>
 </template>
 

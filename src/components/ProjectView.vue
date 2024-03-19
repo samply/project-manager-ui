@@ -196,10 +196,6 @@
                                  :field-value="currentProjectConfiguration" :call-refreh-context="refreshContext"
                                  :possible-values="projectConfigurations"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                </tbody>
-              </table>
-              <table class="table table-bordered custom-table table-hover">
-                <tbody>
                 <ProjectFieldRow field-key="Type" edit-project-param="project-type" :is-editable="isNotIncludedInCurrentProjectConfiguration('type')"
                                  :field-value="project.type" :call-refreh-context="refreshContext"
                                  :possible-values="projectTypes"

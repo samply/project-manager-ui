@@ -44,7 +44,6 @@ export default class ProjectFieldRow extends Vue {
   projectDocumentIds = new Set<string>();
 
 
-
   @Watch('projectManagerBackendService', { immediate: true, deep: true })
   onProjetManagerBackendServiceChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
     this.resetIsActionEnabled();
@@ -155,7 +154,7 @@ export default class ProjectFieldRow extends Vue {
     <td style="width:70%">
       <div class="user-input-container">
         <!-- FOR CELL THAT ARE JUST TEXT-FIELDS EDITABLE-->
-        <div style="display:flex; flex-flow:row; width:100%;"  v-if="editing && !possibleValues && fieldKey!='Application form' && fieldKey!='Votum'  && fieldKey!='Description'">
+        <div style="display:flex; flex-flow:row; width:100%;"  v-if="editing && !possibleValues && fieldKey!='Application form' && fieldKey!='Votum'  && fieldKey!='Description' && fieldKey!='Skript'">
           <div style="width:75%;">
             <input id="labelInput" type="text" v-model="editedValue" class="form-control"/>
           </div>
@@ -165,7 +164,7 @@ export default class ProjectFieldRow extends Vue {
           </div>
         </div>
         <!-- CELL FOR DROPDOWNS EDITABLE-->
-        <div style="display:flex; flex-flow:row; width:100%;"  v-else-if="editing && possibleValues && fieldKey!='Application form' && fieldKey!='Votum'  && fieldKey!='Description'">
+        <div style="display:flex; flex-flow:row; width:100%;"  v-else-if="editing && possibleValues && fieldKey!='Application form' && fieldKey!='Votum'  && fieldKey!='Description' && fieldKey!='Skript'">
           <div style="width:75%">
             <select v-model="editedValue" class="form-select">
               <option v-for="value in possibleValues" :key="value" :value="value" :selected="value === getSelectedOption()">{{ value }}</option>
@@ -215,6 +214,18 @@ export default class ProjectFieldRow extends Vue {
           </div>
         </div>
 
+        <div style="display:flex; flex-flow:row; width:100%" v-if="editing && fieldKey === 'Skript'">
+          <div style="width:75%">
+            <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_SCRIPT_ACTION"
+                            icon-class="bi bi-download"/>
+          </div>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
+          </div>
+        </div>
+
         <!-- CELL ALL VALUES READONLY -->
         <div style="width:70%" v-if="!editing && fieldKey !== 'Bridgeheads' ">
           <div class="field-value truncate">{{ tempFieldValue }}</div>
@@ -227,7 +238,9 @@ export default class ProjectFieldRow extends Vue {
 
         <div style="width:70%" v-if="!editing && fieldKey === 'Bridgeheads'">
           <div class="field-value">
-            <span v-for="(bridgehead, index) in context.bridgehead" :key="index" class="btn btn-primary" style="margin-right: 2%; margin-bottom: 1%">{{ context.bridgehead }}</span>
+            <div v-for="(bridgehead, index) in tempFieldValue" :key="index" style="margin-right:2%" class="btn btn-primary"  >
+              <span style="margin-right: 2%; margin-bottom: 1%">{{ bridgehead }}</span>
+            </div>
           </div>
         </div>
       </div>

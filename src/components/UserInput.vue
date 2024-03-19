@@ -121,7 +121,7 @@ export default class UserInput extends Vue {
     <span>Invite user to this stage:</span>&nbsp;
     <div class="user-input-container">
       <input class="user-input" type="text" v-model="partialEmail" @input="handleInput" @keyup.enter="handleSave"/>
-      <select v-model="selectedBridgehead">
+      <select v-model="selectedBridgehead" class="form-select">
         <option v-for="bridgehead in bridgeheads" :key="bridgehead.bridgehead" :value="bridgehead"
                 :selected="bridgehead === selectedBridgehead">{{ bridgehead.bridgehead }}
         </option>

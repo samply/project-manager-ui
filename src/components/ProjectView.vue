@@ -27,7 +27,7 @@
                               :context="context" :bridgeheads="visibleBridgeheads" />
           <br/>
           <div style="display:flex; flex-flow:row; justify-content: space-between">
-            <router-link to="/"><i class="bi bi-arrow-left-square-fill"></i></router-link>
+            <router-link to="/" data-toggle="tooltip" data-placement="top" title="Back to Project Dashboard"><i class="bi bi-arrow-left-square-fill"></i></router-link>
             <div v-if="visibleBridgeheads && visibleBridgeheads.length > 1">
               <span class="bold-text">Bridgehead:</span>&nbsp;
               <select v-model="activeBridgehead">
@@ -40,11 +40,11 @@
               <span>{{ context.bridgehead }}</span>
             </div>
             <div>
-              <button @click="toggleProgress" class="btn btn-dark"
+              <button data-toggle="tooltip" data-placement="top" title="Progress" @click="toggleProgress" class="btn btn-dark"
                       style="background: none; border:none; color:#007bff; width:auto;">
                 <i class="bi bi-clipboard-check-fill"></i>
               </button>
-              <button @click="toggleNotification" class="btn btn-dark"
+              <button data-toggle="tooltip" data-placement="top" title="Notifications" @click="toggleNotification" class="btn btn-dark"
                       style="background: none; border:none; color:#007bff; width:auto;">
                 <i class="bi bi-chat-right-text-fill"></i>
               </button>
@@ -174,7 +174,7 @@
           <hr/>
         </div>
 
-        <div class="container mt-12" style="margin-bottom: 10%;">
+        <div class="container mt-12" style="margin-bottom: 8%;">
           <div v-if="project">
             <br/>
             <div class="table-responsive">
@@ -201,13 +201,13 @@
                                  :possible-values="projectTypes"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <!-- TODO: Edit Query -->
-                <ProjectFieldRow field-key="Query"
+<!--                <ProjectFieldRow field-key="Query"
                                  :field-value="project.query"
                                  edit-project-param="query"
                                  :call-refreh-context="refreshContext"
                                  :redirect-url="project.explorerUrl"
                                  :is-editable="true"
-                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>-->
                 <ProjectFieldRow field-key="Query (Human readable)"
                                  :field-value="project.humanReadable"
                                  edit-project-param="human-readable"
@@ -324,20 +324,20 @@
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
                           text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false"/>
             <br/>
-            <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
-                            :fetch-list-action="Action.FETCH_OTHER_DOCUMENTS_ACTION"
-                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Other documents: "/>
-            <br/>
+
+          <div style="display:flex; flex-flow:row;  width:100% ">
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
                           text="Upload other document" :call-refreh-context="refreshContext" :is-file="true"/>
-            <br/>
+
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
-                          text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false"/>
-
-          </div>
+                          text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false"/></div>
+<br/>
+            <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
+                            :fetch-list-action="Action.FETCH_OTHER_DOCUMENTS_ACTION"
+                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Other documents: "/></div>
         </div>
       </div>
 

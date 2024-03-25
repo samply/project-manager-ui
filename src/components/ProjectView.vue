@@ -180,23 +180,40 @@
             <div class="table-responsive">
               <h3>Requested Data</h3>
               <br/>
+              <div class="container">
+                <div class="row justify-content-center">
+                  <div class="col-auto">
+                    <!-- Bootstrap Stepper -->
+                    <div class="stepper">
+                      <div v-for="(step, index) in steps" :key="index" :class="{ 'stepper-item': true, 'active': currentStep === index }">{{ step }}</div>
+                    </div>
+                    <!-- Navigationstasten -->
+                    <div class="button-container mt-3">
+                      <button class="btn btn-primary me-2" @click="prevStep" :disabled="currentStep === 0">Zurück</button>
+                      <button class="btn btn-primary" @click="nextStep" :disabled="currentStep === steps.length - 1">Weiter</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+              <br/>
               <table class="table table-bordered custom-table  table-hover">
                 <tbody>
-                <ProjectFieldRow field-key="Title" edit-project-param="label" :is-editable="true"
+                <ProjectFieldRow v-if="currentStep==0 || currentStep==4" field-key="Title" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="Description" edit-project-param="description" :is-editable="true"
+                <ProjectFieldRow v-if="currentStep==0 || currentStep==4" field-key="Description" edit-project-param="description" :is-editable="true"
                                  :field-value="project.description" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="Bridgeheads" edit-project-param="bridgeheads" :is-editable="true"
+                <ProjectFieldRow v-if="currentStep==0 || currentStep==4" field-key="Bridgeheads" edit-project-param="bridgeheads" :is-editable="true"
                                  :field-value="bridgeheads" :call-refreh-context="refreshContext"
                                  :redirect-url="project.explorerUrl"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="Configuration" edit-project-param="project-configuration" :is-editable="true"
+                <ProjectFieldRow v-if="currentStep==1 || currentStep==4" field-key="Configuration" edit-project-param="project-configuration" :is-editable="true"
                                  :field-value="currentProjectConfiguration" :call-refreh-context="refreshContext"
                                  :possible-values="projectConfigurations"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="Type" edit-project-param="project-type" :is-editable="isNotIncludedInCurrentProjectConfiguration('type')"
+                <ProjectFieldRow v-if="currentStep==1 || currentStep==4" field-key="Type" edit-project-param="project-type" :is-editable="isNotIncludedInCurrentProjectConfiguration('type')"
                                  :field-value="project.type" :call-refreh-context="refreshContext"
                                  :possible-values="projectTypes"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
@@ -208,31 +225,31 @@
                                  :redirect-url="project.explorerUrl"
                                  :is-editable="true"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>-->
-                <ProjectFieldRow field-key="Query (Human readable)"
+                <ProjectFieldRow v-if="currentStep==2 || currentStep==4" field-key="Query (Human readable)"
                                  :field-value="project.humanReadable"
                                  edit-project-param="human-readable"
                                  :call-refreh-context="refreshContext"
                                  :redirect-url="project.explorerUrl"
                                  :is-editable="true"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="Query Format" edit-project-param="query-format" :is-editable="true"
+                <ProjectFieldRow v-if="currentStep==2 || currentStep==4" field-key="Query Format" edit-project-param="query-format" :is-editable="true"
                                  :field-value="project.queryFormat" :call-refreh-context="refreshContext"
                                  :possible-values="queryFormats"
                                  :redirect-url="project.explorerUrl"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 <!-- TODO: Separate queries in pairs Key-Values + encrpyt and decrypt in base64-->
-                <ProjectFieldRow field-key="Environment Variables" edit-project-param="query-context" :is-editable="isNotIncludedInCurrentProjectConfiguration('queryContext')"
+                <ProjectFieldRow v-if="currentStep==3 || currentStep==4" field-key="Environment Variables" edit-project-param="query-context" :is-editable="isNotIncludedInCurrentProjectConfiguration('queryContext')"
                                  :field-value="project?.queryContext" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="Output Format" edit-project-param="output-format" :is-editable="isNotIncludedInCurrentProjectConfiguration('outputFormat')"
+                <ProjectFieldRow v-if="currentStep==3 || currentStep==4" field-key="Output Format" edit-project-param="output-format" :is-editable="isNotIncludedInCurrentProjectConfiguration('outputFormat')"
                                  :field-value="project.outputFormat" :call-refreh-context="refreshContext"
                                  :possible-values="outputFormats"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectFieldRow field-key="Template ID" edit-project-param="template-id" :is-editable="isNotIncludedInCurrentProjectConfiguration('templateId')"
+                <ProjectFieldRow v-if="currentStep==3 || currentStep==4" field-key="Template ID" edit-project-param="template-id" :is-editable="isNotIncludedInCurrentProjectConfiguration('templateId')"
                                  :field-value="project.templateId" :call-refreh-context="refreshContext"
                                  :possible-values="exporterTemplateIds"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <tr v-if="dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA'">
+                <tr  v-if="dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && currentStep==2 || currentStep==4">
                   <td class="bold-text thinner-column">Authentication Script</td>
                   <td class="wider-column"></td>
                   <td>
@@ -242,7 +259,7 @@
                                     v-if="existsAuthenticationScript"/>
                   </td>
                 </tr>
-                <tr v-if="existsScript">
+<!--                <tr v-if="existsScript">
                   <td class="bold-text thinner-column">Script</td>
                   <td class="wider-column"></td>
                   <td>
@@ -250,16 +267,20 @@
                                     :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_SCRIPT_ACTION"
                                     icon-class="bi bi-download"/>
                   </td>
-                </tr>
-                <ProjectFieldRow field-key="Application form" edit-project-param="label" :is-editable="true"
+                </tr>-->
+                <ProjectFieldRow v-if="currentStep==0 || currentStep==4" field-key="Application form" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
 
-                <ProjectFieldRow field-key="Votum" edit-project-param="label" :is-editable="true"
+                <ProjectFieldRow v-if="currentStep==0 || currentStep==4" field-key="Samples" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
 
-                <ProjectFieldRow field-key="Script" edit-project-param="label" :is-editable="true"
+                <ProjectFieldRow v-if="currentStep==4" field-key="Votum" edit-project-param="label" :is-editable="true"
+                                 :field-value="project.label" :call-refreh-context="refreshContext"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+
+                <ProjectFieldRow v-if="currentStep==4" field-key="Script" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
 <!--                <tr>
@@ -367,7 +388,6 @@
         </div>
       </div>
     </div>
-  </div>
 
 </template>
 
@@ -453,7 +473,9 @@ export default defineComponent({
       projectConfigurations: [] as string[],
       currentProjectConfiguration: '',
       currentProjectConfigurationFields: [] as string[],
-      projectRoles: [] as ProjectRole[]
+      projectRoles: [] as ProjectRole[],
+      steps: ['Project', 'Type', 'Query', 'Output', 'Summary'], // Die einzelnen Schritte des Steppers
+      currentStep: 0 // Der aktuelle Schritt, beginnend bei 0
     };
   },
   watch: {
@@ -478,6 +500,17 @@ export default defineComponent({
     /*toggleExpand(item: { isExpanded: boolean }) {
       item.isExpanded = !item.isExpanded;
     },*/
+
+    nextStep() {
+      if (this.currentStep < this.steps.length - 1) {
+        this.currentStep++;
+      }
+    },
+    prevStep() {
+      if (this.currentStep > 0) {
+        this.currentStep--;
+      }
+    },
 
     toggleNotification() {
       this.showNotification = !this.showNotification;
@@ -616,6 +649,29 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.stepper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stepper-item {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  border-bottom: 2px solid #ddd;
+}
+
+.stepper-item.active {
+  font-weight: bold;
+  color: #333;
+}
+
+/* Stil für die Navigationstasten */
+.button-container {
+  text-align: center;
+}
+
 .container {
   display: flex;
   flex-direction: column;

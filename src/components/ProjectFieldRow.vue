@@ -27,7 +27,10 @@ export default class ProjectFieldRow extends Vue {
   @Prop({ type: Function, required: true }) readonly callRefrehContext!: () => void;
   @Prop() readonly module!: Module;
   @Prop() readonly action!: Action;
-  @Prop() readonly existsApplicationForm!: boolean;
+  @Prop()  existsApplicationForm!: boolean;
+  @Prop() readonly existsVotum!: boolean;
+  @Prop() readonly existsAuthenticationScript!: boolean;
+  @Prop() readonly existsScript!: boolean;
   @Prop() readonly bridgeheads!: string[];
   @Prop() readonly fetchListAction!: Action;
   @Prop() readonly downloadAction!: Action;
@@ -130,28 +133,23 @@ export default class ProjectFieldRow extends Vue {
   showInputFields() {
     this.showInputs = true;
   }
-
   addBridgehead() {
     if (this.newValue) {
-      if (this.tempFieldValue !== '') {
-        this.tempFieldValue += `,${this.newValue}`;
+      if (this.tempFieldValue) {
+        this.tempFieldValue += `,${this.newValue}`; // Fügen Sie das neue Element dem String hinzu
       } else {
-        this.tempFieldValue += `${this.newValue}`;
+        this.tempFieldValue += this.newValue;
       }
       this.newValue = '';
       this.showInputs = false;
-
-      // Convert tempFieldValue to string if it's not already
-      if (Array.isArray(this.tempFieldValue)) {
-        this.tempFieldValue = this.tempFieldValue.join(',');
-      }
     }
   }
-  removeBridgehead(index: any) {
-    const bridgeheads = this.tempFieldValue.split(',').filter(Boolean);
-    bridgeheads.splice(index, 1);
-    this.tempFieldValue = bridgeheads.join(',');
+  removeBridgehead(index:any) {
+    const bridgeheads = this.tempFieldValue.split(','); // Split den String in ein Array
+    bridgeheads.splice(index, 1); // Entfernen Sie das Element aus dem Array
+    this.tempFieldValue = bridgeheads.join(','); // Verbinden Sie das Array wieder zu einem String
   }
+
 
   addVariable() {
     if (this.newKey && this.newValue) {
@@ -219,10 +217,10 @@ export default class ProjectFieldRow extends Vue {
         <div v-if="editing && fieldKey === 'Bridgeheads'">
           <div class="field-value" style="width: 70%">
             <div v-if="tempFieldValue" class="field-value">
-        <span v-for="(bridgehead, index) in tempFieldValue" :key="index" class="btn btn-primary" style="margin-right: 2%;">
-          <span>{{ bridgehead }}</span>
+      <span v-for="(bridgehead, index) in tempFieldValue.split(',').filter(Boolean)" :key="index" class="btn btn-primary" style="margin-right: 2%;">
+        <span>{{ bridgehead }}</span>
         <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i style="color: white; font-size: 18px" class="bi bi-x"></i></button>
-        </span>
+      </span>
             </div>
             <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
             <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
@@ -267,13 +265,27 @@ export default class ProjectFieldRow extends Vue {
             <br/>
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
-                          text="Upload application form" :call-refreh-context="callRefrehContext" :is-file="true" />
+                          text="Upload application form" :call-refreh-context="callRefrehContext" :is-file="true"  />
           </div>
           <div class="button-container" style="width:25%; gap:3%">
             <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
             <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
           </div>
         </div>
+
+        <!-- CELL FOR AUTHENTICATION SCRIPT EDITABLE-->
+        <div style="display:flex; flex-flow:row; width:100%;" v-if="editing && fieldKey === 'Authentication Script'">
+          <div style="width:75%">
+            <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.TOKEN_MANAGER_MODULE"
+                            :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION" icon-class="bi bi-download"/>
+          </div>
+          <div class="button-container" style="width:25%; gap:3%">
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
+          </div>
+        </div>
+
 <!-- CELL FOR SAMPLES EDITABLE -->
         <div style="display:flex; flex-flow:row; width:100%;" v-if="editing && fieldKey === 'Samples'">
           <div style="width:75%">
@@ -329,33 +341,39 @@ export default class ProjectFieldRow extends Vue {
           <div  class="field-value truncate" v-if="!existsApplicationForm"> </div>
         </div>
 
-        <div style="width:70%" v-if="!editing && fieldKey === 'Samples' ">
+<!--        <div style="width:70%" v-if="!editing && fieldKey === 'Samples' ">
           <div  class="field-value truncate" v-if="existsApplicationForm">available</div>
           <div  class="field-value truncate" v-if="!existsApplicationForm"> </div>
+        </div>-->
+
+        <div style="width:70%" v-if="!editing && fieldKey === 'Authentication Script' ">
+          <div  class="field-value truncate" v-if="existsAuthenticationScript">available</div>
+          <div  class="field-value truncate" v-if="!existsAuthenticationScript"> </div>
         </div>
         <div style="width:70%" v-if="!editing && fieldKey === 'Votum' ">
-          <div  class="field-value truncate" v-if="existsApplicationForm">available</div>
-          <div  class="field-value truncate" v-if="!existsApplicationForm"> </div>
+          <div  class="field-value truncate" v-if="existsVotum">available</div>
+          <div  class="field-value truncate" v-if="!existsVotum"> </div>
         </div>
         <div style="width:70%" v-if="!editing && fieldKey === 'Script' ">
-          <div  class="field-value truncate" v-if="existsApplicationForm">available</div>
-          <div  class="field-value truncate" v-if="!existsApplicationForm"> </div>
+          <div  class="field-value truncate" v-if="existsScript">available</div>
+          <div  class="field-value truncate" v-if="!existsScript"> </div>
         </div>
 
         <!-- READONLY CELL FOR BRIDGEHEADS -->
         <div v-else-if="!editing && fieldKey === 'Bridgeheads'">
           <div style="width: 70%">
             <div v-if="tempFieldValue" class="field-value">
-        <span v-for="(bridgehead, index) in tempFieldValue" :key="index" class="btn btn-primary" style="margin-right: 2%;">
-          <span>{{ bridgehead }}</span>
-        </span>
+      <span v-for="(bridgehead, index) in tempFieldValue" :key="index" class="btn btn-primary" style="margin-right: 2%;">
+        <span>{{ bridgehead }}</span>
+      </span>
             </div>
           </div>
         </div>
+
         <!-- READONLY CELL FOR ENVIRONMENT VARIABLES -->
         <div v-else-if="!editing && fieldKey === 'Environment Variables'">
           <div style="width: 70%">
-            <div v-for="(variable, index) in tempFieldValue.split(';')" :key="index" style="margin-right: 2%;  display: inline;" class="btn btn-primary">
+            <div v-for="(variable, index) in tempFieldValue.split(';').filter(Boolean)" :key="index" style="margin-right: 2%;  display: inline;" class="btn btn-primary">
               <span style=" display: inline; margin-bottom: 1%">{{ variable }}</span>
             </div>
           </div>
@@ -380,7 +398,7 @@ export default class ProjectFieldRow extends Vue {
       </div>
       <div v-if="isFieldValueEditable() && redirectUrl === null && fieldKey === 'Application form'" style="display:inline-flex; flex-flow:row; align-items: baseline">
         <button class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Edit" style="background:none; border:none; color:black"> <i class="bi bi-pencil me-2" @click="editField"></i> </button>
-        <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+        <DownloadButton v-if="existsApplicationForm" :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
         />
       </div>

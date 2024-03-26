@@ -180,13 +180,14 @@
             <div class="table-responsive">
               <h3>Requested Data</h3>
               <br/>
-              <div class="container">
+              <div class="container" style="width:100%">
                 <div class="row justify-content-center">
-                  <div class="col-auto">
+                  <div class="col-auto" style="width:100%">
                     <!-- Bootstrap Stepper -->
                     <div class="stepper">
-                      <div v-for="(step, index) in steps" :key="index" :class="{ 'stepper-item': true, 'active': currentStep === index }">{{ step }}</div>
-                    </div>
+                      <div v-for="(step, index) in steps" :key="index" class="stepper-item" :class="{ 'active': currentStep === index }">
+                        <button style="background: none; border:none; color: black;" @click="currentStep=index" :style="{ fontWeight: currentStep === index ? 'bold' : 'normal' }">{{ step }}</button>
+                      </div>                    </div>
                     <!-- Navigationstasten -->
                     <div class="button-container mt-3">
                       <button class="btn btn-primary me-2" @click="prevStep" :disabled="currentStep === 0">Zurück</button>
@@ -249,7 +250,14 @@
                                  :field-value="project.templateId" :call-refreh-context="refreshContext"
                                  :possible-values="exporterTemplateIds"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-                <tr  v-if="dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && currentStep==2 || currentStep==4">
+
+                <ProjectFieldRow v-if="existsAuthenticationScript && dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && currentStep==2 || currentStep==4" field-key="Authentication Script" edit-project-param="template-id" :is-editable="isNotIncludedInCurrentProjectConfiguration('templateId')"
+                                 :field-value="project.templateId" :call-refreh-context="refreshContext"
+                                 :possible-values="exporterTemplateIds"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+
+
+<!--                <tr  v-if="dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && currentStep==2 || currentStep==4">
                   <td class="bold-text thinner-column">Authentication Script</td>
                   <td class="wider-column"></td>
                   <td>
@@ -258,7 +266,7 @@
                                     :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION" icon-class="bi bi-download"
                                     v-if="existsAuthenticationScript"/>
                   </td>
-                </tr>
+                </tr>-->
 <!--                <tr v-if="existsScript">
                   <td class="bold-text thinner-column">Script</td>
                   <td class="wider-column"></td>
@@ -272,9 +280,9 @@
                                  :field-value="project.label" :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
 
-                <ProjectFieldRow v-if="currentStep==0 || currentStep==4" field-key="Samples" edit-project-param="label" :is-editable="true"
+<!--                <ProjectFieldRow v-if="currentStep==0 || currentStep==4" field-key="Samples" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label" :call-refreh-context="refreshContext"
-                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>-->
 
                 <ProjectFieldRow v-if="currentStep==4" field-key="Votum" edit-project-param="label" :is-editable="true"
                                  :field-value="project.label" :call-refreh-context="refreshContext"
@@ -328,25 +336,25 @@
                 </tbody>
               </table>
             </div>
-            <UserInput :project="project" :context="context"
+            <UserInput v-if="currentStep==4" :project="project" :context="context"
                        :bridgeheads="visibleBridgeheads"
                        :project-manager-backend-service="projectManagerBackendService"/>
             <br/>
-            <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
+            <DocumentsTable v-if="currentStep==4" :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
                             :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
                             :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Publications: "/>
             <br/>
-            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+            <UploadButton v-if="currentStep==4" :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
                           text="Upload publication" :call-refreh-context="refreshContext" :is-file="true"/>
             <br/>
-            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+            <UploadButton v-if="currentStep==4" :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
                           text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false"/>
             <br/>
 
-          <div style="display:flex; flex-flow:row;  width:100% ">
+          <div style="display:flex; flex-flow:row;  width:100% " v-if="currentStep==4">
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
                           text="Upload other document" :call-refreh-context="refreshContext" :is-file="true"/>
@@ -651,6 +659,7 @@ export default defineComponent({
 <style scoped>
 .stepper {
   display: flex;
+  width:100%;
   justify-content: space-between;
   align-items: center;
 }
@@ -665,11 +674,6 @@ export default defineComponent({
 .stepper-item.active {
   font-weight: bold;
   color: #333;
-}
-
-/* Stil für die Navigationstasten */
-.button-container {
-  text-align: center;
 }
 
 .container {
@@ -780,6 +784,11 @@ export default defineComponent({
 .custom-width-notifications .card {
   margin-bottom: 15px;
 }
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  text-align: center;
 
+}
 
 </style>

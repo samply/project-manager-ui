@@ -21,6 +21,7 @@ export default class UploadButton extends Vue {
   @Prop() readonly action!: Action;
   @Prop() readonly text!: string;
   @Prop() readonly isFile!: boolean;
+  @Prop() existsApplicationForm!: boolean;
   file: File | undefined = undefined;
   label = '';
   url = '';
@@ -37,6 +38,7 @@ export default class UploadButton extends Vue {
 
   updateIsActive() {
     this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result)
+   if(this.text==='Upload application form'){this.existsApplicationForm = true;}
   }
 
   handleFileChange(event: Event): void {

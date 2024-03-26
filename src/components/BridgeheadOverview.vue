@@ -1,9 +1,57 @@
+<template>
+  <div>
+    <table class="bridgehead-table">
+      <tbody>
+      <tr v-for="(header, index) in headers" :key="index">
+        <!-- Header in the first column -->
+        <td class="header-cell">{{ header }}</td>
+        <!-- Data for each bridgehead in subsequent columns -->
+        <td
+            v-for="(bridgehead, bridgeheadIndex) in bridgeheads"
+            :key="bridgeheadIndex"
+            class="data-cell"
+            @click="selectBridgehead(bridgeheadIndex)"
+            :class="{ 'selected': selectedBridgehead === bridgeheadIndex }"
+        >
+          <!-- First row: bridgehead.bridgehead -->
+          <div v-if="index === 0">{{ bridgehead.bridgehead }}</div>
+          <!-- Second row: existVotum -->
+          <div v-else-if="index === 1">
+            <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]" class="exist-votum green">
+              <DownloadButton
+                  :context="context"
+                  :project-manager-backend-service="projectManagerBackendService"
+                  icon-class="bi bi-download"
+                  :module="Module.PROJECT_DOCUMENTS_MODULE"
+                  :action="Action.DOWNLOAD_VOTUM_ACTION"
+              />
+            </div>
+            <div v-else class="exist-votum red"></div>
+          </div>
+          <!-- Third row: bridgehead.state -->
+          <div v-else-if="index === 2" :class="{ 'accepted-state': bridgehead.state === 'ACCEPTED' }">
+            {{ bridgehead.state }}
+          </div>
+          <div v-else>
+            <div v-if="dataShieldStatusArray[bridgeheadIndex]">
+              {{ dataShieldStatusArray[bridgeheadIndex].project_status }}
+            </div>
+            <div v-else></div>
+          </div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
 <script lang="ts">
-import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
+import { Options, Vue } from "vue-class-component";
+import { Prop, Watch } from "vue-property-decorator";
 import {
   Action,
-  Bridgehead, DataShieldProjectStatus,
+  Bridgehead,
+  DataShieldProjectStatus,
   Module,
   ProjectManagerContext,
   ProjetManagerBackendService
@@ -12,22 +60,22 @@ import DownloadButton from "@/components/DownloadButton.vue";
 
 @Options({
   name: "BridgeheadOverview",
-  components: {DownloadButton}
+  components: { DownloadButton }
 })
 export default class BridgeheadOverview extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
   @Prop() readonly bridgeheads!: Bridgehead[];
 
-  // Accessing enums directly
   Module = Module;
   Action = Action;
 
-  headers = ['Bridgeheads', 'Votum', 'Project State', 'DataSHIELD Status' ];
+  headers = ['Bridgeheads', 'Votum', 'Project State', 'DataSHIELD Status'];
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
+  selectedBridgehead: number | null = null;
 
-  @Watch('projectManagerBackendService', {immediate: true, deep: true})
+  @Watch('projectManagerBackendService', { immediate: true, deep: true })
   onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
     this.updateBridgeheadExtraInfo();
   }
@@ -61,55 +109,20 @@ export default class BridgeheadOverview extends Vue {
 
   async fetchDataShieldState(bridgehead: Bridgehead): Promise<DataShieldProjectStatus> {
     return this.projectManagerBackendService.isModuleActionActive(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION).then(condition =>
-          (condition) ? this.projectManagerBackendService.fetchData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, this.fetchContext(bridgehead), new Map()) : {
-            project_id: this.context.projectCode,
-            bk: bridgehead.bridgehead,
-            project_status: 'NOT AVAILABLE'
-          });
+        (condition) ? this.projectManagerBackendService.fetchData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, this.fetchContext(bridgehead), new Map()) : {
+          project_id: this.context.projectCode,
+          bk: bridgehead.bridgehead,
+          project_status: 'NOT AVAILABLE'
+        });
   }
 
-
+  selectBridgehead(index: number) {
+    this.selectedBridgehead = index;
+  }
 }
 </script>
 
-<template>
-  <div>
-    <table class="bridgehead-table">
-      <tbody>
-      <tr v-for="(header, index) in headers" :key="index">
-        <!-- Header in the first column -->
-        <td class="header-cell">{{ header }}</td>
-        <!-- Data for each bridgehead in subsequent columns -->
-        <td v-for="(bridgehead, bridgeheadIndex) in bridgeheads" :key="bridgeheadIndex" class="data-cell">
-          <!-- First row: bridgehead.bridgehead -->
-          <div v-if="index === 0">{{ bridgehead.bridgehead }}</div>
-          <!-- Second row: existVotum -->
-          <div v-else-if="index === 1">
-            <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]" class="exist-votum green">
-              <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                              icon-class="bi bi-download"
-                              :module="Module.PROJECT_DOCUMENTS_MODULE"
-                              :action="Action.DOWNLOAD_VOTUM_ACTION"/>
-            </div>
-            <div v-else class="exist-votum red"></div>
-          </div>
-          <!-- Third row: bridgehead.state -->
-          <div v-else-if="index === 2" :class="{ 'accepted-state': bridgehead.state === 'ACCEPTED' }">{{ bridgehead.state }}</div>
-          <div v-else>
-            <div v-if="dataShieldStatusArray[bridgeheadIndex]">
-              {{ dataShieldStatusArray[bridgeheadIndex].project_status}}
-            </div>
-            <div v-else></div>
-          </div>
-        </td>
-      </tr>
-      </tbody>
-    </table>
-  </div>
-</template>
-
 <style scoped>
-
 .bridgehead-table {
   border-collapse: collapse;
   width: 100%;
@@ -126,6 +139,7 @@ export default class BridgeheadOverview extends Vue {
   border: 1px solid #dddddd;
   padding: 8px;
   vertical-align: top;
+  cursor: pointer;
 }
 
 .exist-votum {
@@ -144,5 +158,9 @@ export default class BridgeheadOverview extends Vue {
 
 .accepted-state {
   background-color: green;
+}
+
+.selected {
+  background-color: lightblue;
 }
 </style>

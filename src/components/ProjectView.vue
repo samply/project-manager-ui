@@ -28,9 +28,10 @@
           <br/>
           <div style="display:flex; flex-flow:row; justify-content: space-between">
             <router-link to="/" data-toggle="tooltip" data-placement="top" title="Back to Project Dashboard"><i class="bi bi-arrow-left-square-fill"></i></router-link>
-            <div v-if="visibleBridgeheads && visibleBridgeheads.length > 1">
+            <div v-if="visibleBridgeheads && visibleBridgeheads.length > 1" style="display:flex; flex-flow:row; width:20%; margin-bottom:2%">
               <span class="bold-text">Bridgehead:</span>&nbsp;
-              <select v-model="activeBridgehead">
+
+              <select  class="form-select" v-model="activeBridgehead">
                 <option v-for="bridgehead in visibleBridgeheads" :key="bridgehead.bridgehead" :value="bridgehead"
                         :selected="bridgehead === activeBridgehead">{{ bridgehead.bridgehead }}
                 </option>

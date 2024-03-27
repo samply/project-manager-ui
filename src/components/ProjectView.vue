@@ -22,13 +22,10 @@
           <br/>
           <h2>Project Information</h2>
           <br/>
-          <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
-              :project-manager-backend-service="projectManagerBackendService"
-                              :context="context" :bridgeheads="visibleBridgeheads" />
-          <br/>
+
           <div style="display:flex; flex-flow:row; justify-content: space-between">
             <router-link to="/" data-toggle="tooltip" data-placement="top" title="Back to Project Dashboard"><i class="bi bi-arrow-left-square-fill"></i></router-link>
-            <div v-if="visibleBridgeheads && visibleBridgeheads.length > 1" style="display:flex; flex-flow:row; width:20%; margin-bottom:2%">
+<!--            <div v-if="visibleBridgeheads && visibleBridgeheads.length > 1" style="display:flex; flex-flow:row; width:20%; margin-bottom:2%">
               <span class="bold-text">Bridgehead:</span>&nbsp;
 
               <select  class="form-select" v-model="activeBridgehead">
@@ -36,7 +33,7 @@
                         :selected="bridgehead === activeBridgehead">{{ bridgehead.bridgehead }}
                 </option>
               </select>
-            </div>
+            </div>-->
             <div v-if="visibleBridgeheads && visibleBridgeheads.length == 1">
               <span>{{ context.bridgehead }}</span>
             </div>
@@ -51,6 +48,11 @@
               </button>
             </div>
           </div>
+
+          <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
+                              :project-manager-backend-service="projectManagerBackendService"
+                              :context="context" :bridgeheads="visibleBridgeheads" />
+          <br/>
           <table class="table table-bordered">
             <thead>
             <tr >

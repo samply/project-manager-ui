@@ -156,18 +156,25 @@ export default class ProjectFieldRow extends Vue {
   addBridgehead() {
     if (this.newValue) {
       if (this.tempFieldValue) {
-        this.tempFieldValue.push(this.newValue); // Add the new bridgehead to the array
+        if (this.tempFieldValue[0].length > 0) {
+          this.tempFieldValue[0] += ',' + this.newValue; // Füge das neue Bridgehead dem String hinzu
+        } else {
+          this.tempFieldValue[0] = this.newValue; // Setze den String auf das neue Bridgehead
+        }
       } else {
-        this.tempFieldValue = [this.newValue];
+        this.tempFieldValue = [this.newValue]; // Erstelle ein neues Array mit dem neuen Bridgehead
       }
       this.newValue = '';
       this.showInputs = false;
     }
   }
 
-  // Method to remove a bridgehead
-  removeBridgehead(index: number) {
-    this.tempFieldValue.splice(index, 1); // Remove the bridgehead at the specified index from the array
+  removeBridgehead(index: any) {
+    if (this.tempFieldValue && this.tempFieldValue[0].length > 0) {
+      const bridgeheads = this.tempFieldValue[0].split(','); // Teile den String an den Kommas
+      bridgeheads.splice(index, 1); // Entferne das Bridgehead an der angegebenen Indexposition
+      this.tempFieldValue[0] = bridgeheads.join(','); // Setze den String wieder zusammen
+    }
   }
 
   // Method to add an environment variable
@@ -202,7 +209,7 @@ export default class ProjectFieldRow extends Vue {
     <td style="width:70%">
       <div class="user-input-container">
         <!-- FOR CELL THAT ARE JUST TEXT-FIELDS EDITABLE-->
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" v-if="editing && !possibleValues && fieldKey !== 'Application form' && fieldKey !== 'Votum' && fieldKey !== 'Description' && fieldKey !== 'Script'  && fieldKey !== 'Environment Variables' && fieldKey !== 'Samples' && fieldKey !== 'Query (Human readable)'">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" v-if="editing && !possibleValues && fieldKey !== 'Application form' && fieldKey !== 'Votum' && fieldKey !== 'Description' && fieldKey !== 'Script'  && fieldKey !== 'Environment Variables' && fieldKey !== 'Samples' && fieldKey !== 'Query (Human readable)' && fieldKey !== 'Bridgeheads'">
           <div style="width: 70%;">
             <input id="labelInput" type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;">
           </div>
@@ -226,7 +233,7 @@ export default class ProjectFieldRow extends Vue {
         </div>
 
         <!-- CELL FOR DROPDOWNS EDITABLE-->
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" v-else-if="editing && possibleValues && fieldKey !== 'Application form' && fieldKey !== 'Votum' && fieldKey !== 'Description' && fieldKey !== 'Script' && fieldKey !== 'Bridgeheads' && fieldKey !== 'Environment Variables' && fieldKey !== 'Samples' && fieldKey !== 'Query (Human readable)'">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" v-else-if="editing && possibleValues && fieldKey !== 'Application form' && fieldKey !== 'Votum' && fieldKey !== 'Description' && fieldKey !== 'Script' && fieldKey !== 'Bridgeheads' && fieldKey !== 'Environment Variables' && fieldKey !== 'Bridgeheads' && fieldKey !== 'Samples' && fieldKey !== 'Query (Human readable)'">
           <div style="width: 70%;">
             <select v-model="editedValue[0]" class="form-select" style="width: 100%;">
               <option v-for="value in possibleValues" :key="value" :value="value">{{ value }}</option>
@@ -250,30 +257,25 @@ export default class ProjectFieldRow extends Vue {
         </div>
 
         <!-- CELL FOR BRIDGEHEADS EDITABLE -->
-<!--        <div v-if="editing && fieldKey === 'Bridgeheads'">
+        <div v-if="editing && fieldKey === 'Bridgeheads'">
           <div class="field-value" style="width: 70%">
-            <div v-if="tempFieldValue" class="field-value">
-      <span v-for="(bridgehead, index) in tempFieldValue.split(',').filter(Boolean)" :key="index"
-            class="btn btn-primary" style="margin-right: 2%;">
+            <div v-if="tempFieldValue">
+      <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary" style="margin-right: 2%;">
         <span>{{ bridgehead }}</span>
-        <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i
-            style="color: white; font-size: 18px" class="bi bi-x"></i></button>
+        <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i style="color: white; font-size: 18px" class="bi bi-x"></i></button>
       </span>
             </div>
             <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
             <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
               <input type="text" class="form-control" v-model="newValue" placeholder="Bridgehead">
-              <button class="btn btn-primary" @click="addBridgehead"><i style="font-size: 18px" class="bi bi-check"></i>
-              </button>
+              <button class="btn btn-primary" @click="addBridgehead"><i style="font-size: 18px" class="bi bi-check"></i></button>
             </div>
           </div>
           <div class="button-container" style="width: 25%; display: flex; height: 20%; gap: 3%;">
-            <button @click="saveField" class="btn btn-outline-secondary" style="padding: 4px 15px 4px 15px;">Cancel
-            </button>
-            <button @click="cancelEdit" class="btn btn-outline-primary" style="padding: 4px 20px 4px 20px;">Save
-            </button>
+            <button @click="saveField" class="btn btn-outline-secondary" style="padding: 4px 15px 4px 15px;">Cancel</button>
+            <button @click="cancelEdit" class="btn btn-outline-primary" style="padding: 4px 20px 4px 20px;">Save</button>
           </div>
-        </div>-->
+        </div>
 
         <!-- CELL FOR ENVIRONMENT VARIABLE EDITABLE -->
         <div v-if="editing && fieldKey === 'Environment Variables'">

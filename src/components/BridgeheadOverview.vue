@@ -82,12 +82,15 @@ export default class BridgeheadOverview extends Vue {
 
   async created() {
     this.updateBridgeheadExtraInfo();
+    this.selectedBridgehead = 0;
+
   }
 
   async updateBridgeheadExtraInfo() {
     this.existsVotums = await this.fetchExistsVotums();
     this.dataShieldStatusArray = await this.fetchDataShieldStates();
   }
+
 
   fetchContext(bridgehead: Bridgehead) {
     return new ProjectManagerContext(this.context.projectCode, bridgehead.bridgehead);
@@ -131,13 +134,16 @@ export default class BridgeheadOverview extends Vue {
 .header-cell {
   background-color: #f2f2f2;
   border: 1px solid #dddddd;
-  padding: 8px;
+  padding: 4px; /* Verringere die Padding-Größe */
+  font-size: 14px; /* Reduziere die Schriftgröße */
   text-align: left;
 }
 
 .data-cell {
   border: 1px solid #dddddd;
-  padding: 8px;
+  padding: 4px; /* Verringere die Padding-Größe */
+  font-size: 14px; /* Reduziere die Schriftgröße */
+
   vertical-align: top;
   cursor: pointer;
 }

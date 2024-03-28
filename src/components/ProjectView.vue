@@ -93,6 +93,7 @@
           </table>
           <div class="text-right mt-4">
             <!-- Project State Module: Creator View -->
+            <!-- v-if="existsApplicationForm" entfernt - statt ganz ausblenden -> design ändern -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.CREATE_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Create"
                                   button-class="btn btn-primary mr-2"
@@ -424,9 +425,11 @@
 
             <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
-                          text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false"/></div>
+                          text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false"/>
+          </div>
 <br/>
-            <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
+            <DocumentsTable v-if="currentStep==4"
+                            :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
                             :fetch-list-action="Action.FETCH_OTHER_DOCUMENTS_ACTION"
                             :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Other documents: "/></div>

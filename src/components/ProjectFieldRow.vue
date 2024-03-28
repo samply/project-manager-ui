@@ -311,7 +311,8 @@ export default class ProjectFieldRow extends Vue {
           </div>
         </div>
 
-<!-- CELL FOR SAMPLES EDITABLE -->
+<!-- CELL FOR SAMPLES EDITABLE - NOCH NICHT TEIL DES ANTRAGS-->
+<!--
         <div style="display:flex; flex-flow:row; width:100%;" v-if="editing && fieldKey === 'Samples'">
           <div style="width:75%">
             <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
@@ -328,6 +329,7 @@ export default class ProjectFieldRow extends Vue {
             <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
           </div>
         </div>
+-->
 
         <!--CELL FOR VOTUMN EDITABLE-->
         <div style="display:flex; flex-flow:row; width:100%" v-if="editing && fieldKey === 'Votum'">
@@ -361,6 +363,7 @@ export default class ProjectFieldRow extends Vue {
           <div class="field-value truncate">{{ tempFieldValue[0] }}</div>
         </div>
 
+        <!-- READ ONLY Version: Falls Datei hochgeladen -> zeige available an. Wenn nichts hochgeladen dann Zeile leer lassen v-if"existsApplicationForm"-->
         <div style="width:70%" v-if="!editing && fieldKey === 'Application form' ">
           <div  class="field-value truncate" >available</div>
         </div>
@@ -405,7 +408,9 @@ export default class ProjectFieldRow extends Vue {
         <button class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Edit" style="background:none; border:none; color:black"> <i class="bi bi-pencil me-2" @click="editField"></i> </button>
       </div>
       <div v-if="isFieldValueEditable() && redirectUrl === null && fieldKey === 'Application form'" style="display:inline-flex; flex-flow:row; align-items: baseline">
-        <button class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Edit" style="background:none; border:none; color:black"> <i class="bi bi-pencil me-2" @click="editField"></i> </button>
+        <button class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Edit" style="background:none; border:none; color:black">
+          <i class="bi bi-pencil me-2" @click="editField"></i>
+        </button>
         <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
         />

@@ -129,19 +129,6 @@ export default class ProjectFieldRow extends Vue {
     }
   }
 
-/*  splitPairs(pairString: string): { key: string; value: string }[] {
-    const pairs: string[] = pairString.split(',');
-    const keyValuePairs: { key: string; value: string }[] = [];
-    pairs.forEach(pair => {
-      if (pair.includes(':')) {
-        const [key, value]: string[] = pair.split(':');
-        if (key && value) {
-          keyValuePairs.push({ key: key.trim(), value: value.trim() });
-        }
-      }
-    });
-    return keyValuePairs;
-  }*/
 
   showInputFields() {
     this.showInputs = true;
@@ -155,7 +142,6 @@ export default class ProjectFieldRow extends Vue {
         this.tempFieldValue[0] = targetArray.join(',');
       }
       this.newValue = '';
-      this.showInputs = false;
     }
   }
 
@@ -191,7 +177,7 @@ export default class ProjectFieldRow extends Vue {
   <tr>
     <td class="bold-text thinner-column" style="background-color: #f2f2f2;">{{ fieldKey }}</td>
 
-    <td style="width:70%">
+    <td style="width:80%">
       <div class="user-input-container">
         <!-- FOR CELL THAT ARE JUST TEXT-FIELDS EDITABLE-->
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" v-if="editing && !possibleValues && fieldKey !== 'Application form' && fieldKey !== 'Votum' && fieldKey !== 'Description' && fieldKey !== 'Script'  && fieldKey !== 'Environment Variables' && fieldKey !== 'Samples' && fieldKey !== 'Query' && fieldKey !== 'Bridgeheads' && fieldKey !== 'Authentication Script'">
@@ -207,7 +193,9 @@ export default class ProjectFieldRow extends Vue {
         <!-- CELL FOR QUERY EDITABLE -->
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" v-if="editing && !possibleValues && fieldKey === 'Query'">
           <div style="width: 70%;">
+            <span><strong>Human readable</strong></span>
             <input id="labelInput" type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;"><br/>
+            <span><strong>Query</strong></span>
             <input id="labelInput" type="text" v-model="editedValue[1]" class="form-control" style="width: 100%;">
 
           </div>
@@ -242,13 +230,13 @@ export default class ProjectFieldRow extends Vue {
         </div>
 
         <!-- CELL FOR BRIDGEHEADS EDITABLE -->
-        <div v-if="editing && fieldKey === 'Bridgeheads'">
-          <div class="field-value" style="width: 70%">
-            <div v-if="tempFieldValue">
-         <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary" style="margin-right: 2%;">
+        <div v-if="editing && fieldKey === 'Bridgeheads'" style="display:flex; flex-flow:row; width:100%">
+          <div class="field-value" style="width: 75%">
+            <div v-if="tempFieldValue && tempFieldValue[0]">
+              <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary" style="margin-right: 2%; margin-bottom: 0.5%">
                    <span>{{ bridgehead }}</span>
-        <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i style="color: white; font-size: 18px" class="bi bi-x"></i></button>
-      </span>
+                <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i style="color: white; font-size: 18px" class="bi bi-x"></i></button>
+              </span>
             </div>
             <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
             <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
@@ -264,24 +252,29 @@ export default class ProjectFieldRow extends Vue {
 
 
         <!-- CELL FOR ENVIRONMENT VARIABLE EDITABLE -->
-        <div v-if="editing && fieldKey === 'Environment Variables'">
-          <div>
-          <div v-if=" tempFieldValue[0]!=='' " style="width: 70%">
-            <div v-for="(pair, index) in tempFieldValue[0].split(',')" :key="index" style="margin-right: 2%;  display: inline;" class="btn btn-primary">
-              <span style="display: inline; margin-bottom: 1%">{{ pair }}</span>
-              <button @click="removeVariable(index)" class="btn btn-sm" style="padding: 0px"><i style="color: white; font-size: 18px" class="bi bi-x"></i></button>
+        <div v-if="editing && fieldKey === 'Environment Variables'" style="display:flex; width:100%">
+          <div style="display:flex; width:75%; flex-flow:column">
+            <div v-if="tempFieldValue && tempFieldValue[0] " style="width: 75%">
+              <div v-for="(pair, index) in tempFieldValue[0].split(',')" :key="index" style="margin-right: 2%;  display: inline;" class="btn btn-primary">
+                <span style="display: inline; margin-bottom: 2%">{{ pair }}</span>
+                <button @click="removeVariable(index)" class="btn btn-sm" style="padding: 0px"><i
+                    style="color: white; font-size: 18px" class="bi bi-x"></i></button>
+              </div>
             </div>
-          </div>
-            <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
-            <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
+            <button style="display: inline; margin-top: 1%; margin-bottom: 0.5%; width:5%;" @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
+
+            <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%; width:80%">
               <input type="text" class="form-control" v-model="newKey" placeholder="Key">
               <input type="text" class="form-control" v-model="newValue" placeholder="Value">
-              <button class="btn btn-primary" @click="addVariable"><i style="font-size: 18px" class="bi bi-check"></i></button>
+              <button class="btn btn-primary" @click="addVariable"><i style="font-size: 18px" class="bi bi-check"></i>
+              </button>
             </div>
           </div>
           <div class="button-container" style="width: 25%; display: flex; height: 20%; gap: 3%;">
-            <button @click="saveField" class="btn btn-outline-secondary" style="padding: 4px 15px 4px 15px;">Cancel</button>
-            <button @click="cancelEdit" class="btn btn-outline-primary" style="padding: 4px 20px 4px 20px;">Save</button>
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding: 4px 15px 4px 15px;">Cancel
+            </button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding: 4px 20px 4px 20px;">Save
+            </button>
           </div>
         </div>
 
@@ -299,7 +292,7 @@ export default class ProjectFieldRow extends Vue {
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_APPLICATION_FORM_ACTION"
                           text="Upload application form" :call-refreh-context="callRefrehContext" :is-file="true"  />
           </div>
-          <div class="button-container" style="width:25%; gap:3%">
+          <div class="button-container" style="width: 25%; display: flex; height: 20%; gap: 3%;">
             <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel</button>
             <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save</button>
           </div>
@@ -385,10 +378,10 @@ export default class ProjectFieldRow extends Vue {
         </div>
 
         <!-- READONLY CELL FOR BRIDGEHEADS -->
-        <div v-else-if="!editing && fieldKey === 'Bridgeheads'">
-          <div style="width: 70%">
+        <div v-else-if="!editing && fieldKey === 'Bridgeheads'" style="display:flex; width:100%">
+          <div style="width: 100%">
             <div v-if="tempFieldValue" class="field-value">
-               <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary" style="margin-right: 2%;">
+               <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary" style="margin-right: 2%; margin-bottom: 0.5%">
                    <span>{{ bridgehead }}</span>
                </span>
             </div>
@@ -396,9 +389,9 @@ export default class ProjectFieldRow extends Vue {
         </div>
 
         <!-- READONLY CELL FOR ENVIRONMENT VARIABLES -->
-        <div v-else-if="!editing && fieldKey === 'Environment Variables'">
-          <div v-if=" tempFieldValue[0]!=='' " style="width: 70%">
-            <div v-for="(pair, index) in tempFieldValue[0].split(',')" :key="index" style="margin-right: 2%;  display: inline;" class="btn btn-primary">
+        <div v-if="!editing && fieldKey === 'Environment Variables'" style="display:flex; width:100%">
+          <div v-if=" tempFieldValue && tempFieldValue[0]  " style="width: 70%">
+            <div v-for="(pair, index) in tempFieldValue[0].split(',').filter(Boolean)" :key="index" style="margin-right: 2%;  display: inline;" class="btn btn-primary">
               <span style="display: inline; margin-bottom: 1%">{{ pair }}</span>
             </div>
           </div>

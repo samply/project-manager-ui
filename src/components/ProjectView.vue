@@ -34,9 +34,13 @@
                 </option>
               </select>
             </div>-->
-            <div v-if="visibleBridgeheads && visibleBridgeheads.length == 1">
-              <span>{{ context.bridgehead }}</span>
+
+            <div class="card" v-if="visibleBridgeheads && visibleBridgeheads.length == 1" style="padding: 3px 20px;">
+              <div class="card-body" style="padding: 0px 0px;">
+                <span style="padding: 0px 0px;">{{ context.bridgehead }}</span>
+              </div>
             </div>
+
             <div>
               <button data-toggle="tooltip" data-placement="top" title="Progress" @click="toggleProgress" class="btn btn-dark"
                       style="background: none; border:none; color:#007bff; width:auto;">

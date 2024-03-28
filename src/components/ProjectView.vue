@@ -51,7 +51,9 @@
 
           <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
                               :project-manager-backend-service="projectManagerBackendService"
-                              :context="context" :bridgeheads="visibleBridgeheads" />
+                              :context="context"
+                              :bridgeheads="visibleBridgeheads"
+                              :activeBridgehead="activeBridgehead" />
           <br/>
           <table class="table table-bordered">
             <thead>
@@ -91,7 +93,7 @@
                                   :context="context" :call-refreh-context="refreshContext" text="Create"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"
-                                  v-if="existsApplicationForm"/>&nbsp;
+                                  />&nbsp;
             <!-- Project State Module: PM-ADMIN View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Accept"
@@ -252,7 +254,7 @@
                                  :redirect-url="project.explorerUrl"
                                  :is-editable="true"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>-->
-                <ProjectFieldRow v-if="currentStep==2 || currentStep==4" field-key="Query (Human readable)"
+                <ProjectFieldRow v-if="currentStep==2 || currentStep==4" field-key="Query"
                                  :field-value="[project.humanReadable, project.query]"
                                  edit-project-param="human-readable"
                                  :call-refreh-context="refreshContext"
@@ -292,7 +294,7 @@
                                  :possible-values="exporterTemplateIds"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
 
-                <ProjectFieldRow v-if="existsAuthenticationScript && dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && currentStep==2 || currentStep==4"
+                <ProjectFieldRow v-if=" dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && currentStep==2 || currentStep==4"
                                  field-key="Authentication Script"
                                  edit-project-param="template-id"
                                  :is-editable="isNotIncludedInCurrentProjectConfiguration('templateId')"
@@ -505,6 +507,7 @@ export default defineComponent({
     ProjectFieldRow,
     ProjectManagerButton
   },
+
   data() {
     return {
       activeBridgehead: undefined as Bridgehead | undefined,

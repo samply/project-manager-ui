@@ -60,12 +60,20 @@ import DownloadButton from "@/components/DownloadButton.vue";
 
 @Options({
   name: "BridgeheadOverview",
-  components: { DownloadButton }
+  components: { DownloadButton },
+  props: {
+    activeBridgehead: {
+      type: Object,
+      required: true
+    }
+  }
 })
 export default class BridgeheadOverview extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
   @Prop() readonly bridgeheads!: Bridgehead[];
+
+
 
   Module = Module;
   Action = Action;

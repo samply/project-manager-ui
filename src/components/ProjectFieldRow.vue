@@ -28,10 +28,10 @@ export default class ProjectFieldRow extends Vue {
   @Prop({ type: Function, required: true }) readonly callRefrehContext!: () => void;
   @Prop() readonly module!: Module;
   @Prop() readonly action!: Action;
-  @Prop() existsApplicationForm!: boolean;
+/*  @Prop() existsApplicationForm!: boolean;
   @Prop() readonly existsVotum!: boolean;
   @Prop() readonly existsAuthenticationScript!: boolean;
-  @Prop() readonly existsScript!: boolean;
+  @Prop() readonly existsScript!: boolean;*/
   @Prop() readonly bridgeheads!: string[];
   @Prop() readonly fetchListAction!: Action;
   @Prop() readonly downloadAction!: Action;
@@ -129,25 +129,19 @@ export default class ProjectFieldRow extends Vue {
     }
   }
 
-  splitPairs(pairString: string): { key: string; value: string }[] {
-    // Trennen Sie den String an den Kommas
+/*  splitPairs(pairString: string): { key: string; value: string }[] {
     const pairs: string[] = pairString.split(',');
-    // Erstellen Sie ein Array, um die Schlüssel-Wert-Paare zu speichern
     const keyValuePairs: { key: string; value: string }[] = [];
     pairs.forEach(pair => {
-      // Überprüfen, ob das Paar das erwartete Format hat
       if (pair.includes(':')) {
-        // Trennen Sie jedes Paar an den Doppelpunkten
         const [key, value]: string[] = pair.split(':');
-        // Fügen Sie das Schlüssel-Wert-Paar nur hinzu, wenn beide Teile vorhanden sind
         if (key && value) {
-          // Rückgabe des Schlüssel-Wert-Paares als Objekt
           keyValuePairs.push({ key: key.trim(), value: value.trim() });
         }
       }
     });
     return keyValuePairs;
-  }
+  }*/
 
   showInputFields() {
     this.showInputs = true;
@@ -155,49 +149,40 @@ export default class ProjectFieldRow extends Vue {
 
   addBridgehead() {
     if (this.newValue) {
-      if (this.tempFieldValue) {
-        if (this.tempFieldValue[0].length > 0) {
-          this.tempFieldValue[0] += ',' + this.newValue; // Füge das neue Bridgehead dem String hinzu
-        } else {
-          this.tempFieldValue[0] = this.newValue; // Setze den String auf das neue Bridgehead
-        }
-      } else {
-        this.tempFieldValue = [this.newValue]; // Erstelle ein neues Array mit dem neuen Bridgehead
+      if (Array.isArray(this.tempFieldValue) && this.tempFieldValue.length > 0 && Array.isArray(this.tempFieldValue[0])) {
+        const targetArray = this.tempFieldValue[0];
+        targetArray.push(this.newValue);
+        this.tempFieldValue[0] = targetArray.join(',');
       }
       this.newValue = '';
       this.showInputs = false;
     }
   }
 
+
   removeBridgehead(index: any) {
-    if (this.tempFieldValue && this.tempFieldValue[0].length > 0) {
-      const bridgeheads = this.tempFieldValue[0].split(','); // Teile den String an den Kommas
-      bridgeheads.splice(index, 1); // Entferne das Bridgehead an der angegebenen Indexposition
-      this.tempFieldValue[0] = bridgeheads.join(','); // Setze den String wieder zusammen
+    if (Array.isArray(this.tempFieldValue) && this.tempFieldValue.length > 0 && Array.isArray(this.tempFieldValue[0])) {
+      const targetArray = this.tempFieldValue[0]; // Direkt auf das Ziel-Array zugreifen
+      if (index >= 0 && index < targetArray.length) {
+        targetArray.splice(index, 1);
+        this.tempFieldValue[0] = targetArray.join(',');
+      }
     }
   }
 
-  // Method to add an environment variable
+
   addVariable() {
-    // Überprüfen, ob sowohl ein neuer Schlüssel als auch ein Wert vorhanden sind
     if (this.newKey && this.newValue) {
-      // Hinzufügen des neuen Schlüssel-Wert-Paares zum Array tempFieldValue
       this.tempFieldValue[0] += ',' + this.newKey + '=' + this.newValue;
-      // Zurücksetzen der Eingabefelder für den nächsten Eintrag
       this.newKey = '';
       this.newValue = '';
     }
   }
   removeVariable(index:any) {
-    // Trennen des Strings in Paare
     const pairs = this.tempFieldValue[0].split(',');
-    // Entfernen des gewählten Paares basierend auf dem Index
     pairs.splice(index, 1);
-    // Aktualisieren des tempFieldValue mit den verbleibenden Paaren
     this.tempFieldValue[0] = pairs.join(',');
   }
-
-
 
 }
 </script>
@@ -209,7 +194,7 @@ export default class ProjectFieldRow extends Vue {
     <td style="width:70%">
       <div class="user-input-container">
         <!-- FOR CELL THAT ARE JUST TEXT-FIELDS EDITABLE-->
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" v-if="editing && !possibleValues && fieldKey !== 'Application form' && fieldKey !== 'Votum' && fieldKey !== 'Description' && fieldKey !== 'Script'  && fieldKey !== 'Environment Variables' && fieldKey !== 'Samples' && fieldKey !== 'Query (Human readable)' && fieldKey !== 'Bridgeheads'">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" v-if="editing && !possibleValues && fieldKey !== 'Application form' && fieldKey !== 'Votum' && fieldKey !== 'Description' && fieldKey !== 'Script'  && fieldKey !== 'Environment Variables' && fieldKey !== 'Samples' && fieldKey !== 'Query' && fieldKey !== 'Bridgeheads' && fieldKey !== 'Authentication Script'">
           <div style="width: 70%;">
             <input id="labelInput" type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;">
           </div>
@@ -220,7 +205,7 @@ export default class ProjectFieldRow extends Vue {
         </div>
 
         <!-- CELL FOR QUERY EDITABLE -->
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" v-if="editing && !possibleValues && fieldKey === 'Query (Human readable)'">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" v-if="editing && !possibleValues && fieldKey === 'Query'">
           <div style="width: 70%;">
             <input id="labelInput" type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;"><br/>
             <input id="labelInput" type="text" v-model="editedValue[1]" class="form-control" style="width: 100%;">
@@ -233,7 +218,7 @@ export default class ProjectFieldRow extends Vue {
         </div>
 
         <!-- CELL FOR DROPDOWNS EDITABLE-->
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" v-else-if="editing && possibleValues && fieldKey !== 'Application form' && fieldKey !== 'Votum' && fieldKey !== 'Description' && fieldKey !== 'Script' && fieldKey !== 'Bridgeheads' && fieldKey !== 'Environment Variables' && fieldKey !== 'Bridgeheads' && fieldKey !== 'Samples' && fieldKey !== 'Query (Human readable)'">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;" v-else-if="editing && possibleValues && fieldKey !== 'Application form' && fieldKey !== 'Votum' && fieldKey !== 'Description' && fieldKey !== 'Script' && fieldKey !== 'Bridgeheads' && fieldKey !== 'Environment Variables' && fieldKey !== 'Bridgeheads' && fieldKey !== 'Samples' && fieldKey !== 'Query' && fieldKey !== 'Authentication Script'">
           <div style="width: 70%;">
             <select v-model="editedValue[0]" class="form-select" style="width: 100%;">
               <option v-for="value in possibleValues" :key="value" :value="value">{{ value }}</option>
@@ -260,8 +245,8 @@ export default class ProjectFieldRow extends Vue {
         <div v-if="editing && fieldKey === 'Bridgeheads'">
           <div class="field-value" style="width: 70%">
             <div v-if="tempFieldValue">
-      <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary" style="margin-right: 2%;">
-        <span>{{ bridgehead }}</span>
+         <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary" style="margin-right: 2%;">
+                   <span>{{ bridgehead }}</span>
         <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i style="color: white; font-size: 18px" class="bi bi-x"></i></button>
       </span>
             </div>
@@ -272,10 +257,11 @@ export default class ProjectFieldRow extends Vue {
             </div>
           </div>
           <div class="button-container" style="width: 25%; display: flex; height: 20%; gap: 3%;">
-            <button @click="saveField" class="btn btn-outline-secondary" style="padding: 4px 15px 4px 15px;">Cancel</button>
-            <button @click="cancelEdit" class="btn btn-outline-primary" style="padding: 4px 20px 4px 20px;">Save</button>
+            <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding: 4px 15px 4px 15px;">Cancel</button>
+            <button @click="saveField" class="btn btn-outline-primary" style="padding: 4px 20px 4px 20px;">Save</button>
           </div>
         </div>
+
 
         <!-- CELL FOR ENVIRONMENT VARIABLE EDITABLE -->
         <div v-if="editing && fieldKey === 'Environment Variables'">
@@ -378,31 +364,24 @@ export default class ProjectFieldRow extends Vue {
         </div>
 
         <!-- CELL FOR ALL VALUES READONLY -->
-        <div style="width:70%" v-if="!editing && fieldKey !== 'Bridgeheads' && fieldKey !== 'Application form'  && fieldKey !== 'Environment Variables' && fieldKey !== 'Samples' && fieldKey !== 'Votum' && fieldKey !== 'Script' ">
+        <div style="width:70%" v-if="!editing && fieldKey !== 'Bridgeheads' && fieldKey !== 'Application form'  && fieldKey !== 'Environment Variables' && fieldKey !== 'Samples' && fieldKey !== 'Votum' && fieldKey !== 'Script' && fieldKey !== 'Authentication Script' ">
           <div class="field-value truncate">{{ tempFieldValue[0] }}</div>
         </div>
 
         <div style="width:70%" v-if="!editing && fieldKey === 'Application form' ">
-          <div  class="field-value truncate" v-if="existsApplicationForm">available</div>
-          <div  class="field-value truncate" v-if="!existsApplicationForm"> </div>
+          <div  class="field-value truncate" >available</div>
         </div>
-
-<!--        <div style="width:70%" v-if="!editing && fieldKey === 'Samples' ">
-          <div  class="field-value truncate" v-if="existsApplicationForm">available</div>
-          <div  class="field-value truncate" v-if="!existsApplicationForm"> </div>
-        </div>-->
 
         <div style="width:70%" v-if="!editing && fieldKey === 'Authentication Script' ">
-          <div  class="field-value truncate" v-if="existsAuthenticationScript">available</div>
-          <div  class="field-value truncate" v-if="!existsAuthenticationScript"> </div>
+          <div  class="field-value truncate" >available</div>
         </div>
+
         <div style="width:70%" v-if="!editing && fieldKey === 'Votum' ">
-          <div  class="field-value truncate" v-if="existsVotum">available</div>
-          <div  class="field-value truncate" v-if="!existsVotum"> </div>
+          <div  class="field-value truncate" >available</div>
         </div>
+
         <div style="width:70%" v-if="!editing && fieldKey === 'Script' ">
-          <div  class="field-value truncate" v-if="existsScript">available</div>
-          <div  class="field-value truncate" v-if="!existsScript"> </div>
+          <div  class="field-value truncate" >available</div>
         </div>
 
         <!-- READONLY CELL FOR BRIDGEHEADS -->
@@ -424,17 +403,6 @@ export default class ProjectFieldRow extends Vue {
             </div>
           </div>
         </div>
-
-
-        <!--        <div style="width:70%" v-if="!editing && fieldKey === 'Environment Variables'">
-                  <div class="field-value">
-                    <div v-for="(bridgehead, index) in tempFieldValue" :key="index" style="margin-right:2%;  display: inline;" class="btn btn-primary"  >
-                      <span style=" display: inline; margin-bottom: 1%">{{ tempFieldValue }}</span>
-                    </div>
-                  </div>
-                </div>-->
-
-
       </div>
     </td>
 
@@ -445,7 +413,7 @@ export default class ProjectFieldRow extends Vue {
       </div>
       <div v-if="isFieldValueEditable() && redirectUrl === null && fieldKey === 'Application form'" style="display:inline-flex; flex-flow:row; align-items: baseline">
         <button class="btn btn-primary" data-toggle="tooltip" data-placement="top" title="Edit" style="background:none; border:none; color:black"> <i class="bi bi-pencil me-2" @click="editField"></i> </button>
-        <DownloadButton v-if="existsApplicationForm" :context="context" :project-manager-backend-service="projectManagerBackendService"
+        <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
         />
       </div>

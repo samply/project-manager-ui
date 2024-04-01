@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2024-03-14]
+## [1.1.0 - 2024-04-01]
 ### Added
 - Dockerfile
 - Single Spa
@@ -50,3 +50,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Documents Table for visible bridgeheads
 - DataSHIELD Status in bridgehead overview
 - Fetch project roles
+- Show Draft Dialog only if user is CREATOR and the state is DRAFT

@@ -314,7 +314,7 @@
                                :download-action="Action.DOWNLOAD_VOTUM_ACTION"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==4"
+              <ProjectFieldRow v-if="dataShieldStatus && (!existsDraftDialog || draftDialogCurrentStep==4)"
                                field-key="Script"
                                :field-value="[]"
                                :is-editable="true"

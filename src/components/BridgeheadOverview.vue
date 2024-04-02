@@ -10,16 +10,17 @@
             v-for="(bridgehead, bridgeheadIndex) in bridgeheads"
             :key="bridgeheadIndex"
             class="data-cell"
-            @click="selectBridgehead(bridgeheadIndex)"
             :class="{ 'selected': selectedBridgehead === bridgeheadIndex }"
         >
           <!-- First row: bridgehead.bridgehead -->
-          <div v-if="index === 0">{{ bridgehead.bridgehead }}</div>
+          <div v-if="index === 0"
+               @click="selectBridgehead(bridgeheadIndex)"
+          >{{ bridgehead.bridgehead }}</div>
           <!-- Second row: existVotum -->
           <div v-else-if="index === 1">
             <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]" class="exist-votum green">
               <DownloadButton
-                  :context="context"
+                  :context="fetchContext(bridgehead)"
                   :project-manager-backend-service="projectManagerBackendService"
                   icon-class="bi bi-download"
                   :module="Module.PROJECT_DOCUMENTS_MODULE"
@@ -93,7 +94,6 @@ export default class BridgeheadOverview extends Vue {
   async created() {
     this.updateBridgeheadExtraInfo();
     this.selectedBridgehead = 0;
-
   }
 
   async updateBridgeheadExtraInfo() {
@@ -105,7 +105,6 @@ export default class BridgeheadOverview extends Vue {
       this.dataShieldStatusArray = await this.fetchDataShieldStates();
     }
   }
-
 
   fetchContext(bridgehead: Bridgehead) {
     return new ProjectManagerContext(this.context.projectCode, bridgehead.bridgehead);

@@ -177,7 +177,7 @@ export default class ProjectFieldRow extends Vue {
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;"
              v-if="editing && !possibleValues && fieldKey !== 'Application form' && fieldKey !== 'Votum' && fieldKey !== 'Description' && fieldKey !== 'Script'  && fieldKey !== 'Environment Variables' && fieldKey !== 'Samples' && fieldKey !== 'Query' && fieldKey !== 'Bridgeheads' && fieldKey !== 'Authentication Script'">
           <div style="width: 70%;">
-            <input id="labelInput" type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;">
+            <input type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;">
           </div>
           <div class="button-container" style="width: 25%; display:flex; gap:3%">
             <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding: 4px 15px;">Cancel</button>
@@ -190,9 +190,9 @@ export default class ProjectFieldRow extends Vue {
              v-if="editing && !possibleValues && fieldKey === 'Query'">
           <div style="width: 70%;">
             <span><strong>Human readable</strong></span>
-            <input id="labelInput" type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;"><br/>
+            <input type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;"><br/>
             <span><strong>Query</strong></span>
-            <input id="labelInput" type="text" v-model="editedValue[1]" class="form-control" style="width: 100%;">
+            <input type="text" v-model="editedValue[1]" class="form-control" style="width: 100%;">
 
           </div>
           <div class="button-container" style="width: 25%; display:flex; gap:3%">
@@ -220,7 +220,7 @@ export default class ProjectFieldRow extends Vue {
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;"
              v-if="editing && fieldKey === 'Description'">
           <div style="width:70%">
-            <textarea id="labelInput" type="text" v-model="editedValue[0]" class="form-control"></textarea></div>
+            <textarea type="text" v-model="editedValue[0]" class="form-control"></textarea></div>
           <div class="button-container" style="width: 25%; display: flex; gap: 3%;">
             <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel
             </button>

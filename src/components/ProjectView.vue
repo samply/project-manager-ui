@@ -288,14 +288,6 @@
                                :call-refreh-context="refreshContext"
                                :possible-values="exporterTemplateIds"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow
-                  v-if=" dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && (!existsDraftDialog || draftDialogCurrentStep==2 || draftDialogCurrentStep==4)"
-                  field-key="Authentication Script"
-                  :is-editable="isNotIncludedInCurrentProjectConfiguration('templateId')"
-                  :field-value="[project.templateId]"
-                  :call-refreh-context="refreshContext"
-                  :possible-values="exporterTemplateIds"
-                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
                                field-key="Application form"
                                :exists-file="existsApplicationForm"
@@ -323,6 +315,15 @@
                                :download-action="Action.DOWNLOAD_SCRIPT_ACTION"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+              <ProjectFieldRow
+                  v-if=" dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && existsAuthenticationScript && (!existsDraftDialog || draftDialogCurrentStep==2 || draftDialogCurrentStep==4)"
+                  field-key="Authentication Script"
+                  :is-editable="false"
+                  :field-value="[]"
+                  :download-action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION"
+                  :exists-file="existsAuthenticationScript"
+                  :call-refreh-context="refreshContext"
+                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               </tbody>
             </table>
           </div>

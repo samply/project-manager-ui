@@ -3,6 +3,7 @@ import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
+  EditProjectParam,
   Module,
   ProjectManagerContext,
   ProjetManagerBackendService
@@ -17,7 +18,7 @@ import UploadButton from "@/components/UploadButton.vue";
 export default class ProjectFieldRow extends Vue {
   @Prop() readonly fieldKey!: string;
   @Prop() readonly fieldValue!: string[];
-  @Prop() readonly editProjectParam!: string;
+  @Prop() readonly editProjectParam!: EditProjectParam;
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop({default: null}) readonly redirectUrl!: string | null;
@@ -94,12 +95,12 @@ export default class ProjectFieldRow extends Vue {
     this.tempFieldValue = this.editedValue.slice(); // Copy editedValue back to tempFieldValue
     const params = new Map<string, string>();
 
-    if (this.fieldKey === "Type" && this.tempFieldValue[0] === "DATASHIELD") {
+    params.set(this.editProjectParam, this.editedValue[0]);
+    if (this.editProjectParam == EditProjectParam.PROJECT_TYPE && this.tempFieldValue[0] === "DATASHIELD") {
       params.set("output-format", "OPAL");
       params.set("template-id", "opal-ccp");
     }
-    params.set(this.editProjectParam, this.editedValue[0]);
-    if (this.fieldKey === "Configuration") {
+    if (this.editProjectParam == EditProjectParam.PROJECT_CONFIGURATION) {
       this.projectManagerBackendService
           .fetchData(Module.PROJECT_EDITION_MODULE, Action.SET_PROJECT_CONFIGURATION_ACTION, this.context, params)
           .then((result) => this.callRefrehContext());

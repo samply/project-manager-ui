@@ -26,15 +26,6 @@
           <div style="display:flex; flex-flow:row; justify-content: space-between">
             <router-link to="/" data-toggle="tooltip" data-placement="top" title="Back to Project Dashboard"><i
                 class="bi bi-arrow-left-square-fill"></i></router-link>
-            <!--            <div v-if="visibleBridgeheads && visibleBridgeheads.length > 1" style="display:flex; flex-flow:row; width:20%; margin-bottom:2%">
-                          <span class="bold-text">Bridgehead:</span>&nbsp;
-
-                          <select  class="form-select" v-model="activeBridgehead">
-                            <option v-for="bridgehead in visibleBridgeheads" :key="bridgehead.bridgehead" :value="bridgehead"
-                                    :selected="bridgehead === activeBridgehead">{{ bridgehead.bridgehead }}
-                            </option>
-                          </select>
-                        </div>-->
 
             <div class="card" v-if="visibleBridgeheads && visibleBridgeheads.length == 1" style="padding: 3px 20px;">
               <div class="card-body" style="padding: 0px 0px;">
@@ -220,64 +211,53 @@
               <tbody>
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
                                field-key="Title"
-                               edit-project-param="label"
+                               :edit-project-param="EditProjectParam.LABEL"
                                :is-editable="true"
                                :field-value="[project.label]"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
                                field-key="Description"
-                               edit-project-param="description"
+                               :edit-project-param="EditProjectParam.DESCRIPTION"
                                :is-editable="true"
                                :field-value="[project.description]"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
                                field-key="Bridgeheads"
-                               edit-project-param="bridgeheads"
+                               :edit-project-param="EditProjectParam.BRIDGEHEADS"
                                :is-editable="true"
                                :field-value="[bridgeheads]"
                                :call-refreh-context="refreshContext"
                                :redirect-url="project.explorerUrl"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==1 || draftDialogCurrentStep==4"
                                field-key="Configuration"
-                               edit-project-param="project-configuration"
+                               :edit-project-param="EditProjectParam.PROJECT_CONFIGURATION"
                                :is-editable="true"
                                :field-value="[currentProjectConfiguration]"
                                :call-refreh-context="refreshContext"
                                :possible-values="projectConfigurations"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==1 || draftDialogCurrentStep==4"
-                               field-key="Type" edit-project-param="project-type"
+                               field-key="Type"
+                               :edit-project-param="EditProjectParam.PROJECT_TYPE"
                                :is-editable="isNotIncludedInCurrentProjectConfiguration('type')"
                                :field-value="[project.type]"
                                :call-refreh-context="refreshContext"
                                :possible-values="projectTypes"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <!-- TODO: Edit Query -->
-              <!--                <ProjectFieldRow field-key="Query"
-                                               :field-value="project.query"
-                                               edit-project-param="query"
-                                               :call-refreh-context="refreshContext"
-                                               :redirect-url="project.explorerUrl"
-                                               :is-editable="true"
-                                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>-->
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==2 || draftDialogCurrentStep==4"
                                field-key="Query"
                                :field-value="[project.humanReadable, project.query]"
-                               edit-project-param="human-readable"
+                               :edit-project-param="EditProjectParam.HUMAN_READABLE"
                                :call-refreh-context="refreshContext"
                                :redirect-url="project.explorerUrl"
                                :is-editable="true"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==2 || draftDialogCurrentStep==4"
                                field-key="Query Format"
-                               edit-project-param="query-format"
+                               :edit-project-param="EditProjectParam.QUERY_FORMAT"
                                :is-editable="true"
                                :field-value="[project.queryFormat]"
                                :call-refreh-context="refreshContext"
@@ -287,14 +267,14 @@
               <!-- TODO: Separate queries in pairs Key-Values + encrpyt and decrypt in base64-->
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==3 || draftDialogCurrentStep==4"
                                field-key="Environment Variables"
-                               edit-project-param="query-context"
+                               :edit-project-param="EditProjectParam.QUERY_CONTEXT"
                                :is-editable="isNotIncludedInCurrentProjectConfiguration('queryContext')"
                                :field-value="[project?.queryContext]"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==3 || draftDialogCurrentStep==4"
                                field-key="Output Format"
-                               edit-project-param="output-format"
+                               :edit-project-param="EditProjectParam.OUTPUT_FORMAT"
                                :is-editable="isNotIncludedInCurrentProjectConfiguration('outputFormat')"
                                :field-value="[project.outputFormat]"
                                :call-refreh-context="refreshContext"
@@ -302,61 +282,31 @@
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==3 || draftDialogCurrentStep==4"
                                field-key="Template ID"
-                               edit-project-param="template-id"
+                               :edit-project-param="EditProjectParam.TEMPLATE_ID"
                                :is-editable="isNotIncludedInCurrentProjectConfiguration('templateId')"
                                :field-value="[project.templateId]"
                                :call-refreh-context="refreshContext"
                                :possible-values="exporterTemplateIds"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-
               <ProjectFieldRow
                   v-if=" dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && (!existsDraftDialog || draftDialogCurrentStep==2 || draftDialogCurrentStep==4)"
                   field-key="Authentication Script"
-                  edit-project-param="template-id"
                   :is-editable="isNotIncludedInCurrentProjectConfiguration('templateId')"
                   :field-value="[project.templateId]"
                   :call-refreh-context="refreshContext"
                   :possible-values="exporterTemplateIds"
                   :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-
-
-              <!--                <tr  v-if="dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && currentStep==2 || currentStep==4">
-                                <td class="bold-text thinner-column">Authentication Script</td>
-                                <td class="wider-column"></td>
-                                <td>
-                                  <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                                  :module="Module.TOKEN_MANAGER_MODULE"
-                                                  :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION" icon-class="bi bi-download"
-                                                  v-if="existsAuthenticationScript"/>
-                                </td>
-                              </tr>-->
-              <!--                <tr v-if="existsScript">
-                                <td class="bold-text thinner-column">Script</td>
-                                <td class="wider-column"></td>
-                                <td>
-                                  <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                                  :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_SCRIPT_ACTION"
-                                                  icon-class="bi bi-download"/>
-                                </td>
-                              </tr>-->
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
                                field-key="Application form"
                                :exists-file="existsApplicationForm"
-                               edit-project-param="label"
                                :is-editable="true"
                                :upload-action="Action.UPLOAD_APPLICATION_FORM_ACTION"
                                :download-action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
                                :field-value="[project.label]"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-
-              <!--                <ProjectFieldRow v-if="currentStep==0 || currentStep==4" field-key="Samples" edit-project-param="label" :is-editable="true"
-                                               :field-value="project.label" :call-refreh-context="refreshContext"
-                                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>-->
-
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==4"
                                field-key="Votum"
-                               edit-project-param="label"
                                :is-editable="true"
                                :exists-file="existsVotum"
                                :field-value="[project.label]"
@@ -364,10 +314,8 @@
                                :download-action="Action.DOWNLOAD_VOTUM_ACTION"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==4"
                                field-key="Script"
-                               edit-project-param="label"
                                :is-editable="true"
                                :exists-file="existsScript"
                                :field-value="[project.label]"
@@ -375,48 +323,6 @@
                                :download-action="Action.DOWNLOAD_SCRIPT_ACTION"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <!--                <tr>
-                                <td>{{project && project.createdAt ? 'Script': ''}}</td>
-                                <td>{{project && project.createdAt ? project.templateId:''}}</td>
-                                <td>
-                                  <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                                :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_SCRIPT_ACTION"
-                                                text="Upload script" :call-refreh-context="refreshContext" :is-file="true"/>
-                                </td>
-                              </tr>-->
-
-              <!--<tr>
-                <td> {{project && project.createdAt ? 'Other documents': ''}}</td>
-                <td v-if="project" >
-                  <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                                                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_PUBLICATION_ACTION"
-                                                                         :project-documents="publications" icon-class="bi bi-download" text="Publications: " />
-                  <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
-                                text="Upload publication" :call-refreh-context="refreshContext" :is-file="true"/>
-                </td>
-                <td v-if="!project"></td>
-                <td>
-                  <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
-                                text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false" />
-                </td>
-              </tr>
-              <tr>
-                <td>{{project && project.createdAt ? 'Other URL': ''}}</td>
-                <td>{{project && project.createdAt ? project.templateId:''}}</td>
-                <td>
-                  <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                  :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
-                                  :project-documents="otherDocuments" icon-class="bi bi-download" text="Other documents: "/>
-                  <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
-                                text="Upload other document" :call-refreh-context="refreshContext" :is-file="true" /><br/>
-                  <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
-                                text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false" />
-                </td>
-              </tr> -->
               </tbody>
             </table>
           </div>
@@ -495,6 +401,7 @@ import {
   Action,
   Bridgehead,
   DataShieldProjectStatus,
+  EditProjectParam,
   Module,
   Notification,
   Project,
@@ -515,6 +422,9 @@ import keycloak from "@/services/keycloak";
 
 export default defineComponent({
   computed: {
+    EditProjectParam() {
+      return EditProjectParam
+    },
     Action() {
       return Action
     },

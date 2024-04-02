@@ -107,6 +107,19 @@ export enum Action {
     FETCH_PROJECT_ROLES_ACTION = "FETCH_PROJECT_ROLES"
 }
 
+export enum EditProjectParam {
+    PROJECT_CONFIGURATION= "project-configuration",
+    QUERY_FORMAT = "query-format",
+    BRIDGEHEADS = "bridgeheads",
+    LABEL = "label",
+    DESCRIPTION = "description",
+    OUTPUT_FORMAT = "output-format",
+    TEMPLATE_ID = "template-id",
+    HUMAN_READABLE = "human-readable",
+    PROJECT_TYPE = "project-type",
+    QUERY_CONTEXT = "query-context"
+}
+
 export interface Project {
     code: string | null;
     creatorEmail: string | null;

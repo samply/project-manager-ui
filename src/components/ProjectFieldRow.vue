@@ -13,11 +13,6 @@ import UploadButton from "@/components/UploadButton.vue";
 
 @Options({
   name: "ProjectFieldRow",
-  computed: {
-    EditProjectParam() {
-      return EditProjectParam
-    }
-  },
   components: {DownloadButton, UploadButton}
 })
 export default class ProjectFieldRow extends Vue {
@@ -177,16 +172,87 @@ export default class ProjectFieldRow extends Vue {
   }
 
   removeVariable(index: any) {
-    if (this.tempFieldValue.length > 0){
+    if (this.tempFieldValue.length > 0) {
       const pairs = this.tempFieldValue[0].split(',');
       pairs.splice(index, 1);
       this.tempFieldValue[0] = pairs.join(',');
     }
   }
 
-  exitAndCallRefreshContext(){
+  exitAndCallRefreshContext() {
     this.cancelEdit();
     this.callRefrehContext();
+  }
+
+  isQuery(): boolean {
+    return this.includesEditProjectParam(EditProjectParam.HUMAN_READABLE);
+  }
+
+  isDescription(): boolean {
+    return this.includesEditProjectParam(EditProjectParam.DESCRIPTION);
+  }
+
+  isBridgeheads(): boolean {
+    return this.includesEditProjectParam(EditProjectParam.BRIDGEHEADS);
+  }
+
+  isEnvironmentVariables(): boolean {
+    return this.includesEditProjectParam(EditProjectParam.QUERY_CONTEXT);
+  }
+
+  isSelection(): boolean {
+    return this.possibleValues && this.possibleValues.length > 0;
+  }
+
+  isApplicationForm(): boolean {
+    return this.uploadAction === Action.UPLOAD_APPLICATION_FORM_ACTION;
+  }
+
+  getEditFieldStyle() {
+    if (this.isQuery()) {
+      return 'query-edit-field';
+    }
+    if (this.isDescription()) {
+      return 'description-edit-field';
+    }
+    if (this.isBridgeheads()) {
+      return 'bridgeheads-edit-field';
+    }
+    if (this.isEnvironmentVariables()) {
+      return 'environment-variables-edit-field';
+    }
+    if (this.isSelection()) {
+      return 'selection-edit-fields';
+    }
+    if (this.uploadAction) {
+      return 'upload-edit-field'
+    }
+    return 'other-edit-fields';
+  }
+
+  getButtonContainerStyle() {
+    if (this.isQuery()) {
+      return 'query-button-container';
+    }
+    if (this.isSelection()) {
+      return 'selection-button-container';
+    }
+    if (this.isDescription()) {
+      return 'description-button-container';
+    }
+    if (this.isBridgeheads()) {
+      return 'bridgeheads-button-container';
+    }
+    if (this.isEnvironmentVariables()) {
+      return 'environment-variables-button-container';
+    }
+    if (this.isApplicationForm()) {
+      return 'application-form-button-container';
+    }
+    if (this.uploadAction) {
+      return 'upload-button-container';
+    }
+    return 'other-button-container';
   }
 
 }
@@ -199,88 +265,88 @@ export default class ProjectFieldRow extends Vue {
     <td style="width:80%">
       <div class="user-input-container">
         <div v-if="editing"> <!-- If editing -->
-          <div v-if="uploadAction"> <!-- If uploading a file -->
-            <div v-if="uploadAction === Action.UPLOAD_APPLICATION_FORM_ACTION">
-              <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                              :module="Module.PROJECT_DOCUMENTS_MODULE"
-                              :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION"
-                              text="Download application form template"/>
-              <br/>
+          <div :style="getEditFieldStyle()">
+            <div v-if="uploadAction" style="width:75%"> <!-- If uploading a file -->
+              <div v-if="uploadAction === Action.UPLOAD_APPLICATION_FORM_ACTION">
+                <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                                :module="Module.PROJECT_DOCUMENTS_MODULE"
+                                :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION"
+                                text="Download application form template"/>
+                <br/>
+              </div>
+              <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
+                            :text="'Upload '+ fieldKey" :call-refreh-context="exitAndCallRefreshContext"
+                            :is-file="true"/>
             </div>
-            <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
-                          :text="'Upload '+ fieldKey" :call-refreh-context="exitAndCallRefreshContext" :is-file="true"/>
-            <div class="button-container" style="width: 25%; display: flex; gap: 3%;">
-              <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel
-              </button>
-            </div>
-          </div>
-          <div v-else> <!-- If not uploading a file -->
-            <div v-if="includesEditProjectParam(EditProjectParam.HUMAN_READABLE)" style="width: 70%">
-              <span><strong>Human readable</strong></span>
-              <input type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;"><br/>
-              <span><strong>Query</strong></span>
-              <input type="text" v-model="editedValue[1]" class="form-control" style="width: 100%;">
-            </div>
-            <div v-else-if="includesEditProjectParam(EditProjectParam.DESCRIPTION)" style="width: 70%;">
-              <textarea type="text" v-model="editedValue[0]" class="form-control"></textarea>
-            </div>
-            <div v-else-if="includesEditProjectParam(EditProjectParam.BRIDGEHEADS)" style="width: 70%;">
-              <div v-if="tempFieldValue && tempFieldValue[0]">
+            <div v-else> <!-- If not uploading a file -->
+              <div>
+                <div v-if="isQuery()" style="width: 70%;">
+                  <span><strong>Human readable</strong></span>
+                  <input type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;"><br/>
+                  <span><strong>Query</strong></span>
+                  <input type="text" v-model="editedValue[1]" class="form-control" style="width: 100%;">
+                </div>
+                <div v-else-if="isDescription()" style="width:70%">
+                  <textarea type="text" v-model="editedValue[0]" class="form-control"></textarea>
+                </div>
+                <div v-else-if="isBridgeheads()" style="width: 75%">
+                  <div v-if="tempFieldValue && tempFieldValue[0]">
               <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary"
                     style="margin-right: 2%; margin-bottom: 0.5%">
                    <span>{{ bridgehead }}</span>
                 <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i
                     style="color: white; font-size: 18px" class="bi bi-x"></i></button>
               </span>
-              </div>
-              <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
-              <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
-                <input type="text" class="form-control" v-model="newValue" placeholder="Bridgehead">
-                <button class="btn btn-primary" @click="addBridgehead"><i style="font-size: 18px"
-                                                                          class="bi bi-check"></i>
-                </button>
-              </div>
-            </div>
-            <div v-else-if="includesEditProjectParam(EditProjectParam.QUERY_CONTEXT)" style="display:flex; width:100%">
-              <div style="display:flex; width:75%; flex-flow:column">
-                <div v-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] " style="width: 75%">
-                  <div v-for="(pair, index) in tempFieldValue[0].split(',')" :key="index"
-                       style="margin-right: 2%;  display: inline;" class="btn btn-primary">
-                    <span style="display: inline; margin-bottom: 2%">{{ pair }}</span>
-                    <button @click="removeVariable(index)" class="btn btn-sm" style="padding: 0px"><i
-                        style="color: white; font-size: 18px" class="bi bi-x"></i></button>
+                  </div>
+                  <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
+                  <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
+                    <input type="text" class="form-control" v-model="newValue" placeholder="Bridgehead">
+                    <button class="btn btn-primary" @click="addBridgehead"><i style="font-size: 18px"
+                                                                              class="bi bi-check"></i>
+                    </button>
                   </div>
                 </div>
-                <button style="display: inline; margin-top: 1%; margin-bottom: 0.5%; width:5%;" @click="showInputFields"
-                        class="btn btn-secondary"><i class="bi bi-plus"></i></button>
-                <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%; width:80%">
-                  <input type="text" class="form-control" v-model="newKey" placeholder="Key">
-                  <input type="text" class="form-control" v-model="newValue" placeholder="Value">
-                  <button class="btn btn-primary" @click="addVariable"><i style="font-size: 18px"
-                                                                          class="bi bi-check"></i>
-                  </button>
+                <div v-else-if="isEnvironmentVariables()" style="display:flex; width:75%; flex-flow:column">
+                  <div v-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] " style="width: 75%">
+                    <div v-for="(pair, index) in tempFieldValue[0].split(',')" :key="index"
+                         style="margin-right: 2%;  display: inline;" class="btn btn-primary">
+                      <span style="display: inline; margin-bottom: 2%">{{ pair }}</span>
+                      <button @click="removeVariable(index)" class="btn btn-sm" style="padding: 0px"><i
+                          style="color: white; font-size: 18px" class="bi bi-x"></i></button>
+                    </div>
+                  </div>
+                  <button style="display: inline; margin-top: 1%; margin-bottom: 0.5%; width:5%;" @click="showInputFields"
+                          class="btn btn-secondary"><i class="bi bi-plus"></i></button>
+                  <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%; width:80%">
+                    <input type="text" class="form-control" v-model="newKey" placeholder="Key">
+                    <input type="text" class="form-control" v-model="newValue" placeholder="Value">
+                    <button class="btn btn-primary" @click="addVariable"><i style="font-size: 18px" class="bi bi-check"></i>
+                    </button>
+                  </div>
+                </div>
+                <div v-else-if="isSelection()" style="width: 70%;">
+                  <select v-model="editedValue[0]" class="form-select" style="width: 100%;">
+                    <option v-for="value in possibleValues" :key="value" :value="value">{{ value }}</option>
+                  </select>
+                </div>
+                <div v-else style="width: 70%;">
+                  <!-- Normal case -->
+                  <input type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;">
                 </div>
               </div>
             </div>
-            <div v-else-if="possibleValues && possibleValues.length > 0" style="width: 70%">
-              <select v-model="editedValue[0]" class="form-select" style="width: 100%;">
-                <option v-for="value in possibleValues" :key="value" :value="value">{{ value }}</option>
-              </select>
-            </div>
-            <div v-else style="width: 70%"> <!-- Normal case -->
-              <input type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;">
-            </div>
-            <div class="button-container" style="width: 25%; display: flex; gap: 3%;">
+            <div class="button-container" :style="getButtonContainerStyle()">
               <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel
               </button>
-              <button @click="saveField" class="btn btn-outline-primary" style="padding:4px 20px 4px 20px;">Save
+              <button v-if="!uploadAction" @click="saveField" class="btn btn-outline-primary"
+                      style="padding:4px 20px 4px 20px;">Save
               </button>
             </div>
           </div>
         </div>
-        <div v-else> <!-- If not editing -->
-          <div v-if="includesEditProjectParam(EditProjectParam.BRIDGEHEADS)" style="width:100%">
+        <div v-else style="display:flex; width:100%"> <!-- If not editing -->
+          <div v-if="isBridgeheads()" style="width:100%">
             <div v-if="tempFieldValue" class="field-value">
                <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary"
                      style="margin-right: 2%; margin-bottom: 0.5%">
@@ -288,7 +354,9 @@ export default class ProjectFieldRow extends Vue {
                </span>
             </div>
           </div>
-          <div v-else-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] && includesEditProjectParam(EditProjectParam.QUERY_CONTEXT)" style="display:flex; width:100%">
+          <div
+              v-else-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] && isEnvironmentVariables()"
+              style="display:flex; width:100%">
             <div v-for="(pair, index) in tempFieldValue[0].split(',').filter(Boolean)" :key="index"
                  style="margin-right: 2%;  display: inline;" class="btn btn-primary">
               <span style="display: inline; margin-bottom: 1%">{{ pair }}</span>
@@ -359,6 +427,74 @@ export default class ProjectFieldRow extends Vue {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: calc(50 * 1ch); /* 1ch is the width of one character */
+}
+
+.query-edit-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.description-edit-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.bridgeheads-edit-field {
+  display: flex;
+  flex-flow: row;
+  width: 100%;
+}
+
+.environment-variables-edit-field {
+  display: flex;
+  width: 100%;
+}
+
+.selection-edit-fields {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.upload-edit-field {
+  display: flex;
+  flex-flow: row;
+  width: 100%;
+}
+
+.other-edit-fields {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.other-button-container,
+.query-button-container,
+.selection-button-container,
+.description-button-container {
+  width: 25%;
+  display: flex;
+  gap: 3%;
+}
+
+.bridgeheads-button-container,
+.environment-variables-button-container,
+.application-form-button-container {
+  width: 25%;
+  display: flex;
+  height: 20%;
+  gap: 3%;
+}
+
+.upload-button-container {
+  width: 25%;
+  gap: 3%;
 }
 
 </style>

@@ -106,15 +106,6 @@ export default class UploadButton extends Vue {
   </div>
 </template>
 
-
-
-
-
-
-
-
-
-
 <style scoped>
 
 </style>

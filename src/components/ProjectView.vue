@@ -59,6 +59,7 @@
           <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
                               :project-manager-backend-service="projectManagerBackendService"
                               :context="context"
+                              :project="project"
                               :bridgeheads="visibleBridgeheads"
                               :activeBridgehead="activeBridgehead"/>
           <br/>
@@ -73,7 +74,6 @@
               <th style="background-color: #f2f2f2;" scope="col">Created at</th>
               <th style="background-color: #f2f2f2;" scope="col">Expires at</th>
               <th style="background-color: #f2f2f2;" scope="col">Last modified</th>
-              <th style="background-color: #f2f2f2;" scope="col" v-if="existsVotum">Votum</th>
             </tr>
             </thead>
             <tbody>
@@ -86,11 +86,6 @@
               <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
               <td>{{ project && project.expiresAt ? convertDate(project.expiresAt) : '' }}</td>
               <td>{{ project && project.modifiedAt ? convertDate(project.modifiedAt) : '' }}</td>
-              <td v-if="existsVotum">
-                <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.DOWNLOAD_VOTUM_ACTION"
-                                icon-class="bi bi-download"/>
-              </td>
             </tr>
             </tbody>
           </table>
@@ -200,16 +195,19 @@
                     <div class="stepper">
                       <div v-for="(step, index) in steps" :key="index" class="stepper-item"
                            :class="{ 'active': draftDialogCurrentStep === index }">
-                        <button style="background: none; border:none; color: black;" @click="draftDialogCurrentStep=index"
+                        <button style="background: none; border:none; color: black;"
+                                @click="draftDialogCurrentStep=index"
                                 :style="{ fontWeight: draftDialogCurrentStep === index ? 'bold' : 'normal' }">{{ step }}
                         </button>
                       </div>
                     </div>
                     <!-- Navigationstasten -->
                     <div class="button-container mt-3">
-                      <button class="btn btn-primary me-2" @click="prevStep" :disabled="draftDialogCurrentStep === 0">Zurück
+                      <button class="btn btn-primary me-2" @click="prevStep" :disabled="draftDialogCurrentStep === 0">
+                        Zurück
                       </button>
-                      <button class="btn btn-primary" @click="nextStep" :disabled="draftDialogCurrentStep === steps.length - 1">
+                      <button class="btn btn-primary" @click="nextStep"
+                              :disabled="draftDialogCurrentStep === steps.length - 1">
                         Weiter
                       </button>
                     </div>
@@ -269,14 +267,16 @@
                                                :redirect-url="project.explorerUrl"
                                                :is-editable="true"
                                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>-->
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==2 || draftDialogCurrentStep==4" field-key="Query"
+              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==2 || draftDialogCurrentStep==4"
+                               field-key="Query"
                                :field-value="[project.humanReadable, project.query]"
                                edit-project-param="human-readable"
                                :call-refreh-context="refreshContext"
                                :redirect-url="project.explorerUrl"
                                :is-editable="true"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==2 || draftDialogCurrentStep==4" field-key="Query Format"
+              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==2 || draftDialogCurrentStep==4"
+                               field-key="Query Format"
                                edit-project-param="query-format"
                                :is-editable="true"
                                :field-value="[project.queryFormat]"
@@ -341,8 +341,11 @@
                               </tr>-->
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
                                field-key="Application form"
+                               :exists-file="existsApplicationForm"
                                edit-project-param="label"
                                :is-editable="true"
+                               :upload-action="Action.UPLOAD_APPLICATION_FORM_ACTION"
+                               :download-action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
                                :field-value="[project.label]"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
@@ -355,7 +358,10 @@
                                field-key="Votum"
                                edit-project-param="label"
                                :is-editable="true"
+                               :exists-file="existsVotum"
                                :field-value="[project.label]"
+                               :upload-action="Action.UPLOAD_VOTUM_ACTION"
+                               :download-action="Action.DOWNLOAD_VOTUM_ACTION"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
 
@@ -363,7 +369,10 @@
                                field-key="Script"
                                edit-project-param="label"
                                :is-editable="true"
+                               :exists-file="existsScript"
                                :field-value="[project.label]"
+                               :upload-action="Action.UPLOAD_SCRIPT_ACTION"
+                               :download-action="Action.DOWNLOAD_SCRIPT_ACTION"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <!--                <tr>
@@ -500,7 +509,6 @@ import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
 import NotificationBox from "@/components/Notification.vue";
 import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
-import DownloadButton from "@/components/DownloadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
 import keycloak from "@/services/keycloak";
@@ -523,7 +531,6 @@ export default defineComponent({
   components: {
     BridgeheadOverview,
     DocumentsTable,
-    DownloadButton,
     UploadButton,
     UserInput,
     NotificationBox,

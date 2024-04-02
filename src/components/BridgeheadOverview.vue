@@ -32,7 +32,7 @@
           <div v-else-if="index === 2" :class="{ 'accepted-state': bridgehead.state === 'ACCEPTED' }">
             {{ bridgehead.state }}
           </div>
-          <div v-else>
+          <div v-else> <!-- We assume that the DataSHIELD Status is the last header -->
             <div v-if="dataShieldStatusArray[bridgeheadIndex]">
               {{ dataShieldStatusArray[bridgeheadIndex].project_status }}
             </div>
@@ -52,7 +52,7 @@ import {
   Action,
   Bridgehead,
   DataShieldProjectStatus,
-  Module,
+  Module, Project,
   ProjectManagerContext,
   ProjetManagerBackendService
 } from "@/services/projetManagerBackendService";
@@ -72,13 +72,15 @@ export default class BridgeheadOverview extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
   @Prop() readonly bridgeheads!: Bridgehead[];
+  @Prop() readonly project!: Project;
 
 
 
   Module = Module;
   Action = Action;
 
-  headers = ['Bridgeheads', 'Votum', 'Project State', 'DataSHIELD Status'];
+  DATASHIELD_STATUS_HEADER = 'DataSHIELD Status';
+  headers = ['Bridgeheads', 'Votum', 'Project State'];
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
   selectedBridgehead: number | null = null;
@@ -96,7 +98,12 @@ export default class BridgeheadOverview extends Vue {
 
   async updateBridgeheadExtraInfo() {
     this.existsVotums = await this.fetchExistsVotums();
-    this.dataShieldStatusArray = await this.fetchDataShieldStates();
+    if (this.project && this.project.type === 'DATASHIELD'){
+      if (!this.headers.includes(this.DATASHIELD_STATUS_HEADER)){
+        this.headers.push(this.DATASHIELD_STATUS_HEADER); // We assume that the DataSHIELD Status is the last header
+      }
+      this.dataShieldStatusArray = await this.fetchDataShieldStates();
+    }
   }
 
 

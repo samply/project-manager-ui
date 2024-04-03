@@ -120,12 +120,12 @@ export default class UserInput extends Vue {
   <div v-if="isActive">
     <span>Invite user to this stage:</span>&nbsp;
     <div class="user-input-container">
-      <input class="user-input" type="text" v-model="partialEmail" @input="handleInput" @keyup.enter="handleSave"/>
       <select v-model="selectedBridgehead" class="form-select">
         <option v-for="bridgehead in bridgeheads" :key="bridgehead.bridgehead" :value="bridgehead"
                 :selected="bridgehead === selectedBridgehead">{{ bridgehead.bridgehead }}
         </option>
       </select>
+      <input class="user-input" type="text" v-model="partialEmail" @input="handleInput" @keyup.enter="handleSave"/>
       <ul class="suggestions" v-if="suggestions.length > 0">
         <li v-for="(suggestion, index) in suggestions" :key="index" @click="selectSuggestion(suggestion)">
           {{ suggestion.email }}

@@ -28,6 +28,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
   @Prop() readonly uploadAction!: Action;
   @Prop() readonly downloadAction!: Action;
+  @Prop() readonly downloadModule!: Module;
   @Prop() readonly existsFile!: boolean;
   @Prop() readonly bridgeheads!: string[];
   @Prop() readonly fetchListAction!: Action;
@@ -378,7 +379,7 @@ export default class ProjectFieldRow extends Vue {
         </button>
         <DownloadButton v-if="existsFile && downloadAction" :context="context"
                         :project-manager-backend-service="projectManagerBackendService"
-                        :module="Module.PROJECT_DOCUMENTS_MODULE" :action="downloadAction"/>
+                        :module="downloadModule" :action="downloadAction"/>
       </div>
       <div v-if="isFieldValueEditable() && redirectUrl !== null">
         <i class="bi bi-arrow-right-circle" @click="redirectToURL"></i>

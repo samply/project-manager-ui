@@ -295,6 +295,7 @@
                                :field-value="[]"
                                :upload-action="Action.UPLOAD_APPLICATION_FORM_ACTION"
                                :download-action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
+                               :download-module="Module.PROJECT_DOCUMENTS_MODULE"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==4"
@@ -304,6 +305,7 @@
                                :field-value="[]"
                                :upload-action="Action.UPLOAD_VOTUM_ACTION"
                                :download-action="Action.DOWNLOAD_VOTUM_ACTION"
+                               :download-module="Module.PROJECT_DOCUMENTS_MODULE"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="dataShieldStatus && (!existsDraftDialog || draftDialogCurrentStep==4)"
@@ -313,6 +315,7 @@
                                :exists-file="existsScript"
                                :upload-action="Action.UPLOAD_SCRIPT_ACTION"
                                :download-action="Action.DOWNLOAD_SCRIPT_ACTION"
+                               :download-module="Module.PROJECT_DOCUMENTS_MODULE"
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow
@@ -321,6 +324,7 @@
                   :is-editable="false"
                   :field-value="[]"
                   :download-action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION"
+                  :download-module="Module.TOKEN_MANAGER_MODULE"
                   :exists-file="existsAuthenticationScript"
                   :call-refreh-context="refreshContext"
                   :context="context" :project-manager-backend-service="projectManagerBackendService"/>

@@ -264,14 +264,6 @@
                                :possible-values="queryFormats"
                                :redirect-url="project.explorerUrl"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <!-- TODO: Separate queries in pairs Key-Values + encrpyt and decrypt in base64-->
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==3 || draftDialogCurrentStep==4"
-                               field-key="Environment Variables"
-                               :field-value="[project?.queryContext]"
-                               :edit-project-param="[EditProjectParam.QUERY_CONTEXT]"
-                               :is-editable="isNotIncludedInCurrentProjectConfiguration('queryContext')"
-                               :call-refreh-context="refreshContext"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==3 || draftDialogCurrentStep==4"
                                field-key="Output Format"
                                :field-value="[project.outputFormat]"
@@ -287,6 +279,14 @@
                                :is-editable="isNotIncludedInCurrentProjectConfiguration('templateId')"
                                :call-refreh-context="refreshContext"
                                :possible-values="exporterTemplateIds"
+                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+              <!-- TODO: Separate queries in pairs Key-Values + encrpyt and decrypt in base64-->
+              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==3 || draftDialogCurrentStep==4"
+                               field-key="Environment Variables"
+                               :field-value="[project?.queryContext]"
+                               :edit-project-param="[EditProjectParam.QUERY_CONTEXT]"
+                               :is-editable="isNotIncludedInCurrentProjectConfiguration('queryContext')"
+                               :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
                                field-key="Application form"

@@ -316,7 +316,7 @@
                                :call-refreh-context="refreshContext"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow
-                  v-if=" dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && existsAuthenticationScript && (!existsDraftDialog || draftDialogCurrentStep==2 || draftDialogCurrentStep==4)"
+                  v-if=" dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && existsAuthenticationScript"
                   field-key="Authentication Script"
                   :is-editable="false"
                   :field-value="[]"

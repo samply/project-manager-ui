@@ -225,7 +225,7 @@
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
                                field-key="Bridgeheads"
-                               :field-value="[bridgeheads]"
+                               :field-value="[bridgeheads, allBridgeheads]"
                                :edit-project-param="[EditProjectParam.BRIDGEHEADS]"
                                :is-editable="true"
                                :call-refreh-context="refreshContext"

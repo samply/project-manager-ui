@@ -152,6 +152,21 @@ export default class ProjectFieldRow extends Vue {
     }
   }
 
+  areThereMoreBridgeheadsAvailableToAdd(): boolean {
+    return (this.fieldValue !== null && this.fieldValue.length >= 2
+        && this.fieldValue[0] !== null && this.fieldValue[1] !== null
+        && Array.isArray(this.fieldValue[0]) && Array.isArray(this.fieldValue[1])
+        && (this.fieldValue[0] as string[]).length < (this.fieldValue[1] as string[]).length);
+  }
+
+  fetchOtherAvailableBridgeheadsToAdd(): string[] {
+    return (this.fieldValue !== null && this.fieldValue.length >= 2
+        && this.fieldValue[0] !== null && this.fieldValue[1] !== null
+        && Array.isArray(this.fieldValue[0]) && Array.isArray(this.fieldValue[1])) ?
+        (this.fieldValue[1] as string[]).filter((element: string) => !this.fieldValue[0].includes(element)) : [];
+
+
+  }
 
   removeBridgehead(index: any) {
     if (Array.isArray(this.tempFieldValue) && this.tempFieldValue.length > 0 && Array.isArray(this.tempFieldValue[0])) {
@@ -300,12 +315,19 @@ export default class ProjectFieldRow extends Vue {
                     style="color: white; font-size: 18px" class="bi bi-x"></i></button>
               </span>
                   </div>
-                  <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
-                  <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
-                    <input type="text" class="form-control" v-model="newValue" placeholder="Bridgehead">
-                    <button class="btn btn-primary" @click="addBridgehead"><i style="font-size: 18px"
-                                                                              class="bi bi-check"></i>
-                    </button>
+                  <div v-if="areThereMoreBridgeheadsAvailableToAdd()">
+                    <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
+                    <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
+                      <select class="form-control" v-model="newValue" placeholder="Bridgehead">
+                        <option
+                            v-for="(value, index) in fetchOtherAvailableBridgeheadsToAdd()"
+                            :key="index" :value="value">{{ value }}
+                        </option>
+                      </select>
+                      <button class="btn btn-primary" @click="addBridgehead"><i style="font-size: 18px"
+                                                                                class="bi bi-check"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div v-else-if="isEnvironmentVariables()" style="display:flex; width:75%; flex-flow:column">
@@ -317,12 +339,14 @@ export default class ProjectFieldRow extends Vue {
                           style="color: white; font-size: 18px" class="bi bi-x"></i></button>
                     </div>
                   </div>
-                  <button style="display: inline; margin-top: 1%; margin-bottom: 0.5%; width:5%;" @click="showInputFields"
+                  <button style="display: inline; margin-top: 1%; margin-bottom: 0.5%; width:5%;"
+                          @click="showInputFields"
                           class="btn btn-secondary"><i class="bi bi-plus"></i></button>
                   <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%; width:80%">
                     <input type="text" class="form-control" v-model="newKey" placeholder="Key">
                     <input type="text" class="form-control" v-model="newValue" placeholder="Value">
-                    <button class="btn btn-primary" @click="addVariable"><i style="font-size: 18px" class="bi bi-check"></i>
+                    <button class="btn btn-primary" @click="addVariable"><i style="font-size: 18px"
+                                                                            class="bi bi-check"></i>
                     </button>
                   </div>
                 </div>
@@ -373,7 +397,8 @@ export default class ProjectFieldRow extends Vue {
     <!-- THIRD COLUMN ACTION TOOLS -->
     <td>
       <div style="display:inline-flex; flex-flow:row; align-items: baseline">
-        <button v-if="isFieldValueEditable() && redirectUrl === null" class="btn btn-primary" data-toggle="tooltip"
+        <button v-if="isFieldValueEditable() && (redirectUrl === null || isBridgeheads())" class="btn btn-primary"
+                data-toggle="tooltip"
                 data-placement="top" title="Edit"
                 style="background:none; border:none; color:black"><i class="bi bi-pencil me-2" @click="editField"></i>
         </button>

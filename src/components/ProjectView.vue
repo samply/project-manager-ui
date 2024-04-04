@@ -119,12 +119,14 @@
                                   :project-manager-backend-service="projectManagerBackendService"/>
 
             <!-- Project State Module: BK-ADMIN View -->
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
+            <ProjectManagerButton v-if="activeBridgehead && activeBridgehead.state !== 'ACCEPTED'"
+                                  :module="Module.PROJECT_STATE_MODULE"
                                   :action="Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
+            <ProjectManagerButton v-if="activeBridgehead && activeBridgehead.state !== 'REJECTED'"
+                                  :module="Module.PROJECT_STATE_MODULE"
                                   :action="Action.REJECT_BRIDGEHEAD_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Reject"
                                   button-class="btn btn-danger btn-secondary mr-2"

@@ -53,3 +53,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Show Draft Dialog only if user is CREATOR and the state is DRAFT
 - EditProjectParam
 - Bridgeheads list for adding new bridgeheads to a project
+- Bridgehead can accept only if not accepted and reject only if not rejected

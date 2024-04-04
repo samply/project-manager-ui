@@ -280,8 +280,8 @@ export default class ProjectFieldRow extends Vue {
 
     <td style="width:80%">
       <div class="user-input-container">
-        <div v-if="editing"> <!-- If editing -->
-          <div :style="getEditFieldStyle()">
+        <div v-if="editing" style="width:100%"> <!-- If editing -->
+          <div :class="getEditFieldStyle()">
             <div v-if="uploadAction" style="width:75%"> <!-- If uploading a file -->
               <div v-if="uploadAction === Action.UPLOAD_APPLICATION_FORM_ACTION">
                 <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
@@ -295,7 +295,7 @@ export default class ProjectFieldRow extends Vue {
                             :text="'Upload '+ fieldKey" :call-refreh-context="exitAndCallRefreshContext"
                             :is-file="true"/>
             </div>
-            <div v-else> <!-- If not uploading a file -->
+            <div v-else style="width:75%"> <!-- If not uploading a file -->
               <div>
                 <div v-if="isQuery()" style="width: 70%;">
                   <span><strong>Human readable</strong></span>
@@ -361,8 +361,8 @@ export default class ProjectFieldRow extends Vue {
                 </div>
               </div>
             </div>
-            <div class="button-container" :style="getButtonContainerStyle()">
-              <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;">Cancel
+            <div class="button-container" :class="getButtonContainerStyle()">
+              <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;margin-left: auto">Cancel
               </button>
               <button v-if="!uploadAction" @click="saveField" class="btn btn-outline-primary"
                       style="padding:4px 20px 4px 20px;">Save
@@ -506,7 +506,7 @@ export default class ProjectFieldRow extends Vue {
 .description-button-container {
   width: 25%;
   display: flex;
-  gap: 3%;
+  gap: 5%;
 }
 
 .bridgeheads-button-container,

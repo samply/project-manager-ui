@@ -33,6 +33,7 @@ export default class UserInput extends Vue {
   isActive = false;
   currentUsers: User[] = [];
   canInvite = true;
+  showSuggestions = false;
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
   onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
@@ -85,9 +86,13 @@ export default class UserInput extends Vue {
     const params = new Map<string, string>();
     if (partialEmail && partialEmail.length > 0) {
       params.set('partial-email', partialEmail);
-      this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_ACTION, this.createContext(this.selectedBridgehead), params).then(users => this.suggestions = users);
+      this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_ACTION, this.createContext(this.selectedBridgehead), params).then(users => {
+        this.suggestions = users;
+        this.showSuggestions = true;
+      });
     } else {
       this.suggestions = [];
+      this.showSuggestions = false;
     }
   }
 
@@ -111,6 +116,7 @@ export default class UserInput extends Vue {
   selectSuggestion(suggestion: User) {
     this.partialEmail = suggestion.email;
     this.suggestions = this.suggestions.filter(item => item != suggestion);
+    this.showSuggestions = false;
   }
 
 }
@@ -126,7 +132,7 @@ export default class UserInput extends Vue {
         </option>
       </select>
       <input class="user-input" type="text" v-model="partialEmail" @input="handleInput" @keyup.enter="handleSave"/>
-      <ul class="suggestions" v-if="suggestions.length > 0">
+      <ul class="suggestions" v-if="suggestions.length > 0 && showSuggestions">
         <li v-for="(suggestion, index) in suggestions" :key="index" @click="selectSuggestion(suggestion)">
           {{ suggestion.email }}
         </li>

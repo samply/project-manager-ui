@@ -74,6 +74,7 @@ export default class BridgeheadOverview extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
   @Prop() readonly bridgeheads!: Bridgehead[];
   @Prop() readonly project!: Project;
+  @Prop({ type: Function, required: true }) readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
 
 
 
@@ -135,6 +136,7 @@ export default class BridgeheadOverview extends Vue {
 
   selectBridgehead(index: number) {
     this.selectedBridgehead = index;
+    this.callUpdateActiveBridgehead(this.bridgeheads[index]);
   }
 }
 </script>

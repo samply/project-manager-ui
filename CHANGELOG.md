@@ -55,3 +55,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Bridgeheads list for adding new bridgeheads to a project
 - Bridgehead can accept only if not accepted and reject only if not rejected
 - Fetch labels of script, application form and votum
+- Update active bridgehead after clicking on bridgehead in bridgehead overview

@@ -49,6 +49,7 @@
 
           <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
                               :project-manager-backend-service="projectManagerBackendService"
+                              :call-update-active-bridgehead="updateActiveBridgehead"
                               :context="context"
                               :project="project"
                               :bridgeheads="visibleBridgeheads"
@@ -674,6 +675,10 @@ export default defineComponent({
         console.error('Error calling action ' + action + ' of module ' + module + ':', error);
         throw error;
       }
+    },
+
+    updateActiveBridgehead(bridgehead: Bridgehead){
+      this.activeBridgehead = bridgehead;
     }
 
   }

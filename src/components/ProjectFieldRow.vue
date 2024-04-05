@@ -146,7 +146,7 @@ export default class ProjectFieldRow extends Vue {
       if (Array.isArray(this.tempFieldValue) && this.tempFieldValue.length > 0 && Array.isArray(this.tempFieldValue[0])) {
         const targetArray = this.tempFieldValue[0];
         targetArray.push(this.newValue);
-        this.tempFieldValue[0] = targetArray.join(',');
+        this.tempFieldValue[0] = targetArray;
       }
       this.newValue = '';
     }
@@ -173,7 +173,7 @@ export default class ProjectFieldRow extends Vue {
       const targetArray = this.tempFieldValue[0]; // Direkt auf das Ziel-Array zugreifen
       if (index >= 0 && index < targetArray.length) {
         targetArray.splice(index, 1);
-        this.tempFieldValue[0] = targetArray.join(',');
+        this.tempFieldValue[0] = targetArray;
       }
     }
   }
@@ -307,15 +307,15 @@ export default class ProjectFieldRow extends Vue {
                   <textarea type="text" v-model="editedValue[0]" class="form-control"></textarea>
                 </div>
                 <div v-else-if="isBridgeheads()" style="width: 75%">
-                  <div v-if="tempFieldValue && tempFieldValue[0]">
-              <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary"
-                    style="margin-right: 2%; margin-bottom: 0.5%">
-                   <span>{{ bridgehead }}</span>
-                <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i
-                    style="color: white; font-size: 18px" class="bi bi-x"></i></button>
-              </span>
-                  </div>
-                  <div v-if="areThereMoreBridgeheadsAvailableToAdd()">
+                  <span v-if="tempFieldValue && tempFieldValue[0]">
+                    <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary"
+                          style="margin-right: 2%; margin-bottom: 0.5%">
+                         <span>{{ bridgehead }}</span>
+                      <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i
+                          style="color: white; font-size: 18px" class="bi bi-x"></i></button>
+                    </span>
+                  </span>
+                  <span v-if="areThereMoreBridgeheadsAvailableToAdd()">
                     <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
                     <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
                       <select class="form-control" v-model="newValue" placeholder="Bridgehead">
@@ -328,7 +328,7 @@ export default class ProjectFieldRow extends Vue {
                                                                                 class="bi bi-check"></i>
                       </button>
                     </div>
-                  </div>
+                  </span>
                 </div>
                 <div v-else-if="isEnvironmentVariables()" style="display:flex; width:75%; flex-flow:column">
                   <div v-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] " style="width: 75%">
@@ -396,19 +396,23 @@ export default class ProjectFieldRow extends Vue {
 
     <!-- THIRD COLUMN ACTION TOOLS -->
     <td>
-      <div style="display:inline-flex; flex-flow:row; align-items: baseline">
-        <button v-if="isFieldValueEditable() && (redirectUrl === null || isBridgeheads())" class="btn btn-primary"
+      <span style="display:flex; flex-flow:row; align-items: baseline">
+          <div style="display:inline-flex; flex-flow:row; align-items: baseline">
+            <button v-if="isFieldValueEditable() && (redirectUrl === null || isBridgeheads())" class="btn btn-primary"
+                    data-toggle="tooltip"
+                    data-placement="top" title="Edit"
+                    style="background:none; border:none; color:black"><i class="bi bi-pencil me-2" @click="editField"></i>
+            </button>
+            <DownloadButton v-if="existsFile && downloadAction" :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :module="downloadModule" :action="downloadAction"/>
+        </div>
+        <button v-if="isFieldValueEditable() && redirectUrl !== null" class="btn btn-primary"
                 data-toggle="tooltip"
-                data-placement="top" title="Edit"
-                style="background:none; border:none; color:black"><i class="bi bi-pencil me-2" @click="editField"></i>
+                data-placement="top" title="CCP Explorer"
+                style="background:none; border:none; color:black"><i class="bi bi-arrow-right-circle" @click="redirectToURL"></i>
         </button>
-        <DownloadButton v-if="existsFile && downloadAction" :context="context"
-                        :project-manager-backend-service="projectManagerBackendService"
-                        :module="downloadModule" :action="downloadAction"/>
-      </div>
-      <div v-if="isFieldValueEditable() && redirectUrl !== null">
-        <i class="bi bi-arrow-right-circle" @click="redirectToURL"></i>
-      </div>
+      </span>
     </td>
   </tr>
 </template>

@@ -276,11 +276,14 @@ export default class ProjectFieldRow extends Vue {
 
 <template>
   <tr>
+    <!-- FIRST COLUMN: HEADERS -->
     <td class="bold-text thinner-column" style="background-color: #f2f2f2;">{{ fieldKey }}</td>
 
+    <!-- SECOND COLUMN: CONTENT -->
     <td style="width:80%">
       <div class="user-input-container">
-        <div v-if="editing" style="width:100%"> <!-- If editing -->
+        <!-- If editing -->
+        <div v-if="editing" style="width:100%">
           <div :class="getEditFieldCssClass()">
             <div v-if="uploadAction" style="width:75%"> <!-- If uploading a file -->
               <div v-if="uploadAction === Action.UPLOAD_APPLICATION_FORM_ACTION">
@@ -370,7 +373,8 @@ export default class ProjectFieldRow extends Vue {
             </div>
           </div>
         </div>
-        <div v-else style="display:flex; width:100%"> <!-- If not editing -->
+        <!-- If not editing -->
+        <div v-else style="display:flex; width:100%">
           <div v-if="isBridgeheads()" style="width:100%">
             <div v-if="tempFieldValue" class="field-value">
                <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary"
@@ -394,7 +398,7 @@ export default class ProjectFieldRow extends Vue {
       </div>
     </td>
 
-    <!-- THIRD COLUMN ACTION TOOLS -->
+    <!-- THIRD COLUMN: ACTIONS -->
     <td>
       <span style="display:flex; flex-flow:row; align-items: baseline">
           <div style="display:inline-flex; flex-flow:row; align-items: baseline">

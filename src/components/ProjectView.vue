@@ -294,7 +294,7 @@
                                field-key="Application form"
                                :exists-file="existsApplicationForm"
                                :is-editable="true"
-                               :field-value="[]"
+                               :field-value="[applicationFormLabel]"
                                :upload-action="Action.UPLOAD_APPLICATION_FORM_ACTION"
                                :download-action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
                                :download-module="Module.PROJECT_DOCUMENTS_MODULE"
@@ -304,7 +304,7 @@
                                field-key="Votum"
                                :is-editable="true"
                                :exists-file="existsVotum"
-                               :field-value="[]"
+                               :field-value="[votumLabel]"
                                :upload-action="Action.UPLOAD_VOTUM_ACTION"
                                :download-action="Action.DOWNLOAD_VOTUM_ACTION"
                                :download-module="Module.PROJECT_DOCUMENTS_MODULE"
@@ -312,7 +312,7 @@
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="dataShieldStatus && (!existsDraftDialog || draftDialogCurrentStep==4)"
                                field-key="Script"
-                               :field-value="[]"
+                               :field-value="[scriptLabel]"
                                :is-editable="true"
                                :exists-file="existsScript"
                                :upload-action="Action.UPLOAD_SCRIPT_ACTION"
@@ -491,7 +491,10 @@ export default defineComponent({
       projectRoles: [] as ProjectRole[],
       steps: ['Project', 'Type', 'Query', 'Output', 'Summary'], // Die einzelnen Schritte des Steppers
       draftDialogCurrentStep: 0, // Der aktuelle Schritt, beginnend bei 0
-      existsDraftDialog: false
+      existsDraftDialog: false,
+      applicationFormLabel: "",
+      scriptLabel: "",
+      votumLabel: ""
     };
   },
   watch: {
@@ -605,9 +608,24 @@ export default defineComponent({
           }
         }
         this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads');
-        this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, new Map(), 'existsVotum');
-        this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), 'existsApplicationForm');
-        this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), 'existsScript');
+        this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, new Map(), (result: boolean) => {
+          this.existsVotum = result;
+          if (this.existsVotum) {
+            this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_LABEL_ACTION, new Map(), 'votumLabel');
+          }
+        });
+        this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), (result: boolean) => {
+          this.existsApplicationForm = result;
+          if (this.existsApplicationForm) {
+            this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_APPLICATION_FORM_LABEL_ACTION, new Map(), 'applicationFormLabel');
+          }
+        })
+        this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), (result: boolean) => {
+          this.existsScript = result;
+          if (this.existsScript) {
+            this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_SCRIPT_LABEL_ACTION, new Map(), 'scriptLabel');
+          }
+        });
         this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript');
         this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, new Map(), 'projectRoles');
         this.existsDraftDialog = (this.project.state === 'DRAFT' && keycloak.getEmail() === this.project.creatorEmail);

@@ -224,7 +224,7 @@ export default class ProjectFieldRow extends Vue {
     return this.uploadAction === Action.UPLOAD_APPLICATION_FORM_ACTION;
   }
 
-  getEditFieldStyle() {
+  getEditFieldCssClass() {
     if (this.isQuery()) {
       return 'query-edit-field';
     }
@@ -246,7 +246,7 @@ export default class ProjectFieldRow extends Vue {
     return 'other-edit-fields';
   }
 
-  getButtonContainerStyle() {
+  getButtonContainerCssClass() {
     if (this.isQuery()) {
       return 'query-button-container';
     }
@@ -281,7 +281,7 @@ export default class ProjectFieldRow extends Vue {
     <td style="width:80%">
       <div class="user-input-container">
         <div v-if="editing" style="width:100%"> <!-- If editing -->
-          <div :class="getEditFieldStyle()">
+          <div :class="getEditFieldCssClass()">
             <div v-if="uploadAction" style="width:75%"> <!-- If uploading a file -->
               <div v-if="uploadAction === Action.UPLOAD_APPLICATION_FORM_ACTION">
                 <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
@@ -361,7 +361,7 @@ export default class ProjectFieldRow extends Vue {
                 </div>
               </div>
             </div>
-            <div class="button-container" :class="getButtonContainerStyle()">
+            <div class="button-container" :class="getButtonContainerCssClass()">
               <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;margin-left: auto">Cancel
               </button>
               <button v-if="!uploadAction" @click="saveField" class="btn btn-outline-primary"

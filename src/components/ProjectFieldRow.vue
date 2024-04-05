@@ -84,7 +84,7 @@ export default class ProjectFieldRow extends Vue {
   editField() {
     this.editing = true;
     // Copy tempFieldValue to editedValue when editing starts
-    this.editedValue = this.tempFieldValue.slice();
+    this.editedValue = this.tempFieldValue
   }
 
   isFieldValueEditable() {
@@ -181,7 +181,8 @@ export default class ProjectFieldRow extends Vue {
 
   addVariable() {
     if (this.newKey && this.newValue) {
-      this.tempFieldValue[0] += ',' + this.newKey + '=' + this.newValue;
+      this.tempFieldValue[0] != null ? this.tempFieldValue[0] += ',' : this.tempFieldValue[0] = '';
+      this.tempFieldValue[0] += this.newKey + '=' + this.newValue;
       this.newKey = '';
       this.newValue = '';
     }
@@ -333,18 +334,16 @@ export default class ProjectFieldRow extends Vue {
                     </div>
                   </span>
                 </div>
-                <div v-else-if="isEnvironmentVariables()" style="display:flex; width:75%; flex-flow:column">
-                  <div v-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] " style="width: 75%">
-                    <div v-for="(pair, index) in tempFieldValue[0].split(',')" :key="index"
+                <div v-else-if="isEnvironmentVariables()" style="width:75%;">
+                  <span v-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] " style="width: 75%">
+                    <span v-for="(pair, index) in tempFieldValue[0].split(',')" :key="index"
                          style="margin-right: 2%;  display: inline;" class="btn btn-primary">
                       <span style="display: inline; margin-bottom: 2%">{{ pair }}</span>
                       <button @click="removeVariable(index)" class="btn btn-sm" style="padding: 0px"><i
                           style="color: white; font-size: 18px" class="bi bi-x"></i></button>
-                    </div>
-                  </div>
-                  <button style="display: inline; margin-top: 1%; margin-bottom: 0.5%; width:5%;"
-                          @click="showInputFields"
-                          class="btn btn-secondary"><i class="bi bi-plus"></i></button>
+                    </span>
+                  </span>
+                  <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
                   <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%; width:80%">
                     <input type="text" class="form-control" v-model="newKey" placeholder="Key">
                     <input type="text" class="form-control" v-model="newValue" placeholder="Value">

@@ -322,7 +322,7 @@ export default class ProjectFieldRow extends Vue {
                   <span v-if="areThereMoreBridgeheadsAvailableToAdd()">
                     <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
                     <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
-                      <select class="form-control" v-model="newValue" placeholder="Bridgehead">
+                      <select class="form-select" v-model="newValue" placeholder="Bridgehead">
                         <option
                             v-for="(value, index) in fetchOtherAvailableBridgeheadsToAdd()"
                             :key="index" :value="value">{{ value }}

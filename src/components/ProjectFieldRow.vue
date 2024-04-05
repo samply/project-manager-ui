@@ -179,20 +179,20 @@ export default class ProjectFieldRow extends Vue {
   }
 
 
-  addVariable() {
+  addEnvVariable() {
     if (this.newKey && this.newValue) {
-      this.tempFieldValue[0] != null ? this.tempFieldValue[0] += ',' : this.tempFieldValue[0] = '';
+      this.tempFieldValue[0] != null ? this.tempFieldValue[0] += ';' : this.tempFieldValue[0] = '';
       this.tempFieldValue[0] += this.newKey + '=' + this.newValue;
       this.newKey = '';
       this.newValue = '';
     }
   }
 
-  removeVariable(index: any) {
+  removeEnvVariable(index: any) {
     if (this.tempFieldValue.length > 0) {
-      const pairs = this.tempFieldValue[0].split(',');
+      const pairs = this.tempFieldValue[0].split(';');
       pairs.splice(index, 1);
-      this.tempFieldValue[0] = pairs.join(',');
+      this.tempFieldValue[0] = pairs.join(';');
     }
   }
 
@@ -336,10 +336,10 @@ export default class ProjectFieldRow extends Vue {
                 </div>
                 <div v-else-if="isEnvironmentVariables()" style="width:75%;">
                   <span v-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] " style="width: 75%">
-                    <span v-for="(pair, index) in tempFieldValue[0].split(',')" :key="index"
+                    <span v-for="(pair, index) in tempFieldValue[0].split(';')" :key="index"
                          style="margin-right: 2%;  display: inline;" class="btn btn-primary">
                       <span style="display: inline; margin-bottom: 2%">{{ pair }}</span>
-                      <button @click="removeVariable(index)" class="btn btn-sm" style="padding: 0px"><i
+                      <button @click="removeEnvVariable(index)" class="btn btn-sm" style="padding: 0px"><i
                           style="color: white; font-size: 18px" class="bi bi-x"></i></button>
                     </span>
                   </span>
@@ -347,7 +347,7 @@ export default class ProjectFieldRow extends Vue {
                   <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%; width:80%">
                     <input type="text" class="form-control" v-model="newKey" placeholder="Key">
                     <input type="text" class="form-control" v-model="newValue" placeholder="Value">
-                    <button class="btn btn-primary" @click="addVariable"><i style="font-size: 18px"
+                    <button class="btn btn-primary" @click="addEnvVariable"><i style="font-size: 18px"
                                                                             class="bi bi-check"></i>
                     </button>
                   </div>
@@ -385,7 +385,7 @@ export default class ProjectFieldRow extends Vue {
           <div
               v-else-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] && isEnvironmentVariables()"
               style="display:flex; width:100%">
-            <div v-for="(pair, index) in tempFieldValue[0].split(',').filter(Boolean)" :key="index"
+            <div v-for="(pair, index) in tempFieldValue[0].split(';').filter(Boolean)" :key="index"
                  style="margin-right: 2%;  display: inline;" class="btn btn-primary">
               <span style="display: inline; margin-bottom: 1%">{{ pair }}</span>
             </div>

@@ -120,13 +120,13 @@
                                   :project-manager-backend-service="projectManagerBackendService"/>
 
             <!-- Project State Module: BK-ADMIN View -->
-            <ProjectManagerButton v-if="activeBridgehead && activeBridgehead.state !== 'ACCEPTED'"
+            <ProjectManagerButton v-if="activeBridgehead && activeBridgehead.state !== 'ACCEPTED' && canShowBridgeheadAdminButtons()"
                                   :module="Module.PROJECT_STATE_MODULE"
                                   :action="Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton v-if="activeBridgehead && activeBridgehead.state !== 'REJECTED'"
+            <ProjectManagerButton v-if="activeBridgehead && activeBridgehead.state !== 'REJECTED' && canShowBridgeheadAdminButtons()"
                                   :module="Module.PROJECT_STATE_MODULE"
                                   :action="Action.REJECT_BRIDGEHEAD_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Reject"
@@ -160,12 +160,12 @@
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <!-- Export Module -->
-            <ProjectManagerButton :module="Module.EXPORT_MODULE" :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
+            <ProjectManagerButton v-if="canShowBridgeheadAdminButtons()" :module="Module.EXPORT_MODULE" :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
                                   :context="context" :call-refreh-context="refreshContext"
                                   text="Save query in bridgehead"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.EXPORT_MODULE"
+            <ProjectManagerButton v-if="canShowBridgeheadAdminButtons()" :module="Module.EXPORT_MODULE"
                                   :action="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"
                                   :context="context" :call-refreh-context="refreshContext"
                                   text="Save and execute query in bridgehead"
@@ -495,7 +495,8 @@ export default defineComponent({
       existsDraftDialog: false,
       applicationFormLabel: "",
       scriptLabel: "",
-      votumLabel: ""
+      votumLabel: "",
+      existInvitedUsers: false
     };
   },
   watch: {
@@ -629,6 +630,7 @@ export default defineComponent({
         });
         this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript');
         this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, new Map(), 'projectRoles');
+        this.initializeData(Module.USER_MODULE, Action.EXIST_INVITED_USERS_ACTION, new Map(), 'existInvitedUsers');
         this.existsDraftDialog = (this.project.state === 'DRAFT' && keycloak.getEmail() === this.project.creatorEmail);
       }
     },
@@ -679,7 +681,12 @@ export default defineComponent({
 
     updateActiveBridgehead(bridgehead: Bridgehead){
       this.activeBridgehead = bridgehead;
+    },
+
+    canShowBridgeheadAdminButtons(): boolean {
+      return (this.project && (this.project.state == 'DEVELOP' || this.project.state == 'PILOT')) ? this.existInvitedUsers : true;
     }
+
 
   }
 

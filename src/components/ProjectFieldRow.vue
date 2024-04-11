@@ -84,7 +84,7 @@ export default class ProjectFieldRow extends Vue {
   editField() {
     this.editing = true;
     // Copy tempFieldValue to editedValue when editing starts
-    this.editedValue = this.tempFieldValue
+    this.editedValue = this.tempFieldValue.slice();
   }
 
   isFieldValueEditable() {

@@ -1,19 +1,20 @@
 <template>
   <div class="flex-container">
     <div class="left-container">
-      <div v-if="projectData.projectId">
+
+      <!--<div v-if="projectData.projectId">-->
         <div class="vertical-stepper">
-          <div v-for="(projectState, index) in projectStates" :key="index" class="stepper-step">
-            <div style="display: flex; flex-flow: row">
+          <div v-for="(projectState, index) in getProjectStates()" :key="index" class="stepper-step">
+            <div style="display: flex; flex-flow: row" :class="{ 'active-step': project?.state === projectState }">
               <div class="step-circle">
                 <span>{{ index + 1 }}</span>
               </div>
               <div class="step-title">{{ projectState }}</div>
             </div>
-            <div v-if="index < projectStates.length - 1" class="stepper-line"></div>
+            <div v-if="index < getProjectStates().length - 1" class="stepper-line"></div>
           </div>
         </div>
-      </div>
+      <!--</div>-->
     </div>
 
     <div class="right-container">
@@ -27,7 +28,7 @@
             <router-link to="/" data-toggle="tooltip" data-placement="top" title="Back to Project Dashboard"><i
                 class="bi bi-arrow-left-square-fill"></i></router-link>
 
-            <div class="card" v-if="visibleBridgeheads && visibleBridgeheads.length == 1" style="padding: 3px 20px;">
+            <div class="card" v-if="visibleBridgeheads && visibleBridgeheads.length === 1" style="padding: 3px 20px;">
               <div class="card-body" style="padding: 0px 0px;">
                 <span style="padding: 0px 0px;">{{ context.bridgehead }}</span>
               </div>
@@ -685,8 +686,23 @@ export default defineComponent({
 
     canShowBridgeheadAdminButtons(): boolean {
       return (this.project && (this.project.state == 'DEVELOP' || this.project.state == 'PILOT')) ? this.existInvitedUsers : true;
-    }
+    },
 
+    getProjectStates(): string[] {
+      let visibleProjectStates: string[] = this.projectStates.slice();
+      if (this.projectStates.length > 0) {
+        if (this.project?.state === 'REJECTED') {
+          visibleProjectStates = visibleProjectStates.filter(item => !['FINISHED', 'ARCHIVED'].includes(item));
+        } else {
+          if (this.project?.state === 'ARCHIVED') {
+            visibleProjectStates = visibleProjectStates.filter(item => !['FINISHED', 'REJECTED'].includes(item));
+          } else {
+            visibleProjectStates = visibleProjectStates.filter(item => !['ARCHIVED', 'REJECTED'].includes(item));
+          }
+        }
+      }
+      return visibleProjectStates
+    }
 
   }
 
@@ -798,8 +814,14 @@ export default defineComponent({
 
 .step-title {
   font-size: 16px;
+  padding-top: 2px;
 }
-
+.active-step {
+  font-weight: bold;
+}
+.active-step .step-circle {
+  background-color: #007bff;
+}
 
 .custom-width-notifications {
   width: 28%;

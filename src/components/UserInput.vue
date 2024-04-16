@@ -33,6 +33,7 @@ export default class UserInput extends Vue {
   isActive = false;
   currentUsers: User[] = [];
   canInvite = true;
+  showSuggestions = false;
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
   onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
@@ -85,17 +86,27 @@ export default class UserInput extends Vue {
     const params = new Map<string, string>();
     if (partialEmail && partialEmail.length > 0) {
       params.set('partial-email', partialEmail);
-      this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_ACTION, this.createContext(this.selectedBridgehead), params).then(users => this.suggestions = users);
+      this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_ACTION, this.createContext(this.selectedBridgehead), params).then(users => {
+        this.suggestions = users;
+        this.showSuggestions = true;
+      });
     } else {
       this.suggestions = [];
+      this.showSuggestions = false;
     }
   }
 
   updateCurrentUsers() {
-    this.currentUsers = [];
+    let index = 0;
     this.bridgeheads.forEach(bridgehead => this.projectManagerBackendService
         .fetchData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, this.createContext(bridgehead), new Map())
-        .then(currentUsers => this.currentUsers.push(...currentUsers)));
+        .then(currentUsers => {
+          if (index == 0){
+            this.currentUsers = [];
+          }
+          index += 1;
+          this.currentUsers.push(...currentUsers)
+        }));
   }
 
   createContext(bridgehead: Bridgehead | undefined) {
@@ -105,6 +116,7 @@ export default class UserInput extends Vue {
   selectSuggestion(suggestion: User) {
     this.partialEmail = suggestion.email;
     this.suggestions = this.suggestions.filter(item => item != suggestion);
+    this.showSuggestions = false;
   }
 
 }
@@ -114,13 +126,13 @@ export default class UserInput extends Vue {
   <div v-if="isActive">
     <span>Invite user to this stage:</span>&nbsp;
     <div class="user-input-container">
-      <input class="user-input" type="text" v-model="partialEmail" @input="handleInput" @keyup.enter="handleSave"/>
-      <select v-model="selectedBridgehead">
+      <select v-model="selectedBridgehead" class="form-select">
         <option v-for="bridgehead in bridgeheads" :key="bridgehead.bridgehead" :value="bridgehead"
                 :selected="bridgehead === selectedBridgehead">{{ bridgehead.bridgehead }}
         </option>
       </select>
-      <ul class="suggestions" v-if="suggestions.length > 0">
+      <input class="user-input" type="text" v-model="partialEmail" @input="handleInput" @keyup.enter="handleSave"/>
+      <ul class="suggestions" v-if="suggestions.length > 0 && showSuggestions">
         <li v-for="(suggestion, index) in suggestions" :key="index" @click="selectSuggestion(suggestion)">
           {{ suggestion.email }}
         </li>

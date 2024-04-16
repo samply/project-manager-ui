@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2024-04-10]
+## [1.1.0 - 2024-04-16]
 ### Added
 - Dockerfile
 - Single Spa
@@ -57,3 +57,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fetch labels of script, application form and votum
 - Update active bridgehead after clicking on bridgehead in bridgehead overview
 - Exist invited users -> can show bridgehead admin buttons
+- Buttons with message

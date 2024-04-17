@@ -21,20 +21,21 @@ export default class ProjectManagerButton extends Vue {
   @Prop() readonly withMessage!: boolean;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly params: Map<string, string> = new Map();
-  @Prop({ type: Function, required: true }) readonly callRefrehContext!: () => void;
+  @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
 
   isActive = false;
   inputText = '';
 
-  @Watch('projectManagerBackendService', { immediate: true, deep: true })
+  @Watch('projectManagerBackendService', {immediate: true, deep: true})
   onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
     this.updateIsActive()
   }
+
   async created() {
     this.updateIsActive()
   }
 
-  updateIsActive(){
+  updateIsActive() {
     this.inputText = '';
     this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result)
   }

@@ -62,6 +62,7 @@
               <th style="background-color: #f2f2f2;" scope="col">Data Request Number (DRN)</th>
               <th style="background-color: #f2f2f2;" scope="col">Project State</th>
               <th style="background-color: #f2f2f2;" scope="col">Bridgehead State</th>
+              <th style="background-color: #f2f2f2;" scope="col">Query State</th>
               <th style="background-color: #f2f2f2;" v-if="dataShieldStatus" scope="col">DataSHIELD Status</th>
               <th style="background-color: #f2f2f2;" scope="col">Creator</th>
               <th style="background-color: #f2f2f2;" scope="col">Created at</th>
@@ -74,6 +75,7 @@
               <td>{{ project ? project.code : '' }}</td>
               <td>{{ project ? project.state : '' }}</td>
               <td>{{ activeBridgehead ? activeBridgehead.state : '' }}</td>
+              <td>{{ activeBridgehead ? activeBridgehead.queryState : '' }}</td>
               <td v-if="dataShieldStatus">{{ dataShieldStatus.project_status }}</td>
               <td>{{ project ? project.creatorEmail : '' }}</td>
               <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
@@ -178,14 +180,14 @@
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <!-- Export Module -->
             <ProjectManagerButton v-if="canShowBridgeheadAdminButtons()" :module="Module.EXPORT_MODULE" :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext"
+                                  :context="context" :call-refreh-context="refreshBridgeheadsAndContext"
                                   text="Save query in bridgehead"
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton v-if="canShowBridgeheadAdminButtons()" :module="Module.EXPORT_MODULE"
                                   :action="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext"
+                                  :context="context" :call-refreh-context="refreshBridgeheadsAndContext"
                                   text="Save and execute query in bridgehead"
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"

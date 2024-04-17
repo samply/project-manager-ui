@@ -9,11 +9,17 @@
         <!-- Header in the first column -->
         <td class="header-cell">{{ header }}</td>
         <td v-if="index === 0" class="header-summary-cell">{{ bridgeheads.length }}</td>
-        <td v-if="index === 1" class="header-summary-cell votum-cell" style="border: none">{{ getVotumStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getVotumStatus()[1]}}<div class="exist-votum-small red"></div></td>
-        <td v-if="index === 2" class="header-summary-cell">{{  }}</td>
+        <td v-if="index === 1" class="header-summary-cell votum-cell" style="border: none">{{ getVotumStatus()[0] }}
+          <div class="exist-votum-small green"></div>
+          / {{ getVotumStatus()[1] }}
+          <div class="exist-votum-small red"></div>
+        </td>
+        <td v-if="index === 2" class="header-summary-cell">{{ }}</td>
+        <td v-if="index === 3" class="header-summary-cell">{{ }}</td>
+        <td v-if="index === 4" class="header-summary-cell">{{ }}</td>
         <!-- Data for each bridgehead in subsequent columns -->
         <td
-            v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(this.scrollIndex,(this.scrollIndex + this.numberBridgeheadShown))"
+            v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(scrollIndex,(scrollIndex + numberBridgeheadShown))"
             :key="bridgeheadIndex"
             class="data-cell"
             :class="{ 'selected': selectedBridgehead === bridgeheadIndex }"
@@ -21,7 +27,8 @@
           <!-- First row: bridgehead.bridgehead -->
           <div v-if="index === 0"
                @click="selectBridgehead(bridgeheadIndex)"
-          >{{ bridgehead.bridgehead }}</div>
+          >{{ bridgehead.bridgehead }}
+          </div>
           <!-- Second row: existVotum -->
           <div v-else-if="index === 1">
             <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]" class="exist-votum green">
@@ -38,6 +45,9 @@
           <!-- Third row: bridgehead.state -->
           <div v-else-if="index === 2" :class="{ 'accepted-state': bridgehead.state === 'ACCEPTED' }">
             {{ bridgehead.state }}
+          </div>
+          <div v-else-if="index === 3" :class="{ 'accepted-state': bridgehead.state === 'ACCEPTED' }">
+            {{ bridgehead.queryState }}
           </div>
           <div v-else> <!-- We assume that the DataSHIELD Status is the last header -->
             <div v-if="dataShieldStatusArray[bridgeheadIndex]">
@@ -56,13 +66,14 @@
 </template>
 
 <script lang="ts">
-import { Options, Vue } from "vue-class-component";
-import { Prop, Watch } from "vue-property-decorator";
+import {Options, Vue} from "vue-class-component";
+import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   Bridgehead,
   DataShieldProjectStatus,
-  Module, Project,
+  Module,
+  Project,
   ProjectManagerContext,
   ProjetManagerBackendService
 } from "@/services/projetManagerBackendService";
@@ -70,7 +81,7 @@ import DownloadButton from "@/components/DownloadButton.vue";
 
 @Options({
   name: "BridgeheadOverview",
-  components: { DownloadButton },
+  components: {DownloadButton},
   props: {
     activeBridgehead: {
       type: Object,
@@ -83,15 +94,14 @@ export default class BridgeheadOverview extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
   @Prop() readonly bridgeheads!: Bridgehead[];
   @Prop() readonly project!: Project;
-  @Prop({ type: Function, required: true }) readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
-
+  @Prop({type: Function, required: true}) readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
 
 
   Module = Module;
   Action = Action;
 
   DATASHIELD_STATUS_HEADER = 'DataSHIELD Status';
-  headers = ['Bridgeheads', 'Votum', 'Bridgehead State'];
+  headers = ['Bridgeheads', 'Votum', 'Bridgehead State', 'Query state'];
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
   selectedBridgehead: number | null = null;
@@ -99,7 +109,7 @@ export default class BridgeheadOverview extends Vue {
   numberBridgeheadShown = 4;
 
 
-  @Watch('projectManagerBackendService', { immediate: true, deep: true })
+  @Watch('projectManagerBackendService', {immediate: true, deep: true})
   onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
     this.updateBridgeheadExtraInfo();
   }
@@ -111,8 +121,8 @@ export default class BridgeheadOverview extends Vue {
 
   async updateBridgeheadExtraInfo() {
     this.existsVotums = await this.fetchExistsVotums();
-    if (this.project && this.project.type === 'DATASHIELD'){
-      if (!this.headers.includes(this.DATASHIELD_STATUS_HEADER)){
+    if (this.project && this.project.type === 'DATASHIELD') {
+      if (!this.headers.includes(this.DATASHIELD_STATUS_HEADER)) {
         this.headers.push(this.DATASHIELD_STATUS_HEADER); // We assume that the DataSHIELD Status is the last header
       }
       this.dataShieldStatusArray = await this.fetchDataShieldStates();
@@ -150,6 +160,7 @@ export default class BridgeheadOverview extends Vue {
     this.selectedBridgehead = index;
     this.callUpdateActiveBridgehead(this.bridgeheads[index]);
   }
+
   scrollBridgehead(direction: string) {
     if (direction === "left") {
       if (this.scrollIndex > 0) {
@@ -176,10 +187,12 @@ export default class BridgeheadOverview extends Vue {
   margin-bottom: 2em;
   display: flex;
 }
+
 .bridgehead-table {
   border-collapse: collapse;
   width: 100%;
 }
+
 .header-cell {
   background-color: #f2f2f2;
   border-top: 1px solid #dddddd;
@@ -190,6 +203,7 @@ export default class BridgeheadOverview extends Vue {
   text-align: left;
   width: min-content;
 }
+
 .header-summary-cell {
   background-color: #f2f2f2;
   border-top: 1px solid #dddddd;
@@ -200,6 +214,7 @@ export default class BridgeheadOverview extends Vue {
   text-align: center;
   width: 12%;
 }
+
 .data-cell {
   border: 1px solid #dddddd;
   padding: 4px; /* Verringere die Padding-Größe */
@@ -208,32 +223,38 @@ export default class BridgeheadOverview extends Vue {
   cursor: pointer;
   width: min-content;
 }
+
 .votum-cell {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
 }
+
 .exist-votum {
   width: 20px;
   height: 20px;
   border-radius: 50%;
 }
+
 .exist-votum-small {
   width: 12px;
   height: 12px;
   border-radius: 50%;
   margin: 0 5px;
 }
+
 .bridgehead-arrow {
   background: none;
-  border:none;
-  color:#007bff;
+  border: none;
+  color: #007bff;
   padding: 0;
 }
+
 .bridgehead-arrow i {
   font-size: xx-large;
 }
+
 .green {
   background-color: green;
 }

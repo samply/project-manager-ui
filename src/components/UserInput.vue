@@ -101,7 +101,7 @@ export default class UserInput extends Vue {
     this.bridgeheads.forEach(bridgehead => this.projectManagerBackendService
         .fetchData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, this.createContext(bridgehead), new Map())
         .then(currentUsers => {
-          if (index == 0){
+          if (index == 0) {
             this.currentUsers = [];
           }
           index += 1;
@@ -124,21 +124,24 @@ export default class UserInput extends Vue {
 
 <template>
   <div v-if="isActive">
-    <span>Invite user to this stage:</span>&nbsp;
+    <span style="font-weight: bold">Invite user to this stage:</span>
     <div class="user-input-container">
       <select v-model="selectedBridgehead" class="form-select">
         <option v-for="bridgehead in bridgeheads" :key="bridgehead.bridgehead" :value="bridgehead"
                 :selected="bridgehead === selectedBridgehead">{{ bridgehead.bridgehead }}
         </option>
       </select>
-      <input class="user-input" type="text" v-model="partialEmail" @input="handleInput" @keyup.enter="handleSave"/>
-      <ul class="suggestions" v-if="suggestions.length > 0 && showSuggestions">
-        <li v-for="(suggestion, index) in suggestions" :key="index" @click="selectSuggestion(suggestion)">
-          {{ suggestion.email }}
-        </li>
-      </ul>&nbsp;
-      <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite">Invite</button>
+      <div>
+        <input class="user-input" type="text" v-model="partialEmail" @input="handleInput" @keyup.enter="handleSave" placeholder="user email"/>
+        <ul class="suggestions" v-if="suggestions.length > 0 && showSuggestions">
+          <li v-for="(suggestion, index) in suggestions" :key="index" @click="selectSuggestion(suggestion)">
+            {{ suggestion.email }}
+          </li>
+        </ul>&nbsp;
+        <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite">Invite</button>
+      </div>
     </div>
+    <br>
   </div>
   <div v-if="currentUsers.length > 0">
     <span>Current users involved in this stage:</span>
@@ -158,6 +161,7 @@ export default class UserInput extends Vue {
       </tr>
       </tbody>
     </table>
+    <br>
   </div>
 </template>
 
@@ -165,17 +169,25 @@ export default class UserInput extends Vue {
 
 .user-input-container {
   position: relative;
+  display: flex;
+  margin: 10px 0 30px 0;
 }
-
+.form-select {
+  width: 300px;
+  margin-right: 20px;
+}
 .user-input {
-  width: 200px; /* Adjust width as needed */
+  width: 300px; /* Adjust width as needed */
+  height: 38px;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
 }
 
 .suggestions {
   list-style-type: none; /* Removes bullets */
   position: absolute;
-  width: 200px; /* Adjust width to match the input field */
-  padding: 0;
+  width: 300px; /* Adjust width to match the input field */
+  padding: 5px;
   margin: 0;
   border: 1px solid #ccc; /* Add border for the rectangle appearance */
   background-color: #fff; /* Add background color */

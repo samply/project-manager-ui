@@ -181,18 +181,18 @@ export default class ProjectFieldRow extends Vue {
 
   addEnvVariable() {
     if (this.newKey && this.newValue) {
-      this.tempFieldValue[0] != null ? this.tempFieldValue[0] += ';' : this.tempFieldValue[0] = '';
-      this.tempFieldValue[0] += this.newKey + '=' + this.newValue;
+      this.editedValue[0] != null ? this.editedValue[0] += ';' : this.editedValue[0] = '';
+      this.editedValue[0] += this.newKey + '=' + this.newValue;
       this.newKey = '';
       this.newValue = '';
     }
   }
 
   removeEnvVariable(index: any) {
-    if (this.tempFieldValue.length > 0) {
-      const pairs = this.tempFieldValue[0].split(';');
+    if (this.editedValue.length > 0) {
+      const pairs = this.editedValue[0].split(';');
       pairs.splice(index, 1);
-      this.tempFieldValue[0] = pairs.join(';');
+      this.editedValue[0] = pairs.join(';');
     }
   }
 
@@ -335,8 +335,8 @@ export default class ProjectFieldRow extends Vue {
                   </span>
                 </div>
                 <div v-else-if="isEnvironmentVariables()" style="width:75%;">
-                  <span v-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] " style="width: 75%">
-                    <span v-for="(pair, index) in tempFieldValue[0].split(';')" :key="index"
+                  <span v-if="editedValue && editedValue.length > 0 && editedValue[0] " style="width: 75%">
+                    <span v-for="(pair, index) in editedValue[0].split(';')" :key="index"
                          style="margin-right: 2%;  display: inline;" class="btn btn-primary">
                       <span style="display: inline; margin-bottom: 2%">{{ pair }}</span>
                       <button @click="removeEnvVariable(index)" class="btn btn-sm" style="padding: 0px"><i

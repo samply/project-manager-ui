@@ -163,6 +163,7 @@ export interface Bridgehead {
     bridgehead: string;
     state: string;
     modifiedAt: string;
+    queryState: string;
 }
 
 export interface ProjectDocument {

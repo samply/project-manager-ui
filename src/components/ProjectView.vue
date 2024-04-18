@@ -62,6 +62,7 @@
               <th style="background-color: #f2f2f2;" scope="col">Data Request Number (DRN)</th>
               <th style="background-color: #f2f2f2;" scope="col">Project State</th>
               <th style="background-color: #f2f2f2;" scope="col">Bridgehead State</th>
+              <th style="background-color: #f2f2f2;" scope="col">Query State</th>
               <th style="background-color: #f2f2f2;" v-if="dataShieldStatus" scope="col">DataSHIELD Status</th>
               <th style="background-color: #f2f2f2;" scope="col">Creator</th>
               <th style="background-color: #f2f2f2;" scope="col">Created at</th>
@@ -74,6 +75,7 @@
               <td>{{ project ? project.code : '' }}</td>
               <td>{{ project ? project.state : '' }}</td>
               <td>{{ activeBridgehead ? activeBridgehead.state : '' }}</td>
+              <td>{{ activeBridgehead ? activeBridgehead.queryState : '' }}</td>
               <td v-if="dataShieldStatus">{{ dataShieldStatus.project_status }}</td>
               <td>{{ project ? project.creatorEmail : '' }}</td>
               <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
@@ -89,39 +91,38 @@
                                   :context="context" :call-refreh-context="refreshContext" text="Create"
                                   button-class="btn btn-primary mr-2"
                                   :with-message="false"
-                                  :project-manager-backend-service="projectManagerBackendService"
-            />&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <!-- Project State Module: PM-ADMIN View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
                                   :with-message="false"
-                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Reject"
                                   button-class="btn btn-danger btn-secondary mr-2"
                                   :with-message="true"
-                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_DEVELOP_STAGE_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Start develop stage"
                                   button-class="btn btn-primary mr-2"
                                   :with-message="false"
-                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_PILOT_STAGE_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Start pilot stage"
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_FINAL_STAGE_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Start final stage"
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.FINISH_PROJECT_ACTION"
                                   :with-message="false"
                                   :context="context" :call-refreh-context="refreshContext" text="Finish"
                                   button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ARCHIVE_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Archive"
                                   :with-message="false"
@@ -178,20 +179,29 @@
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <!-- Export Module -->
             <ProjectManagerButton v-if="canShowBridgeheadAdminButtons()" :module="Module.EXPORT_MODULE" :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext"
+                                  :context="context" :call-refreh-context="refreshBridgeheadsAndContext"
                                   text="Save query in bridgehead"
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton v-if="canShowBridgeheadAdminButtons()" :module="Module.EXPORT_MODULE"
                                   :action="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext"
+                                  :context="context" :call-refreh-context="refreshBridgeheadsAndContext"
                                   text="Save and execute query in bridgehead"
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
           </div>
-
+          <div v-if="!existsDraftDialog || draftDialogCurrentStep==4">
+            <UserInput  :project="project" :context="context"
+                       :bridgeheads="visibleBridgeheads"
+                       :project-manager-backend-service="projectManagerBackendService"/>
+            <DocumentsTable :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
+                            :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
+                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Publications: "/>
+          </div>
           <hr/>
         </div>
 
@@ -353,16 +363,6 @@
               </tbody>
             </table>
           </div>
-          <UserInput v-if="!existsDraftDialog || draftDialogCurrentStep==4" :project="project" :context="context"
-                     :bridgeheads="visibleBridgeheads"
-                     :project-manager-backend-service="projectManagerBackendService"/>
-          <br/>
-          <DocumentsTable v-if="!existsDraftDialog || draftDialogCurrentStep==4" :context="context"
-                          :project-manager-backend-service="projectManagerBackendService"
-                          :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
-                          :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
-                          :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Publications: "/>
-          <br/>
           <UploadButton v-if="!existsDraftDialog || draftDialogCurrentStep==4" :context="context"
                         :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
@@ -870,5 +870,7 @@ export default defineComponent({
   text-align: center;
 
 }
-
+.inviteUser {
+  margin: 2em 0;
+}
 </style>

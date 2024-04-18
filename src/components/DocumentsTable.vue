@@ -105,6 +105,7 @@ export default class DocumentsTable extends Vue {
       </tr>
       </tbody>
     </table>
+    <br>
   </div>
 </template>
 

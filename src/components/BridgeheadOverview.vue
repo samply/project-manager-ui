@@ -1,6 +1,6 @@
 <template>
   <div class="table-container">
-    <button title="left" @click="scrollBridgehead('left')" class="btn btn-primary bridgehead-arrow">
+    <button v-if="bridgeheads.length > numberBridgeheadShown" title="left" @click="scrollBridgehead('left')" class="btn btn-primary bridgehead-arrow">
       <i class="bi bi-caret-left-fill"></i>
     </button>
     <table class="bridgehead-table">
@@ -8,12 +8,14 @@
       <tr v-for="(header, index) in headers" :key="index">
         <!-- Header in the first column -->
         <td class="header-cell">{{ header }}</td>
-        <td v-if="index === 0" class="header-summary-cell">{{ bridgeheads.length }}</td>
-        <td v-if="index === 1" class="header-summary-cell votum-cell" style="border: none">{{ getVotumStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getVotumStatus()[1]}}<div class="exist-votum-small red"></div></td>
-        <td v-if="index === 2" class="header-summary-cell">{{  }}</td>
+        <td v-if="header === 'Bridgeheads'" class="header-summary-cell">{{ bridgeheads.length }}</td>
+        <td v-if="header === 'Votum'" class="header-summary-cell status-cell" style="border: none">{{ getVotumStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getVotumStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'Bridgehead State'" class="header-summary-cell status-cell" style="border: none">{{ getBridgeheadStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getBridgeheadStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'DataSHIELD Status'" class="header-summary-cell status-cell" style="border: none">{{ getDatashieldStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getDatashieldStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'Query state'" class="header-summary-cell status-cell" style="border: none">{{ getQueryStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getQueryStatus()[1]}}<div class="exist-votum-small red"></div></td>
         <!-- Data for each bridgehead in subsequent columns -->
         <td
-            v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(this.scrollIndex,(this.scrollIndex + this.numberBridgeheadShown))"
+            v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(scrollIndex,(scrollIndex + numberBridgeheadShown))"
             :key="bridgeheadIndex"
             class="data-cell"
             :class="{ 'selected': selectedBridgehead === bridgeheadIndex }"
@@ -39,6 +41,9 @@
           <div v-else-if="index === 2" :class="{ 'accepted-state': bridgehead.state === 'ACCEPTED' }">
             {{ bridgehead.state }}
           </div>
+          <div v-else-if="index === 3" :class="{ 'accepted-state': bridgehead.state === 'ACCEPTED' }">
+            {{ bridgehead.queryState }}
+          </div>
           <div v-else> <!-- We assume that the DataSHIELD Status is the last header -->
             <div v-if="dataShieldStatusArray[bridgeheadIndex]">
               {{ dataShieldStatusArray[bridgeheadIndex].project_status }}
@@ -49,7 +54,7 @@
       </tr>
       </tbody>
     </table>
-    <button title="right" @click="scrollBridgehead('right')" class="btn btn-primary bridgehead-arrow">
+    <button v-if="bridgeheads.length > numberBridgeheadShown" title="right" @click="scrollBridgehead('right')" class="btn btn-primary bridgehead-arrow">
       <i class="bi bi-caret-right-fill"></i>
     </button>
   </div>
@@ -62,7 +67,8 @@ import {
   Action,
   Bridgehead,
   DataShieldProjectStatus,
-  Module, Project,
+  Module,
+  Project,
   ProjectManagerContext,
   ProjetManagerBackendService
 } from "@/services/projetManagerBackendService";
@@ -70,7 +76,7 @@ import DownloadButton from "@/components/DownloadButton.vue";
 
 @Options({
   name: "BridgeheadOverview",
-  components: { DownloadButton },
+  components: {DownloadButton},
   props: {
     activeBridgehead: {
       type: Object,
@@ -83,15 +89,14 @@ export default class BridgeheadOverview extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
   @Prop() readonly bridgeheads!: Bridgehead[];
   @Prop() readonly project!: Project;
-  @Prop({ type: Function, required: true }) readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
-
+  @Prop({type: Function, required: true}) readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
 
 
   Module = Module;
   Action = Action;
 
   DATASHIELD_STATUS_HEADER = 'DataSHIELD Status';
-  headers = ['Bridgeheads', 'Votum', 'Bridgehead State'];
+  headers = ['Bridgeheads', 'Votum', 'Bridgehead State', 'Query state'];
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
   selectedBridgehead: number | null = null;
@@ -99,7 +104,7 @@ export default class BridgeheadOverview extends Vue {
   numberBridgeheadShown = 4;
 
 
-  @Watch('projectManagerBackendService', { immediate: true, deep: true })
+  @Watch('projectManagerBackendService', {immediate: true, deep: true})
   onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
     this.updateBridgeheadExtraInfo();
   }
@@ -111,8 +116,8 @@ export default class BridgeheadOverview extends Vue {
 
   async updateBridgeheadExtraInfo() {
     this.existsVotums = await this.fetchExistsVotums();
-    if (this.project && this.project.type === 'DATASHIELD'){
-      if (!this.headers.includes(this.DATASHIELD_STATUS_HEADER)){
+    if (this.project && this.project.type === 'DATASHIELD') {
+      if (!this.headers.includes(this.DATASHIELD_STATUS_HEADER)) {
         this.headers.push(this.DATASHIELD_STATUS_HEADER); // We assume that the DataSHIELD Status is the last header
       }
       this.dataShieldStatusArray = await this.fetchDataShieldStates();
@@ -150,6 +155,7 @@ export default class BridgeheadOverview extends Vue {
     this.selectedBridgehead = index;
     this.callUpdateActiveBridgehead(this.bridgeheads[index]);
   }
+
   scrollBridgehead(direction: string) {
     if (direction === "left") {
       if (this.scrollIndex > 0) {
@@ -167,6 +173,21 @@ export default class BridgeheadOverview extends Vue {
     const hasVotum = this.existsVotums.filter((votum) => votum);
     const noVotum = this.existsVotums.filter((votum) => !votum);
     return [hasVotum.length, noVotum.length]
+  }
+  getBridgeheadStatus(): number[] {
+    const isAccepted = this.bridgeheads.filter((bridgehead) => bridgehead.state === 'ACCEPTED');
+    const notAccepted = this.bridgeheads.filter((bridgehead) => bridgehead.state !== 'ACCEPTED');
+    return [isAccepted.length, notAccepted.length]
+  }
+  getDatashieldStatus(): number[] {
+    const withData = this.dataShieldStatusArray.filter((datashield) => datashield.project_status === 'WITH_DATA');
+    const withoutData = this.dataShieldStatusArray.filter((datashield) => datashield.project_status !== 'WITH_DATA');
+    return [withData.length, withoutData.length]
+  }
+  getQueryStatus(): number[] {
+    const isFinished = this.bridgeheads.filter((bridgehead) => bridgehead.queryState === 'FINISHED');
+    const notFinished = this.bridgeheads.filter((bridgehead) => bridgehead.state !== 'FINISHED');
+    return [isFinished.length, notFinished.length]
   }
 }
 </script>
@@ -189,6 +210,7 @@ export default class BridgeheadOverview extends Vue {
   font-size: 14px; /* Reduziere die Schriftgröße */
   text-align: left;
   width: min-content;
+  font-weight: bold;
 }
 .header-summary-cell {
   background-color: #f2f2f2;
@@ -208,7 +230,7 @@ export default class BridgeheadOverview extends Vue {
   cursor: pointer;
   width: min-content;
 }
-.votum-cell {
+.status-cell {
   display: flex;
   justify-content: center;
   align-items: center;

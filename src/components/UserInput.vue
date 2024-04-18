@@ -101,7 +101,7 @@ export default class UserInput extends Vue {
     this.bridgeheads.forEach(bridgehead => this.projectManagerBackendService
         .fetchData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, this.createContext(bridgehead), new Map())
         .then(currentUsers => {
-          if (index == 0){
+          if (index == 0) {
             this.currentUsers = [];
           }
           index += 1;
@@ -139,6 +139,7 @@ export default class UserInput extends Vue {
       </ul>&nbsp;
       <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite">Invite</button>
     </div>
+    <br>
   </div>
   <div v-if="currentUsers.length > 0">
     <span>Current users involved in this stage:</span>
@@ -158,6 +159,7 @@ export default class UserInput extends Vue {
       </tr>
       </tbody>
     </table>
+    <br>
   </div>
 </template>
 

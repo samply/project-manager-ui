@@ -193,7 +193,16 @@
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
           </div>
-
+          <div v-if="!existsDraftDialog || draftDialogCurrentStep==4">
+            <UserInput  :project="project" :context="context"
+                       :bridgeheads="visibleBridgeheads"
+                       :project-manager-backend-service="projectManagerBackendService"/>
+            <DocumentsTable :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
+                            :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
+                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Publications: "/>
+          </div>
           <hr/>
         </div>
 
@@ -355,16 +364,6 @@
               </tbody>
             </table>
           </div>
-          <UserInput v-if="!existsDraftDialog || draftDialogCurrentStep==4" :project="project" :context="context"
-                     :bridgeheads="visibleBridgeheads"
-                     :project-manager-backend-service="projectManagerBackendService"/>
-          <br/>
-          <DocumentsTable v-if="!existsDraftDialog || draftDialogCurrentStep==4" :context="context"
-                          :project-manager-backend-service="projectManagerBackendService"
-                          :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
-                          :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
-                          :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Publications: "/>
-          <br/>
           <UploadButton v-if="!existsDraftDialog || draftDialogCurrentStep==4" :context="context"
                         :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"

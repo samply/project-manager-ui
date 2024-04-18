@@ -91,39 +91,38 @@
                                   :context="context" :call-refreh-context="refreshContext" text="Create"
                                   button-class="btn btn-primary mr-2"
                                   :with-message="false"
-                                  :project-manager-backend-service="projectManagerBackendService"
-            />&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <!-- Project State Module: PM-ADMIN View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
                                   :with-message="false"
-                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Reject"
                                   button-class="btn btn-danger btn-secondary mr-2"
                                   :with-message="true"
-                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_DEVELOP_STAGE_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Start develop stage"
                                   button-class="btn btn-primary mr-2"
                                   :with-message="false"
-                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_PILOT_STAGE_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Start pilot stage"
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_FINAL_STAGE_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Start final stage"
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.FINISH_PROJECT_ACTION"
                                   :with-message="false"
                                   :context="context" :call-refreh-context="refreshContext" text="Finish"
                                   button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>&nbsp;
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ARCHIVE_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Archive"
                                   :with-message="false"
@@ -871,5 +870,7 @@ export default defineComponent({
   text-align: center;
 
 }
-
+.inviteUser {
+  margin: 2em 0;
+}
 </style>

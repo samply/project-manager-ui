@@ -1,6 +1,6 @@
 <template>
   <div class="table-container">
-    <button title="left" @click="scrollBridgehead('left')" class="btn btn-primary bridgehead-arrow">
+    <button v-if="bridgeheads.length > numberBridgeheadShown" title="left" @click="scrollBridgehead('left')" class="btn btn-primary bridgehead-arrow">
       <i class="bi bi-caret-left-fill"></i>
     </button>
     <table class="bridgehead-table">
@@ -8,15 +8,11 @@
       <tr v-for="(header, index) in headers" :key="index">
         <!-- Header in the first column -->
         <td class="header-cell">{{ header }}</td>
-        <td v-if="index === 0" class="header-summary-cell">{{ bridgeheads.length }}</td>
-        <td v-if="index === 1" class="header-summary-cell votum-cell" style="border: none">{{ getVotumStatus()[0] }}
-          <div class="exist-votum-small green"></div>
-          / {{ getVotumStatus()[1] }}
-          <div class="exist-votum-small red"></div>
-        </td>
-        <td v-if="index === 2" class="header-summary-cell">{{ }}</td>
-        <td v-if="index === 3" class="header-summary-cell">{{ }}</td>
-        <td v-if="index === 4" class="header-summary-cell">{{ }}</td>
+        <td v-if="header === 'Bridgeheads'" class="header-summary-cell">{{ bridgeheads.length }}</td>
+        <td v-if="header === 'Votum'" class="header-summary-cell status-cell" style="border: none">{{ getVotumStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getVotumStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'Bridgehead State'" class="header-summary-cell status-cell" style="border: none">{{ getBridgeheadStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getBridgeheadStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'DataSHIELD Status'" class="header-summary-cell status-cell" style="border: none">{{ getDatashieldStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getDatashieldStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'Query state'" class="header-summary-cell status-cell" style="border: none">{{ getQueryStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getQueryStatus()[1]}}<div class="exist-votum-small red"></div></td>
         <!-- Data for each bridgehead in subsequent columns -->
         <td
             v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(scrollIndex,(scrollIndex + numberBridgeheadShown))"
@@ -27,8 +23,7 @@
           <!-- First row: bridgehead.bridgehead -->
           <div v-if="index === 0"
                @click="selectBridgehead(bridgeheadIndex)"
-          >{{ bridgehead.bridgehead }}
-          </div>
+          >{{ bridgehead.bridgehead }}</div>
           <!-- Second row: existVotum -->
           <div v-else-if="index === 1">
             <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]" class="exist-votum green">
@@ -59,15 +54,15 @@
       </tr>
       </tbody>
     </table>
-    <button title="right" @click="scrollBridgehead('right')" class="btn btn-primary bridgehead-arrow">
+    <button v-if="bridgeheads.length > numberBridgeheadShown" title="right" @click="scrollBridgehead('right')" class="btn btn-primary bridgehead-arrow">
       <i class="bi bi-caret-right-fill"></i>
     </button>
   </div>
 </template>
 
 <script lang="ts">
-import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
+import { Options, Vue } from "vue-class-component";
+import { Prop, Watch } from "vue-property-decorator";
 import {
   Action,
   Bridgehead,
@@ -179,6 +174,21 @@ export default class BridgeheadOverview extends Vue {
     const noVotum = this.existsVotums.filter((votum) => !votum);
     return [hasVotum.length, noVotum.length]
   }
+  getBridgeheadStatus(): number[] {
+    const isAccepted = this.bridgeheads.filter((bridgehead) => bridgehead.state === 'ACCEPTED');
+    const notAccepted = this.bridgeheads.filter((bridgehead) => bridgehead.state !== 'ACCEPTED');
+    return [isAccepted.length, notAccepted.length]
+  }
+  getDatashieldStatus(): number[] {
+    const withData = this.dataShieldStatusArray.filter((datashield) => datashield.project_status === 'WITH_DATA');
+    const withoutData = this.dataShieldStatusArray.filter((datashield) => datashield.project_status !== 'WITH_DATA');
+    return [withData.length, withoutData.length]
+  }
+  getQueryStatus(): number[] {
+    const isFinished = this.bridgeheads.filter((bridgehead) => bridgehead.queryState === 'FINISHED');
+    const notFinished = this.bridgeheads.filter((bridgehead) => bridgehead.state !== 'FINISHED');
+    return [isFinished.length, notFinished.length]
+  }
 }
 </script>
 
@@ -187,12 +197,10 @@ export default class BridgeheadOverview extends Vue {
   margin-bottom: 2em;
   display: flex;
 }
-
 .bridgehead-table {
   border-collapse: collapse;
   width: 100%;
 }
-
 .header-cell {
   background-color: #f2f2f2;
   border-top: 1px solid #dddddd;
@@ -202,8 +210,8 @@ export default class BridgeheadOverview extends Vue {
   font-size: 14px; /* Reduziere die Schriftgröße */
   text-align: left;
   width: min-content;
+  font-weight: bold;
 }
-
 .header-summary-cell {
   background-color: #f2f2f2;
   border-top: 1px solid #dddddd;
@@ -214,7 +222,6 @@ export default class BridgeheadOverview extends Vue {
   text-align: center;
   width: 12%;
 }
-
 .data-cell {
   border: 1px solid #dddddd;
   padding: 4px; /* Verringere die Padding-Größe */
@@ -223,38 +230,32 @@ export default class BridgeheadOverview extends Vue {
   cursor: pointer;
   width: min-content;
 }
-
-.votum-cell {
+.status-cell {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
 }
-
 .exist-votum {
   width: 20px;
   height: 20px;
   border-radius: 50%;
 }
-
 .exist-votum-small {
   width: 12px;
   height: 12px;
   border-radius: 50%;
   margin: 0 5px;
 }
-
 .bridgehead-arrow {
   background: none;
-  border: none;
-  color: #007bff;
+  border:none;
+  color:#007bff;
   padding: 0;
 }
-
 .bridgehead-arrow i {
   font-size: xx-large;
 }
-
 .green {
   background-color: green;
 }

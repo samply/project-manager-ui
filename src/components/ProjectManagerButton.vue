@@ -25,6 +25,7 @@ export default class ProjectManagerButton extends Vue {
 
   isActive = false;
   inputText = '';
+  hideInput = true;
 
   @Watch('projectManagerBackendService', { immediate: true, deep: true })
   onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
@@ -42,16 +43,35 @@ export default class ProjectManagerButton extends Vue {
   async handleButtonClick() {
     this.params.set('message', this.inputText);
     this.projectManagerBackendService.fetchData(this.module, this.action, this.context, this.params).then(result => this.callRefrehContext());
+    this.toggleVisibility();
   }
-
+  toggleVisibility() {
+    this.hideInput = !this.hideInput;
+  }
 }
 </script>
-
 <template>
-  <input v-if="isActive && withMessage" type="text" v-model="inputText">
-  <button :class="buttonClass" v-if="isActive" @click="handleButtonClick">{{ text }}</button>
+  <span v-if="isActive && withMessage" class="pm-button">
+    <input type="text" v-model="inputText" :class="{ 'hidden': hideInput }" class="inputfield" placeholder="optional message">
+    <button :class="[buttonClass, {'hidden': !hideInput }]" @click="toggleVisibility">{{ text }}</button>
+    <button :class="[buttonClass, {'hidden': hideInput }]" @click="handleButtonClick">Submit</button>
+  </span>
+  <span v-if="isActive && !withMessage" class="pm-button">
+    <button :class="buttonClass" @click="handleButtonClick">{{ text }}</button>
+  </span>
 </template>
-
 <style scoped>
-
+.hidden {
+  display: none;
+}
+.pm-button {
+  margin-right: 20px;
+}
+.inputfield {
+  margin-right: 10px;
+  height: 37px;
+  padding-bottom: 7px;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+}
 </style>

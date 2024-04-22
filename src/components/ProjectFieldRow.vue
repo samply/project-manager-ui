@@ -131,9 +131,8 @@ export default class ProjectFieldRow extends Vue {
   }
 
   redirectToURL() {
-    if (this.redirectUrl) {
-      window.location.href = this.redirectUrl;
-    }
+    if (!this.redirectUrl) return;
+    window.location.href = this.redirectUrl + "&project-code=" + this.context.projectCode;
   }
 
 

@@ -186,7 +186,7 @@ export default class BridgeheadOverview extends Vue {
   }
   getQueryStatus(): number[] {
     const isFinished = this.bridgeheads.filter((bridgehead) => bridgehead.queryState === 'FINISHED');
-    const notFinished = this.bridgeheads.filter((bridgehead) => bridgehead.state !== 'FINISHED');
+    const notFinished = this.bridgeheads.filter((bridgehead) => bridgehead.queryState !== 'FINISHED');
     return [isFinished.length, notFinished.length]
   }
 }

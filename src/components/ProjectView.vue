@@ -177,6 +177,22 @@
                                   :context="context" :call-refreh-context="refreshContext" text="Request changes"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
+            <!-- Project State Module: Developer/Pilot View -->
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ANALYSIS_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
+                                  button-class="btn btn-primary mr-2"
+                                  :with-message="false"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ANALYSIS_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
+                                  :with-message="true"
+                                  button-class="btn btn-danger btn-secondary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Request changes"
+                                  :with-message="true"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
             <!-- Export Module -->
             <ProjectManagerButton v-if="canShowBridgeheadAdminButtons()" :module="Module.EXPORT_MODULE" :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
                                   :context="context" :call-refreh-context="refreshBridgeheadsAndContext"

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2024-04-18]
+## [1.1.0 - 2024-06-27]
 ### Added
 - Dockerfile
 - Single Spa
@@ -59,3 +59,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Exist invited users -> can show bridgehead admin buttons
 - Buttons with message
 - Query State
+- Research environment buttons

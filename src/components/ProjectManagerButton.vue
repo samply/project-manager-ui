@@ -16,8 +16,10 @@ export default class ProjectManagerButton extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
   @Prop() readonly module!: Module;
   @Prop() readonly action!: Action;
-  @Prop() readonly buttonClass!: string;
   @Prop() readonly text!: string;
+  @Prop() readonly action2?: Action;
+  @Prop() readonly text2?: string;
+  @Prop() readonly buttonClass!: string;
   @Prop() readonly withMessage!: boolean;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly params: Map<string, string> = new Map();
@@ -26,6 +28,8 @@ export default class ProjectManagerButton extends Vue {
   isActive = false;
   inputText = '';
   hideInput = true;
+  checkboxChecked = this.action2 ? true : false;
+
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
   onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
@@ -42,10 +46,12 @@ export default class ProjectManagerButton extends Vue {
   }
 
   async handleButtonClick() {
+    const actionToUse = this.checkboxChecked && this.action2 ? this.action2 : this.action;
     this.params.set('message', this.inputText);
-    this.projectManagerBackendService.fetchData(this.module, this.action, this.context, this.params).then(result => this.callRefrehContext());
+    this.projectManagerBackendService.fetchData(this.module, actionToUse, this.context, this.params).then(result => this.callRefrehContext());
     this.toggleVisibility();
   }
+
   toggleVisibility() {
     this.hideInput = !this.hideInput;
   }
@@ -57,11 +63,22 @@ export default class ProjectManagerButton extends Vue {
     <input type="text" v-model="inputText" :class="{ 'hidden': hideInput }" class="inputfield" placeholder="optional message">
     <button :class="[buttonClass, {'hidden': !hideInput }]" @click="toggleVisibility">{{ text }}</button>
     <button :class="[buttonClass, {'hidden': hideInput }]" @click="handleButtonClick">Submit</button>
+    <label v-if="action2" class="pm-checkbox">
+      <input type="checkbox" v-model="checkboxChecked" />
+      {{ text2 }}
+    </label>
   </span>
   <span v-if="isActive && !withMessage" class="pm-button">
     <button :class="buttonClass" @click="handleButtonClick">{{ text }}</button>
+    <label v-if="action2" class="pm-checkbox">
+      <br>
+      <input type="checkbox" v-model="checkboxChecked" />
+      {{ text2 }}
+    </label>
   </span>
 </template>
+
+
 
 <style scoped>
 .hidden {

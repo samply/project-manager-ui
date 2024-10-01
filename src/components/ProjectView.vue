@@ -3,17 +3,17 @@
     <div class="left-container">
 
       <!--<div v-if="projectData.projectId">-->
-        <div class="vertical-stepper">
-          <div v-for="(projectState, index) in getProjectStates()" :key="index" class="stepper-step">
-            <div style="display: flex; flex-flow: row" :class="{ 'active-step': project?.state === projectState }">
-              <div class="step-circle">
-                <span>{{ index + 1 }}</span>
-              </div>
-              <div class="step-title">{{ projectState }}</div>
+      <div class="vertical-stepper">
+        <div v-for="(projectState, index) in getProjectStates()" :key="index" class="stepper-step">
+          <div style="display: flex; flex-flow: row" :class="{ 'active-step': project?.state === projectState }">
+            <div class="step-circle">
+              <span>{{ index + 1 }}</span>
             </div>
-            <div v-if="index < getProjectStates().length - 1" class="stepper-line"></div>
+            <div class="step-title">{{ projectState }}</div>
           </div>
+          <div v-if="index < getProjectStates().length - 1" class="stepper-line"></div>
         </div>
+      </div>
       <!--</div>-->
     </div>
 
@@ -64,6 +64,7 @@
               <th style="background-color: #f2f2f2;" scope="col">Bridgehead State</th>
               <th style="background-color: #f2f2f2;" scope="col">Query State</th>
               <th style="background-color: #f2f2f2;" v-if="dataShieldStatus" scope="col">DataSHIELD Status</th>
+              <th style="background-color: #f2f2f2;" v-if="dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT'" scope="col">Files in Coder</th>
               <th style="background-color: #f2f2f2;" scope="col">Creator</th>
               <th style="background-color: #f2f2f2;" scope="col">Created at</th>
               <th style="background-color: #f2f2f2;" scope="col">Expires at</th>
@@ -77,6 +78,7 @@
               <td>{{ activeBridgehead ? activeBridgehead.state : '' }}</td>
               <td>{{ activeBridgehead ? activeBridgehead.queryState : '' }}</td>
               <td v-if="dataShieldStatus">{{ dataShieldStatus.project_status }}</td>
+              <td v-if="dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT'" >{{areExportFilesTransferredToResearchEnvironment}}</td>
               <td>{{ project ? project.creatorEmail : '' }}</td>
               <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
               <td>{{ project && project.expiresAt ? convertDate(project.expiresAt) : '' }}</td>
@@ -130,20 +132,22 @@
                                   :project-manager-backend-service="projectManagerBackendService"/>
 
             <!-- Project State Module: BK-ADMIN View -->
-            <ProjectManagerButton v-if="activeBridgehead && activeBridgehead.state !== 'ACCEPTED' && canShowBridgeheadAdminButtons()"
-                                  :module="Module.PROJECT_STATE_MODULE"
-                                  :action="Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION"
-                                  :with-message="false"
-                                  :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Accept"
-                                  button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton v-if="activeBridgehead && activeBridgehead.state !== 'REJECTED' && canShowBridgeheadAdminButtons()"
-                                  :module="Module.PROJECT_STATE_MODULE"
-                                  :action="Action.REJECT_BRIDGEHEAD_PROJECT_ACTION"
-                                  :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Reject"
-                                  :with-message="true"
-                                  button-class="btn btn-danger btn-secondary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton
+                v-if="activeBridgehead && activeBridgehead.state !== 'ACCEPTED' && canShowBridgeheadAdminButtons()"
+                :module="Module.PROJECT_STATE_MODULE"
+                :action="Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION"
+                :with-message="false"
+                :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Accept"
+                button-class="btn btn-primary mr-2"
+                :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton
+                v-if="activeBridgehead && activeBridgehead.state !== 'REJECTED' && canShowBridgeheadAdminButtons()"
+                :module="Module.PROJECT_STATE_MODULE"
+                :action="Action.REJECT_BRIDGEHEAD_PROJECT_ACTION"
+                :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Reject"
+                :with-message="true"
+                button-class="btn btn-danger btn-secondary mr-2"
+                :project-manager-backend-service="projectManagerBackendService"/>
             <!-- Project State Module: Developer/Pilot View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_SCRIPT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Accept"
@@ -188,7 +192,8 @@
                                   :with-message="true"
                                   button-class="btn btn-danger btn-secondary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION"
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
+                                  :action="Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Request changes"
                                   :with-message="true"
                                   button-class="btn btn-primary mr-2"
@@ -203,9 +208,15 @@
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.EXPORT_MODULE"
+                                  :action="Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Resend export files to research environment"
+                                  :with-message="false"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
           </div>
           <div v-if="!existsDraftDialog || draftDialogCurrentStep==4">
-            <UserInput  :project="project" :context="context"
+            <UserInput :project="project" :context="context"
                        :bridgeheads="visibleBridgeheads"
                        :project-manager-backend-service="projectManagerBackendService"/>
             <DocumentsTable :context="context"
@@ -527,7 +538,8 @@ export default defineComponent({
       applicationFormLabel: "",
       scriptLabel: "",
       votumLabel: "",
-      existInvitedUsers: false
+      existInvitedUsers: false,
+      areExportFilesTransferredToResearchEnvironment: false
     };
   },
   watch: {
@@ -662,6 +674,7 @@ export default defineComponent({
         this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript');
         this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, new Map(), 'projectRoles');
         this.initializeData(Module.USER_MODULE, Action.EXIST_INVITED_USERS_ACTION, new Map(), 'existInvitedUsers');
+        this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment');
         this.existsDraftDialog = (this.project.state === 'DRAFT' && keycloak.getEmail() === this.project.creatorEmail);
       }
     },
@@ -710,7 +723,7 @@ export default defineComponent({
       }
     },
 
-    updateActiveBridgehead(bridgehead: Bridgehead){
+    updateActiveBridgehead(bridgehead: Bridgehead) {
       this.activeBridgehead = bridgehead;
     },
 
@@ -846,9 +859,11 @@ export default defineComponent({
   font-size: 16px;
   padding-top: 2px;
 }
+
 .active-step {
   font-weight: bold;
 }
+
 .active-step .step-circle {
   background-color: #007bff;
 }
@@ -882,6 +897,7 @@ export default defineComponent({
   text-align: center;
 
 }
+
 .inviteUser {
   margin: 2em 0;
 }

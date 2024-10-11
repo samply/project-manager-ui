@@ -63,3 +63,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Query execution as checkbox
 - Github CI
 - VUE_APP_PUBLIC_PATH
+- Nginx conf

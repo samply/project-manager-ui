@@ -1,7 +1,5 @@
 .github
 .idea
-dist
-none_modules
 .env
 .env.standalone
 .gitignore

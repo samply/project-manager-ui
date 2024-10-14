@@ -1,10 +1,11 @@
-// projetManagerBackendService.ts
+//projectManagerBackendService.ts
 import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
 import axiosRetry from "axios-retry";
 import KeyCloakService from "@/services/keycloak";
+import {getConfig} from "@/services/configLoader";
 
 
-const baseURL = (this as any).$config.VUE_APP_PROJECT_MANAGER_BACKEND_URL
+const baseURL = (await getConfig()).VUE_APP_PROJECT_MANAGER_BACKEND_URL;
 
 const bridgeheadParam = 'bridgehead'
 const projectCodeParam = 'project-code'

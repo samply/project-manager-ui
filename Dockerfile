@@ -32,5 +32,8 @@ EXPOSE 80
 ADD docker/start.sh                 /samply/
 RUN chmod +x                        /samply/start.sh
 
+COPY docker/keycloak.json .
+COPY docker/config.json .
+
 
 CMD ["/samply/start.sh"]

@@ -44,7 +44,7 @@ const refreshToken = () => {
 };
 
 // Set up timer to refresh token periodically
-const tokenRefreshInterval = setInterval(refreshToken, process.env.VUE_APP_KEYCLOAK_REFRESH_TOKEN_TIME_IN_MINUTES * 60 * 1000); // Refresh token every 5 minutes
+const tokenRefreshInterval = setInterval(refreshToken, 5 * 60 * 1000); // Refresh token every 5 minutes
 
 const KeyCloakService = {
     getToken: () => keycloakInstance.token,

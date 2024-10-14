@@ -4,7 +4,7 @@ import axiosRetry from "axios-retry";
 import KeyCloakService from "@/services/keycloak";
 
 
-const baseURL = process.env.VUE_APP_PROJECT_MANAGER_BACKEND_URL
+const baseURL = this.$config.VUE_APP_PROJECT_MANAGER_BACKEND_URL
 
 const bridgeheadParam = 'bridgehead'
 const projectCodeParam = 'project-code'

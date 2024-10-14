@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 envsubst < /usr/share/nginx/html/app.js > /usr/share/nginx/html/app.temp.js
 mv /usr/share/nginx/html/app.temp.js /usr/share/nginx/html/app.js

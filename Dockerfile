@@ -9,6 +9,8 @@ RUN npm install
 
 # Copy the rest of your application code
 COPY . .
+COPY docker/.env.template                   ./.env
+COPY docker/.env.standalone.template        ./.env.standalone
 
 # Build the Vue application
 RUN npm run build:standalone
@@ -16,14 +18,22 @@ RUN npm run build:standalone
 # Stage 2: Serve the application with Nginx
 FROM nginx:alpine
 
+WORKDIR /usr/share/nginx/html
+
 # Copy the built Vue application from the previous stage
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/dist .
 
 # Copy custom Nginx configuration if needed
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80 for the Nginx server
 EXPOSE 80
 
-# Nginx will run automatically
-CMD ["nginx", "-g", "daemon off;"]
+ADD docker/start.sh                 /samply/
+RUN chmod +x                        /samply/start.sh
+
+COPY docker/keycloak.json .
+COPY docker/config.json .
+
+
+CMD ["/samply/start.sh"]

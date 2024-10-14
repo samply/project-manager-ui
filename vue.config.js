@@ -1,7 +1,7 @@
 const dotenv = require('dotenv').config();
 
 module.exports = {
-    publicPath: process.env.VUE_APP_PUBLIC_PATH || './', // Fallback to './' if not set
+//    publicPath: process.env.VUE_APP_PUBLIC_PATH || './', // Fallback to './' if not set
     configureWebpack: {
         output: {
             libraryTarget: "system",

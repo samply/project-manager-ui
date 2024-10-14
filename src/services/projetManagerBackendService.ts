@@ -1,10 +1,10 @@
-// projetManagerBackendService.ts
+//projectManagerBackendService.ts
 import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
 import axiosRetry from "axios-retry";
 import KeyCloakService from "@/services/keycloak";
+import {getConfig} from "@/services/configLoader";
 
 
-const baseURL = process.env.VUE_APP_PROJECT_MANAGER_BACKEND_URL
 
 const bridgeheadParam = 'bridgehead'
 const projectCodeParam = 'project-code'
@@ -242,8 +242,14 @@ export class ProjetManagerBackendService {
     private _isInitialized: Promise<void> | undefined;
 
     constructor(context: ProjectManagerContext, site: Site) {
-        this.baseURL = baseURL
-        this.fetchActiveModuleActions(context, site)
+        // Do not assign baseURL directly in the constructor
+        this._isInitialized = this.initialize(context, site);
+    }
+
+    private async initialize(context: ProjectManagerContext, site: Site): Promise<void> {
+        const config = await getConfig();
+        this.baseURL = config.VUE_APP_PROJECT_MANAGER_BACKEND_URL;
+        await this.fetchActiveModuleActions(context, site);
     }
 
     private fetchActiveModuleActions(context: ProjectManagerContext, site: Site) {

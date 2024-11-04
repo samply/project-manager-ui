@@ -7,8 +7,8 @@ import {
   Module,
   ProjectDocument,
   ProjectManagerContext,
-  ProjetManagerBackendService
-} from "@/services/projetManagerBackendService";
+  ProjectManagerBackendService
+} from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 
 @Options({
@@ -17,7 +17,7 @@ import DownloadButton from "@/components/DownloadButton.vue";
 })
 export default class DocumentsTable extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
+  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly downloadAction!: Action;
   @Prop() readonly fetchListAction!: Action;
   @Prop() readonly iconClass: string | undefined = undefined;
@@ -30,7 +30,7 @@ export default class DocumentsTable extends Vue {
   projectDocumentIds = new Set<string>();
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
+  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
     this.updateCanDownload();
   }
 

@@ -8,8 +8,8 @@ import {
   Module,
   Project,
   ProjectManagerContext,
-  ProjetManagerBackendService
-} from "@/services/projetManagerBackendService";
+  ProjectManagerBackendService
+} from "@/services/projectManagerBackendService";
 
 interface User {
   email: string;
@@ -22,7 +22,7 @@ interface User {
   name: "UserInput"
 })
 export default class UserInput extends Vue {
-  @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
+  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly project!: Project;
   @Prop() readonly bridgeheads!: Bridgehead[];
@@ -36,7 +36,7 @@ export default class UserInput extends Vue {
   showSuggestions = false;
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
+  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
     this.selectedBridgehead = this.bridgeheads[0];
     this.updateIsActive()
   }

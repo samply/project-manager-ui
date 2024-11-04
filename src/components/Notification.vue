@@ -6,8 +6,8 @@ import {
   Module,
   Notification,
   ProjectManagerContext,
-  ProjetManagerBackendService
-} from "@/services/projetManagerBackendService";
+  ProjectManagerBackendService
+} from "@/services/projectManagerBackendService";
 import {Options, Vue} from "vue-class-component";
 import {format} from "date-fns";
 
@@ -16,7 +16,7 @@ import {format} from "date-fns";
 })
 export default class NotificationBox extends Vue {
 
-  @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
+  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly notifications!: Notification[];
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly showNotification!: boolean;

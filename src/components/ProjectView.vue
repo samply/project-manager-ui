@@ -457,9 +457,9 @@ import {
   Project,
   ProjectManagerContext,
   ProjectRole,
-  ProjetManagerBackendService,
+  ProjectManagerBackendService,
   Site
-} from "@/services/projetManagerBackendService";
+} from "@/services/projectManagerBackendService";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import {format} from "date-fns";
 import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
@@ -505,7 +505,7 @@ export default defineComponent({
       bridgeheads: [] as string[],
       visibleBridgeheads: [] as Bridgehead[],
       context: new ProjectManagerContext(this.projectCode, undefined),
-      projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
+      projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
       project: undefined as Project | undefined,
       projectTypes: [] as string[],
       outputFormats: [] as string[],
@@ -548,7 +548,7 @@ export default defineComponent({
       this.context = new ProjectManagerContext(this.projectCode, newValue.bridgehead);
     },
     context(newValue, oldValue) {
-      this.projectManagerBackendService = new ProjetManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
+      this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
       this.fetchProject();
     },
     project(newValue, oldValue) {

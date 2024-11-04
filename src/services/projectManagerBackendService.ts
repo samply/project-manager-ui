@@ -1,5 +1,5 @@
 //projectManagerBackendService.ts
-import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
+import axios, {AxiosRequestConfig, AxiosResponse, AxiosInstance} from 'axios';
 import axiosRetry from "axios-retry";
 import KeyCloakService from "@/services/keycloak";
 import {getConfig} from "@/services/configLoader";
@@ -235,38 +235,74 @@ export class ProjectManagerContext {
 export const UPLOAD_DOCUMENT_PARAM = 'document';
 export const UPLOAD_DOCUMENT_URL_PARAM = 'document-url';
 
-export class ProjetManagerBackendService {
-    private baseURL: string | undefined;
-    private activeModuleActionsMetadata: Map<Module, Map<Action, ActionMetadata>> | undefined;
-    //private activeModuleActionsMetadata: any;
-    private _isInitialized: Promise<void> | undefined;
+// Variable to hold the backend URL once loaded
+let projectManagerBackendUrl: string | null = null;
+
+// Initialize configuration on first load
+const initializeConfig = async () => {
+    const config = await getConfig();
+    projectManagerBackendUrl = config.VUE_APP_PROJECT_MANAGER_BACKEND_URL;
+};
+
+// Ensure configuration is initialized at module load
+initializeConfig().catch(error => {
+    console.error('Error initializing configuration:', error);
+});
+
+// Function to create Axios instance with the loaded backend URL
+const createAxiosInstance = async (): Promise<AxiosInstance> => {
+    if (!projectManagerBackendUrl) {
+        await initializeConfig();
+    }
+
+    if (!projectManagerBackendUrl) {
+        throw new Error("Backend URL not loaded.");
+    }
+
+    return axios.create({
+        baseURL: projectManagerBackendUrl,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+};
+
+
+
+export class ProjectManagerBackendService {
+    private axiosInstance?: AxiosInstance;
+    private activeModuleActionsMetadata?: Map<Module, Map<Action, ActionMetadata>> | undefined;
+    private initializedPromise: Promise<void> | undefined;
 
     constructor(context: ProjectManagerContext, site: Site) {
-        // Do not assign baseURL directly in the constructor
-        this._isInitialized = this.initialize(context, site);
+        this.initializedPromise = this.initialize(context, site);
     }
 
     private async initialize(context: ProjectManagerContext, site: Site): Promise<void> {
-        const config = await getConfig();
-        this.baseURL = config.VUE_APP_PROJECT_MANAGER_BACKEND_URL;
-        await this.fetchActiveModuleActions(context, site);
+        try {
+            this.axiosInstance = await createAxiosInstance();
+            await this.fetchActiveModuleActions(context, site);
+        } catch (error) {
+            console.error("Initialization failed:", error);
+            throw error;
+        }
     }
 
-    private fetchActiveModuleActions(context: ProjectManagerContext, site: Site) {
-        const httpParams: Map<string, string> = new Map<string, string>();
-        this.addContextToMap(httpParams, context);
-        httpParams.set(siteParam, site);
-        console.log('Fetching active module actions...');
-        this._isInitialized = this.doHttpRequest(HttpMethod.GET, actionsPath, httpParams)
-            .then(httpResponse => {
-                this.activeModuleActionsMetadata = this.fetchActiveModuleActionsFromHttpResponse(httpResponse.data);
-            })
-            .catch(error => {
-                console.error('Error fetching active module actions:', error);
-            });
+    private async fetchActiveModuleActions(context: ProjectManagerContext, site: Site): Promise<void> {
+        const params = new Map<string, string>();
+        this.addContextToMap(params, context);
+        params.set(siteParam, site);
+
+        try {
+            const response = await this.doHttpRequest(HttpMethod.GET, actionsPath, params);
+            this.activeModuleActionsMetadata = this.parseModuleActions(response.data);
+        } catch (error) {
+            console.error("Error fetching active module actions:", error);
+            throw error;
+        }
     }
 
-    private fetchActiveModuleActionsFromHttpResponse(data: any): Map<Module, Map<Action, ActionMetadata>> {
+    private parseModuleActions(data: any): Map<Module, Map<Action, ActionMetadata>> {
         const resultMap = new Map<Module, Map<Action, ActionMetadata>>();
         for (const moduleName in data) {
             if (Object.prototype.hasOwnProperty.call(data, moduleName)) {
@@ -277,11 +313,9 @@ export class ProjetManagerBackendService {
                     for (const actionName in moduleData) {
                         if (Object.prototype.hasOwnProperty.call(moduleData, actionName)) {
                             const action = getActionFromString(actionName);
-                            if (action) {
-                                const actionMetaData = jsonToActionMetadata(moduleData[actionName]);
-                                if (actionMetaData) {
-                                    moduleMap.set(action, actionMetaData);
-                                }
+                            const actionMetadata = jsonToActionMetadata(moduleData[actionName]);
+                            if (action && actionMetadata) {
+                                moduleMap.set(action, actionMetadata);
                             }
                         }
                     }
@@ -292,150 +326,129 @@ export class ProjetManagerBackendService {
         return resultMap;
     }
 
-    private isInitialized(): Promise<void> | undefined {
-        return this._isInitialized;
-    }
-
-    public async isModuleActionActive(module: Module, action: Action) {
-        await this.isInitialized()
+    public async isModuleActionActive(module: Module, action: Action): Promise<boolean> {
+        await this.initializedPromise;
         return this.getActionMetadata(module, action) !== undefined;
     }
 
     private getActionMetadata(module: Module, action: Action): ActionMetadata | undefined {
-        const actionMetadataMap = this.activeModuleActionsMetadata?.get(module)
-        if (actionMetadataMap) {
-            return actionMetadataMap.get(action)
-        }
-        return undefined;
+        return this.activeModuleActionsMetadata?.get(module)?.get(action);
     }
 
-    public addContextToMap(map: Map<string, unknown>, context: ProjectManagerContext) {
-        if (context.projectCode) {
-            map.set(projectCodeParam, context.projectCode)
-        }
-        if (context.bridgehead) {
-            map.set(bridgeheadParam, context.bridgehead)
-        }
+    public addContextToMap(map: Map<string, unknown>, context: ProjectManagerContext): void {
+        if (context.projectCode) map.set(projectCodeParam, context.projectCode);
+        if (context.bridgehead) map.set(bridgeheadParam, context.bridgehead);
     }
 
-    public async downloadFile(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, unknown>) {
-        return this.fetchHttpResponse(module, action, context, params).then(httpResponse => {
-            const url = window.URL.createObjectURL(new Blob([httpResponse.data]));
+    public async downloadFile(
+        module: Module,
+        action: Action,
+        context: ProjectManagerContext,
+        params: Map<string, unknown>
+    ): Promise<void> {
+        try {
+            const response = await this.fetchHttpResponse(module, action, context, params);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            // Extract filename from Content-Disposition header if available
-            const contentDisposition = httpResponse.headers['content-disposition'];
-            let fileName = 'downloaded-file';
-            if (contentDisposition) {
-                const fileNameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-                const matches = fileNameRegex.exec(contentDisposition);
-                if (matches != null && matches[1]) {
-                    fileName = matches[1].replace(/['"]/g, '');
-                }
-            }
+
+            const contentDisposition = response.headers['content-disposition'];
+            const fileName = contentDisposition
+                ? contentDisposition.match(/filename="?([^"]+)"?/)?.[1] || 'downloaded-file'
+                : 'downloaded-file';
+
             link.setAttribute('download', fileName);
             document.body.appendChild(link);
             link.click();
             link.remove();
-        }).catch(error => {
-            console.error('Error downloading file:', error);
-        });
+        } catch (error) {
+            console.error("Error downloading file:", error);
+            throw error;
+        }
     }
 
-
-    public async fetchData(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, unknown>): Promise<any> {
+    public async fetchData(
+        module: Module,
+        action: Action,
+        context: ProjectManagerContext,
+        params: Map<string, unknown>
+    ) {
         return (await this.fetchHttpResponse(module, action, context, params)).data;
     }
 
-    public async fetchHttpResponse(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, unknown>): Promise<AxiosResponse<any, any>> {
-        await this.isInitialized();
+    public async fetchHttpResponse(
+        module: Module,
+        action: Action,
+        context: ProjectManagerContext,
+        params: Map<string, unknown>
+    ): Promise<AxiosResponse<any, any>> {
+        await this.initializedPromise;
         const actionMetadata = this.getActionMetadata(module, action);
-        if (actionMetadata) {
-            return this.doHttpRequest(actionMetadata.method, actionMetadata.path, this.fetchHttpParams(module, action, context, params))
-        } else {
-            throw new Error('Action ' + action + ' for module ' + module + ' not active')
+        if (!actionMetadata) {
+            throw new Error(`Action ${action} for module ${module} is not active`);
         }
+        return this.doHttpRequest(actionMetadata.method, actionMetadata.path, this.buildHttpParams(context, params, actionMetadata));
     }
 
-    private fetchHttpParams(module: Module, action: Action, context: ProjectManagerContext, params: Map<string, unknown>): Map<string, unknown> {
-        const result = new Map<string, unknown>()
-        const actionMetadata = this.getActionMetadata(module, action);
-        if (actionMetadata) {
-            this.addContextToMap(result, context)
-            for (const param of actionMetadata.params) {
-                const value = params.get(param);
-                if (value) {
-                    result.set(param, value)
-                }
-            }
+    private buildHttpParams(
+        context: ProjectManagerContext,
+        params: Map<string, unknown>,
+        actionMetadata: ActionMetadata
+    ): Map<string, unknown> {
+        const httpParams = new Map<string, unknown>();
+        this.addContextToMap(httpParams, context);
+        for (const param of actionMetadata.params) {
+            const value = params.get(param);
+            if (value) httpParams.set(param, value);
         }
-        return result
+        return httpParams;
     }
 
+    private async doHttpRequest(
+        httpMethod: HttpMethod,
+        endpoint: string,
+        params: Map<string, unknown>
+    ): Promise<AxiosResponse<any, any>> {
+        if (!this.axiosInstance) throw new Error("Axios instance not initialized");
 
-    private async doHttpRequest(httpMethod: HttpMethod, endpoint: string, httpParams: Map<string, unknown>): Promise<AxiosResponse<any, any>> {
-        try {
-            //const token = KeyCloakService.getToken();
-            const url = `${this.baseURL}${endpoint}`
-            const config: AxiosRequestConfig = {
-                headers: {
-                    Authorization: `Bearer ${KeyCloakService.getToken()}`
-                },
-                params: this.convertToUrlSearchParams(httpParams),
-                withCredentials: true
-            }
-            if (endpoint.includes('download')) {
-                config.responseType = 'blob';
-            }
-            let data = {};
-            if (endpoint.includes('upload')) {
-                if (!config.headers) {
-                    config.headers = {};
-                }
-                config.headers["Content-Type"] = 'multipart/form-data';
-                const uploadFile = httpParams.get(UPLOAD_DOCUMENT_PARAM);
-                if (!uploadFile) {
-                    throw new Error("Upload file not provided for action " + actionsPath);
-                }
-                httpParams.delete(UPLOAD_DOCUMENT_PARAM);
-                data = new FormData();
-                if (data instanceof FormData) {
-                    data.append('document', uploadFile as File);
-                }
-            }
-            axiosRetry(axios, {
-                retries: 2,
-                retryDelay: axiosRetry.exponentialDelay,
-                /*retryCondition: (error) => {
-                    return axiosRetry.isNetworkOrIdempotentRequestError(error) || error.code === 'ETIMEDOUT';
-                }*/
-            });
-            let response: AxiosResponse<any, any>;
-            switch (httpMethod) {
-                case HttpMethod.GET:
-                    response = await axios.get(url, config)
-                    break;
-                case HttpMethod.POST:
-                    //TODO: data not null
-                    response = await axios.post(url, data, config)
-                // Other methods for PUT, DELETE, etc. (Currently not used in Project Manager Backend)
-            }
-            return response;
-        } catch (error) {
-            console.error('Error fetching data:', error);
-            throw error;
+        const config: AxiosRequestConfig = {
+            headers: {
+                Authorization: `Bearer ${KeyCloakService.getToken()}`,
+            },
+            params: this.convertToUrlSearchParams(params),
+            withCredentials: true,
+        };
+
+        if (endpoint.includes('download')) config.responseType = 'blob';
+
+        if (endpoint.includes('upload')) {
+            config.headers!["Content-Type"] = 'multipart/form-data';
+            const uploadFile = params.get(UPLOAD_DOCUMENT_PARAM);
+            if (!uploadFile) throw new Error("Upload file not provided");
+            params.delete(UPLOAD_DOCUMENT_PARAM);
+            const data = new FormData();
+            data.append('document', uploadFile as File);
+            return this.axiosInstance.post(endpoint, data, config);
+        }
+
+        axiosRetry(this.axiosInstance, { retries: 2, retryDelay: axiosRetry.exponentialDelay });
+
+        switch (httpMethod) {
+            case HttpMethod.GET:
+                return this.axiosInstance.get(endpoint, config);
+            case HttpMethod.POST:
+                return this.axiosInstance.post(endpoint, {}, config);
+            default:
+                throw new Error(`Unsupported HTTP method: ${httpMethod}`);
         }
     }
 
     private convertToUrlSearchParams(map: Map<string, unknown>): URLSearchParams {
         const result = new URLSearchParams();
-        if (map) {
-            for (const [key, value] of map) {
-                result.append(key, value as string);
-            }
+        for (const [key, value] of map) {
+            result.append(key, String(value));
         }
         return result;
     }
-
 
 }

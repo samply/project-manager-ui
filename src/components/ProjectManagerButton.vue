@@ -5,15 +5,15 @@ import {
   Action,
   Module,
   ProjectManagerContext,
-  ProjetManagerBackendService
-} from "@/services/projetManagerBackendService";
+  ProjectManagerBackendService
+} from "@/services/projectManagerBackendService";
 import {Options, Vue} from "vue-class-component";
 
 @Options({
   name: "ProjectManagerButton"
 })
 export default class ProjectManagerButton extends Vue {
-  @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
+  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly module!: Module;
   @Prop() readonly action!: Action;
   @Prop() readonly text!: string;
@@ -32,7 +32,7 @@ export default class ProjectManagerButton extends Vue {
 
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
+  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
     this.updateIsActive()
   }
 

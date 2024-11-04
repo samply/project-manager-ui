@@ -57,9 +57,9 @@ import {
   Module,
   Project,
   ProjectManagerContext,
-  ProjetManagerBackendService,
+  ProjectManagerBackendService,
   Site
-} from "@/services/projetManagerBackendService";
+} from "@/services/projectManagerBackendService";
 import NotificationBox from "@/components/Notification.vue";
 
 export default defineComponent({
@@ -69,7 +69,7 @@ export default defineComponent({
     return {
       site: Site.PROJECT_DASHBOARD_SITE,
       context: new ProjectManagerContext(undefined, undefined),
-      projectManagerBackendService: new ProjetManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.PROJECT_DASHBOARD_SITE),
+      projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.PROJECT_DASHBOARD_SITE),
       projects: [] as Project[],
       notifications: [],
       showNotification: false,
@@ -77,7 +77,7 @@ export default defineComponent({
   },
   watch: {
     context(newValue, oldValue) {
-      this.projectManagerBackendService = new ProjetManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
+      this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
       this.fetchProjects();
     },
     projects(newValue, oldValue) {

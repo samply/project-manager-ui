@@ -5,9 +5,9 @@ import {
   Action,
   Module,
   ProjectManagerContext,
-  ProjetManagerBackendService,
+  ProjectManagerBackendService,
   UPLOAD_DOCUMENT_PARAM, UPLOAD_DOCUMENT_URL_PARAM
-} from "@/services/projetManagerBackendService";
+} from "@/services/projectManagerBackendService";
 
 @Options({
   name: "UploadButton"
@@ -16,7 +16,7 @@ import {
 export default class UploadButton extends Vue {
   @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
   @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
+  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly module!: Module;
   @Prop() readonly action!: Action;
   @Prop() readonly text!: string;
@@ -27,7 +27,7 @@ export default class UploadButton extends Vue {
   isActive = false;
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
+  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
     this.updateIsActive()
   }
 

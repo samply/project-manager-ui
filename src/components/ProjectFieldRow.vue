@@ -6,8 +6,8 @@ import {
   EditProjectParam,
   Module,
   ProjectManagerContext,
-  ProjetManagerBackendService
-} from "@/services/projetManagerBackendService";
+  ProjectManagerBackendService
+} from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
 
@@ -20,7 +20,7 @@ export default class ProjectFieldRow extends Vue {
   // The index of editProjectParam, fieldValue, editedValue and tempFieldValue is the same
   @Prop() readonly editProjectParam!: EditProjectParam[];
   @Prop() readonly fieldValue!: string[];
-  @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
+  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop({default: null}) readonly redirectUrl!: string | null;
   @Prop() readonly possibleValues!: string[];
@@ -47,8 +47,8 @@ export default class ProjectFieldRow extends Vue {
 
   @Watch("projectManagerBackendService", {immediate: true, deep: true})
   onProjetManagerBackendServiceChange(
-      newValue: ProjetManagerBackendService,
-      oldValue: ProjetManagerBackendService
+      newValue: ProjectManagerBackendService,
+      oldValue: ProjectManagerBackendService
   ) {
     this.resetIsActionEnabled();
   }

@@ -70,8 +70,8 @@ import {
   Module,
   Project,
   ProjectManagerContext,
-  ProjetManagerBackendService
-} from "@/services/projetManagerBackendService";
+  ProjectManagerBackendService
+} from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 
 @Options({
@@ -86,7 +86,7 @@ import DownloadButton from "@/components/DownloadButton.vue";
 })
 export default class BridgeheadOverview extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
+  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly bridgeheads!: Bridgehead[];
   @Prop() readonly project!: Project;
   @Prop({type: Function, required: true}) readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
@@ -105,7 +105,7 @@ export default class BridgeheadOverview extends Vue {
 
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
+  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
     this.updateBridgeheadExtraInfo();
   }
 

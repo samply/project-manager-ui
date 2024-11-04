@@ -5,8 +5,8 @@ import {
   Action,
   Module,
   ProjectManagerContext,
-  ProjetManagerBackendService
-} from "@/services/projetManagerBackendService";
+  ProjectManagerBackendService
+} from "@/services/projectManagerBackendService";
 
 @Options({
   name: "DownloadButton"
@@ -14,7 +14,7 @@ import {
 
 export default class DownloadButton extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectManagerBackendService!: ProjetManagerBackendService;
+  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly module!: Module;
   @Prop() readonly action!: Action;
   @Prop() readonly filename: string | undefined = undefined;
@@ -23,7 +23,7 @@ export default class DownloadButton extends Vue {
   isActive = false;
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange(newValue: ProjetManagerBackendService, oldValue: ProjetManagerBackendService) {
+  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
     this.updateIsActive()
   }
 

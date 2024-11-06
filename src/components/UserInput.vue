@@ -14,6 +14,7 @@ import {
 interface User {
   email: string;
   bridgehead: string;
+  humanReadableBridgehead: string | null;
   projectRole: string;
   projectState: string;
 }
@@ -128,7 +129,7 @@ export default class UserInput extends Vue {
     <div class="user-input-container">
       <select v-model="selectedBridgehead" class="form-select">
         <option v-for="bridgehead in bridgeheads" :key="bridgehead.bridgehead" :value="bridgehead"
-                :selected="bridgehead === selectedBridgehead">{{ bridgehead.bridgehead }}
+                :selected="bridgehead === selectedBridgehead">{{ bridgehead.humanReadable }}
         </option>
       </select>
       <div>
@@ -156,7 +157,7 @@ export default class UserInput extends Vue {
       <tbody>
       <tr v-for="(user, index) in currentUsers" :key="index">
         <td>{{ user.email }}</td>
-        <td v-if="bridgeheads.length > 0">{{ user.bridgehead }}</td>
+        <td v-if="bridgeheads.length > 0">{{ user.humanReadableBridgehead }}</td>
         <td>{{ user.projectState }}</td> <!-- Display user's state in the second column -->
       </tr>
       </tbody>

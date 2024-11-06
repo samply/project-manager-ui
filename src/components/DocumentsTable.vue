@@ -92,7 +92,7 @@ export default class DocumentsTable extends Vue {
         <td>{{ projectDocument.originalFilename }}</td>
         <td><a :href="projectDocument.url">{{ projectDocument.url }}</a></td>
         <td>{{ projectDocument.createdAt }}</td>
-        <td v-if="projectDocument.bridgehead != 'NONE'">{{ projectDocument.bridgehead }}</td>
+        <td v-if="projectDocument.bridgehead != 'NONE'">{{ projectDocument.humanReadableBridgehead }}</td>
         <td v-if="projectDocument.bridgehead === 'NONE'"></td>
         <td>{{ projectDocument.creatorEmail }}</td>
         <td>{{ projectDocument.type }}</td>

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2024-10-11]
+## [1.1.0 - 2024-11-06]
 ### Added
 - Dockerfile
 - Single Spa
@@ -65,3 +65,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - VUE_APP_PUBLIC_PATH
 - Nginx conf
 - Config Loader
+- Human Readable to bridgehead

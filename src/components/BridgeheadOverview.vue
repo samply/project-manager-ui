@@ -23,7 +23,7 @@
           <!-- First row: bridgehead.bridgehead -->
           <div v-if="index === 0"
                @click="selectBridgehead(bridgeheadIndex)"
-          >{{ bridgehead.bridgehead }}</div>
+          >{{ bridgehead.humanReadable }}</div>
           <!-- Second row: existVotum -->
           <div v-else-if="index === 1">
             <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]" class="exist-votum green">

@@ -157,6 +157,7 @@ export interface Notification {
     timestamp: Date | null;
     projectCode: string | null;
     bridgehead: string | null;
+    humanReadableBridgehead: string | null;
     operationType: string | null;
     details: string | null;
     error: string | null;
@@ -167,6 +168,7 @@ export interface Notification {
 export interface Bridgehead {
     projectCode: string;
     bridgehead: string;
+    humanReadable: string | null;
     state: string;
     modifiedAt: string;
     queryState: string;
@@ -178,6 +180,7 @@ export interface ProjectDocument {
     url: string;
     createdAt: string;
     bridgehead: string;
+    humanReadableBridgehead: string | null;
     creatorEmail: string;
     label: string;
     type: string;

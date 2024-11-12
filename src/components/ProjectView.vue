@@ -30,7 +30,7 @@
 
             <div class="card" v-if="visibleBridgeheads && visibleBridgeheads.length === 1" style="padding: 3px 20px;">
               <div class="card-body" style="padding: 0px 0px;">
-                <span style="padding: 0px 0px;">{{ context.bridgehead.humanReadable }}</span>
+                <span style="padding: 0px 0px;">{{ context.bridgehead?.humanReadable }}</span>
               </div>
             </div>
 
@@ -280,11 +280,12 @@
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
                                field-key="Bridgeheads"
-                               :field-value="[bridgeheads, allBridgeheads]"
+                               :field-value="[bridgeheads.map(bridghead => bridghead.humanReadable), allBridgeheads.map(bridghead => bridghead.humanReadable)]"
                                :edit-project-param="[EditProjectParam.BRIDGEHEADS]"
                                :is-editable="true"
                                :call-refreh-context="refreshContext"
                                :redirect-url="project.explorerUrl"
+                               :transform-for-sending="(humanReadable: string) => allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==1 || draftDialogCurrentStep==4"
                                field-key="Configuration"
@@ -502,7 +503,7 @@ export default defineComponent({
     return {
       activeBridgehead: undefined as Bridgehead | undefined,
       activeBridgeheadIndex: 0,
-      bridgeheads: [] as string[],
+      bridgeheads: [] as Bridgehead[],
       visibleBridgeheads: [] as Bridgehead[],
       context: new ProjectManagerContext(this.projectCode, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
@@ -511,7 +512,7 @@ export default defineComponent({
       outputFormats: [] as string[],
       queryFormats: [] as string[],
       exporterTemplateIds: [] as string[],
-      allBridgeheads: [] as string[],
+      allBridgeheads: [] as Bridgehead[],
       projectStates: [] as string[],
       dataShieldStatus: undefined as DataShieldProjectStatus | undefined,
       site: Site.PROJECT_VIEW_SITE,
@@ -634,8 +635,7 @@ export default defineComponent({
     initializeProjectRelatedData() {
       if (this.project) {
         this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), (result: Bridgehead[]) => {
-          this.bridgeheads = [];
-          result.forEach(bridgehead => this.bridgeheads.push(bridgehead.bridgehead));
+          this.bridgeheads = result;
         });
         this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_STATES_ACTION, new Map(), 'projectStates');
         this.fetchNotifications();

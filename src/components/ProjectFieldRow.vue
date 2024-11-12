@@ -5,8 +5,8 @@ import {
   Action,
   EditProjectParam,
   Module,
-  ProjectManagerContext,
-  ProjectManagerBackendService
+  ProjectManagerBackendService,
+  ProjectManagerContext
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
@@ -30,6 +30,11 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly downloadAction!: Action;
   @Prop() readonly downloadModule!: Module;
   @Prop() readonly existsFile!: boolean;
+  @Prop({
+    type: Function,
+    default: (input: string): string => input
+  }) readonly transformForSending!: (input: string) => string;
+
 
   editing = false;
   editedValue: string[] = [];
@@ -58,10 +63,6 @@ export default class ProjectFieldRow extends Vue {
   @Watch("redirectUrl", {immediate: true, deep: true})
   onRedirectUrlChange(newValue: string | null, oldValue: string | null) {
     console.log("redirectURL:" + newValue);
-  }
-
-  createContext(bridgehead: string | undefined) {
-    return new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
   }
 
   created() {
@@ -101,7 +102,7 @@ export default class ProjectFieldRow extends Vue {
       }
       for (let i = 0; i < this.editProjectParam.length; i++) {
         if (i < this.editedValue.length) {
-          params.set(this.editProjectParam[i], this.editedValue[i]);
+          params.set(this.editProjectParam[i], this.applyTransformToSend(this.editedValue[i]));
         }
       }
       if (this.includesEditProjectParam(EditProjectParam.PROJECT_CONFIGURATION)) {
@@ -115,6 +116,13 @@ export default class ProjectFieldRow extends Vue {
       }
     }
 
+  }
+
+  applyTransformToSend(editedValue: any): any {
+    if (editedValue) {
+      return (Array.isArray(editedValue)) ? editedValue.map(input => this.transformForSending(input)) : this.transformForSending(editedValue);
+    }
+    return "";
   }
 
   includesEditProjectParam(param: EditProjectParam): boolean {
@@ -334,7 +342,7 @@ export default class ProjectFieldRow extends Vue {
                 <div v-else-if="isEnvironmentVariables()" style="width:75%;">
                   <span v-if="editedValue && editedValue.length > 0 && editedValue[0] " style="width: 75%">
                     <span v-for="(pair, index) in editedValue[0].split(';')" :key="index"
-                         style="margin-right: 2%;  display: inline;" class="btn btn-primary">
+                          style="margin-right: 2%;  display: inline;" class="btn btn-primary">
                       <span style="display: inline; margin-bottom: 2%">{{ pair }}</span>
                       <button @click="removeEnvVariable(index)" class="btn btn-sm" style="padding: 0px"><i
                           style="color: white; font-size: 18px" class="bi bi-x"></i></button>
@@ -345,7 +353,7 @@ export default class ProjectFieldRow extends Vue {
                     <input type="text" class="form-control" v-model="newKey" placeholder="Key">
                     <input type="text" class="form-control" v-model="newValue" placeholder="Value">
                     <button class="btn btn-primary" @click="addEnvVariable"><i style="font-size: 18px"
-                                                                            class="bi bi-check"></i>
+                                                                               class="bi bi-check"></i>
                     </button>
                   </div>
                 </div>
@@ -361,7 +369,8 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div class="button-container" :class="getButtonContainerCssClass()">
-              <button @click="cancelEdit" class="btn btn-outline-secondary" style="padding:4px 15px 4px 15px;margin-left: auto">Cancel
+              <button @click="cancelEdit" class="btn btn-outline-secondary"
+                      style="padding:4px 15px 4px 15px;margin-left: auto">Cancel
               </button>
               <button v-if="!uploadAction" @click="saveField" class="btn btn-outline-primary"
                       style="padding:4px 20px 4px 20px;">Save
@@ -401,7 +410,8 @@ export default class ProjectFieldRow extends Vue {
             <button v-if="isFieldValueEditable() && (redirectUrl === null || isBridgeheads())" class="btn btn-primary"
                     data-toggle="tooltip"
                     data-placement="top" title="Edit"
-                    style="background:none; border:none; color:black"><i class="bi bi-pencil me-2" @click="editField"></i>
+                    style="background:none; border:none; color:black"><i class="bi bi-pencil me-2"
+                                                                         @click="editField"></i>
             </button>
             <DownloadButton v-if="existsFile && downloadAction" :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
@@ -410,7 +420,8 @@ export default class ProjectFieldRow extends Vue {
         <button v-if="isFieldValueEditable() && redirectUrl !== null" class="btn btn-primary"
                 data-toggle="tooltip"
                 data-placement="top" title="CCP Explorer"
-                style="background:none; border:none; color:black"><i class="bi bi-arrow-right-circle" @click="redirectToURL"></i>
+                style="background:none; border:none; color:black"><i class="bi bi-arrow-right-circle"
+                                                                     @click="redirectToURL"></i>
         </button>
       </span>
     </td>

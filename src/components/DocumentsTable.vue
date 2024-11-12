@@ -62,7 +62,7 @@ export default class DocumentsTable extends Vue {
   }
 
   createContext(bridgehead: Bridgehead) {
-    return new ProjectManagerContext(this.context.projectCode, bridgehead.bridgehead);
+    return new ProjectManagerContext(this.context.projectCode, bridgehead);
   }
 
 

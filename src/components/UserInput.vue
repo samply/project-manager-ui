@@ -111,7 +111,7 @@ export default class UserInput extends Vue {
   }
 
   createContext(bridgehead: Bridgehead | undefined) {
-    return (bridgehead) ? new ProjectManagerContext(this.context.projectCode, bridgehead.bridgehead) : this.context;
+    return (bridgehead) ? new ProjectManagerContext(this.context.projectCode, bridgehead) : this.context;
   }
 
   selectSuggestion(suggestion: User) {

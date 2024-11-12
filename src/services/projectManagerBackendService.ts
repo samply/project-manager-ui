@@ -226,9 +226,9 @@ function jsonToActionMetadata(json: any): ActionMetadata | undefined {
 
 export class ProjectManagerContext {
     projectCode: string | undefined;
-    bridgehead: string | undefined;
+    bridgehead: Bridgehead | undefined;
 
-    constructor(projectCode: string | undefined, bridgehead: string | undefined) {
+    constructor(projectCode: string | undefined, bridgehead: Bridgehead | undefined) {
         this.projectCode = projectCode;
         this.bridgehead = bridgehead;
     }
@@ -340,7 +340,7 @@ export class ProjectManagerBackendService {
 
     public addContextToMap(map: Map<string, unknown>, context: ProjectManagerContext): void {
         if (context.projectCode) map.set(projectCodeParam, context.projectCode);
-        if (context.bridgehead) map.set(bridgeheadParam, context.bridgehead);
+        if (context.bridgehead) map.set(bridgeheadParam, context.bridgehead.bridgehead);
     }
 
     public async downloadFile(

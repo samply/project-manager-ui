@@ -125,7 +125,7 @@ export default class BridgeheadOverview extends Vue {
   }
 
   fetchContext(bridgehead: Bridgehead) {
-    return new ProjectManagerContext(this.context.projectCode, bridgehead.bridgehead);
+    return new ProjectManagerContext(this.context.projectCode, bridgehead);
   }
 
   async fetchExistsVotums(): Promise<boolean[]> {

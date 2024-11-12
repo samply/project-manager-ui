@@ -30,7 +30,7 @@
 
             <div class="card" v-if="visibleBridgeheads && visibleBridgeheads.length === 1" style="padding: 3px 20px;">
               <div class="card-body" style="padding: 0px 0px;">
-                <span style="padding: 0px 0px;">{{ context.bridgehead }}</span>
+                <span style="padding: 0px 0px;">{{ context.bridgehead.humanReadable }}</span>
               </div>
             </div>
 
@@ -545,7 +545,7 @@ export default defineComponent({
   watch: {
     activeBridgehead(newValue, oldValue) {
       this.activeBridgeheadIndex = this.visibleBridgeheads.findIndex(bridgehead => bridgehead === newValue);
-      this.context = new ProjectManagerContext(this.projectCode, newValue.bridgehead);
+      this.context = new ProjectManagerContext(this.projectCode, newValue);
     },
     context(newValue, oldValue) {
       this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);

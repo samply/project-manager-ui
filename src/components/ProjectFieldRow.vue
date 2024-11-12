@@ -30,9 +30,6 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly downloadAction!: Action;
   @Prop() readonly downloadModule!: Module;
   @Prop() readonly existsFile!: boolean;
-  @Prop() readonly bridgeheads!: string[];
-  @Prop() readonly fetchListAction!: Action;
-  @Prop() readonly label!: string;
 
   editing = false;
   editedValue: string[] = [];

@@ -138,7 +138,7 @@ export default class ProjectFieldRow extends Vue {
     this.showInputs = true;
   }
 
-  addBridgehead() {
+  addFieldValue() {
     if (this.newValue) {
       if (Array.isArray(this.tempFieldValue) && this.tempFieldValue.length > 0 && Array.isArray(this.tempFieldValue[0])) {
         const targetArray = this.tempFieldValue[0];
@@ -325,7 +325,7 @@ export default class ProjectFieldRow extends Vue {
                             :key="index" :value="value">{{ value }}
                         </option>
                       </select>
-                      <button class="btn btn-primary" @click="addBridgehead"><i style="font-size: 18px"
+                      <button class="btn btn-primary" @click="addFieldValue"><i style="font-size: 18px"
                                                                                 class="bi bi-check"></i>
                       </button>
                     </div>

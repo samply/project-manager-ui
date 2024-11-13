@@ -18,7 +18,7 @@
     </div>
 
     <div class="right-container">
-      <div style="display:flex; flex-flow: column; width:100%; padding-right:3%">
+      <div style="display:flex; flex-flow: column; padding-right:3%">
         <div class="container">
           <br/>
           <h2>Project Information</h2>
@@ -761,7 +761,7 @@ export default defineComponent({
 }
 
 .left-container {
-  flex: 0.5;
+  flex: 0.4;
   padding-left: 5%;
 }
 
@@ -769,6 +769,7 @@ export default defineComponent({
   flex: 3;
   display: flex;
   flex-flow: row;
+  margin-top: 3%;
 }
 
 .button-container-right button {

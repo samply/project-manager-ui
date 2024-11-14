@@ -96,6 +96,7 @@ export default class ProjectFieldRow extends Vue {
     const params = new Map<string, string>();
 
     if (this.editProjectParam && this.editProjectParam.length > 0) {
+      //TODO: Please remove hardcoded output format and template id. These values only make sense for DKTK and not always
       if (this.includesEditProjectParam(EditProjectParam.PROJECT_TYPE) && this.tempFieldValue[0] === "DATASHIELD") {
         params.set("output-format", "OPAL");
         params.set("template-id", "opal-ccp");

@@ -201,13 +201,15 @@
             <!-- Export Module -->
             <ProjectManagerButton v-if="canShowBridgeheadAdminButtons()" :module="Module.EXPORT_MODULE"
                                   :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                  :action2="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"
                                   :context="context" :call-refreh-context="refreshBridgeheadsAndContext"
                                   text="Send query to bridgehead"
-                                  text2="With execution"
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
+            <!-- In order to allow executing query after sending, please set the following parameters in ProjectManagerButton -->
+            <!--:action2="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"-->
+            <!--text2="With execution"-->
+
             <ProjectManagerButton :module="Module.EXPORT_MODULE"
                                   :action="Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Resend export files to research environment"

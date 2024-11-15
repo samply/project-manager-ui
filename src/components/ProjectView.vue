@@ -18,7 +18,7 @@
     </div>
 
     <div class="right-container">
-      <div style="display:flex; flex-flow: column; width:100%; padding-right:3%">
+      <div style="display:flex; flex-flow: column; padding-right:3%">
         <div class="container">
           <br/>
           <h2>Project Information</h2>
@@ -215,15 +215,11 @@
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
           </div>
-          <div v-if="!existsDraftDialog || draftDialogCurrentStep==4">
+          <hr/>
+          <div v-if="!existsDraftDialog || draftDialogCurrentStep==4" class="inviteUser">
             <UserInput :project="project" :context="context"
                        :bridgeheads="visibleBridgeheads"
                        :project-manager-backend-service="projectManagerBackendService"/>
-            <DocumentsTable :context="context"
-                            :project-manager-backend-service="projectManagerBackendService"
-                            :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
-                            :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
-                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Publications: "/>
           </div>
           <hr/>
         </div>
@@ -387,6 +383,12 @@
               </tbody>
             </table>
           </div>
+          <DocumentsTable v-if="!existsDraftDialog || draftDialogCurrentStep==4" :context="context"
+                          :project-manager-backend-service="projectManagerBackendService"
+                          :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
+                          :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
+                          :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Publications: "/>
+          <br/>
           <UploadButton v-if="!existsDraftDialog || draftDialogCurrentStep==4" :context="context"
                         :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
@@ -784,7 +786,7 @@ export default defineComponent({
 }
 
 .left-container {
-  flex: 0.5;
+  flex: 0.4;
   padding-left: 5%;
 }
 
@@ -792,6 +794,7 @@ export default defineComponent({
   flex: 3;
   display: flex;
   flex-flow: row;
+  margin-top: 3%;
 }
 
 .button-container-right button {
@@ -859,11 +862,9 @@ export default defineComponent({
   font-size: 16px;
   padding-top: 2px;
 }
-
 .active-step {
   font-weight: bold;
 }
-
 .active-step .step-circle {
   background-color: #007bff;
 }
@@ -897,7 +898,6 @@ export default defineComponent({
   text-align: center;
 
 }
-
 .inviteUser {
   margin: 2em 0;
 }

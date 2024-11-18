@@ -69,3 +69,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Show minimal information in project form
 - Show User TODOs
 - Extended explanations
+- Extended explanations Messages for draft

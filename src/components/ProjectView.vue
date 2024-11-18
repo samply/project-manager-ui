@@ -476,9 +476,9 @@ import {
   Module,
   Notification,
   Project,
+  ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,
-  ProjectManagerBackendService,
   Site
 } from "@/services/projectManagerBackendService";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
@@ -771,6 +771,19 @@ export default defineComponent({
 
     getExtendedExplanations(): string[]{
       let extendedExplanations:string[] = [];
+      if (this.existsDraftDialog){
+        if (this.draftDialogCurrentStep === 0){ // Project
+          extendedExplanations.push("Please provide the general project information to proceed.");
+        } else if (this.draftDialogCurrentStep === 1){ // Type
+          extendedExplanations.push("Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration.");
+        } else if (this.draftDialogCurrentStep === 2){ // Query
+          extendedExplanations.push("Please set the query and specify the query format if they have not been previously configured in the Federated Explorer.");
+        } else if (this.draftDialogCurrentStep === 3){ // Output
+          extendedExplanations.push("Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables.");
+        } else if (this.draftDialogCurrentStep === 4){ // Summary
+          extendedExplanations.push("Please check all of the fields in the summary and click 'Create' if everything seems OK.");
+        }
+      }
       return [...this.explanations, ...extendedExplanations];
     }
 

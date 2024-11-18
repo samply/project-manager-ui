@@ -227,13 +227,11 @@
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
           </div>
-          <hr/>
           <div v-if="!existsDraftDialog || draftDialogCurrentStep==4" class="inviteUser">
             <UserInput :project="project" :context="context"
                        :bridgeheads="visibleBridgeheads"
                        :project-manager-backend-service="projectManagerBackendService"/>
           </div>
-          <hr/>
         </div>
 
         <div class="container mt-12" style="margin-bottom: 8%;">

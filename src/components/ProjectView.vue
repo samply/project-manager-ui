@@ -20,10 +20,15 @@
     <div class="right-container">
       <div class="main-content">
         <div class="container">
-          <div v-if="explanations.length" class="explanation-box">
-            <p v-for="(explanation, index) in explanations" :key="index" class="explanation-line">
-              - {{ explanation }}
-            </p>
+          <div>
+            <div v-if="explanations.length" class="explanation-box">
+              <p v-for="(explanation, index) in explanations" :key="index" class="explanation-line">
+                - {{ explanation }}
+              </p>
+            </div>
+            <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED' ">
+              <p>No action is required at the moment. Please wait for the next notification, which will also be sent to you via email.</p>
+            </div>
           </div>
           <br/>
           <h2 v-if="project?.state !== 'DRAFT'">Project Information</h2>

@@ -18,17 +18,17 @@
     </div>
 
     <div class="right-container">
-      <div style="display:flex; flex-flow: column; padding-right:3%">
+      <div class="main-content">
         <div class="container">
           <br/>
-          <h2>Project Information</h2>
+          <h2 v-if="project?.state !== 'DRAFT'">Project Information</h2>
           <br/>
 
           <div style="display:flex; flex-flow:row; justify-content: space-between">
             <router-link to="/" data-toggle="tooltip" data-placement="top" title="Back to Project Dashboard"><i
                 class="bi bi-arrow-left-square-fill"></i></router-link>
 
-            <div class="card" v-if="visibleBridgeheads && visibleBridgeheads.length === 1" style="padding: 3px 20px;">
+            <div class="card" v-if="project?.state !== 'DRAFT' && visibleBridgeheads && visibleBridgeheads.length === 1" style="padding: 3px 20px;">
               <div class="card-body" style="padding: 0px 0px;">
                 <span style="padding: 0px 0px;">{{ context.bridgehead?.humanReadable }}</span>
               </div>
@@ -47,7 +47,6 @@
               </button>
             </div>
           </div>
-
           <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
                               :project-manager-backend-service="projectManagerBackendService"
                               :call-update-active-bridgehead="updateActiveBridgehead"
@@ -56,7 +55,8 @@
                               :bridgeheads="visibleBridgeheads"
                               :activeBridgehead="activeBridgehead"/>
           <br/>
-          <table class="table table-bordered">
+          <table class="table table-bordered" v-if="project?.state !== 'DRAFT' ">
+          <!--<table class="table table-bordered" >-->
             <thead>
             <tr>
               <th style="background-color: #f2f2f2;" scope="col">Data Request Number (DRN)</th>
@@ -230,7 +230,7 @@
           <div v-if="project">
             <br/>
             <div class="table-responsive">
-              <h3>Requested Data</h3>
+              <h3 v-if="project.state !== 'DRAFT' ">Requested Data</h3>
               <br/>
               <div v-if="existsDraftDialog" class="container" style="width:100%">
                 <div class="row justify-content-center">
@@ -797,6 +797,13 @@ export default defineComponent({
   display: flex;
   flex-flow: row;
   margin-top: 3%;
+}
+
+.main-content {
+  display:flex;
+  flex-flow: column;
+  padding-right:3%;
+  width: 100%;
 }
 
 .button-container-right button {

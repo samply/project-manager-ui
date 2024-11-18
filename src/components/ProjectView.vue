@@ -22,7 +22,7 @@
         <div class="container">
           <div>
             <div v-if="explanations.length" class="explanation-box">
-              <p v-for="(explanation, index) in explanations" :key="index" class="explanation-line">
+              <p v-for="(explanation, index) in getExtendedExplanations()" :key="index" class="explanation-line">
                 - {{ explanation }}
               </p>
             </div>
@@ -99,18 +99,14 @@
           <div class="text-right mt-4">
             <!-- Project State Module: Creator View -->
             <!-- v-if="existsApplicationForm" entfernt - statt ganz ausblenden -> design ändern -->
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.CREATE_PROJECT_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Create"
-                                  button-class="btn btn-primary mr-2"
-                                  :with-message="false"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
             <!-- Project State Module: PM-ADMIN View -->
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
                                   :with-message="false"
                                   :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ACTION"
+            <ProjectManagerButton v-if="project?.state !== 'DRAFT' "
+                                  :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Reject"
                                   button-class="btn btn-danger btn-secondary mr-2"
                                   :with-message="true"
@@ -256,12 +252,24 @@
                     <!-- Navigationstasten -->
                     <div class="button-container mt-3">
                       <button class="btn btn-primary me-2" @click="prevStep" :disabled="draftDialogCurrentStep === 0">
-                        Zurück
+                        Back
                       </button>
                       <button class="btn btn-primary" @click="nextStep"
-                              :disabled="draftDialogCurrentStep === steps.length - 1">
-                        Weiter
+                              v-if="draftDialogCurrentStep < steps.length - 1">
+                        Continue
                       </button>
+                      <ProjectManagerButton v-if="draftDialogCurrentStep === steps.length - 1"
+                                            :module="Module.PROJECT_STATE_MODULE" :action="Action.CREATE_PROJECT_ACTION"
+                                            :context="context" :call-refreh-context="refreshContext" text="Create"
+                                            button-class="btn btn-success mr-2"
+                                            :with-message="false"
+                                            :project-manager-backend-service="projectManagerBackendService"/>
+                      <ProjectManagerButton v-if="project?.state === 'DRAFT' "
+                                            :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ACTION"
+                                            :context="context" :call-refreh-context="refreshContext" text="Discard"
+                                            button-class="btn btn-danger btn-secondary mr-2"
+                                            :with-message="true"
+                                            :project-manager-backend-service="projectManagerBackendService"/>
                     </div>
                   </div>
                 </div>
@@ -759,6 +767,11 @@ export default defineComponent({
         }
       }
       return visibleProjectStates
+    },
+
+    getExtendedExplanations(): string[]{
+      let extendedExplanations:string[] = [];
+      return [...this.explanations, ...extendedExplanations];
     }
 
   }
@@ -915,7 +928,6 @@ export default defineComponent({
   display: flex;
   justify-content: flex-end;
   text-align: center;
-
 }
 .inviteUser {
   margin: 2em 0;

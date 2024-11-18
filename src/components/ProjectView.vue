@@ -20,6 +20,11 @@
     <div class="right-container">
       <div class="main-content">
         <div class="container">
+          <div v-if="explanations.length" class="explanation-box">
+            <p v-for="(explanation, index) in explanations" :key="index" class="explanation-line">
+              - {{ explanation }}
+            </p>
+          </div>
           <br/>
           <h2 v-if="project?.state !== 'DRAFT'">Project Information</h2>
           <br/>
@@ -544,7 +549,8 @@ export default defineComponent({
       scriptLabel: "",
       votumLabel: "",
       existInvitedUsers: false,
-      areExportFilesTransferredToResearchEnvironment: false
+      areExportFilesTransferredToResearchEnvironment: false,
+      explanations: [] as string[]
     };
   },
   watch: {
@@ -638,6 +644,7 @@ export default defineComponent({
 
     initializeProjectRelatedData() {
       if (this.project) {
+        this.explanations = this.projectManagerBackendService.getExplanations();
         this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), (result: Bridgehead[]) => {
           this.bridgeheads = result;
         });
@@ -910,4 +917,19 @@ export default defineComponent({
 .inviteUser {
   margin: 2em 0;
 }
+
+.explanation-box {
+  border: 1px solid red;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #ffe6e6; /* Light red background */
+  max-width: 100%; /* Adjust width as needed */
+}
+
+.explanation-line {
+  color: red;
+  font-weight: bold;
+  margin: 5px 0;
+}
+
 </style>

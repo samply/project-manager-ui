@@ -26,7 +26,6 @@ export enum Site {
     PROJECT_VIEW_SITE = "project-view"
 }
 
-// TODO: Update Module and Action
 export enum Module {
     PROJECTS_MODULE = "PROJECTS",
     USER_MODULE = "USER",
@@ -205,6 +204,7 @@ export type ActionMetadata = {
     path: string;
     method: HttpMethod;
     params: string [];
+    explanation: string;
 }
 
 function jsonToActionMetadata(json: any): ActionMetadata | undefined {
@@ -220,7 +220,8 @@ function jsonToActionMetadata(json: any): ActionMetadata | undefined {
     return {
         path: json.path,
         method: method,
-        params: json.params || []  // assuming params is an array, provide a default value if it's optional
+        params: json.params || [],  // assuming params is an array, provide a default value if it's optional
+        explanation: json.explanation
     };
 }
 
@@ -275,6 +276,8 @@ const createAxiosInstance = async (): Promise<AxiosInstance> => {
 export class ProjectManagerBackendService {
     private axiosInstance?: AxiosInstance;
     private activeModuleActionsMetadata?: Map<Module, Map<Action, ActionMetadata>> | undefined;
+    private activeModuleActionsMetadataWithExplanation?: Map<Module, Map<Action, ActionMetadata>> | undefined;
+    private explanations: string[] = [];
     private initializedPromise: Promise<void> | undefined;
 
     constructor(context: ProjectManagerContext, site: Site) {
@@ -299,11 +302,56 @@ export class ProjectManagerBackendService {
         try {
             const response = await this.doHttpRequest(HttpMethod.GET, actionsPath, params);
             this.activeModuleActionsMetadata = this.parseModuleActions(response.data);
+            this.activeModuleActionsMetadataWithExplanation = this.filterModuleActionsWithExplanations(this.activeModuleActionsMetadata);
+            this.explanations = this.fetchAllExplanations(this.activeModuleActionsMetadataWithExplanation);
         } catch (error) {
             console.error("Error fetching active module actions:", error);
             throw error;
         }
     }
+
+    private filterModuleActionsWithExplanations(actions: Map<Module, Map<Action, ActionMetadata>>):
+        Map<Module, Map<Action, ActionMetadata>> {
+        const filteredActions = new Map<Module, Map<Action, ActionMetadata>>();
+
+        for (const [module, actionMap] of actions) {
+            // Create a new map for the filtered actions of this module
+            const filteredActionMap = new Map<Action, ActionMetadata>();
+
+            for (const [action, metadata] of actionMap) {
+                // Only include actions where explanation is not null or undefined
+                if (metadata.explanation) {
+                    filteredActionMap.set(action, metadata);
+                }
+            }
+
+            // If there are any filtered actions, add them to the result map
+            if (filteredActionMap.size > 0) {
+                filteredActions.set(module, filteredActionMap);
+            }
+        }
+
+        return filteredActions;
+    }
+
+    private fetchAllExplanations(actions: Map<Module, Map<Action, ActionMetadata>>): string[] {
+        const explanations: string[] = [];
+
+        for (const [, actionMap] of actions) {
+            for (const [, metadata] of actionMap) {
+                if (metadata.explanation) {
+                    explanations.push(metadata.explanation);
+                }
+            }
+        }
+
+        return explanations;
+    }
+
+    public getExplanations(): string[]{
+        return this.explanations;
+    }
+
 
     private parseModuleActions(data: any): Map<Module, Map<Action, ActionMetadata>> {
         const resultMap = new Map<Module, Map<Action, ActionMetadata>>();

@@ -191,6 +191,25 @@ export interface DataShieldProjectStatus {
     project_status: string;
 }
 
+export interface ActionModule {
+    module: Module
+    action: Action
+}
+export interface ActionButtonGroup {
+    label: string
+    button: ActionButton[]
+}
+export interface ActionButton {
+    module: Module
+    action: Action
+    //context: ProjectManagerContext
+    refreshContextCallFunction: () => void
+    text: string
+    withMessage: boolean
+    cssClass: string
+    //pmbs: ProjectManagerBackendService
+    visibilityCondition?: boolean
+}
 function getActionFromString(value: string): Action | undefined {
     return Object.values(Action).find((action) => action === value) as Action | undefined;
 }

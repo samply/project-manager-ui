@@ -207,6 +207,7 @@ export type ActionMetadata = {
     explanation: string;
 }
 
+export type Explanation = Map<string, {number: number, message: string}>
 function jsonToActionMetadata(json: any): ActionMetadata | undefined {
     const methodMapping: Record<string, HttpMethod> = {
         'GET': HttpMethod.GET,
@@ -348,10 +349,11 @@ export class ProjectManagerBackendService {
         return explanations;
     }
 
-    public getExplanations(): string[]{
-        return this.explanations;
+    public getExplanations(): Explanation {
+        const map = new Map()
+        this.explanations.map((explanation, index) => map.set((index + 1).toString(), {number: index + 1, message: explanation}));
+        return map
     }
-
 
     private parseModuleActions(data: any): Map<Module, Map<Action, ActionMetadata>> {
         const resultMap = new Map<Module, Map<Action, ActionMetadata>>();

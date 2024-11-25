@@ -21,9 +21,9 @@
       <div class="main-content">
         <div class="container">
           <div>
-            <div v-if="explanations.length" class="explanation-box">
-              <p v-for="(explanation, index) in getExtendedExplanations()" :key="index" class="explanation-line">
-                - {{ explanation }}
+            <div v-if="explanations.size" class="explanation-box">
+              <p v-for="(explanation, index) in Array.from(getExtendedExplanations().values())" :key="index" class="explanation-line">
+                - {{ explanation.message }}
               </p>
             </div>
             <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED' ">
@@ -387,6 +387,7 @@
                                :download-action="Action.DOWNLOAD_SCRIPT_ACTION"
                                :download-module="Module.PROJECT_DOCUMENTS_MODULE"
                                :call-refreh-context="refreshContext"
+                               :todos="explanations"
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow
                   v-if=" dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && existsAuthenticationScript"
@@ -443,12 +444,32 @@
 
     <div v-if="showProgress" class="custom-width-notifications">
       <div style="display:flex; flex-flow:row; justify-content:space-between ">
-        <h2>Progress</h2>
+        <h2>TODO's</h2>
         <button style="padding:5px" @click="toggleProgress" class="btn btn-dark" v-if="showProgress">
           <i style="font-size: 30px" class="bi bi-x"></i> <!-- Schließsymbol für Progress -->
         </button>
       </div>
-      <div style="padding-left:10%" v-if="projectData.projectId">
+
+
+      <div v-if="explanations.size" class="">
+        <div v-for="(explanation, index) in Array.from(getExtendedExplanations().values())" :key="index" class="card mb-3">
+          <div class="card-body">
+            <div style="display:flex; flex-flow: row;">
+              <div class="todo-circle"><span>#{{explanation.number}}</span></div><h5 class="card-title">{{ explanation.message }}</h5>
+            </div>
+          </div>
+      </div>
+
+      </div>
+      <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED' ">
+        <p>No action is required at the moment. Please wait for the next notification, which will also be sent to you via email.</p>
+      </div>
+
+
+        <!--<div class="card-body" :class="{ 'expanded': true }">-->
+
+
+      <!--<div style="padding-left:10%" v-if="projectData.projectId">
         <div class="vertical-stepper">
           <div v-for="(projectState, index) in projectStates" :key="index" class="stepper-step">
             <div style="display: flex; flex-flow: row">
@@ -460,7 +481,7 @@
             <div v-if="index < projectStates.length - 1" class="stepper-line"></div>
           </div>
         </div>
-      </div>
+      </div>-->
     </div>
   </div>
 
@@ -473,6 +494,7 @@ import {
   Bridgehead,
   DataShieldProjectStatus,
   EditProjectParam,
+  Explanation,
   Module,
   Notification,
   Project,
@@ -561,7 +583,7 @@ export default defineComponent({
       votumLabel: "",
       existInvitedUsers: false,
       areExportFilesTransferredToResearchEnvironment: false,
-      explanations: [] as string[]
+      explanations: new Map() as Explanation
     };
   },
   watch: {
@@ -769,22 +791,22 @@ export default defineComponent({
       return visibleProjectStates
     },
 
-    getExtendedExplanations(): string[]{
-      let extendedExplanations:string[] = [];
+    getExtendedExplanations(): Explanation {
       if (this.existsDraftDialog){
+        const count = this.explanations.size + 1
         if (this.draftDialogCurrentStep === 0){ // Project
-          extendedExplanations.push("Please provide the general project information to proceed.");
+          this.explanations.set(count.toString(), {number: count, message: "Please provide the general project information to proceed."});
         } else if (this.draftDialogCurrentStep === 1){ // Type
-          extendedExplanations.push("Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration.");
+          this.explanations.set(count.toString(), {number: count, message: "Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration."});
         } else if (this.draftDialogCurrentStep === 2){ // Query
-          extendedExplanations.push("Please set the query and specify the query format if they have not been previously configured in the Federated Explorer.");
+          this.explanations.set(count.toString(), { number: count, message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."});
         } else if (this.draftDialogCurrentStep === 3){ // Output
-          extendedExplanations.push("Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables.");
+          this.explanations.set(count.toString(), { number: count, message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."});
         } else if (this.draftDialogCurrentStep === 4){ // Summary
-          extendedExplanations.push("Please check all of the fields in the summary and click 'Create' if everything seems OK.");
+          this.explanations.set(count.toString(), { number: count, message: "Please check all of the fields in the summary and click 'Create' if everything seems OK."});
         }
       }
-      return [...this.explanations, ...extendedExplanations];
+      return this.explanations;
     }
 
   }
@@ -913,7 +935,20 @@ export default defineComponent({
 .active-step .step-circle {
   background-color: #007bff;
 }
-
+.todo-circle {
+  min-width: 40px;
+  height: 40px;
+  background-color:gold;
+  color: #000;
+  border: 1px solid black;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  font-weight: bold;
+  font-size: 16pt;
+}
 .custom-width-notifications {
   width: 28%;
   background-color: #212529;

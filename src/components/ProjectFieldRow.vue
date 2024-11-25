@@ -3,7 +3,7 @@ import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
-  EditProjectParam,
+  EditProjectParam, Explanation,
   Module,
   ProjectManagerBackendService,
   ProjectManagerContext
@@ -29,6 +29,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly uploadAction!: Action;
   @Prop() readonly downloadAction!: Action;
   @Prop() readonly downloadModule!: Module;
+  @Prop() readonly todos?: Explanation;
   @Prop() readonly existsFile!: boolean;
   @Prop({
     type: Function,
@@ -284,7 +285,12 @@ export default class ProjectFieldRow extends Vue {
 <template>
   <tr>
     <!-- FIRST COLUMN: HEADERS -->
-    <td class="bold-text thinner-column" style="background-color: #f2f2f2;">{{ fieldKey }}</td>
+    <td class="bold-text thinner-column" style="background-color: #f2f2f2;">
+      <div style="display: flex">
+        <span>{{ fieldKey }}</span>
+        <span v-if="todos?.get('1')" class="todo-circle-small">#{{todos?.get('1')?.number}}</span>
+      </div>
+    </td>
 
     <!-- SECOND COLUMN: CONTENT -->
     <td style="width:80%">
@@ -538,5 +544,18 @@ export default class ProjectFieldRow extends Vue {
   width: 25%;
   gap: 3%;
 }
-
+.todo-circle-small {
+  width: 26px;
+  height: 26px;
+  background-color:gold;
+  color: #000;
+  border: 1px solid black;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  font-weight: bold;
+  font-size: 10pt;
+}
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div class="main-container">
     <div class="left-container">
-      <div class="box-header">Project Phase</div>
+      <div class="box-header" style="padding-left:7%">Project Phase</div>
       <!--<div v-if="projectData.projectId">-->
       <div class="vertical-stepper">
         <div v-for="(projectState, index) in getProjectStates()" :key="index" class="stepper-step">
@@ -102,144 +102,147 @@
               </tr>
               </tbody>
             </table>
-            <div class="text-right mt-4">
-              <!-- Project State Module: Creator View -->
-              <!-- v-if="existsApplicationForm" entfernt - statt ganz ausblenden -> design ändern -->
-              <!-- Project State Module: PM-ADMIN View -->
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Accept"
-                                    button-class="btn btn-primary mr-2"
-                                    :with-message="false"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton v-if="project?.state !== 'DRAFT' "
-                                    :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Reject"
-                                    button-class="btn btn-danger btn-secondary mr-2"
-                                    :with-message="true"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_DEVELOP_STAGE_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Start develop stage"
-                                    button-class="btn btn-primary mr-2"
-                                    :with-message="false"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_PILOT_STAGE_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Start pilot stage"
-                                    :with-message="false"
-                                    button-class="btn btn-primary mr-2"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_FINAL_STAGE_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Start final stage"
-                                    :with-message="false"
-                                    button-class="btn btn-primary mr-2"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.FINISH_PROJECT_ACTION"
-                                    :with-message="false"
-                                    :context="context" :call-refreh-context="refreshContext" text="Finish"
-                                    button-class="btn btn-primary mr-2"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ARCHIVE_PROJECT_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Archive"
-                                    :with-message="false"
-                                    button-class="btn btn-secondary"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
 
-              <!-- Project State Module: BK-ADMIN View -->
-              <ProjectManagerButton
-                  v-if="activeBridgehead && activeBridgehead.state !== 'ACCEPTED' && canShowBridgeheadAdminButtons()"
-                  :module="Module.PROJECT_STATE_MODULE"
-                  :action="Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION"
-                  :with-message="false"
-                  :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Accept"
-                  button-class="btn btn-primary mr-2"
-                  :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton
-                  v-if="activeBridgehead && activeBridgehead.state !== 'REJECTED' && canShowBridgeheadAdminButtons()"
-                  :module="Module.PROJECT_STATE_MODULE"
-                  :action="Action.REJECT_BRIDGEHEAD_PROJECT_ACTION"
-                  :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Reject"
-                  :with-message="true"
-                  button-class="btn btn-danger btn-secondary mr-2"
-                  :project-manager-backend-service="projectManagerBackendService"/>
-              <!-- Project State Module: Developer/Pilot View -->
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_SCRIPT_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Accept"
-                                    button-class="btn btn-primary mr-2"
-                                    :with-message="false"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_SCRIPT_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Reject"
-                                    :with-message="true"
-                                    button-class="btn btn-danger btn-secondary mr-2"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REQUEST_SCRIPT_CHANGES_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Request changes"
-                                    :with-message="true"
-                                    button-class="btn btn-primary mr-2"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <!-- Project State Module: Final View -->
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_RESULTS_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Accept"
-                                    button-class="btn btn-primary mr-2"
-                                    :with-message="false"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_RESULTS_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Reject"
-                                    :with-message="true"
-                                    button-class="btn btn-danger btn-secondary mr-2"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
-                                    :action="Action.REQUEST_CHANGES_IN_PROJECT_ACTION"
-                                    :with-message="true"
-                                    :context="context" :call-refreh-context="refreshContext" text="Request changes"
-                                    button-class="btn btn-primary mr-2"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <!-- Project State Module: Developer/Pilot View -->
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
-                                    :action="Action.ACCEPT_PROJECT_ANALYSIS_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Accept"
-                                    button-class="btn btn-primary mr-2"
-                                    :with-message="false"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
-                                    :action="Action.REJECT_PROJECT_ANALYSIS_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Reject"
-                                    :with-message="true"
-                                    button-class="btn btn-danger btn-secondary mr-2"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
-                                    :action="Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Request changes"
-                                    :with-message="true"
-                                    button-class="btn btn-primary mr-2"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <!-- Export Module -->
-              <ProjectManagerButton v-if="canShowBridgeheadAdminButtons()" :module="Module.EXPORT_MODULE"
-                                    :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                    :context="context" :call-refreh-context="refreshBridgeheadsAndContext"
-                                    text="Send query to bridgehead"
-                                    :with-message="false"
-                                    button-class="btn btn-primary mr-2"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <!-- In order to allow executing query after sending, please set the following parameters in ProjectManagerButton -->
-              <!--:action2="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"-->
-              <!--text2="With execution"-->
-
-              <ProjectManagerButton :module="Module.EXPORT_MODULE"
-                                    :action="Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext"
-                                    text="Resend export files to research environment"
-                                    :with-message="false"
-                                    button-class="btn btn-primary mr-2"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-            </div>
-            <div v-if="!existsDraftDialog || draftDialogCurrentStep==4" class="inviteUser">
-              <UserInput :project="project" :context="context"
-                         :bridgeheads="visibleBridgeheads"
-                         :project-manager-backend-service="projectManagerBackendService"/>
-            </div>
           </div>
         </div>
+        <div class="project-actions">
+          <div class="box-header">Project Actions</div>
+          <div style="padding:2%">
+            <!-- Project State Module: Creator View -->
+            <!-- v-if="existsApplicationForm" entfernt - statt ganz ausblenden -> design ändern -->
+            <!-- Project State Module: PM-ADMIN View -->
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
+                                  button-class="btn btn-primary mr-2"
+                                  :with-message="false"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton v-if="project?.state !== 'DRAFT' "
+                                  :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
+                                  button-class="btn btn-danger btn-secondary mr-2"
+                                  :with-message="true"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_DEVELOP_STAGE_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Start develop stage"
+                                  button-class="btn btn-primary mr-2"
+                                  :with-message="false"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_PILOT_STAGE_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Start pilot stage"
+                                  :with-message="false"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_FINAL_STAGE_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Start final stage"
+                                  :with-message="false"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.FINISH_PROJECT_ACTION"
+                                  :with-message="false"
+                                  :context="context" :call-refreh-context="refreshContext" text="Finish"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ARCHIVE_PROJECT_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Archive"
+                                  :with-message="false"
+                                  button-class="btn btn-secondary"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
 
+            <!-- Project State Module: BK-ADMIN View -->
+            <ProjectManagerButton
+                v-if="activeBridgehead && activeBridgehead.state !== 'ACCEPTED' && canShowBridgeheadAdminButtons()"
+                :module="Module.PROJECT_STATE_MODULE"
+                :action="Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION"
+                :with-message="false"
+                :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Accept"
+                button-class="btn btn-primary mr-2"
+                :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton
+                v-if="activeBridgehead && activeBridgehead.state !== 'REJECTED' && canShowBridgeheadAdminButtons()"
+                :module="Module.PROJECT_STATE_MODULE"
+                :action="Action.REJECT_BRIDGEHEAD_PROJECT_ACTION"
+                :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Reject"
+                :with-message="true"
+                button-class="btn btn-danger btn-secondary mr-2"
+                :project-manager-backend-service="projectManagerBackendService"/>
+            <!-- Project State Module: Developer/Pilot View -->
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_SCRIPT_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
+                                  button-class="btn btn-primary mr-2"
+                                  :with-message="false"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_SCRIPT_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
+                                  :with-message="true"
+                                  button-class="btn btn-danger btn-secondary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REQUEST_SCRIPT_CHANGES_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Request changes"
+                                  :with-message="true"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <!-- Project State Module: Final View -->
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_RESULTS_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
+                                  button-class="btn btn-primary mr-2"
+                                  :with-message="false"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_RESULTS_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
+                                  :with-message="true"
+                                  button-class="btn btn-danger btn-secondary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
+                                  :action="Action.REQUEST_CHANGES_IN_PROJECT_ACTION"
+                                  :with-message="true"
+                                  :context="context" :call-refreh-context="refreshContext" text="Request changes"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <!-- Project State Module: Developer/Pilot View -->
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
+                                  :action="Action.ACCEPT_PROJECT_ANALYSIS_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
+                                  button-class="btn btn-primary mr-2"
+                                  :with-message="false"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
+                                  :action="Action.REJECT_PROJECT_ANALYSIS_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
+                                  :with-message="true"
+                                  button-class="btn btn-danger btn-secondary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
+                                  :action="Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext" text="Request changes"
+                                  :with-message="true"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <!-- Export Module -->
+            <ProjectManagerButton v-if="canShowBridgeheadAdminButtons()" :module="Module.EXPORT_MODULE"
+                                  :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
+                                  :context="context" :call-refreh-context="refreshBridgeheadsAndContext"
+                                  text="Send query to bridgehead"
+                                  :with-message="false"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <!-- In order to allow executing query after sending, please set the following parameters in ProjectManagerButton -->
+            <!--:action2="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"-->
+            <!--text2="With execution"-->
+
+            <ProjectManagerButton :module="Module.EXPORT_MODULE"
+                                  :action="Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION"
+                                  :context="context" :call-refreh-context="refreshContext"
+                                  text="Resend export files to research environment"
+                                  :with-message="false"
+                                  button-class="btn btn-primary mr-2"
+                                  :project-manager-backend-service="projectManagerBackendService"/>
+          </div>
+          <div v-if="!existsDraftDialog || draftDialogCurrentStep==4" class="inviteUser">
+            <UserInput :project="project" :context="context"
+                       :bridgeheads="visibleBridgeheads"
+                       :project-manager-backend-service="projectManagerBackendService"/>
+          </div>
+        </div>
         <div class="data-container mt-12">
           <div v-if="project">
             <div v-if="project?.state !== 'DRAFT'" class="box-header">Requested Data</div>
@@ -460,8 +463,8 @@
 
     <div v-if="showProgress" class="custom-width-notifications">
       <div class="box-header" style="display:flex; flex-flow:row; justify-content:space-between ">
-        <div>ToDos</div>
-        <button style="padding: 0 15px 0 0; margin-bottom: -4px" @click="toggleProgress" class="btn btn-dark" v-if="showProgress">
+        <div>ToDo List</div>
+        <button style="padding: 0 15px 0 0; margin-bottom: -4px" @click="toggleProgress" class="btn" v-if="showProgress">
           <i style="font-size: 20px" class="bi bi-x"></i> <!-- Schließsymbol für Progress -->
         </button>
       </div>
@@ -834,11 +837,12 @@ export default defineComponent({
 <style scoped>
 
 .box-header {
-  padding: 12px 0 12px 25px;
-  background-color: #212529;
-  color: white;
+  padding: 12px 0 12px 2%;
+  background-color: #95c8dc;
+  color: black;
   font-size: large;
-  border: 1px solid #212529;
+  font-weight: bold;
+  border: 1px solid #95c8dc;
   border-radius: 10px 10px 0 0;
 }
 .stepper {
@@ -873,7 +877,13 @@ export default defineComponent({
   background-color: white;
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
-  margin-top: 2%;
+  margin-top: 1.5%;
+}
+.project-actions {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  margin-top: 1.5%;
 }
 .main-container {
   display: flex;
@@ -884,9 +894,9 @@ export default defineComponent({
 .left-container {
   display: flex;
   flex-flow: column;
-  width: 18%;
-  margin-top: 2%;
-  margin-left: 2%;
+  width: 16%;
+  margin-top: 1.5%;
+  margin-left: 1.5%;
   margin-bottom: 4%;
   background-color: white;
   border-radius: 10px;
@@ -897,7 +907,7 @@ export default defineComponent({
   flex: 3;
   display: flex;
   flex-flow: row;
-  margin: 2% 2% 4% 2%;
+  margin: 1.5% 1.5% 4% 1.5%;
 }
 
 .main-content {
@@ -980,6 +990,7 @@ export default defineComponent({
 }
 .notification-box {
   padding: 2%;
+  font-family: "Calibri Light";
 }
 .todo-circle {
   min-width: 36px;
@@ -1001,14 +1012,13 @@ export default defineComponent({
   order: 2;
   position: relative;
   z-index: 1;
-  font-family: "Calibri Light";
   overflow-y: auto;
   transition: transform 0.3s ease-in-out;
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
-  margin-top: 2%;
+  margin-top: 1.5%;
   margin-bottom: 4%;
-
+  margin-right: 0.5%;
 }
 
 
@@ -1016,10 +1026,10 @@ export default defineComponent({
   margin-bottom: 15px;
 }
 
-.custom-width-notifications .card {
-  margin-bottom: 15px;
+.card {
+  border-radius: 10px;
+  background-color: rgba(149, 200, 220, 0.1);
 }
-
 .button-container {
   display: flex;
   justify-content: flex-end;

@@ -111,17 +111,45 @@
             <!-- Project State Module: Creator View -->
             <!-- v-if="existsApplicationForm" entfernt - statt ganz ausblenden -> design ändern -->
             <!-- Project State Module: PM-ADMIN View -->
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
-                                  button-class="btn btn-primary mr-2"
-                                  :with-message="false"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton v-if="project?.state !== 'DRAFT' "
-                                  :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
-                                  button-class="btn btn-danger btn-secondary mr-2"
-                                  :with-message="true"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
+            <template v-for="(buttonGroup, index) in actionButtons" :key="index">
+              <div v-if="buttonGroups[index]" class="button-group-box">
+                <div class="button-group-label">{{buttonGroup.label}}</div>
+                <ProjectManagerButton v-for="(button, index2) in buttonGroup.button" :key="index2"
+                                      :module="button.module" :action="button.action"
+                                      :context="context" :call-refreh-context="button.refreshContextCallFunction" :text="button.text"
+                                      :button-class="button.cssClass" :with-message="button.withMessage"
+                                      :visibility="button.visibilityCondition"
+                                      :project-manager-backend-service="projectManagerBackendService"/>
+              </div>
+            </template>
+            <!--<div class="button-group-box"
+                 v-if="buttonGroups[0]">
+              <div class="button-group-label">Project</div>
+              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ACTION"
+                                    :context="context" :call-refreh-context="refreshContext" text="Accept"
+                                    button-class="btn btn-primary mr-2"
+                                    :with-message="false"
+                                    :project-manager-backend-service="projectManagerBackendService"/>
+              <ProjectManagerButton v-if="project?.state !== 'DRAFT'"
+                                    :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ACTION"
+                                    :context="context" :call-refreh-context="refreshContext" text="Reject"
+                                    button-class="btn btn-danger btn-secondary mr-2"
+                                    :with-message="true"
+                                    :project-manager-backend-service="projectManagerBackendService"/>
+              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.FINISH_PROJECT_ACTION"
+                                    :with-message="false"
+                                    :context="context" :call-refreh-context="refreshContext" text="Finish"
+                                    button-class="btn btn-primary mr-2"
+                                    :project-manager-backend-service="projectManagerBackendService"/>
+              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ARCHIVE_PROJECT_ACTION"
+                                    :context="context" :call-refreh-context="refreshContext" text="Archive"
+                                    :with-message="false"
+                                    button-class="btn btn-secondary"
+                                    :project-manager-backend-service="projectManagerBackendService"/>
+            </div>
+            <div class="button-group-box"
+                 v-if="buttonGroups[1]">
+              <div class="button-group-label">Stage</div>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_DEVELOP_STAGE_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Start develop stage"
                                   button-class="btn btn-primary mr-2"
@@ -137,18 +165,11 @@
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.FINISH_PROJECT_ACTION"
-                                  :with-message="false"
-                                  :context="context" :call-refreh-context="refreshContext" text="Finish"
-                                  button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ARCHIVE_PROJECT_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Archive"
-                                  :with-message="false"
-                                  button-class="btn btn-secondary"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-
+            </div>-->
             <!-- Project State Module: BK-ADMIN View -->
+            <!--<div class="button-group-box"
+                 v-if="buttonGroups[2]">
+              <div class="button-group-label">Bridgehead Project</div>
             <ProjectManagerButton
                 v-if="activeBridgehead && activeBridgehead.state !== 'ACCEPTED' && canShowBridgeheadAdminButtons()"
                 :module="Module.PROJECT_STATE_MODULE"
@@ -165,7 +186,11 @@
                 :with-message="true"
                 button-class="btn btn-danger btn-secondary mr-2"
                 :project-manager-backend-service="projectManagerBackendService"/>
+            </div>-->
             <!-- Project State Module: Developer/Pilot View -->
+            <!--<div class="button-group-box"
+                 v-if="buttonGroups[3]">
+              <div class="button-group-label">Script</div>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_SCRIPT_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
@@ -181,7 +206,11 @@
                                   :with-message="true"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
+            </div>-->
             <!-- Project State Module: Final View -->
+            <!--<div class="button-group-box"
+                 v-if="buttonGroups[4]">
+              <div class="button-group-label">Project Result</div>
             <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_RESULTS_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
@@ -198,15 +227,17 @@
                                   :context="context" :call-refreh-context="refreshContext" text="Request changes"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
+            </div>-->
             <!-- Project State Module: Developer/Pilot View -->
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
-                                  :action="Action.ACCEPT_PROJECT_ANALYSIS_ACTION"
+            <!--<div class="button-group-box"
+                 v-if="buttonGroups[5]">
+              <div class="button-group-label">Project Analysis</div>
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ANALYSIS_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Accept"
                                   button-class="btn btn-primary mr-2"
                                   :with-message="false"
                                   :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
-                                  :action="Action.REJECT_PROJECT_ANALYSIS_ACTION"
+            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ANALYSIS_ACTION"
                                   :context="context" :call-refreh-context="refreshContext" text="Reject"
                                   :with-message="true"
                                   button-class="btn btn-danger btn-secondary mr-2"
@@ -217,25 +248,29 @@
                                   :with-message="true"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
+            </div>-->
             <!-- Export Module -->
+            <!--<div class="button-group-box"
+                 v-if="buttonGroups[6]">
+              <div class="button-group-label">Export</div>
             <ProjectManagerButton v-if="canShowBridgeheadAdminButtons()" :module="Module.EXPORT_MODULE"
                                   :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
                                   :context="context" :call-refreh-context="refreshBridgeheadsAndContext"
                                   text="Send query to bridgehead"
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
+                                  :project-manager-backend-service="projectManagerBackendService"/>-->
             <!-- In order to allow executing query after sending, please set the following parameters in ProjectManagerButton -->
             <!--:action2="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"-->
             <!--text2="With execution"-->
 
-            <ProjectManagerButton :module="Module.EXPORT_MODULE"
+           <!-- <ProjectManagerButton :module="Module.EXPORT_MODULE"
                                   :action="Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext"
-                                  text="Resend export files to research environment"
+                                  :context="context" :call-refreh-context="refreshContext" text="Resend export files to research environment"
                                   :with-message="false"
                                   button-class="btn btn-primary mr-2"
                                   :project-manager-backend-service="projectManagerBackendService"/>
+            </div>-->
           </div>
           <div v-if="!existsDraftDialog || draftDialogCurrentStep==4" class="inviteUser">
             <UserInput :project="project" :context="context"
@@ -530,7 +565,9 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import {
-  Action,
+  Action, ActionButtonGroup,
+  ActionButton,
+  ActionModule,
   Bridgehead,
   DataShieldProjectStatus,
   EditProjectParam,
@@ -626,6 +663,45 @@ export default defineComponent({
       areExportFilesTransferredToResearchEnvironment: false,
       explanations: new Map() as Explanation,
       extendedExplanations: [] as {number: number, message: string}[]
+      buttonGroups: [] as boolean[],
+      /*buttonGroupStates: [
+        [
+          {module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ACTION },
+          {module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ACTION },
+          {module: Module.PROJECT_STATE_MODULE, action: Action.FINISH_PROJECT_ACTION },
+          {module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION }
+        ],
+        [
+          {module: Module.PROJECT_STATE_MODULE, action: Action.START_DEVELOP_STAGE_ACTION },
+          {module: Module.PROJECT_STATE_MODULE, action: Action.START_PILOT_STAGE_ACTION },
+          {module: Module.PROJECT_STATE_MODULE, action: Action.START_FINAL_STAGE_ACTION }
+        ],
+        [
+          {module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION },
+          {module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION }
+        ],
+        [
+          {module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_SCRIPT_ACTION },
+          {module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_SCRIPT_ACTION },
+          {module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_SCRIPT_CHANGES_ACTION }
+        ],
+        [
+          {module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_RESULTS_ACTION },
+          {module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_RESULTS_ACTION },
+          {module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ACTION }
+        ],
+        [
+          {module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ANALYSIS_ACTION },
+          {module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ANALYSIS_ACTION },
+          {module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION }
+        ],
+        [
+          {module: Module.EXPORT_MODULE, action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION },
+          {module: Module.EXPORT_MODULE, action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION }
+        ]
+      ] as ActionModule[][],*/
+
+      actionButtons: [] as ActionButtonGroup[]
     };
   },
   watch: {
@@ -643,6 +719,10 @@ export default defineComponent({
   },
   mounted() {
     this.fetchVisibleBridgeheads();
+    //setTimeout(() => {
+    //this.updateButtonVisibility();
+    //}, 2000)
+
   },
 
 
@@ -763,6 +843,12 @@ export default defineComponent({
         this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment');
         this.existsDraftDialog = (this.project.state === 'DRAFT' && keycloak.getEmail() === this.project.creatorEmail);
 
+        setTimeout(() => {
+          this.getButtons()
+          //this.checkButtonVisibility()
+          this.checkButtonVisibility2()
+        }, 1000);
+
         this.extendedExplanations = Array.from(this.getExtendedExplanations().values())
       }
     },
@@ -836,18 +922,33 @@ export default defineComponent({
     },
 
     getExtendedExplanations(): Explanation {
-      if (this.existsDraftDialog){
+      if (this.existsDraftDialog) {
         const count = this.explanations.size + 1
-        if (this.draftDialogCurrentStep === 0){ // Project
-          this.explanations.set(count.toString(), {number: count, message: "Please provide the general project information to proceed."});
-        } else if (this.draftDialogCurrentStep === 1){ // Type
-          this.explanations.set(count.toString(), {number: count, message: "Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration."});
-        } else if (this.draftDialogCurrentStep === 2){ // Query
-          this.explanations.set(count.toString(), { number: count, message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."});
-        } else if (this.draftDialogCurrentStep === 3){ // Output
-          this.explanations.set(count.toString(), { number: count, message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."});
-        } else if (this.draftDialogCurrentStep === 4){ // Summary
-          this.explanations.set(count.toString(), { number: count, message: "Please check all of the fields in the summary and click 'Create' if everything seems OK."});
+        if (this.draftDialogCurrentStep === 0) { // Project
+          this.explanations.set(count.toString(), {
+            number: count,
+            message: "Please provide the general project information to proceed."
+          });
+        } else if (this.draftDialogCurrentStep === 1) { // Type
+          this.explanations.set(count.toString(), {
+            number: count,
+            message: "Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration."
+          });
+        } else if (this.draftDialogCurrentStep === 2) { // Query
+          this.explanations.set(count.toString(), {
+            number: count,
+            message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."
+          });
+        } else if (this.draftDialogCurrentStep === 3) { // Output
+          this.explanations.set(count.toString(), {
+            number: count,
+            message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."
+          });
+        } else if (this.draftDialogCurrentStep === 4) { // Summary
+          this.explanations.set(count.toString(), {
+            number: count,
+            message: "Please check all of the fields in the summary and click 'Create' if everything seems OK."
+          });
         }
       }
       return this.explanations;
@@ -860,14 +961,14 @@ export default defineComponent({
           fieldValue: [this.project?.label],
           editProjectParam: [EditProjectParam.LABEL],
           isEditable: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==0 || this.draftDialogCurrentStep==4
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 0 || this.draftDialogCurrentStep == 4
         },
         {
           fieldKey: "Description",
           fieldValue: [this.project?.description],
           editProjectParam: [EditProjectParam.DESCRIPTION],
           isEditable: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==0 || this.draftDialogCurrentStep==4
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 0 || this.draftDialogCurrentStep == 4
         },
         {
           fieldKey: "Bridgeheads",
@@ -876,7 +977,7 @@ export default defineComponent({
           isEditable: true,
           redirectUrl: this.project?.explorerUrl,
           transformForSending: (humanReadable: string) => this.allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==0 || this.draftDialogCurrentStep==4
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 0 || this.draftDialogCurrentStep == 4
         },
         {
           fieldKey: "Configuration",
@@ -884,7 +985,7 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.PROJECT_CONFIGURATION],
           isEditable: true,
           possibleValues: this.projectConfigurations,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==1 || this.draftDialogCurrentStep==4
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 1 || this.draftDialogCurrentStep == 4
         },
         {
           fieldKey: "Type",
@@ -892,7 +993,7 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.PROJECT_TYPE],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
           possibleValues: this.projectTypes,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==1 || this.draftDialogCurrentStep==4
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 1 || this.draftDialogCurrentStep == 4
         },
         {
           fieldKey: "Query",
@@ -900,7 +1001,7 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
           isEditable: true,
           redirectUrl: this.project?.explorerUrl,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==2 || this.draftDialogCurrentStep==4
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 2 || this.draftDialogCurrentStep == 4
         },
         {
           fieldKey: "Query Format",
@@ -909,7 +1010,7 @@ export default defineComponent({
           isEditable: true,
           redirectUrl: this.project?.explorerUrl,
           possibleValues: this.queryFormats,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==2 || this.draftDialogCurrentStep==4
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 2 || this.draftDialogCurrentStep == 4
         },
         {
           fieldKey: "Output Format",
@@ -917,7 +1018,7 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('outputFormat'),
           possibleValues: this.outputFormats,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==3 || this.draftDialogCurrentStep==4
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 3 || this.draftDialogCurrentStep == 4
         },
         {
           fieldKey: "Template ID",
@@ -925,14 +1026,14 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.TEMPLATE_ID],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('templateId'),
           possibleValues: this.exporterTemplateIds,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==3 || this.draftDialogCurrentStep==4
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 3 || this.draftDialogCurrentStep == 4
         },
         {
           fieldKey: "Environment Variables",
           fieldValue: [this.project?.queryContext],
           editProjectParam: [EditProjectParam.QUERY_CONTEXT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('queryContext'),
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==3 || this.draftDialogCurrentStep==4
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 3 || this.draftDialogCurrentStep == 4
         },
         {
           fieldKey: "Application form",
@@ -942,7 +1043,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_APPLICATION_FORM_ACTION,
           downloadAction: this.Action.DOWNLOAD_APPLICATION_FORM_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==0 || this.draftDialogCurrentStep==4
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 0 || this.draftDialogCurrentStep == 4
         },
         {
           fieldKey: "Votum",
@@ -952,7 +1053,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==4
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 4
         },
         {
           fieldKey: "Script",
@@ -963,7 +1064,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_SCRIPT_ACTION,
           downloadAction: this.Action.DOWNLOAD_SCRIPT_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.dataShieldStatus && (!this.existsDraftDialog || this.draftDialogCurrentStep==4)
+          visibilityCondition: this.dataShieldStatus && (!this.existsDraftDialog || this.draftDialogCurrentStep == 4)
         },
         {
           fieldKey: "Authentication Script",
@@ -976,7 +1077,179 @@ export default defineComponent({
         }
       ] as ProjectField[]
     }
-  }
+  },
+
+    getButtons(): void {
+      this.actionButtons = [
+        {
+          label: "Project",
+          button: [
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Reject", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
+              visibilityCondition: this.project?.state !== 'DRAFT'
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.FINISH_PROJECT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Finish", withMessage: false, cssClass: "btn btn-primary mr-2"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Archive", withMessage: false, cssClass: "btn btn-secondary"
+            }
+          ] as ActionButton[]
+        },
+        {
+          label: "Stage",
+          button: [
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.START_DEVELOP_STAGE_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Start Develop Stage", withMessage: false, cssClass: "btn btn-primary mr-2"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.START_PILOT_STAGE_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Start Pilot Stage", withMessage: false, cssClass: "btn btn-primary mr-2"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.START_FINAL_STAGE_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Start Final Stage", withMessage: false, cssClass: "btn btn-primary mr-2"
+            }
+          ] as ActionButton[]
+        },
+        {
+          label: "Bridgehead Project",
+          button: [
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
+              refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2",
+              visibilityCondition: this.activeBridgehead && this.activeBridgehead.state !== 'ACCEPTED' && this.canShowBridgeheadAdminButtons()
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION,
+              refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+              text: "Reject", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
+              visibilityCondition: this.activeBridgehead && this.activeBridgehead.state !== 'REJECTED' && this.canShowBridgeheadAdminButtons()
+            }
+          ] as ActionButton[]
+        },
+        {
+          label: "Script",
+          button: [
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_SCRIPT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_SCRIPT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Reject", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_SCRIPT_CHANGES_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Request Changes", withMessage: true, cssClass: "btn btn-primary mr-2"
+            }
+          ] as ActionButton[]
+        },
+        {
+          label: "Project Result",
+          button: [
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_RESULTS_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_RESULTS_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Reject", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Request Changes", withMessage: true, cssClass: "btn btn-primary mr-2"
+            }
+          ] as ActionButton[]
+        },
+        {
+          label: "Project Analysis",
+          button: [
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ANALYSIS_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ANALYSIS_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Reject", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Request Changes", withMessage: true, cssClass: "btn btn-primary mr-2"
+            }
+          ] as ActionButton[]
+        },
+        {
+          label: "Export",
+          button: [
+            {
+              module: Module.EXPORT_MODULE, action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
+              refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+              text: "Send Query to Bridgeheads", withMessage: false, cssClass: "btn btn-primary mr-2",
+              visibilityCondition: this.canShowBridgeheadAdminButtons()
+            },
+            {
+              module: Module.EXPORT_MODULE, action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Resend Export Files to Research Environment", withMessage: false, cssClass: "btn btn-primary mr-2"
+            }
+          ] as ActionButton[]
+        },
+      ]
+    },
+    /*async checkButtonVisibility() {
+      this.buttonGroupStates.forEach( async (state, index) => {
+        const statusArray = state.map((status) => this.projectManagerBackendService.isModuleActionActive(status.module, status.action))
+        Promise.all(statusArray).then((result) => {this.buttonGroups[index] = result.includes(true)})
+      })
+    },*/
+    async checkButtonVisibility2() {
+      this.actionButtons.forEach((buttonGroup, index) => {
+        const statusArray = buttonGroup.button.map(async (button) => {
+          const visibility1 = button.visibilityCondition !== undefined ? button.visibilityCondition :  true
+          const visibility2 = await this.projectManagerBackendService.isModuleActionActive(button.module, button.action)
+          return visibility1 && visibility2
+        })
+        Promise.all(statusArray).then((result) => {this.buttonGroups[index] = result.includes(true)})
+      })
+    },
+
+    async isButtonGroupVisible(buttonGroup: ActionButtonGroup): Promise<boolean> {
+      try {
+        const statusArray = buttonGroup.button.map((button) => this.projectManagerBackendService.isModuleActionActive(button.module, button.action))
+        const result = await Promise.all(statusArray);
+        return result.includes(true);
+      } catch (error) {
+        console.error('Fehler beim Überprüfen der Button-Gruppe:', error);
+        return false;
+      }
+    }
+
 
 });
 
@@ -1201,5 +1474,24 @@ export default defineComponent({
   font-weight: bold;
   margin: 5px 0;
 }
-
+.button-group-box {
+  border: 1px solid lightgrey;
+  border-radius: 5px;
+  padding: 0 0 18px 18px;
+  width: fit-content;
+  display: inline-block;
+  margin-right: 2%;
+  margin-top: 1%;
+}
+.button-group-label {
+  border: 1px solid lightgrey;
+  border-radius: 5px;
+  width: fit-content;
+  padding: 0 5px;
+  position: relative;
+  top: -13px;
+  background-color: #f1f1f1;
+  font-weight: bold;
+  margin-right: 15px;
+}
 </style>

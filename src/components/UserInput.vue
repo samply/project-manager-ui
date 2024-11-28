@@ -126,6 +126,7 @@ export default class UserInput extends Vue {
 </script>
 
 <template>
+  <hr v-if="isActive || currentUsers.length > 0"/>
   <div v-if="isActive">
     <span style="font-weight: bold">Invite user to this stage:</span>
     <div class="user-input-container">

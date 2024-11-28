@@ -17,7 +17,6 @@ import UploadButton from "@/components/UploadButton.vue";
 })
 export default class ProjectFieldRow extends Vue {
   @Prop() readonly fieldKey!: string;
-  @Prop() readonly explanationKey?: string;
   // The index of editProjectParam, fieldValue, editedValue and tempFieldValue is the same
   @Prop() readonly editProjectParam!: EditProjectParam[];
   @Prop() readonly fieldValue!: string[];
@@ -289,7 +288,8 @@ export default class ProjectFieldRow extends Vue {
     <td class="bold-text thinner-column" style="background-color: #f2f2f2;">
       <div style="display: flex">
         <span>{{ fieldKey }}</span>
-        <span v-if="todos?.get(this.explanationKey)" class="todo-circle-small">#{{todos?.get(this.explanationKey)?.number}}</span>
+        <span v-if="todos?.get(this.uploadAction)" class="todo-circle-small">#{{todos?.get(this.uploadAction)?.number}}</span>
+        <span v-if="todos?.get(this.downloadAction) && this.existsFile" class="todo-circle-small">#{{todos?.get(this.downloadAction)?.number}}</span>
       </div>
     </td>
 
@@ -546,8 +546,8 @@ export default class ProjectFieldRow extends Vue {
   gap: 3%;
 }
 .todo-circle-small {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   background-color:gold;
   color: #000;
   border: 1px solid black;
@@ -557,6 +557,6 @@ export default class ProjectFieldRow extends Vue {
   justify-content: center;
   margin-left: 10px;
   font-weight: bold;
-  font-size: 10pt;
+  font-size: 9pt;
 }
 </style>

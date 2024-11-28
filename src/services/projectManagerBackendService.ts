@@ -186,7 +186,6 @@ export interface ProjectDocument {
 }
 export interface ProjectField {
     fieldKey: string
-    explanationKey?: string
     editProjectParam: EditProjectParam[]
     fieldValue: string[]
     redirectUrl?: string

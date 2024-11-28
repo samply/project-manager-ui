@@ -113,7 +113,10 @@
             <!-- Project State Module: PM-ADMIN View -->
             <template v-for="(buttonGroup, index) in actionButtons" :key="index">
               <div v-if="buttonGroups[index]" class="button-group-box">
-                <div class="button-group-label">{{buttonGroup.label}}</div>
+                <div class="button-group-label">
+                  {{buttonGroup.label}}
+                  <span v-for="(explanationNumber, index3) in getExplanationsForButtonGroup(buttonGroup)" :key="index3" class="todo-circle-small">#{{explanationNumber}}</span>
+                </div>
                 <ProjectManagerButton v-for="(button, index2) in buttonGroup.button" :key="index2"
                                       :module="button.module" :action="button.action"
                                       :context="context" :call-refreh-context="button.refreshContextCallFunction" :text="button.text"
@@ -663,43 +666,6 @@ export default defineComponent({
       explanations: new Map() as Explanation,
       extendedExplanations: [] as {number: number, message: string}[],
       buttonGroups: [] as boolean[],
-      /*buttonGroupStates: [
-        [
-          {module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ACTION },
-          {module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ACTION },
-          {module: Module.PROJECT_STATE_MODULE, action: Action.FINISH_PROJECT_ACTION },
-          {module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION }
-        ],
-        [
-          {module: Module.PROJECT_STATE_MODULE, action: Action.START_DEVELOP_STAGE_ACTION },
-          {module: Module.PROJECT_STATE_MODULE, action: Action.START_PILOT_STAGE_ACTION },
-          {module: Module.PROJECT_STATE_MODULE, action: Action.START_FINAL_STAGE_ACTION }
-        ],
-        [
-          {module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION },
-          {module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION }
-        ],
-        [
-          {module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_SCRIPT_ACTION },
-          {module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_SCRIPT_ACTION },
-          {module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_SCRIPT_CHANGES_ACTION }
-        ],
-        [
-          {module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_RESULTS_ACTION },
-          {module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_RESULTS_ACTION },
-          {module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ACTION }
-        ],
-        [
-          {module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ANALYSIS_ACTION },
-          {module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ANALYSIS_ACTION },
-          {module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION }
-        ],
-        [
-          {module: Module.EXPORT_MODULE, action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION },
-          {module: Module.EXPORT_MODULE, action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION }
-        ]
-      ] as ActionModule[][],*/
-
       actionButtons: [] as ActionButtonGroup[]
     };
   },
@@ -953,6 +919,10 @@ export default defineComponent({
       return this.explanations;
     },
 
+    getExplanationsForButtonGroup(buttonGroup: ActionButtonGroup): number[] {
+      return buttonGroup.button?.map((button) => this.explanations?.get(button.action)?.number).filter((number): number is number => number !== undefined) || []
+    },
+
     getProjectFields(): ProjectField[] {
       return [
         {
@@ -1056,7 +1026,6 @@ export default defineComponent({
         },
         {
           fieldKey: "Script",
-          explanationKey: "ACCEPT_SCRIPT",
           fieldValue: [this.scriptLabel],
           isEditable: true,
           existFile: this.existsScript,
@@ -1218,7 +1187,7 @@ export default defineComponent({
             }
           ] as ActionButton[]
         },
-      ]
+      ] as ActionButtonGroup[]
     },
     /*async checkButtonVisibility() {
       this.buttonGroupStates.forEach( async (state, index) => {
@@ -1414,8 +1383,8 @@ export default defineComponent({
   font-family: "Calibri Light";
 }
 .todo-circle {
-  min-width: 36px;
-  height: 36px;
+  min-width: 32px;
+  height: 32px;
   background-color:gold;
   color: #000;
   border: 1px solid black;
@@ -1424,7 +1393,22 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   margin-right: 10px;
-  font-size: 14pt;
+  font-size: 12pt;
+  font-weight: bold;
+}
+.todo-circle-small {
+  width: 22px;
+  height: 22px;
+  background-color:gold;
+  color: #000;
+  border: 1px solid black;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  font-weight: bold;
+  font-size: 9pt;
 }
 .custom-width-notifications {
   width: 25%;
@@ -1486,11 +1470,12 @@ export default defineComponent({
   border: 1px solid lightgrey;
   border-radius: 5px;
   width: fit-content;
-  padding: 1px 10px;
+  padding: 4px 10px;
   position: relative;
   top: -13px;
   background-color: #95c8dc;
   font-weight: bold;
   margin-right: 15px;
+  display: flex;
 }
 </style>

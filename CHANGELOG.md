@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2024-11-18]
+## [1.1.0 - 2024-11-28]
 ### Added
 - Dockerfile
 - Single Spa
@@ -70,3 +70,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Show User TODOs
 - Extended explanations
 - Extended explanations Messages for draft
+- First and Last Name in User

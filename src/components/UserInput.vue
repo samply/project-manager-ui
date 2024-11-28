@@ -13,6 +13,8 @@ import {
 
 interface User {
   email: string;
+  firstName: string | null;
+  lastName: string | null;
   bridgehead: string;
   humanReadableBridgehead: string | null;
   projectRole: string;

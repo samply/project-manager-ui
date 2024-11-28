@@ -184,7 +184,22 @@ export interface ProjectDocument {
     label: string;
     type: string;
 }
-
+export interface ProjectField {
+    fieldKey: string
+    explanationKey?: string
+    editProjectParam: EditProjectParam[]
+    fieldValue: string[]
+    redirectUrl?: string
+    isEditable: boolean
+    possibleValues?: string[]
+    uploadAction?: Action
+    downloadAction?: Action
+    downloadModule?: Module
+    todos?: Explanation
+    existFile?: boolean
+    transformForSending?: (input: string) => string
+    visibilityCondition: boolean
+}
 export interface DataShieldProjectStatus {
     project_id: string;
     bk: string;
@@ -207,6 +222,7 @@ export type ActionMetadata = {
     explanation: string;
 }
 
+export type Explanation = Map<string, {number: number, message: string}>
 function jsonToActionMetadata(json: any): ActionMetadata | undefined {
     const methodMapping: Record<string, HttpMethod> = {
         'GET': HttpMethod.GET,
@@ -348,10 +364,17 @@ export class ProjectManagerBackendService {
         return explanations;
     }
 
-    public getExplanations(): string[]{
-        return this.explanations;
+    public getExplanations(): Explanation {
+        const map = new Map()
+        let index = 1;
+        this.activeModuleActionsMetadataWithExplanation?.forEach((module) => {
+            module.forEach((action, key) => {
+                map.set(key, {number: index, message: action.explanation})
+                index++;
+            })
+        })
+        return map
     }
-
 
     private parseModuleActions(data: any): Map<Module, Map<Action, ActionMetadata>> {
         const resultMap = new Map<Module, Map<Action, ActionMetadata>>();

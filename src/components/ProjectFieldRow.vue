@@ -3,7 +3,7 @@ import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
-  EditProjectParam,
+  EditProjectParam, Explanation,
   Module,
   ProjectManagerBackendService,
   ProjectManagerContext
@@ -17,6 +17,7 @@ import UploadButton from "@/components/UploadButton.vue";
 })
 export default class ProjectFieldRow extends Vue {
   @Prop() readonly fieldKey!: string;
+  @Prop() readonly explanationKey?: string;
   // The index of editProjectParam, fieldValue, editedValue and tempFieldValue is the same
   @Prop() readonly editProjectParam!: EditProjectParam[];
   @Prop() readonly fieldValue!: string[];
@@ -29,6 +30,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly uploadAction!: Action;
   @Prop() readonly downloadAction!: Action;
   @Prop() readonly downloadModule!: Module;
+  @Prop() readonly todos?: Explanation;
   @Prop() readonly existsFile!: boolean;
   @Prop({
     type: Function,
@@ -284,7 +286,12 @@ export default class ProjectFieldRow extends Vue {
 <template>
   <tr>
     <!-- FIRST COLUMN: HEADERS -->
-    <td class="bold-text thinner-column" style="background-color: #f2f2f2;">{{ fieldKey }}</td>
+    <td class="bold-text thinner-column" style="background-color: #f2f2f2;">
+      <div style="display: flex">
+        <span>{{ fieldKey }}</span>
+        <span v-if="todos?.get(this.explanationKey)" class="todo-circle-small">#{{todos?.get(this.explanationKey)?.number}}</span>
+      </div>
+    </td>
 
     <!-- SECOND COLUMN: CONTENT -->
     <td style="width:80%">
@@ -538,5 +545,18 @@ export default class ProjectFieldRow extends Vue {
   width: 25%;
   gap: 3%;
 }
-
+.todo-circle-small {
+  width: 26px;
+  height: 26px;
+  background-color:gold;
+  color: #000;
+  border: 1px solid black;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  font-weight: bold;
+  font-size: 10pt;
+}
 </style>

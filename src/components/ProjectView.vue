@@ -567,7 +567,6 @@ import {defineComponent} from 'vue';
 import {
   Action, ActionButtonGroup,
   ActionButton,
-  ActionModule,
   Bridgehead,
   DataShieldProjectStatus,
   EditProjectParam,
@@ -662,7 +661,7 @@ export default defineComponent({
       existInvitedUsers: false,
       areExportFilesTransferredToResearchEnvironment: false,
       explanations: new Map() as Explanation,
-      extendedExplanations: [] as {number: number, message: string}[]
+      extendedExplanations: [] as {number: number, message: string}[],
       buttonGroups: [] as boolean[],
       /*buttonGroupStates: [
         [
@@ -1076,8 +1075,7 @@ export default defineComponent({
           visibilityCondition: this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && this.existsAuthenticationScript
         }
       ] as ProjectField[]
-    }
-  },
+    },
 
     getButtons(): void {
       this.actionButtons = [
@@ -1250,6 +1248,7 @@ export default defineComponent({
       }
     }
 
+  }
 
 });
 
@@ -1487,10 +1486,10 @@ export default defineComponent({
   border: 1px solid lightgrey;
   border-radius: 5px;
   width: fit-content;
-  padding: 0 5px;
+  padding: 1px 10px;
   position: relative;
   top: -13px;
-  background-color: #f1f1f1;
+  background-color: #95c8dc;
   font-weight: bold;
   margin-right: 15px;
 }

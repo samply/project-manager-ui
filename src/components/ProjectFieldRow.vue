@@ -17,6 +17,7 @@ import UploadButton from "@/components/UploadButton.vue";
 })
 export default class ProjectFieldRow extends Vue {
   @Prop() readonly fieldKey!: string;
+  @Prop() readonly explanationKey?: string;
   // The index of editProjectParam, fieldValue, editedValue and tempFieldValue is the same
   @Prop() readonly editProjectParam!: EditProjectParam[];
   @Prop() readonly fieldValue!: string[];
@@ -288,7 +289,7 @@ export default class ProjectFieldRow extends Vue {
     <td class="bold-text thinner-column" style="background-color: #f2f2f2;">
       <div style="display: flex">
         <span>{{ fieldKey }}</span>
-        <span v-if="todos?.get('1')" class="todo-circle-small">#{{todos?.get('1')?.number}}</span>
+        <span v-if="todos?.get(this.explanationKey)" class="todo-circle-small">#{{todos?.get(this.explanationKey)?.number}}</span>
       </div>
     </td>
 

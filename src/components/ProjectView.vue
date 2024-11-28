@@ -20,7 +20,7 @@
     <div class="right-container">
       <div class="main-content">
         <div class="container">
-          <div>
+          <!--<div>
             <div v-if="explanations.size" class="explanation-box">
               <p v-for="(explanation, index) in Array.from(getExtendedExplanations().values())" :key="index" class="explanation-line">
                 - {{ explanation.message }}
@@ -29,7 +29,7 @@
             <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED' ">
               <p>No action is required at the moment. Please wait for the next notification, which will also be sent to you via email.</p>
             </div>
-          </div>
+          </div>-->
           <br/>
           <h2 v-if="project?.state !== 'DRAFT'">Project Information</h2>
           <br/>
@@ -278,7 +278,26 @@
             <br/>
             <table class="table table-bordered custom-table  table-hover">
               <tbody>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
+              <template v-for="(projectField, index) in getProjectFields()" :key="index">
+                <ProjectFieldRow v-if="projectField.visibilityCondition"
+                                 :field-key="projectField.fieldKey"
+                                 :field-value="projectField.fieldValue"
+                                 :edit-project-param="projectField.editProjectParam"
+                                 :is-editable="projectField.isEditable"
+                                 :redirect-url="projectField.redirectUrl"
+                                 :transform-for-sending="projectField.transformForSending"
+                                 :possible-values="projectField.possibleValues"
+                                 :exists-file="projectField.existFile"
+                                 :upload-action="projectField.uploadAction"
+                                 :download-action="projectField.downloadAction"
+                                 :download-module="projectField.downloadModule"
+                                 :explanation-key="projectField.explanationKey"
+                                 :todos="explanations"
+                                 :call-refreh-context="refreshContext"
+                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+
+              </template>
+              <!--<ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
                                field-key="Title"
                                :field-value="[project.label]"
                                :edit-project-param="[EditProjectParam.LABEL]"
@@ -349,9 +368,9 @@
                                :is-editable="isNotIncludedInCurrentProjectConfiguration('templateId')"
                                :call-refreh-context="refreshContext"
                                :possible-values="exporterTemplateIds"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>-->
               <!-- TODO: Separate queries in pairs Key-Values + encrpyt and decrypt in base64-->
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==3 || draftDialogCurrentStep==4"
+              <!--<ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==3 || draftDialogCurrentStep==4"
                                field-key="Environment Variables"
                                :field-value="[project?.queryContext]"
                                :edit-project-param="[EditProjectParam.QUERY_CONTEXT]"
@@ -380,6 +399,7 @@
                                :context="context" :project-manager-backend-service="projectManagerBackendService"/>
               <ProjectFieldRow v-if="dataShieldStatus && (!existsDraftDialog || draftDialogCurrentStep==4)"
                                field-key="Script"
+                               explanation-key="ACCEPT_SCRIPT"
                                :field-value="[scriptLabel]"
                                :is-editable="true"
                                :exists-file="existsScript"
@@ -398,7 +418,7 @@
                   :download-module="Module.TOKEN_MANAGER_MODULE"
                   :exists-file="existsAuthenticationScript"
                   :call-refreh-context="refreshContext"
-                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>-->
               </tbody>
             </table>
           </div>
@@ -451,8 +471,8 @@
       </div>
 
 
-      <div v-if="explanations.size" class="">
-        <div v-for="(explanation, index) in Array.from(getExtendedExplanations().values())" :key="index" class="card mb-3">
+     <div v-if="extendedExplanations.length" class="">
+        <div v-for="(explanation, index) in extendedExplanations" :key="index" class="card mb-3">
           <div class="card-body">
             <div style="display:flex; flex-flow: row;">
               <div class="todo-circle"><span>#{{explanation.number}}</span></div><h5 class="card-title">{{ explanation.message }}</h5>
@@ -498,6 +518,7 @@ import {
   Module,
   Notification,
   Project,
+  ProjectField,
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,
@@ -583,7 +604,8 @@ export default defineComponent({
       votumLabel: "",
       existInvitedUsers: false,
       areExportFilesTransferredToResearchEnvironment: false,
-      explanations: new Map() as Explanation
+      explanations: new Map() as Explanation,
+      extendedExplanations: [] as {number: number, message: string}[]
     };
   },
   watch: {
@@ -720,6 +742,8 @@ export default defineComponent({
         this.initializeData(Module.USER_MODULE, Action.EXIST_INVITED_USERS_ACTION, new Map(), 'existInvitedUsers');
         this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment');
         this.existsDraftDialog = (this.project.state === 'DRAFT' && keycloak.getEmail() === this.project.creatorEmail);
+
+        this.extendedExplanations = Array.from(this.getExtendedExplanations().values())
       }
     },
 
@@ -807,8 +831,131 @@ export default defineComponent({
         }
       }
       return this.explanations;
-    }
+    },
 
+    getProjectFields(): ProjectField[] {
+      return [
+        {
+          fieldKey: "Title",
+          fieldValue: [this.project?.label],
+          editProjectParam: [EditProjectParam.LABEL],
+          isEditable: true,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==0 || this.draftDialogCurrentStep==4
+        },
+        {
+          fieldKey: "Description",
+          fieldValue: [this.project?.description],
+          editProjectParam: [EditProjectParam.DESCRIPTION],
+          isEditable: true,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==0 || this.draftDialogCurrentStep==4
+        },
+        {
+          fieldKey: "Bridgeheads",
+          fieldValue: [this.bridgeheads.map(bridghead => bridghead.humanReadable), this.allBridgeheads.map(bridghead => bridghead.humanReadable)],
+          editProjectParam: [EditProjectParam.BRIDGEHEADS],
+          isEditable: true,
+          redirectUrl: this.project?.explorerUrl,
+          transformForSending: (humanReadable: string) => this.allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==0 || this.draftDialogCurrentStep==4
+        },
+        {
+          fieldKey: "Configuration",
+          fieldValue: [this.currentProjectConfiguration],
+          editProjectParam: [EditProjectParam.PROJECT_CONFIGURATION],
+          isEditable: true,
+          possibleValues: this.projectConfigurations,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==1 || this.draftDialogCurrentStep==4
+        },
+        {
+          fieldKey: "Type",
+          fieldValue: [this.project?.type],
+          editProjectParam: [EditProjectParam.PROJECT_TYPE],
+          isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
+          possibleValues: this.projectTypes,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==1 || this.draftDialogCurrentStep==4
+        },
+        {
+          fieldKey: "Query",
+          fieldValue: [this.project?.humanReadable, this.project?.query],
+          editProjectParam: [EditProjectParam.HUMAN_READABLE],
+          isEditable: true,
+          redirectUrl: this.project?.explorerUrl,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==2 || this.draftDialogCurrentStep==4
+        },
+        {
+          fieldKey: "Query Format",
+          fieldValue: [this.project?.queryFormat],
+          editProjectParam: [EditProjectParam.QUERY_FORMAT],
+          isEditable: true,
+          redirectUrl: this.project?.explorerUrl,
+          possibleValues: this.queryFormats,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==2 || this.draftDialogCurrentStep==4
+        },
+        {
+          fieldKey: "Output Format",
+          fieldValue: [this.project?.outputFormat],
+          editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
+          isEditable: this.isNotIncludedInCurrentProjectConfiguration('outputFormat'),
+          possibleValues: this.outputFormats,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==3 || this.draftDialogCurrentStep==4
+        },
+        {
+          fieldKey: "Template ID",
+          fieldValue: [this.project?.templateId],
+          editProjectParam: [EditProjectParam.TEMPLATE_ID],
+          isEditable: this.isNotIncludedInCurrentProjectConfiguration('templateId'),
+          possibleValues: this.exporterTemplateIds,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==3 || this.draftDialogCurrentStep==4
+        },
+        {
+          fieldKey: "Environment Variables",
+          fieldValue: [this.project?.queryContext],
+          editProjectParam: [EditProjectParam.QUERY_CONTEXT],
+          isEditable: this.isNotIncludedInCurrentProjectConfiguration('queryContext'),
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==3 || this.draftDialogCurrentStep==4
+        },
+        {
+          fieldKey: "Application form",
+          fieldValue: [this.applicationFormLabel],
+          isEditable: true,
+          existFile: this.existsApplicationForm,
+          uploadAction: this.Action.UPLOAD_APPLICATION_FORM_ACTION,
+          downloadAction: this.Action.DOWNLOAD_APPLICATION_FORM_ACTION,
+          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==0 || this.draftDialogCurrentStep==4
+        },
+        {
+          fieldKey: "Votum",
+          fieldValue: [this.votumLabel],
+          isEditable: true,
+          existFile: this.existsVotum,
+          uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
+          downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
+          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep==4
+        },
+        {
+          fieldKey: "Script",
+          explanationKey: "ACCEPT_SCRIPT",
+          fieldValue: [this.scriptLabel],
+          isEditable: true,
+          existFile: this.existsScript,
+          uploadAction: this.Action.UPLOAD_SCRIPT_ACTION,
+          downloadAction: this.Action.DOWNLOAD_SCRIPT_ACTION,
+          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          visibilityCondition: this.dataShieldStatus && (!this.existsDraftDialog || this.draftDialogCurrentStep==4)
+        },
+        {
+          fieldKey: "Authentication Script",
+          fieldValue: [],
+          isEditable: false,
+          existFile: this.existsAuthenticationScript,
+          downloadAction: this.Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION,
+          downloadModule: this.Module.TOKEN_MANAGER_MODULE,
+          visibilityCondition: this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && this.existsAuthenticationScript
+        }
+      ] as ProjectField[]
+    }
   }
 
 });

@@ -184,7 +184,22 @@ export interface ProjectDocument {
     label: string;
     type: string;
 }
-
+export interface ProjectField {
+    fieldKey: string
+    explanationKey?: string
+    editProjectParam: EditProjectParam[]
+    fieldValue: string[]
+    redirectUrl?: string
+    isEditable: boolean
+    possibleValues?: string[]
+    uploadAction?: Action
+    downloadAction?: Action
+    downloadModule?: Module
+    todos?: Explanation
+    existFile?: boolean
+    transformForSending?: (input: string) => string
+    visibilityCondition: boolean
+}
 export interface DataShieldProjectStatus {
     project_id: string;
     bk: string;
@@ -351,7 +366,13 @@ export class ProjectManagerBackendService {
 
     public getExplanations(): Explanation {
         const map = new Map()
-        this.explanations.map((explanation, index) => map.set((index + 1).toString(), {number: index + 1, message: explanation}));
+        let index = 1;
+        this.activeModuleActionsMetadataWithExplanation?.forEach((module) => {
+            module.forEach((action, key) => {
+                map.set(key, {number: index, message: action.explanation})
+                index++;
+            })
+        })
         return map
     }
 

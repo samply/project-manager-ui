@@ -39,39 +39,40 @@ export default class NotificationBox extends Vue {
 
 <template>
   <div v-if="showNotification" class="custom-width-notifications">
-    <div style="display:flex; flex-flow:row; justify-content:space-between ">
-      <h2>Notifications</h2>
-      <button style="padding:5px" @click="callToggleNotification" class="btn btn-dark" v-if="showNotification">
-        <i style="font-size: 30px" class="bi bi-x"></i> <!-- Schließsymbol für Notification -->
+    <div class="box-header" style="display:flex; flex-flow:row; justify-content:space-between ">
+      <div>Notifications</div>
+      <button style="padding: 0 15px 0 0; margin-bottom: -4px" @click="callToggleNotification" class="btn" v-if="showNotification">
+        <i style="font-size: 20px" class="bi bi-x"></i> <!-- Schließsymbol für Progress -->
       </button>
     </div>
-    <div v-for="(notification,index) in notifications" :key="index" class="card mb-3">
-      <!--<div class="card-body" :class="{ 'expanded': true }">-->
-      <div class="card-body" v-if="!notification.read">
-        <div style="display:flex; flex-flow: row; justify-content: space-between">
-          <h5 class="card-title">{{ notification.details }}</h5>
-          <div class="notification-header">
-            <button type="button" class="btn-close"
-                    @click="removeNotification(notification && notification.id ? notification.id : 0)"
-                    aria-label="Close"></button>
+    <div class="notification-box">
+      <div v-for="(notification,index) in notifications" :key="index" class="card mb-3">
+        <!--<div class="card-body" :class="{ 'expanded': true }">-->
+        <div class="card-body" v-if="!notification.read">
+          <div style="display:flex; flex-flow: row; justify-content: space-between">
+            <h5 class="card-title">{{ notification.details }}</h5>
+            <div class="notification-header">
+              <button type="button" class="btn-close"
+                      @click="removeNotification(notification && notification.id ? notification.id : 0)"
+                      aria-label="Close"></button>
+            </div>
           </div>
-        </div>
-        <!-- TODO: Add rest of notification information -->
-        <div class="card-text">
-          <div style="font-size: small">{{
-              notification && notification.timestamp ? convertDate(notification.timestamp) : ''
-            }}
+          <!-- TODO: Add rest of notification information -->
+          <div class="card-text">
+            <div style="font-size: small">{{
+                notification && notification.timestamp ? convertDate(notification.timestamp) : ''
+              }}
+            </div>
+            <div style="display:flex; align-items: end; gap:10px;margin-top:4px;">
+              <strong>Project:</strong> {{ notification.projectCode }}
+              <strong>User:</strong> {{ notification.email }}
+            </div>
           </div>
-          <div style="display:flex; float: right; align-items: end; gap:10px">
-            <strong>Project:</strong> {{ notification.projectCode }}
-            <strong>User:</strong> {{ notification.email }}
-          </div>
-        </div>
-        <br>
 
-        <!--            <div class="expand-icon" @click="toggleExpand(notification)">
-                      <i :class="['bi', 'bi-chevron-compact-down', { 'rotate': notification.isExpanded }]"></i>
-                    </div>-->
+          <!--            <div class="expand-icon" @click="toggleExpand(notification)">
+                        <i :class="['bi', 'bi-chevron-compact-down', { 'rotate': notification.isExpanded }]"></i>
+                      </div>-->
+        </div>
       </div>
     </div>
   </div>
@@ -80,17 +81,19 @@ export default class NotificationBox extends Vue {
 <style scoped>
 
 .custom-width-notifications {
-  width: 28%;
-  background-color: #212529;
-  color: white;
-  padding: 15px;
+  width: 25%;
+  background-color: white;
+  color: black;
   order: 2;
   position: relative;
   z-index: 1;
-  font-family: "Calibri Light";
   overflow-y: auto;
   transition: transform 0.3s ease-in-out;
-  height: 100vh;
+  border-radius: 10px;
+  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  margin-top: 1.5%;
+  margin-bottom: 4%;
+  margin-right: 0.5%;
 }
 
 .notification-header {
@@ -98,7 +101,10 @@ export default class NotificationBox extends Vue {
   justify-content: flex-end;
   margin-bottom: 10px;
 }
-
+.notification-box {
+  padding: 2%;
+  font-family: "Calibri Light";
+}
 .expand-icon {
   display: flex;
   align-items: flex-end;
@@ -112,11 +118,28 @@ export default class NotificationBox extends Vue {
 .card-body.expanded {
   height: 300px;
 }
-
-.card {
-  border: none;
-  border-radius: 10px;
+.card-body {
+  padding: 1.25rem 1rem;
 }
-
-
+.card {
+  border-radius: 10px;
+  background-color: rgba(149, 200, 220, 0.1);
+}
+.box-header {
+  padding: 12px 0 12px 2%;
+  background-color: #95c8dc;
+  color: black;
+  font-size: large;
+  font-weight: bold;
+  border: 1px solid #95c8dc;
+  border-radius: 10px 10px 0 0;
+}
+.card-title {
+  font-size: 1rem;
+  font-weight: bold;
+}
+.btn-close {
+  width: 0.5em;
+  height: 0.5em;
+}
 </style>

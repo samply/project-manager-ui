@@ -529,19 +529,24 @@
       </div>
 
 
-     <div v-if="extendedExplanations.length" class="notification-box">
+      <div v-if="extendedExplanations.length" class="notification-box">
         <div v-for="(explanation, index) in extendedExplanations" :key="index" class="card mb-3">
           <div class="card-body">
             <div style="display:flex; flex-flow: row;">
-              <div class="todo-circle"><span>#{{explanation.number}}</span></div><h5 class="card-title">{{ explanation.message }}</h5>
+              <div class="todo-circle"><span>#{{ explanation.number }}</span></div>
+              <h5 class="card-title">{{ explanation.message }}</h5>
             </div>
           </div>
+        </div>
       </div>
-
+      <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED'" class="notification-box">
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="card-title">No action is required at the moment. Please wait for the next notification, which will
+            also be sent to you via email.</h5>
+        </div>
       </div>
-      <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED' ">
-        <p>No action is required at the moment. Please wait for the next notification, which will also be sent to you via email.</p>
-      </div>
+    </div>
 
 
         <!--<div class="card-body" :class="{ 'expanded': true }">-->

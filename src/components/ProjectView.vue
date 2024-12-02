@@ -87,9 +87,9 @@
               <tr>
                 <td>{{ project ? project.code : '' }}</td>
                 <td>{{ project ? project.state : '' }}</td>
-                <td><div v-if="activeBridgehead" class="state_circle" :class="activeBridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.state"></div></td>
-                <td><div v-if="activeBridgehead" class="state_circle" :class="activeBridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.queryState"></div></td>
-                <td><div v-if="dataShieldStatus" class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatus?.project_status"></div></td>
+                <td v-if="activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.state"></div></td>
+                <td v-if="activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.queryState"></div></td>
+                <td v-if="dataShieldStatus"><div  class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatus?.project_status"></div></td>
                 <td v-if="dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT'">
                   {{ areExportFilesTransferredToResearchEnvironment }}
                 </td>

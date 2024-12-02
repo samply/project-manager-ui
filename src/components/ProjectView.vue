@@ -1127,7 +1127,7 @@ export default defineComponent({
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_SCRIPT_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Reject", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2"
+              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2"
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_SCRIPT_CHANGES_ACTION,
@@ -1147,7 +1147,7 @@ export default defineComponent({
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_RESULTS_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Reject", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2"
+              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2"
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ACTION,
@@ -1167,7 +1167,7 @@ export default defineComponent({
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ANALYSIS_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Reject", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2"
+              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2"
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,

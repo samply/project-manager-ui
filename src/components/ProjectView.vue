@@ -71,7 +71,7 @@
               <tr>
                 <th style="background-color: #f2f2f2;" scope="col">Data Request Number (DRN)</th>
                 <th style="background-color: #f2f2f2;" scope="col">Project State</th>
-                <th style="background-color: #f2f2f2;" scope="col">Bridgehead State</th>
+                <th style="background-color: #f2f2f2;" scope="col">User Access Control</th>
                 <th style="background-color: #f2f2f2;" scope="col">Query State</th>
                 <th style="background-color: #f2f2f2;" v-if="dataShieldStatus" scope="col">DataSHIELD State</th>
                 <th style="background-color: #f2f2f2;"
@@ -1105,13 +1105,13 @@ export default defineComponent({
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2",
+              text: "Authorize", withMessage: false, cssClass: "btn btn-primary mr-2",
               visibilityCondition: this.activeBridgehead && this.activeBridgehead.state !== 'ACCEPTED' && this.canShowBridgeheadAdminButtons()
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: "Reject", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
+              text: "Revoke", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
               visibilityCondition: this.activeBridgehead && this.activeBridgehead.state !== 'REJECTED' && this.canShowBridgeheadAdminButtons()
             }
           ] as ActionButton[]

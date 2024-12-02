@@ -255,7 +255,7 @@ export default class BridgeheadOverview extends Vue {
   font-size: xx-large;
 }
 .green {
-  background-color: green;
+  background-color: #009a00;
 }
 
 .red {
@@ -263,7 +263,7 @@ export default class BridgeheadOverview extends Vue {
 }
 
 .accepted-state {
-  background-color: green;
+  background-color: #009a00;
 }
 
 .selected {

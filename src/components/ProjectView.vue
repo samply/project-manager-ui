@@ -35,7 +35,7 @@
             </div>-->
 
             <div style="display:flex; flex-flow:row; justify-content: space-between; margin-bottom:10px;">
-              <router-link to="/" data-toggle="tooltip" data-placement="top" title="Back to Project Dashboard"><i
+              <router-link to="/" data-placement="top" v-b-tooltip.hover title="Back to Project Dashboard"><i
                   class="bi bi-arrow-left-square-fill" style="font-size: x-large"></i></router-link>
 
               <div class="card"
@@ -73,7 +73,7 @@
                 <th style="background-color: #f2f2f2;" scope="col">Project State</th>
                 <th style="background-color: #f2f2f2;" scope="col">Bridgehead State</th>
                 <th style="background-color: #f2f2f2;" scope="col">Query State</th>
-                <th style="background-color: #f2f2f2;" v-if="dataShieldStatus" scope="col">DataSHIELD Status</th>
+                <th style="background-color: #f2f2f2;" v-if="dataShieldStatus" scope="col">DataSHIELD State</th>
                 <th style="background-color: #f2f2f2;"
                     v-if="dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT'" scope="col">Files in Coder
                 </th>
@@ -87,9 +87,9 @@
               <tr>
                 <td>{{ project ? project.code : '' }}</td>
                 <td>{{ project ? project.state : '' }}</td>
-                <td>{{ activeBridgehead ? activeBridgehead.state : '' }}</td>
-                <td>{{ activeBridgehead ? activeBridgehead.queryState : '' }}</td>
-                <td v-if="dataShieldStatus">{{ dataShieldStatus.project_status }}</td>
+                <td><div v-if="activeBridgehead" class="state_circle" :class="activeBridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.state"></div></td>
+                <td><div v-if="activeBridgehead" class="state_circle" :class="activeBridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.queryState"></div></td>
+                <td><div v-if="dataShieldStatus" class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatus?.project_status"></div></td>
                 <td v-if="dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT'">
                   {{ areExportFilesTransferredToResearchEnvironment }}
                 </td>
@@ -1502,5 +1502,27 @@ export default defineComponent({
   width:auto;
   font-size: x-large;
   padding: 0 0 0 15px;
+}
+.state_circle {
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  margin: 10px auto;
+}
+.state_circle.created {
+  border: 1px solid #cccccc;
+  background-color: #f2f2f2;
+}
+.state_circle.request_changes, .state_circle.not_found, .state_circle.inactive {
+  border: 1px solid #cccccc;
+  background-color: #fff200;
+}
+.state_circle.accepted, .state_circle.with_data {
+  border: 1px solid #cccccc;
+  background-color: #009a00;
+}
+.state_circle.rejected, .state_circle.error {
+  border: 1px solid #cccccc;
+  background-color: red;
 }
 </style>

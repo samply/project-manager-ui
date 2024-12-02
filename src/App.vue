@@ -20,4 +20,7 @@ export default defineComponent({
 #app {
   background-color: #DFE5E8;
 }
+:root {
+  background-color: #DFE5E8;
+}
 </style>

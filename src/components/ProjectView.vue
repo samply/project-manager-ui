@@ -34,27 +34,25 @@
               </div>
             </div>-->
 
-            <div style="display:flex; flex-flow:row; justify-content: space-between">
+            <div style="display:flex; flex-flow:row; justify-content: space-between; margin-bottom:10px;">
               <router-link to="/" data-toggle="tooltip" data-placement="top" title="Back to Project Dashboard"><i
-                  class="bi bi-arrow-left-square-fill"></i></router-link>
+                  class="bi bi-arrow-left-square-fill" style="font-size: x-large"></i></router-link>
 
               <div class="card"
                    v-if="project?.state !== 'DRAFT' && visibleBridgeheads && visibleBridgeheads.length === 1"
-                   style="padding: 3px 20px;">
+                   style="padding: 3px 20px;height: fit-content">
                 <div class="card-body" style="padding: 0px 0px;">
                   <span style="padding: 0px 0px;">{{ context.bridgehead?.humanReadable }}</span>
                 </div>
               </div>
 
               <div>
-                <button data-toggle="tooltip" data-placement="top" title="Progress" @click="toggleProgress"
-                        class="btn btn-dark"
-                        style="background: none; border:none; color:#007bff; width:auto;">
-                  <i class="bi bi-clipboard-check-fill"></i>
+                <button data-toggle="tooltip" data-placement="top" title="ToDo's" @click="toggleExplanations"
+                        class="btn explanation-button">
+                  <i class="bi bi-card-checklist"></i>
                 </button>
                 <button data-toggle="tooltip" data-placement="top" title="Notifications" @click="toggleNotification"
-                        class="btn btn-dark"
-                        style="background: none; border:none; color:#007bff; width:auto;">
+                        class="btn notification-button">
                   <i class="bi bi-chat-right-text-fill"></i>
                 </button>
               </div>
@@ -105,7 +103,7 @@
 
           </div>
         </div>
-        <div class="project-actions">
+        <div v-if="!(project?.state === 'DRAFT' && projectRoles.includes(ProjectRole.CREATOR)) && isButtonGroupVisible" class="project-actions">
           <div class="box-header">Project Actions</div>
           <div style="padding:2%">
             <!-- Project State Module: Creator View -->
@@ -115,7 +113,9 @@
               <div v-if="buttonGroups[index]" class="button-group-box">
                 <div class="button-group-label">
                   {{buttonGroup.label}}
-                  <span v-for="(explanationNumber, index3) in getExplanationsForButtonGroup(buttonGroup)" :key="index3" class="todo-circle-small">#{{explanationNumber}}</span>
+                  <span style="display: flex;flex-direction: row-reverse">
+                    <span v-for="(explanationNumber, index3) in getExplanationsForButtonGroup(buttonGroup)" :key="index3" class="todo-circle-small">#{{explanationNumber}}</span>
+                  </span>
                 </div>
                 <ProjectManagerButton v-for="(button, index2) in buttonGroup.button" :key="index2"
                                       :module="button.module" :action="button.action"
@@ -278,12 +278,14 @@
           <div v-if="!existsDraftDialog || draftDialogCurrentStep==4" class="inviteUser">
             <UserInput :project="project" :context="context"
                        :bridgeheads="visibleBridgeheads"
+                       :todos="getExtendedExplanations()"
                        :project-manager-backend-service="projectManagerBackendService"/>
           </div>
         </div>
         <div class="data-container mt-12">
           <div v-if="project">
             <div v-if="project?.state !== 'DRAFT'" class="box-header">Requested Data</div>
+            <div v-if="project?.state === 'DRAFT'" class="box-header">Request Data</div>
             <div class="table-responsive">
 
               <div v-if="existsDraftDialog" class="container" style="width:100%">
@@ -306,7 +308,7 @@
                       <button class="btn btn-primary me-2" @click="prevStep" :disabled="draftDialogCurrentStep === 0">
                         Back
                       </button>
-                      <button class="btn btn-primary" @click="nextStep"
+                      <button class="btn btn-primary me-2" @click="nextStep"
                               v-if="draftDialogCurrentStep < steps.length - 1">
                         Continue
                       </button>
@@ -345,8 +347,7 @@
                                  :upload-action="projectField.uploadAction"
                                  :download-action="projectField.downloadAction"
                                  :download-module="projectField.downloadModule"
-                                 :explanation-key="projectField.explanationKey"
-                                 :todos="explanations"
+                                 :todos="getExtendedExplanations()"
                                  :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
 
@@ -520,17 +521,17 @@
                      :show-notification="showNotification" :call-toggle-notification="toggleNotification"
                      :notifications="notifications" :call-update-notifications="fetchNotifications"/>
 
-    <div v-if="showProgress" class="custom-width-notifications">
+    <div v-if="showExplanations" class="custom-width-notifications">
       <div class="box-header" style="display:flex; flex-flow:row; justify-content:space-between ">
         <div>ToDo List</div>
-        <button style="padding: 0 15px 0 0; margin-bottom: -4px" @click="toggleProgress" class="btn" v-if="showProgress">
+        <button style="padding: 0 15px 0 0; margin-bottom: -4px" @click="toggleExplanations" class="btn" v-if="showExplanations">
           <i style="font-size: 20px" class="bi bi-x"></i> <!-- Schließsymbol für Progress -->
         </button>
       </div>
 
 
-      <div v-if="extendedExplanations.length" class="notification-box">
-        <div v-for="(explanation, index) in extendedExplanations" :key="index" class="card mb-3">
+      <div v-if="getExtendedExplanations().size" class="notification-box">
+        <div v-for="(explanation, index) in Array.from(this.getExtendedExplanations().values())" :key="index" class="card mb-3">
           <div class="card-body">
             <div style="display:flex; flex-flow: row;">
               <div class="todo-circle"><span>#{{ explanation.number }}</span></div>
@@ -600,6 +601,9 @@ import keycloak from "@/services/keycloak";
 
 export default defineComponent({
   computed: {
+    ProjectRole() {
+      return ProjectRole
+    },
     EditProjectParam() {
       return EditProjectParam
     },
@@ -651,7 +655,7 @@ export default defineComponent({
       },
       notifications: [] as Notification[],
       showNotification: false,
-      showProgress: false,
+      showExplanations: true,
       existsVotum: false,
       existsAuthenticationScript: false,
       existsApplicationForm: false,
@@ -669,8 +673,8 @@ export default defineComponent({
       existInvitedUsers: false,
       areExportFilesTransferredToResearchEnvironment: false,
       explanations: new Map() as Explanation,
-      extendedExplanations: [] as {number: number, message: string}[],
       buttonGroups: [] as boolean[],
+      isButtonGroupVisible: false,
       actionButtons: [] as ActionButtonGroup[]
     };
   },
@@ -714,13 +718,11 @@ export default defineComponent({
 
     toggleNotification() {
       this.showNotification = !this.showNotification;
-      if (this.showProgress) {
-        this.showProgress = false;
-      }
+      this.showExplanations = !this.showNotification;
     },
 
-    toggleProgress() {
-      this.showProgress = !this.showProgress;
+    toggleExplanations() {
+      this.showExplanations = !this.showExplanations;
       if (this.showNotification) {
         this.showNotification = false;
       }
@@ -815,11 +817,8 @@ export default defineComponent({
 
         setTimeout(() => {
           this.getButtons()
-          //this.checkButtonVisibility()
-          this.checkButtonVisibility2()
+          this.checkButtonVisibility()
         }, 1000);
-
-        this.extendedExplanations = Array.from(this.getExtendedExplanations().values())
       }
     },
 
@@ -892,36 +891,37 @@ export default defineComponent({
     },
 
     getExtendedExplanations(): Explanation {
+      const extendedExplanations = new Map(this.explanations)
       if (this.existsDraftDialog) {
         const count = this.explanations.size + 1
         if (this.draftDialogCurrentStep === 0) { // Project
-          this.explanations.set(count.toString(), {
+          extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please provide the general project information to proceed."
           });
         } else if (this.draftDialogCurrentStep === 1) { // Type
-          this.explanations.set(count.toString(), {
+          extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration."
           });
         } else if (this.draftDialogCurrentStep === 2) { // Query
-          this.explanations.set(count.toString(), {
+          extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."
           });
         } else if (this.draftDialogCurrentStep === 3) { // Output
-          this.explanations.set(count.toString(), {
+          extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."
           });
         } else if (this.draftDialogCurrentStep === 4) { // Summary
-          this.explanations.set(count.toString(), {
+          extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please check all of the fields in the summary and click 'Create' if everything seems OK."
           });
         }
       }
-      return this.explanations;
+      return extendedExplanations
     },
 
     getExplanationsForButtonGroup(buttonGroup: ActionButtonGroup): number[] {
@@ -1200,26 +1200,19 @@ export default defineComponent({
         Promise.all(statusArray).then((result) => {this.buttonGroups[index] = result.includes(true)})
       })
     },*/
-    async checkButtonVisibility2() {
+    async checkButtonVisibility() {
       this.actionButtons.forEach((buttonGroup, index) => {
         const statusArray = buttonGroup.button.map(async (button) => {
           const visibility1 = button.visibilityCondition !== undefined ? button.visibilityCondition :  true
           const visibility2 = await this.projectManagerBackendService.isModuleActionActive(button.module, button.action)
           return visibility1 && visibility2
         })
-        Promise.all(statusArray).then((result) => {this.buttonGroups[index] = result.includes(true)})
+        Promise.all(statusArray).then((result) => {
+          this.buttonGroups[index] = result.includes(true);
+          this.isButtonGroupVisible = this.isButtonGroupVisible || this.buttonGroups[index]
+        })
       })
-    },
 
-    async isButtonGroupVisible(buttonGroup: ActionButtonGroup): Promise<boolean> {
-      try {
-        const statusArray = buttonGroup.button.map((button) => this.projectManagerBackendService.isModuleActionActive(button.module, button.action))
-        const result = await Promise.all(statusArray);
-        return result.includes(true);
-      } catch (error) {
-        console.error('Fehler beim Überprüfen der Button-Gruppe:', error);
-        return false;
-      }
     }
 
   }
@@ -1273,6 +1266,7 @@ export default defineComponent({
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
   margin-top: 1.5%;
+  height: 100%;
 }
 .project-actions {
   background-color: white;
@@ -1290,6 +1284,7 @@ export default defineComponent({
   display: flex;
   flex-flow: column;
   width: 16%;
+  min-height: 800px;
   margin-top: 1.5%;
   margin-left: 1.5%;
   margin-bottom: 4%;
@@ -1402,7 +1397,7 @@ export default defineComponent({
   font-weight: bold;
 }
 .todo-circle-small {
-  width: 22px;
+  min-width: 22px;
   height: 22px;
   background-color:gold;
   color: #000;
@@ -1416,7 +1411,7 @@ export default defineComponent({
   font-size: 9pt;
 }
 .custom-width-notifications {
-  width: 25%;
+  width: 22%;
   background-color: white;
   color: black;
   order: 2;
@@ -1446,7 +1441,8 @@ export default defineComponent({
   text-align: center;
 }
 .inviteUser {
-  margin: 2em 0;
+  padding: 2%;
+  display: flex;
 }
 
 .explanation-box {
@@ -1477,10 +1473,34 @@ export default defineComponent({
   width: fit-content;
   padding: 4px 10px;
   position: relative;
-  top: -13px;
+  top: -18px;
   background-color: #95c8dc;
   font-weight: bold;
   margin-right: 15px;
   display: flex;
+}
+.explanation-button {
+  background-color: #007bff;
+  color: white;
+  width:auto;
+  font-size: x-large;
+  padding: 0 1px;
+  height: 22px;
+}
+.explanation-button i {
+  position: relative;
+  top: -9px;
+}
+.explanation-button:hover {
+  background-color: black;
+  color:white;
+}
+.notification-button {
+  background: none;
+  border:none;
+  color:#007bff;
+  width:auto;
+  font-size: x-large;
+  padding: 0 0 0 15px;
 }
 </style>

@@ -546,7 +546,7 @@ export default class ProjectFieldRow extends Vue {
   gap: 3%;
 }
 .todo-circle-small {
-  width: 22px;
+  min-width: 22px;
   height: 22px;
   background-color:gold;
   color: #000;

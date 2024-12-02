@@ -9,10 +9,10 @@
         <!-- Header in the first column -->
         <td class="header-cell">{{ header }}</td>
         <td v-if="header === 'Bridgeheads'" class="header-summary-cell">{{ bridgeheads.length }}</td>
-        <td v-if="header === 'Votum'" class="header-summary-cell status-cell" style="border: none">{{ getVotumStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getVotumStatus()[1]}}<div class="exist-votum-small red"></div></td>
-        <td v-if="header === 'Bridgehead State'" class="header-summary-cell status-cell" style="border: none">{{ getBridgeheadStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getBridgeheadStatus()[1]}}<div class="exist-votum-small red"></div></td>
-        <td v-if="header === 'DataSHIELD Status'" class="header-summary-cell status-cell" style="border: none">{{ getDatashieldStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getDatashieldStatus()[1]}}<div class="exist-votum-small red"></div></td>
-        <td v-if="header === 'Query state'" class="header-summary-cell status-cell" style="border: none">{{ getQueryStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getQueryStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'Votum'" class="header-summary-cell status-cell">{{ getVotumStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getVotumStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'Bridgehead State'" class="header-summary-cell status-cell">{{ getBridgeheadStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getBridgeheadStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'DataSHIELD Status'" class="header-summary-cell status-cell">{{ getDatashieldStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getDatashieldStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'Query state'" class="header-summary-cell status-cell">{{ getQueryStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getQueryStatus()[1]}}<div class="exist-votum-small red"></div></td>
         <!-- Data for each bridgehead in subsequent columns -->
         <td
             v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(scrollIndex,(scrollIndex + numberBridgeheadShown))"
@@ -214,8 +214,6 @@ export default class BridgeheadOverview extends Vue {
 }
 .header-summary-cell {
   background-color: #f2f2f2;
-  border-top: 1px solid #dddddd;
-  border-right: 1px solid #dddddd;
   border-bottom: 1px solid #dddddd;
   padding: 4px; /* Verringere die Padding-Größe */
   font-size: 14px; /* Reduziere die Schriftgröße */

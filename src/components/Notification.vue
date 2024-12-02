@@ -63,9 +63,9 @@ export default class NotificationBox extends Vue {
                 notification && notification.timestamp ? convertDate(notification.timestamp) : ''
               }}
             </div>
-            <div style="display:flex; align-items: end; gap:10px;margin-top:4px;">
-              <strong>Project:</strong> {{ notification.projectCode }}
-              <strong>User:</strong> {{ notification.email }}
+            <div style="margin-top:8px;">
+              <div><strong>Project: </strong> {{ notification.projectCode }}</div>
+              <div><strong>User: </strong> {{ notification.email }}</div>
             </div>
           </div>
 
@@ -99,7 +99,7 @@ export default class NotificationBox extends Vue {
 .notification-header {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 10px;
+  margin-bottom: 2px;
 }
 .notification-box {
   padding: 2%;
@@ -137,6 +137,7 @@ export default class NotificationBox extends Vue {
 .card-title {
   font-size: 1rem;
   font-weight: bold;
+  margin-bottom: 2px;
 }
 .btn-close {
   width: 0.5em;

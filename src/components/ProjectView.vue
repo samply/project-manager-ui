@@ -20,7 +20,7 @@
     <div class="right-container">
       <div class="main-content">
         <div class="info-container">
-          <div v-if="project?.state !== 'DRAFT'" class="box-header">Project Information</div>
+          <div v-if="project?.state !== 'DRAFT'" class="box-header">Project Status</div>
 
           <div style="padding: 2%">
             <!--<div>
@@ -70,7 +70,7 @@
               <thead>
               <tr>
                 <th style="background-color: #f2f2f2;" scope="col">Data Request Number (DRN)</th>
-                <th style="background-color: #f2f2f2;" scope="col">Project State</th>
+                <th style="background-color: #f2f2f2;" scope="col">Project Phase</th>
                 <th style="background-color: #f2f2f2;" scope="col">User Access Control</th>
                 <th style="background-color: #f2f2f2;" scope="col">Query State</th>
                 <th style="background-color: #f2f2f2;" v-if="dataShieldStatus" scope="col">DataSHIELD State</th>

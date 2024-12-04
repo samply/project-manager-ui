@@ -10,7 +10,7 @@
         <td class="header-cell">{{ header }}</td>
         <td v-if="header === 'Bridgeheads'" class="header-summary-cell">{{ bridgeheads.length }}</td>
         <td v-if="header === 'Votum'" class="header-summary-cell status-cell">{{ getVotumStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getVotumStatus()[1]}}<div class="exist-votum-small red"></div></td>
-        <td v-if="header === 'Bridgehead State'" class="header-summary-cell status-cell">{{ getBridgeheadStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getBridgeheadStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'User Access Control'" class="header-summary-cell status-cell">{{ getBridgeheadStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getBridgeheadStatus()[1]}}<div class="exist-votum-small red"></div></td>
         <td v-if="header === 'DataSHIELD Status'" class="header-summary-cell status-cell">{{ getDatashieldStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getDatashieldStatus()[1]}}<div class="exist-votum-small red"></div></td>
         <td v-if="header === 'Query state'" class="header-summary-cell status-cell">{{ getQueryStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getQueryStatus()[1]}}<div class="exist-votum-small red"></div></td>
         <!-- Data for each bridgehead in subsequent columns -->
@@ -96,7 +96,7 @@ export default class BridgeheadOverview extends Vue {
   Action = Action;
 
   DATASHIELD_STATUS_HEADER = 'DataSHIELD Status';
-  headers = ['Bridgeheads', 'Votum', 'Bridgehead State', 'Query state'];
+  headers = ['Bridgeheads', 'Votum', 'User Access Control', 'Query state'];
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
   selectedBridgehead: number | null = null;

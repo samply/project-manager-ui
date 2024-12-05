@@ -47,6 +47,7 @@ export default class ProjectFieldRow extends Vue {
   showInputs = false;
   newValue = "";
   newKey = "";
+  toggleHumanReadable = true;
 
   @Watch("projectManagerBackendService", {immediate: true, deep: true})
   onProjetManagerBackendServiceChange(
@@ -279,6 +280,14 @@ export default class ProjectFieldRow extends Vue {
     return 'other-button-container';
   }
 
+  async copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch ($e) {
+      console.log($e)
+    }
+  }
+
 }
 </script>
 
@@ -405,7 +414,13 @@ export default class ProjectFieldRow extends Vue {
             </div>
           </div>
           <div v-else-if="tempFieldValue && tempFieldValue.length > 0" style="width:70%">
-            <div class="field-value truncate">{{ tempFieldValue[0] }}</div>
+            <template v-if="isQuery()">
+              <div class="field-value clickable" :class="{ truncate: toggleHumanReadable }"
+                   @click="toggleHumanReadable = !toggleHumanReadable" v-b-tooltip.hover :title="tempFieldValue[0]">{{ tempFieldValue[0] }}</div>
+            </template>
+            <template v-else>
+              <div class="field-value truncate">{{ tempFieldValue[0] }}</div>
+            </template>
           </div>
         </div>
       </div>
@@ -418,8 +433,7 @@ export default class ProjectFieldRow extends Vue {
             <button v-if="isFieldValueEditable() && (redirectUrl === null || isBridgeheads())" class="btn btn-primary"
                     data-toggle="tooltip"
                     data-placement="top" title="Edit"
-                    style="background:none; border:none; color:black"><i class="bi bi-pencil me-2"
-                                                                         @click="editField"></i>
+                    style="background:none; border:none; color:black"><i class="bi bi-pencil me-2" @click="editField"></i>
             </button>
             <DownloadButton v-if="existsFile && downloadAction" :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
@@ -428,8 +442,12 @@ export default class ProjectFieldRow extends Vue {
         <button v-if="isFieldValueEditable() && redirectUrl !== null" class="btn btn-primary"
                 data-toggle="tooltip"
                 data-placement="top" title="CCP Explorer"
-                style="background:none; border:none; color:black"><i class="bi bi-arrow-right-circle"
-                                                                     @click="redirectToURL"></i>
+                style="background:none; border:none; color:black"><i class="bi bi-arrow-right-circle" @click="redirectToURL"></i>
+        </button>
+        <button v-if="isFieldValueEditable() && redirectUrl !== null && isQuery()" class="btn btn-primary"
+                data-toggle="tooltip"
+                data-placement="top" title="Copy Query to Clipboard"
+                style="background:none; border:none; color:black"><i class="bi bi-copy" @click="copyToClipboard(editedValue[1])"></i>
         </button>
       </span>
     </td>
@@ -475,7 +493,7 @@ export default class ProjectFieldRow extends Vue {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: calc(50 * 1ch); /* 1ch is the width of one character */
+  max-width: calc(60 * 1ch); /* 1ch is the width of one character */
 }
 
 .query-edit-field {
@@ -558,5 +576,8 @@ export default class ProjectFieldRow extends Vue {
   margin-left: 10px;
   font-weight: bold;
   font-size: 9pt;
+}
+.clickable {
+  cursor: pointer;
 }
 </style>

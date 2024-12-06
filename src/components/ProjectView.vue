@@ -1220,7 +1220,7 @@ export default defineComponent({
   border: 1px solid #cccccc;
   background-color: #fff200;
 }
-.state_circle.accepted, .state_circle.with_data {
+.state_circle.accepted, .state_circle.with_data, .state_circle.finished {
   border: 1px solid #cccccc;
   background-color: #009a00;
 }

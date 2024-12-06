@@ -181,7 +181,7 @@
             <table class="table table-bordered custom-table  table-hover">
               <tbody>
               <template v-for="(projectField, index) in getProjectFields()" :key="index">
-                <ProjectFieldRow v-if="projectField.visibilityCondition"
+                <ProjectFieldRow v-if="projectField.visibilityCondition && (!existsDraftDialog || projectField.isEditable && draftDialogCurrentStep < 4 || draftDialogCurrentStep === 4)"
                                  :field-key="projectField.fieldKey"
                                  :field-value="projectField.fieldValue"
                                  :edit-project-param="projectField.editProjectParam"

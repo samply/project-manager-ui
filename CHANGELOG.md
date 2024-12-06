@@ -79,3 +79,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)
 - Rename reject project bridgehead user state as block
+- Copy query to clipboard always active, as long as it has a value

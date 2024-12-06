@@ -444,7 +444,7 @@ export default class ProjectFieldRow extends Vue {
                 data-placement="top" title="CCP Explorer"
                 style="background:none; border:none; color:black"><i class="bi bi-arrow-right-circle" @click="redirectToURL"></i>
         </button>
-        <button v-if="isFieldValueEditable() && redirectUrl !== null && isQuery()" class="btn btn-primary"
+        <button v-if="isQuery() && fieldValue[0]" class="btn btn-primary"
                 data-toggle="tooltip"
                 data-placement="top" title="Copy Query to Clipboard"
                 style="background:none; border:none; color:black"><i class="bi bi-copy" @click="copyToClipboard(editedValue[1])"></i>

@@ -71,11 +71,11 @@
               <tr>
                 <th style="background-color: #f2f2f2;" scope="col">Data Request Number (DRN)</th>
                 <th style="background-color: #f2f2f2;" scope="col">Project Phase</th>
-                <th style="background-color: #f2f2f2;" scope="col">User Access Control</th>
-                <th style="background-color: #f2f2f2;" scope="col">Query State</th>
-                <th style="background-color: #f2f2f2;" v-if="dataShieldStatus" scope="col">DataSHIELD State</th>
+                <th v-if="visibleBridgeheads?.length == 1" style="background-color: #f2f2f2;" scope="col">User Access Control</th>
+                <th v-if="visibleBridgeheads?.length == 1" style="background-color: #f2f2f2;" scope="col">Query State</th>
+                <th style="background-color: #f2f2f2;" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD State</th>
                 <th style="background-color: #f2f2f2;"
-                    v-if="dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT'" scope="col">Files in Coder
+                    v-if="visibleBridgeheads?.length == 1 && (dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT')" scope="col">Files in Coder
                 </th>
                 <th style="background-color: #f2f2f2;" scope="col">Creator</th>
                 <th style="background-color: #f2f2f2;" scope="col">Created at</th>
@@ -87,10 +87,10 @@
               <tr>
                 <td>{{ project ? project.code : '' }}</td>
                 <td>{{ project ? project.state : '' }}</td>
-                <td v-if="activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.state"></div></td>
-                <td v-if="activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.queryState"></div></td>
-                <td v-if="dataShieldStatus"><div  class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatus?.project_status"></div></td>
-                <td v-if="dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT'">
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.state"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.queryState"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus"><div  class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatus?.project_status"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && (dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT')">
                   {{ areExportFilesTransferredToResearchEnvironment }}
                 </td>
                 <td>{{ project ? project.creatorEmail : '' }}</td>

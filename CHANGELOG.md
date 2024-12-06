@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2024-12-04]
+## [1.1.0 - 2024-12-06]
 ### Added
 - Dockerfile
 - Single Spa
@@ -71,6 +71,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Extended explanations
 - Extended explanations Messages for draft
 - First and Last Name in User
+- Show query state, project bridgehead state, datashield state and coder state only for one bridgehead
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

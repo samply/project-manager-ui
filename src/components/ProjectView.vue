@@ -62,7 +62,7 @@
                 <th v-if="visibleBridgeheads?.length == 1" style="background-color: #f2f2f2;" scope="col">Query Status</th>
                 <th style="background-color: #f2f2f2;" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD Status</th>
                 <th style="background-color: #f2f2f2;"
-                    v-if="visibleBridgeheads?.length == 1 && (dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT')" scope="col">Files in Coder
+                    v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')" scope="col">Files in Coder
                 </th>
                 <th style="background-color: #f2f2f2;" scope="col">Creator</th>
                 <th style="background-color: #f2f2f2;" scope="col">Created at</th>
@@ -77,7 +77,7 @@
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.state"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.queryState"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus"><div  class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatus?.project_status"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && (dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT')">
+                <td v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')">
                   {{ areExportFilesTransferredToResearchEnvironment }}
                 </td>
                 <td>

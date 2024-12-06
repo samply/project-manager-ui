@@ -128,6 +128,16 @@ export default class UserInput extends Vue {
     this.showSuggestions = false;
   }
 
+  async copyToClipboard(email: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(email);
+      alert('Email copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy email:', error);
+      alert('Failed to copy email. Please try again.');
+    }
+  }
+
 }
 </script>
 
@@ -164,14 +174,30 @@ export default class UserInput extends Vue {
       <table class="user-table">
         <thead>
         <tr>
-          <th>Email</th>
+          <th>User</th>
           <th v-if="bridgeheads.length > 0">Bridgehead</th>
           <th>State</th> <!-- New column for user state -->
         </tr>
         </thead>
         <tbody>
         <tr v-for="(user, index) in currentUsers" :key="index">
-          <td>{{ user.email }}</td>
+          <td>
+            <!-- Check if firstName and lastName are available -->
+            <template v-if="user.firstName && user.lastName">
+              {{ user.firstName }} {{ user.lastName }}
+              <button
+                  class="btn btn-link p-0 ms-2"
+                  @click="copyToClipboard(user.email)"
+                  title="Copy email">
+                <i class="bi bi-clipboard"></i>
+              </button>
+            </template>
+
+            <!-- If no firstName or lastName, show just the email -->
+            <template v-else>
+              {{ user.email }}
+            </template>
+          </td>
           <td v-if="bridgeheads.length > 0">{{ user.humanReadableBridgehead }}</td>
           <td>{{ user.projectState }}</td> <!-- Display user's state in the second column -->
         </tr>

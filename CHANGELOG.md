@@ -73,6 +73,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - First and Last Name in User
 - Show query state, project bridgehead state, datashield state and coder state only for one bridgehead
 - Creator Name and creator email button
+- User name and email button
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

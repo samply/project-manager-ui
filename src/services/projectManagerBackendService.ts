@@ -131,7 +131,8 @@ export enum EditProjectParam {
 
 export interface Project {
     code: string | null;
-    creatorEmail: string | null;
+    creatorEmail: string | null | undefined;
+    creatorName: string | null;
     createdAt: Date | null;
     expiresAt: Date | null;
     archivedAt: Date | null;

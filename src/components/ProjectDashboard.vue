@@ -31,7 +31,15 @@
         <tr v-for="(project, index) in projects" :key="index">
           <td>{{ project.code }}</td>
           <td>{{ project.label }}</td>
-          <td>{{ project.creatorEmail }}</td>
+          <td>
+            {{ project.creatorName }}
+            <button
+                class="btn btn-link p-0 ms-2"
+                @click="copyToClipboard(project.creatorEmail)"
+                title="Copy email">
+              <i class="bi bi-clipboard"></i>
+            </button>
+          </td>
           <td>{{ project.createdAt }}</td>
           <td>{{ project.state }}</td>
           <td>
@@ -96,6 +104,13 @@ export default defineComponent({
     },
     removeNotification(index: number): void {
       this.notifications.splice(index, 1);
+    },
+    copyToClipboard(email: string | null | undefined) {
+      if (email) {
+        navigator.clipboard.writeText(email).then(() => {
+          alert("Email copied to clipboard!");
+        });
+      }
     },
 
     // TODO: Fetch several pages of projects

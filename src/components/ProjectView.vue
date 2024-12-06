@@ -14,7 +14,6 @@
           <div v-if="index < getProjectStates().length - 1" class="stepper-line"></div>
         </div>
       </div>
-      <!--</div>-->
     </div>
 
     <div class="right-container">
@@ -23,17 +22,6 @@
           <div v-if="project?.state !== 'DRAFT'" class="box-header">Project Status</div>
 
           <div style="padding: 2%">
-            <!--<div>
-              <div v-if="explanations.length" class="explanation-box">
-                <p v-for="(explanation, index) in getExtendedExplanations()" :key="index" class="explanation-line">
-                  - {{ explanation }}
-                </p>
-              </div>
-              <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED' ">
-                <p>No action is required at the moment. Please wait for the next notification, which will also be sent to you via email.</p>
-              </div>
-            </div>-->
-
             <div style="display:flex; flex-flow:row; justify-content: space-between; margin-bottom:10px;">
               <router-link to="/" data-placement="top" v-b-tooltip.hover title="Back to Project Dashboard"><i
                   class="bi bi-arrow-left-square-fill" style="font-size: x-large"></i></router-link>
@@ -66,7 +54,6 @@
                                 :activeBridgehead="activeBridgehead"/>
             <br/>
             <table class="table table-bordered" v-if="project?.state !== 'DRAFT' ">
-              <!--<table class="table table-bordered" >-->
               <thead>
               <tr>
                 <th style="background-color: #f2f2f2;" scope="col">Data Request Number (DRN)</th>
@@ -93,7 +80,15 @@
                 <td v-if="visibleBridgeheads?.length == 1 && (dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT')">
                   {{ areExportFilesTransferredToResearchEnvironment }}
                 </td>
-                <td>{{ project ? project.creatorEmail : '' }}</td>
+                <td>
+                  {{ project?.creatorName }}
+                  <button
+                      class="btn btn-link p-0 ms-2"
+                      @click="copyToClipboard(project?.creatorEmail)"
+                      title="Copy email">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </td>
                 <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
                 <td>{{ project && project.expiresAt ? convertDate(project.expiresAt) : '' }}</td>
                 <td>{{ project && project.modifiedAt ? convertDate(project.modifiedAt) : '' }}</td>
@@ -125,155 +120,6 @@
                                       :project-manager-backend-service="projectManagerBackendService"/>
               </div>
             </template>
-            <!--<div class="button-group-box"
-                 v-if="buttonGroups[0]">
-              <div class="button-group-label">Project</div>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Accept"
-                                    button-class="btn btn-primary mr-2"
-                                    :with-message="false"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton v-if="project?.state !== 'DRAFT'"
-                                    :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Reject"
-                                    button-class="btn btn-danger btn-secondary mr-2"
-                                    :with-message="true"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.FINISH_PROJECT_ACTION"
-                                    :with-message="false"
-                                    :context="context" :call-refreh-context="refreshContext" text="Finish"
-                                    button-class="btn btn-primary mr-2"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ARCHIVE_PROJECT_ACTION"
-                                    :context="context" :call-refreh-context="refreshContext" text="Archive"
-                                    :with-message="false"
-                                    button-class="btn btn-secondary"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-            </div>
-            <div class="button-group-box"
-                 v-if="buttonGroups[1]">
-              <div class="button-group-label">Stage</div>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_DEVELOP_STAGE_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Start develop stage"
-                                  button-class="btn btn-primary mr-2"
-                                  :with-message="false"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_PILOT_STAGE_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Start pilot stage"
-                                  :with-message="false"
-                                  button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.START_FINAL_STAGE_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Start final stage"
-                                  :with-message="false"
-                                  button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            </div>-->
-            <!-- Project State Module: BK-ADMIN View -->
-            <!--<div class="button-group-box"
-                 v-if="buttonGroups[2]">
-              <div class="button-group-label">Bridgehead Project</div>
-            <ProjectManagerButton
-                v-if="activeBridgehead && activeBridgehead.state !== 'ACCEPTED' && canShowBridgeheadAdminButtons()"
-                :module="Module.PROJECT_STATE_MODULE"
-                :action="Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION"
-                :with-message="false"
-                :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Accept"
-                button-class="btn btn-primary mr-2"
-                :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton
-                v-if="activeBridgehead && activeBridgehead.state !== 'REJECTED' && canShowBridgeheadAdminButtons()"
-                :module="Module.PROJECT_STATE_MODULE"
-                :action="Action.REJECT_BRIDGEHEAD_PROJECT_ACTION"
-                :context="context" :call-refreh-context="refreshBridgeheadsAndContext" text="Reject"
-                :with-message="true"
-                button-class="btn btn-danger btn-secondary mr-2"
-                :project-manager-backend-service="projectManagerBackendService"/>
-            </div>-->
-            <!-- Project State Module: Developer/Pilot View -->
-            <!--<div class="button-group-box"
-                 v-if="buttonGroups[3]">
-              <div class="button-group-label">Script</div>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_SCRIPT_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
-                                  button-class="btn btn-primary mr-2"
-                                  :with-message="false"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_SCRIPT_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
-                                  :with-message="true"
-                                  button-class="btn btn-danger btn-secondary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REQUEST_SCRIPT_CHANGES_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Request changes"
-                                  :with-message="true"
-                                  button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            </div>-->
-            <!-- Project State Module: Final View -->
-            <!--<div class="button-group-box"
-                 v-if="buttonGroups[4]">
-              <div class="button-group-label">Project Result</div>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_RESULTS_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
-                                  button-class="btn btn-primary mr-2"
-                                  :with-message="false"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_RESULTS_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
-                                  :with-message="true"
-                                  button-class="btn btn-danger btn-secondary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
-                                  :action="Action.REQUEST_CHANGES_IN_PROJECT_ACTION"
-                                  :with-message="true"
-                                  :context="context" :call-refreh-context="refreshContext" text="Request changes"
-                                  button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            </div>-->
-            <!-- Project State Module: Developer/Pilot View -->
-            <!--<div class="button-group-box"
-                 v-if="buttonGroups[5]">
-              <div class="button-group-label">Project Analysis</div>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.ACCEPT_PROJECT_ANALYSIS_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Accept"
-                                  button-class="btn btn-primary mr-2"
-                                  :with-message="false"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE" :action="Action.REJECT_PROJECT_ANALYSIS_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Reject"
-                                  :with-message="true"
-                                  button-class="btn btn-danger btn-secondary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
-                                  :action="Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Request changes"
-                                  :with-message="true"
-                                  button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            </div>-->
-            <!-- Export Module -->
-            <!--<div class="button-group-box"
-                 v-if="buttonGroups[6]">
-              <div class="button-group-label">Export</div>
-            <ProjectManagerButton v-if="canShowBridgeheadAdminButtons()" :module="Module.EXPORT_MODULE"
-                                  :action="Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION"
-                                  :context="context" :call-refreh-context="refreshBridgeheadsAndContext"
-                                  text="Send query to bridgehead"
-                                  :with-message="false"
-                                  button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>-->
-            <!-- In order to allow executing query after sending, please set the following parameters in ProjectManagerButton -->
-            <!--:action2="Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION"-->
-            <!--text2="With execution"-->
-
-           <!-- <ProjectManagerButton :module="Module.EXPORT_MODULE"
-                                  :action="Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION"
-                                  :context="context" :call-refreh-context="refreshContext" text="Resend export files to research environment"
-                                  :with-message="false"
-                                  button-class="btn btn-primary mr-2"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-            </div>-->
           </div>
           <div v-if="!existsDraftDialog || draftDialogCurrentStep==4" class="inviteUser">
             <UserInput :project="project" :context="context"
@@ -352,128 +198,6 @@
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
 
               </template>
-              <!--<ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
-                               field-key="Title"
-                               :field-value="[project.label]"
-                               :edit-project-param="[EditProjectParam.LABEL]"
-                               :is-editable="true"
-                               :call-refreh-context="refreshContext"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
-                               field-key="Description"
-                               :field-value="[project.description]"
-                               :edit-project-param="[EditProjectParam.DESCRIPTION]"
-                               :is-editable="true"
-                               :call-refreh-context="refreshContext"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
-                               field-key="Bridgeheads"
-                               :field-value="[bridgeheads.map(bridghead => bridghead.humanReadable), allBridgeheads.map(bridghead => bridghead.humanReadable)]"
-                               :edit-project-param="[EditProjectParam.BRIDGEHEADS]"
-                               :is-editable="true"
-                               :call-refreh-context="refreshContext"
-                               :redirect-url="project.explorerUrl"
-                               :transform-for-sending="(humanReadable: string) => allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==1 || draftDialogCurrentStep==4"
-                               field-key="Configuration"
-                               :field-value="[currentProjectConfiguration]"
-                               :edit-project-param="[EditProjectParam.PROJECT_CONFIGURATION]"
-                               :is-editable="true"
-                               :call-refreh-context="refreshContext"
-                               :possible-values="projectConfigurations"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==1 || draftDialogCurrentStep==4"
-                               field-key="Type"
-                               :field-value="[project.type]"
-                               :edit-project-param="[EditProjectParam.PROJECT_TYPE]"
-                               :is-editable="isNotIncludedInCurrentProjectConfiguration('type')"
-                               :call-refreh-context="refreshContext"
-                               :possible-values="projectTypes"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==2 || draftDialogCurrentStep==4"
-                               field-key="Query"
-                               :field-value="[project.humanReadable, project.query]"
-                               :edit-project-param="[EditProjectParam.HUMAN_READABLE]"
-                               :call-refreh-context="refreshContext"
-                               :redirect-url="project.explorerUrl"
-                               :is-editable="true"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==2 || draftDialogCurrentStep==4"
-                               field-key="Query Format"
-                               :field-value="[project.queryFormat]"
-                               :edit-project-param="[EditProjectParam.QUERY_FORMAT]"
-                               :is-editable="true"
-                               :call-refreh-context="refreshContext"
-                               :possible-values="queryFormats"
-                               :redirect-url="project.explorerUrl"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==3 || draftDialogCurrentStep==4"
-                               field-key="Output Format"
-                               :field-value="[project.outputFormat]"
-                               :edit-project-param="[EditProjectParam.OUTPUT_FORMAT]"
-                               :is-editable="isNotIncludedInCurrentProjectConfiguration('outputFormat')"
-                               :call-refreh-context="refreshContext"
-                               :possible-values="outputFormats"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==3 || draftDialogCurrentStep==4"
-                               field-key="Template ID"
-                               :field-value="[project.templateId]"
-                               :edit-project-param="[EditProjectParam.TEMPLATE_ID]"
-                               :is-editable="isNotIncludedInCurrentProjectConfiguration('templateId')"
-                               :call-refreh-context="refreshContext"
-                               :possible-values="exporterTemplateIds"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>-->
-              <!-- TODO: Separate queries in pairs Key-Values + encrpyt and decrypt in base64-->
-              <!--<ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==3 || draftDialogCurrentStep==4"
-                               field-key="Environment Variables"
-                               :field-value="[project?.queryContext]"
-                               :edit-project-param="[EditProjectParam.QUERY_CONTEXT]"
-                               :is-editable="isNotIncludedInCurrentProjectConfiguration('queryContext')"
-                               :call-refreh-context="refreshContext"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==0 || draftDialogCurrentStep==4"
-                               field-key="Application form"
-                               :exists-file="existsApplicationForm"
-                               :is-editable="true"
-                               :field-value="[applicationFormLabel]"
-                               :upload-action="Action.UPLOAD_APPLICATION_FORM_ACTION"
-                               :download-action="Action.DOWNLOAD_APPLICATION_FORM_ACTION"
-                               :download-module="Module.PROJECT_DOCUMENTS_MODULE"
-                               :call-refreh-context="refreshContext"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="!existsDraftDialog || draftDialogCurrentStep==4"
-                               field-key="Votum"
-                               :is-editable="true"
-                               :exists-file="existsVotum"
-                               :field-value="[votumLabel]"
-                               :upload-action="Action.UPLOAD_VOTUM_ACTION"
-                               :download-action="Action.DOWNLOAD_VOTUM_ACTION"
-                               :download-module="Module.PROJECT_DOCUMENTS_MODULE"
-                               :call-refreh-context="refreshContext"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow v-if="dataShieldStatus && (!existsDraftDialog || draftDialogCurrentStep==4)"
-                               field-key="Script"
-                               explanation-key="ACCEPT_SCRIPT"
-                               :field-value="[scriptLabel]"
-                               :is-editable="true"
-                               :exists-file="existsScript"
-                               :upload-action="Action.UPLOAD_SCRIPT_ACTION"
-                               :download-action="Action.DOWNLOAD_SCRIPT_ACTION"
-                               :download-module="Module.PROJECT_DOCUMENTS_MODULE"
-                               :call-refreh-context="refreshContext"
-                               :todos="explanations"
-                               :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-              <ProjectFieldRow
-                  v-if=" dataShieldStatus && dataShieldStatus.project_status === 'WITH_DATA' && existsAuthenticationScript"
-                  field-key="Authentication Script"
-                  :is-editable="false"
-                  :field-value="[]"
-                  :download-action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION"
-                  :download-module="Module.TOKEN_MANAGER_MODULE"
-                  :exists-file="existsAuthenticationScript"
-                  :call-refreh-context="refreshContext"
-                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>-->
               </tbody>
             </table>
           </div>
@@ -531,7 +255,7 @@
 
 
       <div v-if="getExtendedExplanations().size" class="notification-box">
-        <div v-for="(explanation, index) in Array.from(this.getExtendedExplanations().values())" :key="index" class="card mb-3">
+        <div v-for="(explanation, index) in Array.from(getExtendedExplanations().values())" :key="index" class="card mb-3">
           <div class="card-body">
             <div style="display:flex; flex-flow: row;">
               <div class="todo-circle"><span>#{{ explanation.number }}</span></div>
@@ -548,24 +272,6 @@
         </div>
       </div>
     </div>
-
-
-        <!--<div class="card-body" :class="{ 'expanded': true }">-->
-
-
-      <!--<div style="padding-left:10%" v-if="projectData.projectId">
-        <div class="vertical-stepper">
-          <div v-for="(projectState, index) in projectStates" :key="index" class="stepper-step">
-            <div style="display: flex; flex-flow: row">
-              <div class="step-circle">
-                <span>{{ index + 1 }}</span>
-              </div>
-              <div class="step-title">{{ projectState }}</div>
-            </div>
-            <div v-if="index < projectStates.length - 1" class="stepper-line"></div>
-          </div>
-        </div>
-      </div>-->
     </div>
   </div>
 
@@ -574,8 +280,9 @@
 <script lang="ts">
 import {defineComponent} from 'vue';
 import {
-  Action, ActionButtonGroup,
+  Action,
   ActionButton,
+  ActionButtonGroup,
   Bridgehead,
   DataShieldProjectStatus,
   EditProjectParam,
@@ -693,17 +400,10 @@ export default defineComponent({
   },
   mounted() {
     this.fetchVisibleBridgeheads();
-    //setTimeout(() => {
-    //this.updateButtonVisibility();
-    //}, 2000)
-
   },
 
 
   methods: {
-    /*toggleExpand(item: { isExpanded: boolean }) {
-      item.isExpanded = !item.isExpanded;
-    },*/
 
     nextStep() {
       if (this.draftDialogCurrentStep < this.steps.length - 1) {
@@ -754,6 +454,14 @@ export default defineComponent({
         });
       } catch (error) {
         console.error('Error loading BridgeheadList:', error);
+      }
+    },
+
+    copyToClipboard(email: string | null | undefined) {
+      if (email) {
+        navigator.clipboard.writeText(email).then(() => {
+          alert("Email copied to clipboard!");
+        });
       }
     },
 
@@ -1194,12 +902,7 @@ export default defineComponent({
         },
       ] as ActionButtonGroup[]
     },
-    /*async checkButtonVisibility() {
-      this.buttonGroupStates.forEach( async (state, index) => {
-        const statusArray = state.map((status) => this.projectManagerBackendService.isModuleActionActive(status.module, status.action))
-        Promise.all(statusArray).then((result) => {this.buttonGroups[index] = result.includes(true)})
-      })
-    },*/
+
     async checkButtonVisibility() {
       this.actionButtons.forEach((buttonGroup, index) => {
         const statusArray = buttonGroup.button.map(async (button) => {

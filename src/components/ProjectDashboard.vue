@@ -40,7 +40,7 @@
               <i class="bi bi-clipboard"></i>
             </button>
           </td>
-          <td>{{ project.createdAt }}</td>
+          <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
           <td>{{ project.state }}</td>
           <td>
             <router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }">
@@ -69,6 +69,7 @@ import {
   Site
 } from "@/services/projectManagerBackendService";
 import NotificationBox from "@/components/Notification.vue";
+import {format} from "date-fns";
 
 export default defineComponent({
   components: {NotificationBox},
@@ -112,6 +113,11 @@ export default defineComponent({
         });
       }
     },
+
+    convertDate(date: Date) {
+      return format(date, 'yyyy-MM-dd HH:mm')
+    },
+
 
     // TODO: Fetch several pages of projects
     async fetchProjects() {

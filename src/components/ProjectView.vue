@@ -474,7 +474,7 @@ export default defineComponent({
     },
 
     convertDate(date: Date) {
-      return format(date, 'yyyy-MM-dd HH:mm:ss')
+      return format(date, 'yyyy-MM-dd HH:mm')
     },
 
     initializeProjectRelatedData() {

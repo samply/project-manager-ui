@@ -59,8 +59,8 @@
                 <th style="background-color: #f2f2f2;" scope="col">Data Request Number (DRN)</th>
                 <th style="background-color: #f2f2f2;" scope="col">Project Phase</th>
                 <th v-if="visibleBridgeheads?.length == 1" style="background-color: #f2f2f2;" scope="col">User Access Control</th>
-                <th v-if="visibleBridgeheads?.length == 1" style="background-color: #f2f2f2;" scope="col">Query State</th>
-                <th style="background-color: #f2f2f2;" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD State</th>
+                <th v-if="visibleBridgeheads?.length == 1" style="background-color: #f2f2f2;" scope="col">Query Status</th>
+                <th style="background-color: #f2f2f2;" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD Status</th>
                 <th style="background-color: #f2f2f2;"
                     v-if="visibleBridgeheads?.length == 1 && (dataShieldStatus || project?.type == 'RESEARCH_ENVIRONMENT')" scope="col">Files in Coder
                 </th>

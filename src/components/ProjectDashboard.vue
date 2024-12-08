@@ -50,8 +50,22 @@
         </tr>
         </tbody>
       </table>
+      <div class="pager">
+        <button @click="firstPage" class="btn btn-primary">
+          <i class="bi bi-skip-start-fill" style="font-size: medium"></i>
+        </button>
+        <button @click="previousPage" class="btn btn-primary" style="rotate: 180deg">
+          <i class="bi bi-play-fill" style="font-size: medium"></i>
+        </button>
+        <span>{{this.currentPage}} / {{this.totalPages}}</span>
+        <button @click="nextPage" class="btn btn-primary">
+          <i class="bi bi-play-fill" style="font-size: medium"></i>
+        </button>
+        <button @click="lastPage" class="btn btn-primary">
+          <i class="bi bi-skip-end-fill" style="font-size: medium"></i>
+        </button>
+      </div>
     </div>
-
     <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
                      :show-notification="showNotification" :call-toggle-notification="toggleNotification"
                      :notifications="notifications" :call-update-notifications="fetchNotifications"/>
@@ -82,6 +96,8 @@ export default defineComponent({
       projects: [] as Project[],
       notifications: [],
       showNotification: false,
+      currentPage: 1,
+      totalPages: 1
     };
   },
   watch: {
@@ -123,7 +139,7 @@ export default defineComponent({
     async fetchProjects() {
       try {
         const params = new Map<string, string>();
-        params.set('page', '0');
+        params.set('page', (this.currentPage - 1).toString());
         params.set('page-size', '10');
         params.set('site', Site.PROJECT_DASHBOARD_SITE);
         this.projectManagerBackendService.fetchData(
@@ -133,6 +149,7 @@ export default defineComponent({
             params
         ).then(projects => {
           this.projects = projects.content;
+          this.totalPages = projects.totalPages;
         });
       } catch (error) {
         console.error('Error loading projects:', error);
@@ -153,6 +170,10 @@ export default defineComponent({
       }
     },
 
+    firstPage() {this.currentPage = 1;this.fetchProjects()},
+    previousPage() {if (this.currentPage > 1) {this.currentPage--} this.fetchProjects()},
+    nextPage() {if (this.currentPage < this.totalPages) {this.currentPage++} this.fetchProjects()},
+    lastPage() {this.currentPage = this.totalPages; this.fetchProjects()}
   },
 });
 </script>
@@ -212,5 +233,24 @@ export default defineComponent({
 
 .expand-icon i.rotate {
   transform: rotate(180deg);
+}
+.pager {
+  display: flex;
+  justify-content: end;
+}
+.pager span {
+  display: flex;
+  border: 1px solid #cccccc;
+  border-radius: 5px;
+  padding: 0 10px 1px 10px;
+  background-color: white;
+}
+.pager button {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+.pager button, .pager span {
+  margin-left: 10px;
+  align-items: center;
 }
 </style>

@@ -57,18 +57,18 @@
             <table class="table table-bordered" v-if="project?.state !== 'DRAFT' ">
               <thead>
               <tr>
-                <th style="background-color: #f2f2f2;" scope="col">Data Request Number (DRN)</th>
-                <th style="background-color: #f2f2f2;" scope="col">Project Phase</th>
-                <th v-if="visibleBridgeheads?.length == 1" style="background-color: #f2f2f2;" scope="col">User Access Control</th>
-                <th v-if="visibleBridgeheads?.length == 1" style="background-color: #f2f2f2;" scope="col">Query Status</th>
-                <th style="background-color: #f2f2f2;" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD Status</th>
-                <th style="background-color: #f2f2f2;"
+                <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
+                <th class="status-table-header" scope="col">Project Phase</th>
+                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access Control</th>
+                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Query Status</th>
+                <th class="status-table-header" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD Status</th>
+                <th class="status-table-header"
                     v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')" scope="col">Files in Coder
                 </th>
-                <th style="background-color: #f2f2f2;" scope="col">Creator</th>
-                <th style="background-color: #f2f2f2;" scope="col">Created at</th>
-                <th style="background-color: #f2f2f2;" scope="col">Expires at</th>
-                <th style="background-color: #f2f2f2;" scope="col">Last modified</th>
+                <th class="status-table-header" scope="col">Creator</th>
+                <th class="status-table-header" scope="col">Created at</th>
+                <th class="status-table-header" scope="col">Expires at</th>
+                <th class="status-table-header" scope="col">Last modified</th>
               </tr>
               </thead>
               <tbody>
@@ -1148,7 +1148,10 @@ export default defineComponent({
   padding: 2%;
   display: flex;
 }
-
+.status-table-header {
+  background-color: #f2f2f2;
+  vertical-align: middle;
+}
 .explanation-box {
   border: 1px solid red;
   padding: 10px;

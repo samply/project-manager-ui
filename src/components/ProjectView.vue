@@ -14,6 +14,7 @@
           <div v-if="index < getProjectStates().length - 1" class="stepper-line"></div>
         </div>
       </div>
+      <!--</div>-->
     </div>
 
     <div class="right-container">
@@ -986,7 +987,7 @@ export default defineComponent({
 .left-container {
   display: flex;
   flex-flow: column;
-  width: 16%;
+  width: 14%;
   min-height: 800px;
   margin-top: 1.5%;
   margin-left: 1.5%;
@@ -1031,7 +1032,7 @@ export default defineComponent({
 }
 
 .vertical-stepper {
-  margin: 20% 0 0 25%;
+  margin: 20% 0 0 28%;
   display: flex;
   flex-direction: column;
   align-items: flex-start;

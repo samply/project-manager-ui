@@ -26,22 +26,23 @@
           >{{ bridgehead.humanReadable }}</div>
           <!-- Second row: existVotum -->
           <div v-else-if="index === 1">
-            <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]" class="state_circle green">
+            <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]" class="states-circle-container">
+              <div class="state_circle green"></div>
               <DownloadButton
                   :context="fetchContext(bridgehead)"
                   :project-manager-backend-service="projectManagerBackendService"
                   icon-class="bi bi-download"
+                  button-class="download-button"
                   :module="Module.PROJECT_DOCUMENTS_MODULE"
-                  :action="Action.DOWNLOAD_VOTUM_ACTION"
-              />
+                  :action="Action.DOWNLOAD_VOTUM_ACTION"/>
             </div>
-            <div v-else class="state_circle red"></div>
+            <div v-else  class="states-circle-container"><div class="state_circle red"></div></div>
           </div>
           <!-- Third row: bridgehead.state -->
-          <div v-else-if="index === 2" class="state_circle" :class="bridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="bridgehead?.state"></div>
-          <div v-else-if="index === 3" class="state_circle" :class="bridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="bridgehead?.queryState"></div>
+          <div v-else-if="index === 2" class="states-circle-container"><div class="state_circle" :class="bridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="bridgehead?.state"></div></div>
+          <div v-else-if="index === 3" class="states-circle-container"><div class="state_circle" :class="bridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="bridgehead?.queryState"></div></div>
           <div v-else> <!-- We assume that the DataSHIELD Status is the last header -->
-            <div v-if="dataShieldStatusArray[bridgeheadIndex]" class="state_circle" :class="dataShieldStatusArray[bridgeheadIndex]?.project_status?.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatusArray[bridgeheadIndex]?.project_status"></div>
+            <div v-if="dataShieldStatusArray[bridgeheadIndex]" class="states-circle-container"><div class="state_circle" :class="dataShieldStatusArray[bridgeheadIndex]?.project_status?.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatusArray[bridgeheadIndex]?.project_status"></div></div>
             <div v-else></div>
           </div>
         </td>
@@ -267,7 +268,6 @@ export default class BridgeheadOverview extends Vue {
   border-radius: 50%;
   width: 20px;
   height: 20px;
-  margin: auto;
 }
 .state_circle.created {
   border: 1px solid #cccccc;
@@ -288,5 +288,9 @@ export default class BridgeheadOverview extends Vue {
 .state_circle.not_available {
   border: 1px solid #cccccc;
   background-color: #bbbbbb;
+}
+.states-circle-container {
+  display: flex;
+  justify-content: center;
 }
 </style>

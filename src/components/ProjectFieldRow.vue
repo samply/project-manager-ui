@@ -285,6 +285,7 @@ export default class ProjectFieldRow extends Vue {
       await navigator.clipboard.writeText(text);
     } catch ($e) {
       console.log($e)
+      alert("Query copied to clipboard!");
     }
   }
 

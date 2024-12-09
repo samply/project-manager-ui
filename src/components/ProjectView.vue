@@ -1220,13 +1220,12 @@ export default defineComponent({
   border: 1px solid #cccccc;
   background-color: #f2f2f2;
 }
-.state_circle.to_be_sent .state_circle.to_be_sent_and_executed .state_circle.sending .state_circle.sending_and_executing
-.state_circle.export_running_1 .state_circle.export_running_2 {
+.state_circle.to_be_sent, .state_circle.to_be_sent_and_executed, .state_circle.sending, .state_circle.sending_and_executing,
+.state_circle.export_running_1, .state_circle.export_running_2 {
   border: 1px solid #cccccc;
   background-color: #fff200;
 }
-.state_circle.request_changes, .state_circle.not_found, .state_circle.inactive
-.state_circle.expired {
+.state_circle.request_changes, .state_circle.not_found, .state_circle.inactive, .state_circle.expired {
   border: 1px solid #cccccc;
   background-color: #fff200;
 }

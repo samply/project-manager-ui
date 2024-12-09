@@ -1,69 +1,70 @@
 <template>
   <div style="display: flex; min-height: 100vh;">
     <div class="container custom-width-projects">
-      <br/>
-      <div class="row">
+      <div class="row box-header">
         <div class="col-md-8">
-          <h2>Requests</h2>
+          <div>Requests</div>
         </div>
         <div class="col-md-4 text-end">
-          <button @click="toggleNotification" class="btn btn-dark"
-                  style="padding-right:2%; background:none; border:none; color:#007bff"><i
+          <button @click="toggleNotification" class="btn btn-dark notification-button"
+                  style="padding-right:2%; background:none; border:none; color:#007bff"><i style="font-size: x-large"
               class="bi bi-chat-right-text-fill"></i></button>
-          <button style="padding-right:2%; background:none; border:none; color:#007bff" class="btn btn-primary mb-3">
+          <button style="padding-right:2%; padding-top:0; background:none; border:none; color:black" class="btn btn-primary">
             Filter by Status
           </button>
         </div>
       </div>
 
-      <table class="table table-bordered table-striped table-hover">
-        <thead>
-        <tr>
-          <th scope="col">Data Request Number (DRN)</th>
-          <th scope="col">Title</th>
-          <th scope="col">Creator</th>
-          <th scope="col">Date</th>
-          <th scope="col">Status</th>
-          <th scope="col">Action</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="(project, index) in projects" :key="index">
-          <td>{{ project.code }}</td>
-          <td>{{ project.label }}</td>
-          <td>
-            {{ project.creatorName }}
-            <button
-                class="btn btn-link p-0 ms-2 copy-button"
-                @click="copyToClipboard(project.creatorEmail)"
-                title="Copy email">
-              <i class="bi bi-copy"></i>
-            </button>
-          </td>
-          <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
-          <td>{{ project.state }}</td>
-          <td>
-            <router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }">
-              <i class="bi bi-folder-fill"></i>
-            </router-link>
-          </td>
-        </tr>
-        </tbody>
-      </table>
-      <div class="pager">
-        <button @click="firstPage" class="btn btn-primary">
-          <i class="bi bi-skip-start-fill" style="font-size: medium"></i>
-        </button>
-        <button @click="previousPage" class="btn btn-primary" style="rotate: 180deg">
-          <i class="bi bi-play-fill" style="font-size: medium"></i>
-        </button>
-        <span>{{this.currentPage}} / {{this.totalPages}}</span>
-        <button @click="nextPage" class="btn btn-primary">
-          <i class="bi bi-play-fill" style="font-size: medium"></i>
-        </button>
-        <button @click="lastPage" class="btn btn-primary">
-          <i class="bi bi-skip-end-fill" style="font-size: medium"></i>
-        </button>
+      <div class="table-box">
+        <table class="table table-bordered table-striped table-hover">
+          <thead>
+          <tr>
+            <th scope="col">Data Request Number (DRN)</th>
+            <th scope="col">Title</th>
+            <th scope="col">Creator</th>
+            <th scope="col">Date</th>
+            <th scope="col">Status</th>
+            <th scope="col">Action</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="(project, index) in projects" :key="index">
+            <td>{{ project.code }}</td>
+            <td>{{ project.label }}</td>
+            <td>
+              {{ project.creatorName }}
+              <button
+                  class="btn btn-link p-0 ms-2 copy-button"
+                  @click="copyToClipboard(project.creatorEmail)"
+                  title="Copy email">
+                <i class="bi bi-copy"></i>
+              </button>
+            </td>
+            <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
+            <td>{{ project.state }}</td>
+            <td>
+              <router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }">
+                <i class="bi bi-folder-fill"></i>
+              </router-link>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+        <div class="pager">
+          <button @click="firstPage" class="btn btn-primary">
+            <i class="bi bi-skip-start-fill" style="font-size: medium"></i>
+          </button>
+          <button @click="previousPage" class="btn btn-primary" style="rotate: 180deg">
+            <i class="bi bi-play-fill" style="font-size: medium"></i>
+          </button>
+          <span>{{this.currentPage}} / {{this.totalPages}}</span>
+          <button @click="nextPage" class="btn btn-primary">
+            <i class="bi bi-play-fill" style="font-size: medium"></i>
+          </button>
+          <button @click="lastPage" class="btn btn-primary">
+            <i class="bi bi-skip-end-fill" style="font-size: medium"></i>
+          </button>
+        </div>
       </div>
     </div>
     <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
@@ -181,20 +182,35 @@ export default defineComponent({
 <style scoped>
 .custom-width-projects {
   flex: 1;
-  padding-top: 2%;
+  margin-top: 2%;
+  border-radius: 10px!important;
+  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  background-color: white;
+  height: 100%;
 }
-
+.box-header {
+  padding: 12px 0 0 2%;
+  background-color: #95c8dc;
+  color: black;
+  font-size: large;
+  font-weight: bold;
+  border: 1px solid #95c8dc;
+  border-radius: 10px 10px 0 0;
+}
 .custom-width-notifications {
-  width: 18%;
-  background-color: #212529;
-  color: white;
-  padding: 15px;
+  width: 22%;
+  background-color: white;
+  color: black;
   order: 2;
   position: relative;
   z-index: 1;
-  font-family: "Calibri Light";
   overflow-y: auto;
   transition: transform 0.3s ease-in-out;
+  border-radius: 10px;
+  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  margin-top: 1.5%;
+  margin-bottom: 4%;
+  margin-right: 0.5%;
 }
 
 .sidebar-closed {
@@ -253,6 +269,17 @@ export default defineComponent({
   margin-left: 10px;
   align-items: center;
 }
+
+.notification-button:hover {
+  color:black!important;
+}
+.table-box {
+  margin: 3% 2% 5% 2%;
+}
+th {
+  background-color: #95c8dc!important;
+}
+
 .copy-button {
   background: none;
   border: none;

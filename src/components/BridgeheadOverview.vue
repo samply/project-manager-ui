@@ -21,7 +21,7 @@
             :class="{ 'selected': selectedBridgehead === bridgeheadIndex }"
         >
           <!-- First row: bridgehead.bridgehead -->
-          <div v-if="index === 0"
+          <div v-if="index === 0" style="font-weight: bold; text-align: center"
                @click="selectBridgehead(bridgeheadIndex)"
           >{{ bridgehead.humanReadable }}</div>
           <!-- Second row: existVotum -->

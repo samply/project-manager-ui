@@ -8,11 +8,11 @@
       <tr v-for="(header, index) in headers" :key="index">
         <!-- Header in the first column -->
         <td class="header-cell">{{ header }}</td>
-        <td v-if="header === 'Bridgeheads'" class="header-summary-cell">{{ bridgeheads.length }}</td>
-        <td v-if="header === 'Votum'" class="header-summary-cell status-cell" style="border: none">{{ getVotumStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getVotumStatus()[1]}}<div class="exist-votum-small red"></div></td>
-        <td v-if="header === 'Bridgehead State'" class="header-summary-cell status-cell" style="border: none">{{ getBridgeheadStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getBridgeheadStatus()[1]}}<div class="exist-votum-small red"></div></td>
-        <td v-if="header === 'DataSHIELD Status'" class="header-summary-cell status-cell" style="border: none">{{ getDatashieldStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getDatashieldStatus()[1]}}<div class="exist-votum-small red"></div></td>
-        <td v-if="header === 'Query state'" class="header-summary-cell status-cell" style="border: none">{{ getQueryStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getQueryStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'Bridgeheads'" class="header-summary-cell" style="border-top: 1px solid #dddddd">{{ bridgeheads.length }}</td>
+        <td v-if="header === 'Votum'" class="header-summary-cell status-cell">{{ getVotumStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getVotumStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'User Access Control'" class="header-summary-cell status-cell">{{ getBridgeheadStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getBridgeheadStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'DataSHIELD Status'" class="header-summary-cell status-cell">{{ getDatashieldStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getDatashieldStatus()[1]}}<div class="exist-votum-small red"></div></td>
+        <td v-if="header === 'Query Status'" class="header-summary-cell status-cell">{{ getQueryStatus()[0] }} <div class="exist-votum-small green"></div> / {{ getQueryStatus()[1]}}<div class="exist-votum-small red"></div></td>
         <!-- Data for each bridgehead in subsequent columns -->
         <td
             v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(scrollIndex,(scrollIndex + numberBridgeheadShown))"
@@ -21,33 +21,28 @@
             :class="{ 'selected': selectedBridgehead === bridgeheadIndex }"
         >
           <!-- First row: bridgehead.bridgehead -->
-          <div v-if="index === 0"
+          <div v-if="index === 0" style="font-weight: bold; text-align: center"
                @click="selectBridgehead(bridgeheadIndex)"
           >{{ bridgehead.humanReadable }}</div>
           <!-- Second row: existVotum -->
           <div v-else-if="index === 1">
-            <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]" class="exist-votum green">
+            <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]" class="states-circle-container">
+              <div class="state_circle green"></div>
               <DownloadButton
                   :context="fetchContext(bridgehead)"
                   :project-manager-backend-service="projectManagerBackendService"
                   icon-class="bi bi-download"
+                  button-class="download-button"
                   :module="Module.PROJECT_DOCUMENTS_MODULE"
-                  :action="Action.DOWNLOAD_VOTUM_ACTION"
-              />
+                  :action="Action.DOWNLOAD_VOTUM_ACTION"/>
             </div>
-            <div v-else class="exist-votum red"></div>
+            <div v-else  class="states-circle-container"><div class="state_circle red"></div></div>
           </div>
           <!-- Third row: bridgehead.state -->
-          <div v-else-if="index === 2" :class="{ 'accepted-state': bridgehead.state === 'ACCEPTED' }">
-            {{ bridgehead.state }}
-          </div>
-          <div v-else-if="index === 3" :class="{ 'accepted-state': bridgehead.state === 'ACCEPTED' }">
-            {{ bridgehead.queryState }}
-          </div>
+          <div v-else-if="index === 2" class="states-circle-container"><div class="state_circle" :class="bridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="bridgehead?.state"></div></div>
+          <div v-else-if="index === 3" class="states-circle-container"><div class="state_circle" :class="bridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="bridgehead?.queryState"></div></div>
           <div v-else> <!-- We assume that the DataSHIELD Status is the last header -->
-            <div v-if="dataShieldStatusArray[bridgeheadIndex]">
-              {{ dataShieldStatusArray[bridgeheadIndex].project_status }}
-            </div>
+            <div v-if="dataShieldStatusArray[bridgeheadIndex]" class="states-circle-container"><div class="state_circle" :class="dataShieldStatusArray[bridgeheadIndex]?.project_status?.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatusArray[bridgeheadIndex]?.project_status"></div></div>
             <div v-else></div>
           </div>
         </td>
@@ -96,7 +91,7 @@ export default class BridgeheadOverview extends Vue {
   Action = Action;
 
   DATASHIELD_STATUS_HEADER = 'DataSHIELD Status';
-  headers = ['Bridgeheads', 'Votum', 'Bridgehead State', 'Query state'];
+  headers = ['Bridgeheads', 'Votum', 'User Access Control', 'Query Status'];
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
   selectedBridgehead: number | null = null;
@@ -147,7 +142,7 @@ export default class BridgeheadOverview extends Vue {
         (condition) ? this.projectManagerBackendService.fetchData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, this.fetchContext(bridgehead), new Map()) : {
           project_id: this.context.projectCode,
           bk: bridgehead.bridgehead,
-          project_status: 'NOT AVAILABLE'
+          project_status: 'NOT_AVAILABLE'
         });
   }
 
@@ -214,10 +209,8 @@ export default class BridgeheadOverview extends Vue {
 }
 .header-summary-cell {
   background-color: #f2f2f2;
-  border-top: 1px solid #dddddd;
-  border-right: 1px solid #dddddd;
   border-bottom: 1px solid #dddddd;
-  padding: 4px; /* Verringere die Padding-Größe */
+  padding: 5px; /* Verringere die Padding-Größe */
   font-size: 14px; /* Reduziere die Schriftgröße */
   text-align: center;
   width: 12%;
@@ -257,7 +250,7 @@ export default class BridgeheadOverview extends Vue {
   font-size: xx-large;
 }
 .green {
-  background-color: green;
+  background-color: #009a00;
 }
 
 .red {
@@ -265,10 +258,39 @@ export default class BridgeheadOverview extends Vue {
 }
 
 .accepted-state {
-  background-color: green;
+  background-color: #009a00;
 }
 
 .selected {
   background-color: lightblue;
+}
+.state_circle {
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+}
+.state_circle.created {
+  border: 1px solid #cccccc;
+  background-color: #f2f2f2;
+}
+.state_circle.request_changes, .state_circle.not_found, .state_circle.inactive {
+  border: 1px solid #cccccc;
+  background-color: #fff200;
+}
+.state_circle.accepted, .state_circle.with_data, .state_circle.finished {
+  border: 1px solid #cccccc;
+  background-color: #009a00;
+}
+.state_circle.rejected, .state_circle.error {
+  border: 1px solid #cccccc;
+  background-color: red;
+}
+.state_circle.not_available {
+  border: 1px solid #cccccc;
+  background-color: #bbbbbb;
+}
+.states-circle-container {
+  display: flex;
+  justify-content: center;
 }
 </style>

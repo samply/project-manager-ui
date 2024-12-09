@@ -8,7 +8,7 @@ import {
   Module,
   Project,
   ProjectManagerContext,
-  ProjectManagerBackendService
+  ProjectManagerBackendService, Explanation
 } from "@/services/projectManagerBackendService";
 
 interface User {
@@ -22,13 +22,19 @@ interface User {
 }
 
 @Options({
-  name: "UserInput"
+  name: "UserInput",
+  computed: {
+    Action() {
+      return Action
+    }
+  }
 })
 export default class UserInput extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly project!: Project;
   @Prop() readonly bridgeheads!: Bridgehead[];
+  @Prop() readonly todos?: Explanation;
 
   partialEmail = '';
   selectedBridgehead: Bridgehead | undefined = undefined;
@@ -122,12 +128,28 @@ export default class UserInput extends Vue {
     this.showSuggestions = false;
   }
 
+  async copyToClipboard(email: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(email);
+      alert('Email copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy email:', error);
+      alert('Failed to copy email. Please try again.');
+    }
+  }
+
 }
 </script>
 
 <template>
-  <div v-if="isActive">
-    <span style="font-weight: bold">Invite user to this stage:</span>
+  <div v-if="isActive" class="button-group-box">
+      <div class="button-group-label">
+        Invite user to this stage:
+        <span style="display: flex;flex-direction: row-reverse">
+          <span v-if="todos?.get(Action.SET_DEVELOPER_USER_ACTION)" class="todo-circle-small">#{{todos?.get(Action.SET_DEVELOPER_USER_ACTION).number}}</span>
+        </span>
+      </div>
+
     <div class="user-input-container">
       <select v-model="selectedBridgehead" class="form-select">
         <option v-for="bridgehead in bridgeheads" :key="bridgehead.bridgehead" :value="bridgehead"
@@ -144,27 +166,44 @@ export default class UserInput extends Vue {
         <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite">Invite</button>
       </div>
     </div>
-    <br>
   </div>
-  <div v-if="currentUsers.length > 0">
-    <span>Current users involved in this stage:</span>
-    <table class="user-table">
-      <thead>
-      <tr>
-        <th>Email</th>
-        <th v-if="bridgeheads.length > 0">Bridgehead</th>
-        <th>State</th> <!-- New column for user state -->
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-for="(user, index) in currentUsers" :key="index">
-        <td>{{ user.email }}</td>
-        <td v-if="bridgeheads.length > 0">{{ user.humanReadableBridgehead }}</td>
-        <td>{{ user.projectState }}</td> <!-- Display user's state in the second column -->
-      </tr>
-      </tbody>
-    </table>
-    <br>
+
+  <div v-if="currentUsers.length > 0" class="button-group-box">
+    <div class="button-group-label">Current users involved in this stage:</div>
+    <div style="margin: 10px 20px 10px 0">
+      <table class="user-table">
+        <thead>
+        <tr>
+          <th>User</th>
+          <th v-if="bridgeheads.length > 0">Bridgehead</th>
+          <th>State</th> <!-- New column for user state -->
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="(user, index) in currentUsers" :key="index">
+          <td>
+            <!-- Check if firstName and lastName are available -->
+            <template v-if="user.firstName && user.lastName">
+              {{ user.firstName }} {{ user.lastName }}
+              <button
+                  class="btn btn-link p-0 ms-2"
+                  @click="copyToClipboard(user.email)"
+                  title="Copy email">
+                <i class="bi bi-clipboard"></i>
+              </button>
+            </template>
+
+            <!-- If no firstName or lastName, show just the email -->
+            <template v-else>
+              {{ user.email }}
+            </template>
+          </td>
+          <td v-if="bridgeheads.length > 0">{{ user.humanReadableBridgehead }}</td>
+          <td>{{ user.projectState }}</td> <!-- Display user's state in the second column -->
+        </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -173,7 +212,7 @@ export default class UserInput extends Vue {
 .user-input-container {
   position: relative;
   display: flex;
-  margin: 10px 0 30px 0;
+  margin: 10px 14px 20px 0;
 }
 .form-select {
   width: 300px;
@@ -212,5 +251,39 @@ export default class UserInput extends Vue {
 .user-table th {
   background-color: #f2f2f2;
 }
-
+.button-group-box {
+  border: 1px solid lightgrey;
+  border-radius: 5px;
+  padding: 0 0 18px 18px;
+  width: fit-content;
+  display: inline-block;
+  margin-right: 2%;
+  margin-top: 1%;
+}
+.button-group-label {
+  border: 1px solid lightgrey;
+  border-radius: 5px;
+  width: fit-content;
+  padding: 4px 10px;
+  position: relative;
+  top: -18px;
+  background-color: #95c8dc;
+  font-weight: bold;
+  margin-right: 15px;
+  display: flex;
+}
+.todo-circle-small {
+  min-width: 22px;
+  height: 22px;
+  background-color:gold;
+  color: #000;
+  border: 1px solid black;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  font-weight: bold;
+  font-size: 9pt;
+}
 </style>

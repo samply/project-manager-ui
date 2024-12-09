@@ -3,7 +3,7 @@ import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
-  EditProjectParam,
+  EditProjectParam, Explanation,
   Module,
   ProjectManagerBackendService,
   ProjectManagerContext
@@ -29,6 +29,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly uploadAction!: Action;
   @Prop() readonly downloadAction!: Action;
   @Prop() readonly downloadModule!: Module;
+  @Prop() readonly todos?: Explanation;
   @Prop() readonly existsFile!: boolean;
   @Prop({
     type: Function,
@@ -46,6 +47,7 @@ export default class ProjectFieldRow extends Vue {
   showInputs = false;
   newValue = "";
   newKey = "";
+  toggleHumanReadable = true;
 
   @Watch("projectManagerBackendService", {immediate: true, deep: true})
   onProjetManagerBackendServiceChange(
@@ -278,13 +280,29 @@ export default class ProjectFieldRow extends Vue {
     return 'other-button-container';
   }
 
+  async copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Query copied to clipboard!");
+    } catch ($e) {
+      console.log($e)
+      alert("Query copied to clipboard!");
+    }
+  }
+
 }
 </script>
 
 <template>
   <tr>
     <!-- FIRST COLUMN: HEADERS -->
-    <td class="bold-text thinner-column" style="background-color: #f2f2f2;">{{ fieldKey }}</td>
+    <td class="bold-text thinner-column" style="background-color: #f2f2f2;">
+      <div style="display: flex">
+        <span>{{ fieldKey }}</span>
+        <span v-if="todos?.get(this.uploadAction)" class="todo-circle-small">#{{todos?.get(this.uploadAction)?.number}}</span>
+        <span v-if="todos?.get(this.downloadAction) && this.existsFile" class="todo-circle-small">#{{todos?.get(this.downloadAction)?.number}}</span>
+      </div>
+    </td>
 
     <!-- SECOND COLUMN: CONTENT -->
     <td style="width:80%">
@@ -398,7 +416,13 @@ export default class ProjectFieldRow extends Vue {
             </div>
           </div>
           <div v-else-if="tempFieldValue && tempFieldValue.length > 0" style="width:70%">
-            <div class="field-value truncate">{{ tempFieldValue[0] }}</div>
+            <template v-if="isQuery()">
+              <div class="field-value clickable" :class="{ truncate: toggleHumanReadable }"
+                   @click="toggleHumanReadable = !toggleHumanReadable" v-b-tooltip.hover :title="tempFieldValue[0]">{{ tempFieldValue[0] }}</div>
+            </template>
+            <template v-else>
+              <div class="field-value truncate">{{ tempFieldValue[0] }}</div>
+            </template>
           </div>
         </div>
       </div>
@@ -411,8 +435,7 @@ export default class ProjectFieldRow extends Vue {
             <button v-if="isFieldValueEditable() && (redirectUrl === null || isBridgeheads())" class="btn btn-primary"
                     data-toggle="tooltip"
                     data-placement="top" title="Edit"
-                    style="background:none; border:none; color:black"><i class="bi bi-pencil me-2"
-                                                                         @click="editField"></i>
+                    style="background:none; border:none; color:black"><i class="bi bi-pencil me-2" @click="editField"></i>
             </button>
             <DownloadButton v-if="existsFile && downloadAction" :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
@@ -421,8 +444,12 @@ export default class ProjectFieldRow extends Vue {
         <button v-if="isFieldValueEditable() && redirectUrl !== null" class="btn btn-primary"
                 data-toggle="tooltip"
                 data-placement="top" title="CCP Explorer"
-                style="background:none; border:none; color:black"><i class="bi bi-arrow-right-circle"
-                                                                     @click="redirectToURL"></i>
+                style="background:none; border:none; color:black"><i class="bi bi-arrow-right-circle" @click="redirectToURL"></i>
+        </button>
+        <button v-if="isQuery() && fieldValue[0]" class="btn btn-primary"
+                data-toggle="tooltip"
+                data-placement="top" title="Copy Query to Clipboard"
+                style="background:none; border:none; color:black"><i class="bi bi-copy" @click="copyToClipboard(editedValue[1])"></i>
         </button>
       </span>
     </td>
@@ -468,7 +495,7 @@ export default class ProjectFieldRow extends Vue {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: calc(50 * 1ch); /* 1ch is the width of one character */
+  max-width: calc(60 * 1ch); /* 1ch is the width of one character */
 }
 
 .query-edit-field {
@@ -538,5 +565,21 @@ export default class ProjectFieldRow extends Vue {
   width: 25%;
   gap: 3%;
 }
-
+.todo-circle-small {
+  min-width: 22px;
+  height: 22px;
+  background-color:gold;
+  color: #000;
+  border: 1px solid black;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  font-weight: bold;
+  font-size: 9pt;
+}
+.clickable {
+  cursor: pointer;
+}
 </style>

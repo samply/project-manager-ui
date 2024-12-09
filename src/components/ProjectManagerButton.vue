@@ -21,6 +21,7 @@ export default class ProjectManagerButton extends Vue {
   @Prop() readonly text2?: string;
   @Prop() readonly buttonClass!: string;
   @Prop() readonly withMessage!: boolean;
+  @Prop() readonly visibility?: boolean;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly params: Map<string, string> = new Map();
   @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
@@ -42,7 +43,8 @@ export default class ProjectManagerButton extends Vue {
 
   updateIsActive() {
     this.inputText = '';
-    this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result)
+    const visibility = this.visibility !== undefined ? this.visibility : true
+    this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result && visibility)
   }
 
   async handleButtonClick() {

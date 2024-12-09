@@ -131,7 +131,8 @@ export enum EditProjectParam {
 
 export interface Project {
     code: string | null;
-    creatorEmail: string | null;
+    creatorEmail: string | null | undefined;
+    creatorName: string | null;
     createdAt: Date | null;
     expiresAt: Date | null;
     archivedAt: Date | null;
@@ -184,13 +185,46 @@ export interface ProjectDocument {
     label: string;
     type: string;
 }
-
+export interface ProjectField {
+    fieldKey: string
+    editProjectParam: EditProjectParam[]
+    fieldValue: string[]
+    redirectUrl?: string
+    isEditable: boolean
+    possibleValues?: string[]
+    uploadAction?: Action
+    downloadAction?: Action
+    downloadModule?: Module
+    todos?: Explanation
+    existFile?: boolean
+    transformForSending?: (input: string) => string
+    visibilityCondition: boolean
+}
 export interface DataShieldProjectStatus {
     project_id: string;
     bk: string;
     project_status: string;
 }
 
+export interface ActionModule {
+    module: Module
+    action: Action
+}
+export interface ActionButtonGroup {
+    label: string
+    button: ActionButton[]
+}
+export interface ActionButton {
+    module: Module
+    action: Action
+    //context: ProjectManagerContext
+    refreshContextCallFunction: () => void
+    text: string
+    withMessage: boolean
+    cssClass: string
+    //pmbs: ProjectManagerBackendService
+    visibilityCondition?: boolean
+}
 function getActionFromString(value: string): Action | undefined {
     return Object.values(Action).find((action) => action === value) as Action | undefined;
 }
@@ -207,6 +241,7 @@ export type ActionMetadata = {
     explanation: string;
 }
 
+export type Explanation = Map<string, {number: number, message: string}>
 function jsonToActionMetadata(json: any): ActionMetadata | undefined {
     const methodMapping: Record<string, HttpMethod> = {
         'GET': HttpMethod.GET,
@@ -348,10 +383,17 @@ export class ProjectManagerBackendService {
         return explanations;
     }
 
-    public getExplanations(): string[]{
-        return this.explanations;
+    public getExplanations(): Explanation {
+        const map = new Map()
+        let index = 1;
+        this.activeModuleActionsMetadataWithExplanation?.forEach((module) => {
+            module.forEach((action, key) => {
+                map.set(key, {number: index, message: action.explanation})
+                index++;
+            })
+        })
+        return map
     }
-
 
     private parseModuleActions(data: any): Map<Module, Map<Action, ActionMetadata>> {
         const resultMap = new Map<Module, Map<Action, ActionMetadata>>();

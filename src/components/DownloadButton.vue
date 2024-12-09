@@ -19,6 +19,7 @@ export default class DownloadButton extends Vue {
   @Prop() readonly action!: Action;
   @Prop() readonly filename: string | undefined = undefined;
   @Prop() readonly iconClass: string | undefined = undefined;
+  @Prop() readonly buttonClass: string | undefined = undefined;
   @Prop() readonly text: string | undefined = undefined;
   isActive = false;
 
@@ -49,16 +50,16 @@ export default class DownloadButton extends Vue {
 
 <template>
   <div v-if="isActive" style="display:flex; flex-flow: row">
-    <span v-if="text" style=" margin-bottom: 1%; padding-right:10px"><strong>{{ text }}</strong></span>
+    <span v-if="text" style=" margin-bottom: 1%; padding-right:10px"><strong>{{ text }}:</strong></span>
 
     <div v-if="!iconClass">
-      <button data-toggle="tooltip" data-placement="top" title="Download" @click="downloadFile" class="btn btn-primary" style="background:none; border:black; color:black;  ">
+      <button data-toggle="tooltip" data-placement="top" title="Download" @click="downloadFile" class="btn btn-primary" :class="buttonClass" style="background:none; border:black; color:black;">
         <i class="bi bi-download"></i>
       </button>
     </div>
 
     <div v-if="iconClass">
-      <button data-toggle="tooltip" data-placement="top" title="Download" @click="downloadFile" class="btn btn-primary" style="background:none; border:none; color:black">
+      <button data-toggle="tooltip" data-placement="top" title="Download" @click="downloadFile" class="btn btn-primary" :class="buttonClass" style="background:none; border:none; color:black;">
         <i :class="iconClass" class="bi bi-download"></i>
       </button>
     </div>
@@ -67,5 +68,8 @@ export default class DownloadButton extends Vue {
 </template>
 
 <style scoped>
+.download-button {
+  padding: 0 10px;
+}
 
 </style>

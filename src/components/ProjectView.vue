@@ -891,7 +891,7 @@ export default defineComponent({
             {
               module: Module.EXPORT_MODULE, action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
               refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: "Send Query to Bridgehead", withMessage: false, cssClass: "btn btn-primary mr-2",
+              text: (this.activeBridgehead?.queryState === 'FINISHED') ? "Resend Query to Bridgehead" : "Send Query to Bridgehead", withMessage: false, cssClass: "btn btn-primary mr-2",
               visibilityCondition: this.canShowBridgeheadAdminButtons()
             },
             {

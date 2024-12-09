@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2024-12-06]
+## [1.1.0 - 2024-12-09]
 ### Added
 - Dockerfile
 - Single Spa
@@ -75,6 +75,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Creator Name and creator email button
 - User name and email button
 - Hide project rows in dialog if they are not editable except on summary
+- Resend query to bridgehead button
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

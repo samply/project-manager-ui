@@ -84,10 +84,10 @@
                 <td>
                   {{ project?.creatorName }}
                   <button
-                      class="btn btn-link p-0 ms-2"
+                      class="btn btn-link p-0 ms-2 copy-button"
                       @click="copyToClipboard(project?.creatorEmail)"
                       title="Copy email">
-                    <i class="bi bi-clipboard"></i>
+                    <i class="bi bi-copy"></i>
                   </button>
                 </td>
                 <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
@@ -1236,5 +1236,10 @@ export default defineComponent({
 .state_circle.rejected, .state_circle.error {
   border: 1px solid #cccccc;
   background-color: red;
+}
+.copy-button {
+  background: none;
+  border: none;
+  color: black;
 }
 </style>

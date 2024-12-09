@@ -283,6 +283,7 @@ export default class ProjectFieldRow extends Vue {
   async copyToClipboard(text: string) {
     try {
       await navigator.clipboard.writeText(text);
+      alert("Query copied to clipboard!");
     } catch ($e) {
       console.log($e)
     }

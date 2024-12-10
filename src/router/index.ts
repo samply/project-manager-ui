@@ -29,6 +29,7 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/project-view',
         name: 'ProjectView',
+        meta: {title: 'Data Science Orchestrator'},
         component: ProjectView,
         props: (route) => ({
             projectCode: route.query['project-code'] // Accessing the project-code query parameter
@@ -37,6 +38,7 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/',
         name: 'ProjectDashboard',
+        meta: {title: 'Data Science Orchestrator'},
         component: ProjectDashboard,
     }
 ];
@@ -44,6 +46,10 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
     history: createWebHistory(),
     routes,
+});
+router.beforeEach((to, from, next) => {
+    document.title = to.meta.title as string;
+    next();
 });
 
 export default router;

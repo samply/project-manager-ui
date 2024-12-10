@@ -220,7 +220,12 @@ export default class ProjectFieldRow extends Vue {
   isBridgeheads(): boolean {
     return this.includesEditProjectParam(EditProjectParam.BRIDGEHEADS);
   }
-
+  isConfiguration(): boolean {
+    return this.includesEditProjectParam(EditProjectParam.PROJECT_CONFIGURATION);
+  }
+  isConfigType(): boolean {
+    return this.includesEditProjectParam(EditProjectParam.PROJECT_TYPE);
+  }
   isEnvironmentVariables(): boolean {
     return this.includesEditProjectParam(EditProjectParam.QUERY_CONTEXT);
   }
@@ -376,6 +381,21 @@ export default class ProjectFieldRow extends Vue {
                     </button>
                   </div>
                 </div>
+                <div v-else-if="isConfiguration || isConfigType" style="width: 100%;">
+                  <div style="display: flex">
+                    <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
+                         :class="{ 'active': editedValue[0] === step }">
+                      <button class="config-button"
+                              @click="editedValue[0]=step;"
+                              style="background: none; border:none; color: black; padding:0; height:100%;min-width: fit-content">
+                        <div style="height:100%; display: flex; flex-direction: column;">
+                          <div class="config-box-header">{{ step }}</div>
+                          <div class="config-box-body">{{ step }}</div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
                 <div v-else-if="isSelection()" style="width: 70%;">
                   <select v-model="editedValue[0]" class="form-select" style="width: 100%;">
                     <option v-for="value in possibleValues" :key="value" :value="value">{{ value }}</option>
@@ -429,7 +449,7 @@ export default class ProjectFieldRow extends Vue {
     </td>
 
     <!-- THIRD COLUMN: ACTIONS -->
-    <td>
+    <td style="min-width: 50px">
       <span style="display:flex; flex-flow:row; align-items: baseline">
           <div style="display:inline-flex; flex-flow:row; align-items: baseline">
             <button v-if="isFieldValueEditable() && (redirectUrl === null || isBridgeheads())" class="btn btn-primary"
@@ -581,5 +601,44 @@ export default class ProjectFieldRow extends Vue {
 }
 .clickable {
   cursor: pointer;
+}
+.config-box {
+  width: fit-content;
+  text-align: center;
+  margin: 10px;
+  border: 1px solid #0000001E;
+  border-radius: 10px;
+  min-width: 135px;
+  font-size: 14px;
+}
+.config-box.active {
+  box-shadow: 0px 2px 1px -1px rgba(149, 200, 220, 0.8),0px 1px 1px 0px rgba(149, 200, 220, 0.5),0px 1px 3px 0px rgba(149, 200, 220, 0.3);
+}
+.config-box-header {
+  background-color: #95c8dc;
+  padding: 10px 15px;
+  border-radius: 10px 10px 0 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height:62px;
+}
+.config-box.active .config-box-header {
+  color: white;
+  background-color: #007bff;
+  font-weight: bold;
+}
+.config-box-body {
+  padding: 15px;
+  height:100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  border-radius: 0 0 10px 10px;
+}
+.config-button {
+  color: black;
+  width: 100%;
 }
 </style>

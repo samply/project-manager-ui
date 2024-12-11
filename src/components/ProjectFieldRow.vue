@@ -4,7 +4,7 @@ import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   EditProjectParam, Explanation,
-  Module,
+  Module, Project,
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
@@ -24,6 +24,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
   @Prop({default: null}) readonly redirectUrl!: string | null;
   @Prop() readonly possibleValues!: string[];
+  @Prop() readonly configurations?: Map<string, Project>;
   @Prop() readonly isEditable!: boolean;
   @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
   @Prop() readonly uploadAction!: Action;
@@ -310,10 +311,10 @@ export default class ProjectFieldRow extends Vue {
           <div style="height:100%; display: flex; flex-direction: column;">
             <div class="config-box-header">{{ step }}</div>
             <div class="config-box-body">
-              <table style="text-align: left; font-size: smaller;border-spacing: 3px">
-                <tr><td style="font-weight: bold">Type: </td><td>{{step === 'CUSTOM' ? 'Custom' : ''}}</td></tr>
-                <tr><td style="font-weight: bold">Output Format: </td><td>{{step === 'CUSTOM' ? 'Custom' : ''}}</td></tr>
-                <tr><td style="font-weight: bold">Template ID: </td><td>{{step === 'CUSTOM' ? 'Custom' : ''}}</td></tr>
+              <table class="config-box-table">
+                <tr><td style="font-weight: bold">Type: </td><td class="truncate-15" v-b-tooltip.hover :title="step === 'CUSTOM' ? 'Custom' : configurations.get(step).type">{{step === 'CUSTOM' ? 'CUSTOM' : configurations.get(step).type}}</td></tr>
+                <tr><td style="font-weight: bold">Output Format: </td><td class="truncate-15" v-b-tooltip.hover :title="step === 'CUSTOM' ? 'Custom' : configurations.get(step).outputFormat">{{step === 'CUSTOM' ? 'CUSTOM' : configurations.get(step).outputFormat}}</td></tr>
+                <tr><td style="font-weight: bold">Template ID: </td><td class="truncate-15" v-b-tooltip.hover :title="step === 'CUSTOM' ? 'Custom' : configurations.get(step).templateId">{{step === 'CUSTOM' ? 'CUSTOM' : configurations.get(step).templateId}}</td></tr>
               </table>
             </div>
           </div>
@@ -321,7 +322,7 @@ export default class ProjectFieldRow extends Vue {
       </div>
     </div>
   </div>
-  <div v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === 1" style="height:210px"></div>
+  <div v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === 1" style="height:250px"></div>
   <tr v-else>
     <!-- FIRST COLUMN: HEADERS -->
     <td class="bold-text thinner-column" style="background-color: #f2f2f2; max-width: 170px;">
@@ -445,11 +446,11 @@ export default class ProjectFieldRow extends Vue {
           </div>
           <div v-else-if="tempFieldValue && tempFieldValue.length > 0" style="width:70%">
             <template v-if="isQuery()">
-              <div class="field-value clickable" :class="{ truncate: toggleHumanReadable }"
+              <div class="field-value clickable" :class="{ 'truncate-60': toggleHumanReadable }"
                    @click="toggleHumanReadable = !toggleHumanReadable" v-b-tooltip.hover :title="tempFieldValue[0]">{{ tempFieldValue[0] }}</div>
             </template>
             <template v-else>
-              <div class="field-value truncate">{{ tempFieldValue[0] }}</div>
+              <div class="field-value truncate-60">{{ tempFieldValue[0] }}</div>
             </template>
           </div>
         </div>
@@ -519,7 +520,13 @@ export default class ProjectFieldRow extends Vue {
   background-color: #4caf50;
 }
 
-.truncate {
+.truncate-15 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(15 * 1ch); /* 1ch is the width of one character */
+}
+.truncate-60 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -616,7 +623,7 @@ export default class ProjectFieldRow extends Vue {
   margin: 10px;
   border: 1px solid #0000001E;
   border-radius: 10px;
-  min-width: 150px;
+  min-width: 170px;
   font-size: 14px;
 }
 .config-box.active {
@@ -637,7 +644,7 @@ export default class ProjectFieldRow extends Vue {
   font-weight: bold;
 }
 .config-box-body {
-  padding: 15px;
+  padding: 10px;
   height:100%;
   display: flex;
   justify-content: center;
@@ -645,6 +652,12 @@ export default class ProjectFieldRow extends Vue {
   background-color: white;
   border-radius: 0 0 10px 10px;
 }
+.config-box-table {
+  text-align: left;
+  font-size: smaller;
+  border-spacing: 3px;
+}
+
 .config-button {
   color: black;
   width: 100%;

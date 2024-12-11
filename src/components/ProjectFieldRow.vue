@@ -31,6 +31,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly downloadModule!: Module;
   @Prop() readonly todos?: Explanation;
   @Prop() readonly existsFile!: boolean;
+  @Prop() readonly draftDialogCurrentStep!: number;
   @Prop({
     type: Function,
     default: (input: string): string => input
@@ -224,7 +225,7 @@ export default class ProjectFieldRow extends Vue {
     return this.includesEditProjectParam(EditProjectParam.PROJECT_CONFIGURATION);
   }
   isConfigType(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.PROJECT_TYPE);
+    return this.includesEditProjectParam(EditProjectParam.PROJECT_TYPE) && this.fieldKey === 'Type';
   }
   isEnvironmentVariables(): boolean {
     return this.includesEditProjectParam(EditProjectParam.QUERY_CONTEXT);
@@ -299,10 +300,32 @@ export default class ProjectFieldRow extends Vue {
 </script>
 
 <template>
-  <tr>
+  <div v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === 1" style="position:absolute;margin:20px 0">
+    <div style="display: flex;padding-left:0;max-width:200px">
+      <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
+           :class="{ 'active': editedValue[0] === step }">
+        <button class="config-button"
+                @click="editedValue[0]=step;saveField()"
+                style="background: none; border:none; color: black; padding:0; height:100%;min-width: fit-content">
+          <div style="height:100%; display: flex; flex-direction: column;">
+            <div class="config-box-header">{{ step }}</div>
+            <div class="config-box-body">
+              <table style="text-align: left; font-size: smaller;border-spacing: 3px">
+                <tr><td style="font-weight: bold">Type: </td><td>{{step === 'CUSTOM' ? 'Custom' : ''}}</td></tr>
+                <tr><td style="font-weight: bold">Output Format: </td><td>{{step === 'CUSTOM' ? 'Custom' : ''}}</td></tr>
+                <tr><td style="font-weight: bold">Template ID: </td><td>{{step === 'CUSTOM' ? 'Custom' : ''}}</td></tr>
+              </table>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === 1" style="height:210px"></div>
+  <tr v-else>
     <!-- FIRST COLUMN: HEADERS -->
-    <td class="bold-text thinner-column" style="background-color: #f2f2f2;">
-      <div style="display: flex">
+    <td class="bold-text thinner-column" style="background-color: #f2f2f2; max-width: 170px;">
+      <div style="display: flex;">
         <span>{{ fieldKey }}</span>
         <span v-if="todos?.get(this.uploadAction)" class="todo-circle-small">#{{todos?.get(this.uploadAction)?.number}}</span>
         <span v-if="todos?.get(this.downloadAction) && this.existsFile" class="todo-circle-small">#{{todos?.get(this.downloadAction)?.number}}</span>
@@ -379,21 +402,6 @@ export default class ProjectFieldRow extends Vue {
                     <button class="btn btn-primary" @click="addEnvVariable"><i style="font-size: 18px"
                                                                                class="bi bi-check"></i>
                     </button>
-                  </div>
-                </div>
-                <div v-else-if="isConfiguration || isConfigType" style="width: 100%;">
-                  <div style="display: flex">
-                    <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
-                         :class="{ 'active': editedValue[0] === step }">
-                      <button class="config-button"
-                              @click="editedValue[0]=step;"
-                              style="background: none; border:none; color: black; padding:0; height:100%;min-width: fit-content">
-                        <div style="height:100%; display: flex; flex-direction: column;">
-                          <div class="config-box-header">{{ step }}</div>
-                          <div class="config-box-body">{{ step }}</div>
-                        </div>
-                      </button>
-                    </div>
                   </div>
                 </div>
                 <div v-else-if="isSelection()" style="width: 70%;">
@@ -608,7 +616,7 @@ export default class ProjectFieldRow extends Vue {
   margin: 10px;
   border: 1px solid #0000001E;
   border-radius: 10px;
-  min-width: 135px;
+  min-width: 150px;
   font-size: 14px;
 }
 .config-box.active {

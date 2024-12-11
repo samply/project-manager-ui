@@ -196,6 +196,7 @@
                                  :download-module="projectField.downloadModule"
                                  :todos="getExtendedExplanations()"
                                  :call-refreh-context="refreshContext"
+                                 :draft-dialog-current-step="this.existsDraftDialog ? this.draftDialogCurrentStep : NaN"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
 
               </template>
@@ -1204,9 +1205,9 @@ export default defineComponent({
 }
 .notification-button {
   background: none;
-  border:none;
-  color:#007bff;
-  width:auto;
+  border: none;
+  color: #007bff;
+  width: auto;
   font-size: x-large;
   padding: 0 0 0 15px;
 }

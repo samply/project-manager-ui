@@ -198,6 +198,7 @@ export interface ProjectField {
     todos?: Explanation
     existFile?: boolean
     transformForSending?: (input: string) => string
+    draftDialogCurrentStep: number
     visibilityCondition: boolean
 }
 export interface DataShieldProjectStatus {

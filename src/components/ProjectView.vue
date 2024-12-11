@@ -601,10 +601,26 @@ export default defineComponent({
 
     getExtendedExplanations(): Explanations {
       const extendedExplanations = new Map(this.explanations)
+      if (this.existsApplicationForm){
+        this.removeActionExplanation(Action.UPLOAD_APPLICATION_FORM_ACTION, extendedExplanations);
+      } else {
+        this.removeActionExplanation(Action.DOWNLOAD_APPLICATION_FORM_ACTION, extendedExplanations);
+      }
+      if (this.existsVotum){
+        this.removeActionExplanation(Action.UPLOAD_VOTUM_ACTION, extendedExplanations);
+      } else {
+        this.removeActionExplanation(Action.DOWNLOAD_VOTUM_ACTION, extendedExplanations);
+      }
+      if (this.existsScript){
+        this.removeActionExplanation(Action.UPLOAD_SCRIPT_ACTION, extendedExplanations);
+      } else{
+        this.removeActionExplanation(Action.DOWNLOAD_SCRIPT_ACTION, extendedExplanations);
+      }
+      if (!this.existsAuthenticationScript){
+        this.removeActionExplanation(Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION, extendedExplanations);
+      }
+
       if (this.existsDraftDialog) {
-        if (this.existsApplicationForm){
-          this.removeActionExplanation(Action.UPLOAD_APPLICATION_FORM_ACTION, extendedExplanations);
-        }
         const count = extendedExplanations.size + 1;
         if (this.draftDialogCurrentStep === 0) { // Project
           extendedExplanations.set(count.toString(), {

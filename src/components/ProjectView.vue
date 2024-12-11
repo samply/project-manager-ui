@@ -727,7 +727,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Application form",
-          fieldValue: [this.applicationFormDescription.label],
+          fieldValue: [this.applicationFormDescription.label, this.applicationFormDescription.originalFilename],
           isEditable: true,
           existFile: this.existsApplicationForm,
           uploadAction: this.Action.UPLOAD_APPLICATION_FORM_ACTION,
@@ -737,7 +737,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Votum",
-          fieldValue: [this.votumDescription.label],
+          fieldValue: [this.votumDescription.label, this.votumDescription.originalFilename],
           isEditable: true,
           existFile: this.existsVotum,
           uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
@@ -747,7 +747,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Script",
-          fieldValue: [this.scriptDescription.label],
+          fieldValue: [this.scriptDescription.label, this.scriptDescription.originalFilename],
           isEditable: true,
           existFile: this.existsScript,
           uploadAction: this.Action.UPLOAD_SCRIPT_ACTION,

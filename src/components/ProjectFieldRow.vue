@@ -449,6 +449,12 @@ export default class ProjectFieldRow extends Vue {
               <div class="field-value clickable" :class="{ 'truncate-60': toggleHumanReadable }"
                    @click="toggleHumanReadable = !toggleHumanReadable" v-b-tooltip.hover :title="tempFieldValue[0]">{{ tempFieldValue[0] }}</div>
             </template>
+            <template v-else-if="uploadAction">
+              <table style="border-spacing: 5px">
+                <tr v-if="tempFieldValue[0]?.length > 0"><td style="font-weight: bold;padding-right:10px">Label: </td><td class="truncate-60">{{ tempFieldValue[0] }}</td></tr>
+                <tr v-if="tempFieldValue[1]?.length > 0"><td style="font-weight: bold;padding-right:10px">File name: </td><td class="truncate-60">{{ tempFieldValue[1] }}</td></tr>
+              </table>
+              </template>
             <template v-else>
               <div class="field-value truncate-60">{{ tempFieldValue[0] }}</div>
             </template>
@@ -458,7 +464,7 @@ export default class ProjectFieldRow extends Vue {
     </td>
 
     <!-- THIRD COLUMN: ACTIONS -->
-    <td style="min-width: 50px">
+    <td style="min-width: 50px;vertical-align: middle">
       <span style="display:flex; flex-flow:row; align-items: baseline">
           <div style="display:inline-flex; flex-flow:row; align-items: baseline">
             <button v-if="isFieldValueEditable() && (redirectUrl === null || isBridgeheads())" class="btn btn-primary"

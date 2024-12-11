@@ -125,7 +125,7 @@
           <div v-if="!existsDraftDialog || draftDialogCurrentStep==4" class="inviteUser">
             <UserInput :project="project" :context="context"
                        :bridgeheads="visibleBridgeheads"
-                       :todos="getExtendedExplanations()"
+                       :todos="extendedExplanations"
                        :project-manager-backend-service="projectManagerBackendService"/>
           </div>
         </div>
@@ -194,7 +194,7 @@
                                  :upload-action="projectField.uploadAction"
                                  :download-action="projectField.downloadAction"
                                  :download-module="projectField.downloadModule"
-                                 :todos="getExtendedExplanations()"
+                                 :todos="extendedExplanations"
                                  :call-refreh-context="refreshContext"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
 
@@ -255,8 +255,8 @@
       </div>
 
 
-      <div v-if="getExtendedExplanations().size" class="notification-box">
-        <div v-for="(explanation, index) in Array.from(getExtendedExplanations().values())" :key="index" class="card mb-3">
+      <div v-if="extendedExplanations.size" class="notification-box">
+        <div v-for="(explanation, index) in Array.from(extendedExplanations.values())" :key="index" class="card mb-3">
           <div class="card-body">
             <div style="display:flex; flex-flow: row;">
               <div class="todo-circle"><span>#{{ explanation.number }}</span></div>
@@ -381,6 +381,7 @@ export default defineComponent({
       existInvitedUsers: false,
       areExportFilesTransferredToResearchEnvironment: false,
       explanations: new Map() as Explanations,
+      extendedExplanations: new Map() as Explanations,
       buttonGroups: [] as boolean[],
       isButtonGroupVisible: false,
       actionButtons: [] as ActionButtonGroup[]
@@ -397,6 +398,9 @@ export default defineComponent({
     },
     project(newValue, oldValue) {
       this.initializeProjectRelatedData();
+    },
+    draftDialogCurrentStep(newValue, oldValue){
+      this.extendedExplanations = this.fetchExtendedExplanations();
     }
   },
   mounted() {
@@ -481,7 +485,6 @@ export default defineComponent({
     initializeProjectRelatedData() {
       if (this.project) {
         this.existsDraftDialog = (this.project.state === 'DRAFT' && keycloak.getEmail() === this.project.creatorEmail);
-        this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), (result: Bridgehead[]) => {
           this.bridgeheads = result;
         });
@@ -523,7 +526,8 @@ export default defineComponent({
         this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, new Map(), 'projectRoles');
         this.initializeData(Module.USER_MODULE, Action.EXIST_INVITED_USERS_ACTION, new Map(), 'existInvitedUsers');
         this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment');
-
+        this.explanations = this.projectManagerBackendService.fetchExplanations();
+        this.extendedExplanations = this.fetchExtendedExplanations();
         setTimeout(() => {
           this.getButtons()
           this.checkButtonVisibility()
@@ -599,7 +603,7 @@ export default defineComponent({
       return visibleProjectStates
     },
 
-    getExtendedExplanations(): Explanations {
+    fetchExtendedExplanations(): Explanations {
       const extendedExplanations = new Map(this.explanations)
       if (this.existsApplicationForm){
         this.removeActionExplanation(Action.UPLOAD_APPLICATION_FORM_ACTION, extendedExplanations);
@@ -615,6 +619,9 @@ export default defineComponent({
         this.removeActionExplanation(Action.UPLOAD_SCRIPT_ACTION, extendedExplanations);
       } else{
         this.removeActionExplanation(Action.DOWNLOAD_SCRIPT_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.ACCEPT_SCRIPT_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.REJECT_SCRIPT_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.REQUEST_SCRIPT_CHANGES_ACTION, extendedExplanations);
       }
       if (!this.existsAuthenticationScript){
         this.removeActionExplanation(Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION, extendedExplanations);

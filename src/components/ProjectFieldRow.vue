@@ -3,7 +3,7 @@ import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
-  EditProjectParam, Explanation,
+  EditProjectParam, Explanations,
   Module,
   ProjectManagerBackendService,
   ProjectManagerContext
@@ -29,7 +29,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly uploadAction!: Action;
   @Prop() readonly downloadAction!: Action;
   @Prop() readonly downloadModule!: Module;
-  @Prop() readonly todos?: Explanation;
+  @Prop() readonly todos?: Explanations;
   @Prop() readonly existsFile!: boolean;
   @Prop({
     type: Function,

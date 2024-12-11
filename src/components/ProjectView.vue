@@ -287,7 +287,7 @@ import {
   Bridgehead,
   DataShieldProjectStatus,
   EditProjectParam,
-  Explanation,
+  Explanations,
   Module,
   Notification,
   Project,
@@ -380,7 +380,7 @@ export default defineComponent({
       votumLabel: "",
       existInvitedUsers: false,
       areExportFilesTransferredToResearchEnvironment: false,
-      explanations: new Map() as Explanation,
+      explanations: new Map() as Explanations,
       buttonGroups: [] as boolean[],
       isButtonGroupVisible: false,
       actionButtons: [] as ActionButtonGroup[]
@@ -480,7 +480,8 @@ export default defineComponent({
 
     initializeProjectRelatedData() {
       if (this.project) {
-        this.explanations = this.projectManagerBackendService.getExplanations();
+        this.existsDraftDialog = (this.project.state === 'DRAFT' && keycloak.getEmail() === this.project.creatorEmail);
+        this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), (result: Bridgehead[]) => {
           this.bridgeheads = result;
         });
@@ -522,7 +523,6 @@ export default defineComponent({
         this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, new Map(), 'projectRoles');
         this.initializeData(Module.USER_MODULE, Action.EXIST_INVITED_USERS_ACTION, new Map(), 'existInvitedUsers');
         this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment');
-        this.existsDraftDialog = (this.project.state === 'DRAFT' && keycloak.getEmail() === this.project.creatorEmail);
 
         setTimeout(() => {
           this.getButtons()
@@ -599,7 +599,7 @@ export default defineComponent({
       return visibleProjectStates
     },
 
-    getExtendedExplanations(): Explanation {
+    getExtendedExplanations(): Explanations {
       const extendedExplanations = new Map(this.explanations)
       if (this.existsDraftDialog) {
         const count = this.explanations.size + 1

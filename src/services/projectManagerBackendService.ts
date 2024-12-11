@@ -1,9 +1,8 @@
 //projectManagerBackendService.ts
-import axios, {AxiosRequestConfig, AxiosResponse, AxiosInstance} from 'axios';
+import axios, {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
 import axiosRetry from "axios-retry";
 import KeyCloakService from "@/services/keycloak";
 import {getConfig} from "@/services/configLoader";
-
 
 
 const bridgeheadParam = 'bridgehead'
@@ -117,7 +116,7 @@ export enum Action {
 }
 
 export enum EditProjectParam {
-    PROJECT_CONFIGURATION= "project-configuration",
+    PROJECT_CONFIGURATION = "project-configuration",
     QUERY_FORMAT = "query-format",
     BRIDGEHEADS = "bridgeheads",
     LABEL = "label",
@@ -185,6 +184,7 @@ export interface ProjectDocument {
     label: string;
     type: string;
 }
+
 export interface ProjectField {
     fieldKey: string
     editProjectParam: EditProjectParam[]
@@ -195,11 +195,12 @@ export interface ProjectField {
     uploadAction?: Action
     downloadAction?: Action
     downloadModule?: Module
-    todos?: Explanation
+    todos?: Explanations
     existFile?: boolean
     transformForSending?: (input: string) => string
     visibilityCondition: boolean
 }
+
 export interface DataShieldProjectStatus {
     project_id: string;
     bk: string;
@@ -210,10 +211,12 @@ export interface ActionModule {
     module: Module
     action: Action
 }
+
 export interface ActionButtonGroup {
     label: string
     button: ActionButton[]
 }
+
 export interface ActionButton {
     module: Module
     action: Action
@@ -225,6 +228,7 @@ export interface ActionButton {
     //pmbs: ProjectManagerBackendService
     visibilityCondition?: boolean
 }
+
 function getActionFromString(value: string): Action | undefined {
     return Object.values(Action).find((action) => action === value) as Action | undefined;
 }
@@ -239,9 +243,11 @@ export type ActionMetadata = {
     method: HttpMethod;
     params: string [];
     explanation: string;
+    priority: number;
 }
 
-export type Explanation = Map<string, {number: number, message: string}>
+export type Explanations = Map<string, { number: number, message: string }>
+
 function jsonToActionMetadata(json: any): ActionMetadata | undefined {
     const methodMapping: Record<string, HttpMethod> = {
         'GET': HttpMethod.GET,
@@ -256,7 +262,8 @@ function jsonToActionMetadata(json: any): ActionMetadata | undefined {
         path: json.path,
         method: method,
         params: json.params || [],  // assuming params is an array, provide a default value if it's optional
-        explanation: json.explanation
+        explanation: json.explanation,
+        priority: json.priority
     };
 }
 
@@ -307,12 +314,10 @@ const createAxiosInstance = async (): Promise<AxiosInstance> => {
 };
 
 
-
 export class ProjectManagerBackendService {
     private axiosInstance?: AxiosInstance;
     private activeModuleActionsMetadata?: Map<Module, Map<Action, ActionMetadata>> | undefined;
     private activeModuleActionsMetadataWithExplanation?: Map<Module, Map<Action, ActionMetadata>> | undefined;
-    private explanations: string[] = [];
     private initializedPromise: Promise<void> | undefined;
 
     constructor(context: ProjectManagerContext, site: Site) {
@@ -338,7 +343,6 @@ export class ProjectManagerBackendService {
             const response = await this.doHttpRequest(HttpMethod.GET, actionsPath, params);
             this.activeModuleActionsMetadata = this.parseModuleActions(response.data);
             this.activeModuleActionsMetadataWithExplanation = this.filterModuleActionsWithExplanations(this.activeModuleActionsMetadata);
-            this.explanations = this.fetchAllExplanations(this.activeModuleActionsMetadataWithExplanation);
         } catch (error) {
             console.error("Error fetching active module actions:", error);
             throw error;
@@ -369,30 +373,20 @@ export class ProjectManagerBackendService {
         return filteredActions;
     }
 
-    private fetchAllExplanations(actions: Map<Module, Map<Action, ActionMetadata>>): string[] {
-        const explanations: string[] = [];
-
-        for (const [, actionMap] of actions) {
-            for (const [, metadata] of actionMap) {
-                if (metadata.explanation) {
-                    explanations.push(metadata.explanation);
-                }
-            }
-        }
-
-        return explanations;
-    }
-
-    public getExplanations(): Explanation {
-        const map = new Map()
-        let index = 1;
+    public fetchExplanations(): Explanations {
+        const result = new Map()
+        const temporal: any[] = [];
         this.activeModuleActionsMetadataWithExplanation?.forEach((module) => {
-            module.forEach((action, key) => {
-                map.set(key, {number: index, message: action.explanation})
-                index++;
-            })
+            module.forEach((action, key) =>
+                temporal.push({message: action.explanation, action: key, priority: action.priority}))
         })
-        return map
+        temporal.sort((a, b) => b.priority - a.priority);
+        let index = 1;
+        temporal.forEach(item => {
+            result.set(item.action, {number: index, message: item.message});
+            index++;
+        })
+        return result
     }
 
     private parseModuleActions(data: any): Map<Module, Map<Action, ActionMetadata>> {
@@ -524,7 +518,7 @@ export class ProjectManagerBackendService {
             return this.axiosInstance.post(endpoint, data, config);
         }
 
-        axiosRetry(this.axiosInstance, { retries: 2, retryDelay: axiosRetry.exponentialDelay });
+        axiosRetry(this.axiosInstance, {retries: 2, retryDelay: axiosRetry.exponentialDelay});
 
         switch (httpMethod) {
             case HttpMethod.GET:

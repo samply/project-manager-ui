@@ -8,7 +8,7 @@ import {
   Module,
   Project,
   ProjectManagerContext,
-  ProjectManagerBackendService, Explanation
+  ProjectManagerBackendService, Explanations
 } from "@/services/projectManagerBackendService";
 
 interface User {
@@ -34,7 +34,7 @@ export default class UserInput extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly project!: Project;
   @Prop() readonly bridgeheads!: Bridgehead[];
-  @Prop() readonly todos?: Explanation;
+  @Prop() readonly todos?: Explanations;
 
   partialEmail = '';
   selectedBridgehead: Bridgehead | undefined = undefined;

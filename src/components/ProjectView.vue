@@ -602,7 +602,10 @@ export default defineComponent({
     getExtendedExplanations(): Explanations {
       const extendedExplanations = new Map(this.explanations)
       if (this.existsDraftDialog) {
-        const count = this.explanations.size + 1
+        if (this.existsApplicationForm){
+          this.removeActionExplanation(Action.UPLOAD_APPLICATION_FORM_ACTION, extendedExplanations);
+        }
+        const count = extendedExplanations.size + 1;
         if (this.draftDialogCurrentStep === 0) { // Project
           extendedExplanations.set(count.toString(), {
             number: count,
@@ -631,6 +634,19 @@ export default defineComponent({
         }
       }
       return extendedExplanations
+    },
+
+    removeActionExplanation(action: Action, explanations: Explanations) {
+      const explanation = explanations.get(action);
+      if (explanation){
+        const explanationNumber = explanation.number;
+        explanations.delete(action);
+        explanations.forEach((value, key) => {
+          if (value.number > explanationNumber){
+            value.number--;
+          }
+        })
+      }
     },
 
     getExplanationsForButtonGroup(buttonGroup: ActionButtonGroup): number[] {

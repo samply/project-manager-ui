@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2024-12-11]
+## [1.1.0 - 2024-12-12]
 ### Added
 - Dockerfile
 - Single Spa
@@ -77,6 +77,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Hide project rows in dialog if they are not editable except on summary
 - Resend query to bridgehead button
 - Explanation priority
+- Cancel Reject button
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

@@ -57,14 +57,23 @@ export default class ProjectManagerButton extends Vue {
   toggleVisibility() {
     this.hideInput = !this.hideInput;
   }
+
+  handleCancelClick() {
+    // Reset state to initial defaults
+    this.inputText = "";
+    this.checkboxChecked = this.action2 ? true : false;
+    this.hideInput = true;
+  }
+
 }
 </script>
 
 <template>
   <span v-if="isActive && withMessage" class="pm-button">
     <input type="text" v-model="inputText" :class="{ 'hidden': hideInput }" class="inputfield" placeholder="optional message">
-    <button :class="[buttonClass, {'hidden': !hideInput }]" @click="toggleVisibility">{{ text }}</button>
-    <button :class="[buttonClass, {'hidden': hideInput }]" @click="handleButtonClick">Submit</button>
+    <button :class="[buttonClass, 'button-spacing', {'hidden': !hideInput }]" @click="toggleVisibility">{{ text }}</button>
+    <button :class="[buttonClass, 'button-spacing', {'hidden': hideInput }]" @click="handleButtonClick">Submit</button>
+    <button v-if="!hideInput" :class="[buttonClass, 'button-spacing']" @click="handleCancelClick">Cancel</button>
     <label v-if="action2" class="pm-checkbox">
       <input type="checkbox" v-model="checkboxChecked" />
       {{ text2 }}
@@ -96,4 +105,15 @@ export default class ProjectManagerButton extends Vue {
   border: 1px solid #dee2e6;
   border-radius: 5px;
 }
+
+/* Add spacing for buttons */
+.button-spacing {
+  margin-right: 10px; /* Adds consistent space */
+}
+
+/* Remove margin for the last button */
+.pm-button button:last-of-type {
+  margin-right: 0; /* Keeps layout clean */
+}
+
 </style>

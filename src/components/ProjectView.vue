@@ -823,7 +823,7 @@ export default defineComponent({
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Archive", withMessage: false, cssClass: "btn btn-secondary"
+              text: "Archive", withMessage: true, cssClass: "btn btn-secondary"
             }
           ] as ActionButton[]
         },

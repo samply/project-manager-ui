@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Resend query to bridgehead button
 - Explanation priority
 - Cancel Reject button
+- Archive button requires message too
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

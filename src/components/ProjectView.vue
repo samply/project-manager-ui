@@ -401,6 +401,18 @@ export default defineComponent({
     },
     draftDialogCurrentStep(newValue, oldValue){
       this.extendedExplanations = this.fetchExtendedExplanations();
+    },
+    existsScript(newValue, oldValue){
+      this.extendedExplanations = this.fetchExtendedExplanations();
+    },
+    existsAuthenticationScript(newValue, oldValue){
+      this.extendedExplanations = this.fetchExtendedExplanations();
+    },
+    existsApplicationForm(newValue, oldValue){
+      this.extendedExplanations = this.fetchExtendedExplanations();
+    },
+    existsVotum(newValue, oldValue){
+      this.extendedExplanations = this.fetchExtendedExplanations();
     }
   },
   mounted() {

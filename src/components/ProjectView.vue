@@ -413,6 +413,9 @@ export default defineComponent({
     },
     existsVotum(newValue, oldValue){
       this.extendedExplanations = this.fetchExtendedExplanations();
+    },
+    existInvitedUsers(newValue, oldValue){
+      this.extendedExplanations = this.fetchExtendedExplanations();
     }
   },
   mounted() {
@@ -637,6 +640,14 @@ export default defineComponent({
       }
       if (!this.existsAuthenticationScript){
         this.removeActionExplanation(Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION, extendedExplanations);
+      }
+      if (!this.canShowBridgeheadAdminButtons()){
+        this.removeActionExplanation(Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.REJECT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.REQUEST_CHANGES_IN_PROJECT_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION, extendedExplanations);
       }
 
       if (this.existsDraftDialog) {

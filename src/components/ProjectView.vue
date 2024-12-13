@@ -54,7 +54,7 @@
                                 :bridgeheads="visibleBridgeheads"
                                 :activeBridgehead="activeBridgehead"/>
             <br/>
-            <table class="table table-bordered" v-if="project?.state !== 'DRAFT' ">
+            <table class="table table-bordered table-overview" v-if="project?.state !== 'DRAFT' ">
               <thead>
               <tr>
                 <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
@@ -81,7 +81,7 @@
                 <td v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')">
                   {{ areExportFilesTransferredToResearchEnvironment }}
                 </td>
-                <td>
+                <td style="display:flex;">
                   {{ project?.creatorName }}
                   <button
                       class="btn btn-link p-0 ms-2 copy-button"
@@ -494,7 +494,7 @@ export default defineComponent({
         this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, new Map(), 'outputFormats');
         this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), (result: any) => {
           this.projectConfigurations = new Map(Object.entries(result));
-          this.projectConfigurationLabels = Array.from(this.projectConfigurations?.keys())
+          this.projectConfigurationLabels = Array.from(this.projectConfigurations?.keys());
         });
         this.initializeCurrentProjectConfiguration();
         if (this.project.type) {
@@ -1216,6 +1216,9 @@ export default defineComponent({
   width: auto;
   font-size: x-large;
   padding: 0 0 0 15px;
+}
+.table-overview td {
+  vertical-align: middle;
 }
 .state_circle {
   border-radius: 50%;

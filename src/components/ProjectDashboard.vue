@@ -9,9 +9,6 @@
           <button @click="toggleNotification" class="btn btn-dark notification-button"
                   style="padding-right:2%; background:none; border:none; color:#007bff"><i style="font-size: x-large"
               class="bi bi-chat-right-text-fill"></i></button>
-          <button style="padding-right:2%; padding-top:0; background:none; border:none; color:black" class="btn btn-primary">
-            Filter by Status
-          </button>
         </div>
       </div>
 
@@ -23,7 +20,13 @@
             <th scope="col">Title</th>
             <th scope="col">Creator</th>
             <th scope="col">Date</th>
-            <th scope="col">Status</th>
+            <th scope="col" style="display: flex;justify-content: space-between;align-items: baseline">
+              <span>Status</span><span class="filter">
+                <select v-model="selectedState" class="form-select" @change="changeState()">
+                  <option v-for="value in projectStates" :key="value" :value="value">{{ value }}</option>
+                </select>
+              </span>
+            </th>
             <th scope="col">Action</th>
           </tr>
           </thead>
@@ -98,7 +101,9 @@ export default defineComponent({
       notifications: [],
       showNotification: false,
       currentPage: 1,
-      totalPages: 1
+      totalPages: 1,
+      projectStates: ["ALL"],
+      selectedState: "ALL"
     };
   },
   watch: {
@@ -112,6 +117,7 @@ export default defineComponent({
   },
   mounted() {
     this.fetchProjects();
+    this.fetchProjectStates();
   },
   methods: {
     toggleExpand(item: { isExpanded: boolean }) {
@@ -130,6 +136,9 @@ export default defineComponent({
         });
       }
     },
+    changeState() {
+      this.fetchProjects()
+    },
 
     convertDate(date: Date) {
       return format(date, 'yyyy-MM-dd HH:mm')
@@ -140,6 +149,7 @@ export default defineComponent({
     async fetchProjects() {
       try {
         const params = new Map<string, string>();
+        if (this.selectedState !== "ALL") { params.set('project-state', this.selectedState)}
         params.set('page', (this.currentPage - 1).toString());
         params.set('page-size', '10');
         params.set('site', Site.PROJECT_DASHBOARD_SITE);
@@ -170,7 +180,19 @@ export default defineComponent({
         throw error;
       }
     },
-
+    async fetchProjectStates() {
+      try {
+        const response = await this.projectManagerBackendService.fetchData(
+            Module.PROJECT_BRIDGEHEAD_MODULE,
+            Action.FETCH_PROJECT_STATES_ACTION,
+            this.context,
+            new Map()
+        ).then(projectStates => this.projectStates.push(...projectStates));
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+        throw error;
+      }
+    },
     firstPage() {this.currentPage = 1;this.fetchProjects()},
     previousPage() {if (this.currentPage > 1) {this.currentPage--} this.fetchProjects()},
     nextPage() {if (this.currentPage < this.totalPages) {this.currentPage++} this.fetchProjects()},
@@ -278,11 +300,20 @@ export default defineComponent({
 }
 th {
   background-color: #95c8dc!important;
+  vertical-align: middle;
 }
 
 .copy-button {
   background: none;
   border: none;
   color: black;
+}
+.form-select {
+  background-color: transparent;
+  border:none;
+  height:35px;
+  font-size: smaller;
+  text-align: left;
+  cursor: pointer;
 }
 </style>

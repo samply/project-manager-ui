@@ -244,6 +244,13 @@ export type ActionMetadata = {
 }
 
 export type Explanation = Map<string, {number: number, message: string}>
+
+export enum configLabel {
+    type = 'Type',
+    outputFormat = 'Output Format',
+    templateId = 'Template ID'
+}
+
 function jsonToActionMetadata(json: any): ActionMetadata | undefined {
     const methodMapping: Record<string, HttpMethod> = {
         'GET': HttpMethod.GET,

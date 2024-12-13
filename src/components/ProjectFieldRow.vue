@@ -2,7 +2,7 @@
 import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
-  Action,
+  Action, configLabel,
   EditProjectParam, Explanation,
   Module, Project,
   ProjectManagerBackendService,
@@ -13,6 +13,11 @@ import UploadButton from "@/components/UploadButton.vue";
 
 @Options({
   name: "ProjectFieldRow",
+  computed: {
+    configLabel() {
+      return configLabel
+    }
+  },
   components: {DownloadButton, UploadButton}
 })
 export default class ProjectFieldRow extends Vue {
@@ -312,9 +317,13 @@ export default class ProjectFieldRow extends Vue {
             <div class="config-box-header">{{ step }}</div>
             <div class="config-box-body">
               <table class="config-box-table">
-                <tr><td style="font-weight: bold">Type: </td><td class="truncate-15" v-b-tooltip.hover :title="step === 'CUSTOM' ? 'Custom' : configurations.get(step).type">{{step === 'CUSTOM' ? 'CUSTOM' : configurations.get(step).type}}</td></tr>
-                <tr><td style="font-weight: bold">Output Format: </td><td class="truncate-15" v-b-tooltip.hover :title="step === 'CUSTOM' ? 'Custom' : configurations.get(step).outputFormat">{{step === 'CUSTOM' ? 'CUSTOM' : configurations.get(step).outputFormat}}</td></tr>
-                <tr><td style="font-weight: bold">Template ID: </td><td class="truncate-15" v-b-tooltip.hover :title="step === 'CUSTOM' ? 'Custom' : configurations.get(step).templateId">{{step === 'CUSTOM' ? 'CUSTOM' : configurations.get(step).templateId}}</td></tr>
+                <tr v-for="(param, key) in configurations.get(step)" :key="key">
+                  <template v-if="key !=='customConfig'">
+                    <td style="font-weight: bold">{{configLabel[key]}}:</td>
+                    <td class="truncate-15" v-b-tooltip.hover :title="param">{{param}}</td>
+                  </template>
+                  <td v-else style="font-weight: bold">CUSTOM</td>
+                </tr>
               </table>
             </div>
           </div>
@@ -322,7 +331,7 @@ export default class ProjectFieldRow extends Vue {
       </div>
     </div>
   </div>
-  <div v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === 1" style="height:250px"></div>
+  <div v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === 1" style="height:260px"></div>
   <tr v-else>
     <!-- FIRST COLUMN: HEADERS -->
     <td class="bold-text thinner-column" style="background-color: #f2f2f2; max-width: 170px;">

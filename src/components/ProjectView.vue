@@ -297,7 +297,8 @@ import {
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,
-  Site, User
+  Site,
+  User
 } from "@/services/projectManagerBackendService";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import {format} from "date-fns";
@@ -649,13 +650,18 @@ export default defineComponent({
       if (!this.existsAuthenticationScript){
         this.removeActionExplanation(Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION, extendedExplanations);
       }
-      if (!this.canShowBridgeheadAdminButtons()){
+      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) && !this.canShowBridgeheadAdminButtons()){
         this.removeActionExplanation(Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.REJECT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.REQUEST_CHANGES_IN_PROJECT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.SET_DEVELOPER_USER_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.SET_PILOT_USER_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
+      }
+      if (!this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN)){
         this.removeActionExplanation(Action.SET_DEVELOPER_USER_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SET_PILOT_USER_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);

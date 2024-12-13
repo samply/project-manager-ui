@@ -97,6 +97,7 @@ export enum Action {
     FETCH_DATASHIELD_STATUS_ACTION = "FETCH_DATASHIELD_STATUS",
     FETCH_USERS_FOR_AUTOCOMPLETE_ACTION = "FETCH_USERS_FOR_AUTOCOMPLETE",
     FETCH_PROJECT_USERS_ACTION = "FETCH_PROJECT_USERS",
+    FETCH_CURRENT_USER_ACTION = "FETCH_CURRENT_USER",
     FETCH_PROJECT_CONFIGURATIONS_ACTION = "FETCH_PROJECT_CONFIGURATIONS",
     FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION = "FETCH_CURRENT_PROJECT_CONFIGURATION",
     EXISTS_AUTHENTICATION_SCRIPT_ACTION = "EXISTS_AUTHENTICATION_SCRIPT",
@@ -164,6 +165,17 @@ export interface Notification {
     read: boolean | null;
 }
 
+export interface User {
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    bridgehead: string;
+    humanReadableBridgehead: string | null;
+    projectRole: string;
+    projectState: string;
+}
+
+
 export interface Bridgehead {
     projectCode: string;
     bridgehead: string;
@@ -220,12 +232,10 @@ export interface ActionButtonGroup {
 export interface ActionButton {
     module: Module
     action: Action
-    //context: ProjectManagerContext
     refreshContextCallFunction: () => void
     text: string
     withMessage: boolean
     cssClass: string
-    //pmbs: ProjectManagerBackendService
     visibilityCondition?: boolean
 }
 

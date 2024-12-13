@@ -8,18 +8,8 @@ import {
   Module,
   Project,
   ProjectManagerContext,
-  ProjectManagerBackendService, Explanations
+  ProjectManagerBackendService, Explanations, User
 } from "@/services/projectManagerBackendService";
-
-interface User {
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  bridgehead: string;
-  humanReadableBridgehead: string | null;
-  projectRole: string;
-  projectState: string;
-}
 
 @Options({
   name: "UserInput",
@@ -56,7 +46,7 @@ export default class UserInput extends Vue {
   }
 
   updateIsActive() {
-    this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_ACTION).then(isActive => {
+    this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, this.fetchAction()).then(isActive => {
       this.isActive = isActive;
       if (isActive) {
         this.updateCurrentUsers();
@@ -75,17 +65,21 @@ export default class UserInput extends Vue {
     this.autocomplete(this.partialEmail);
   }
 
-  handleSave(): void {
+  fetchAction(): Action{
     let action: Action = Action.SET_DEVELOPER_USER_ACTION;
     if (this.project.state === 'PILOT') {
       action = Action.SET_PILOT_USER_ACTION;
     } else if (this.project.state === 'FINAL') {
       action = Action.SET_FINAL_USER_ACTION;
     }
+    return action;
+  }
+
+  handleSave(): void {
     const params = new Map<string, string>();
     params.set('email', this.partialEmail);
     const context = (this.selectedBridgehead) ? this.createContext(this.selectedBridgehead) : this.context;
-    this.projectManagerBackendService.fetchData(Module.USER_MODULE, action, context, params).then(result => {
+    this.projectManagerBackendService.fetchData(Module.USER_MODULE, this.fetchAction(), context, params).then(result => {
       this.partialEmail = '';
       this.updateCurrentUsers();
     });

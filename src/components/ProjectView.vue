@@ -61,6 +61,7 @@
                 <th class="status-table-header" scope="col">Project Phase</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access Control</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Query Status</th>
+                <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">{{(project?.type == 'DATASHIELD' && project.state != 'FINAL') ? 'Script' : 'Results'}} Acceptance</th>
                 <th class="status-table-header" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD Status</th>
                 <th class="status-table-header"
                     v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')" scope="col">Files in Coder
@@ -77,6 +78,7 @@
                 <td>{{ project ? project.state : '' }}</td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.state"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.queryState"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser"><div  class="state_circle" :class="currentUser?.projectState.toLowerCase()" v-b-tooltip.hover :title="currentUser.projectState"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus"><div  class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatus?.project_status"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')">
                   {{ areExportFilesTransferredToResearchEnvironment }}
@@ -295,7 +297,8 @@ import {
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,
-  Site
+  Site,
+  User
 } from "@/services/projectManagerBackendService";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import {format} from "date-fns";
@@ -384,7 +387,8 @@ export default defineComponent({
       extendedExplanations: new Map() as Explanations,
       buttonGroups: [] as boolean[],
       isButtonGroupVisible: false,
-      actionButtons: [] as ActionButtonGroup[]
+      actionButtons: [] as ActionButtonGroup[],
+      currentUser: undefined as User | undefined
     };
   },
   watch: {
@@ -396,8 +400,8 @@ export default defineComponent({
       this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
       this.fetchProject();
     },
-    project(newValue, oldValue) {
-      this.initializeProjectRelatedData();
+    async project(newValue, oldValue) {
+      await this.initializeProjectRelatedData();
     },
     draftDialogCurrentStep(newValue, oldValue){
       this.extendedExplanations = this.fetchExtendedExplanations();
@@ -415,6 +419,9 @@ export default defineComponent({
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
     existInvitedUsers(newValue, oldValue){
+      this.extendedExplanations = this.fetchExtendedExplanations();
+    },
+    currentUser(newValue, oldValue){
       this.extendedExplanations = this.fetchExtendedExplanations();
     }
   },
@@ -497,61 +504,62 @@ export default defineComponent({
       return format(date, 'yyyy-MM-dd HH:mm')
     },
 
-    initializeProjectRelatedData() {
+    async initializeProjectRelatedData() {
       if (this.project) {
         this.existsDraftDialog = (this.project.state === 'DRAFT' && keycloak.getEmail() === this.project.creatorEmail);
-        this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), (result: Bridgehead[]) => {
-          this.bridgeheads = result;
-        });
-        this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_STATES_ACTION, new Map(), 'projectStates');
-        this.fetchNotifications();
-        this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, new Map(), 'projectTypes');
-        this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, new Map(), 'queryFormats');
-        this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, new Map(), 'outputFormats');
-        this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), 'projectConfigurations');
-        this.initializeCurrentProjectConfiguration();
+        await Promise.all([
+          this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), async (result: Bridgehead[]) => {
+            this.bridgeheads = result;
+          }),
+          this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_STATES_ACTION, new Map(), 'projectStates'),
+          this.initializeData(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(), 'notifications'),
+          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, new Map(), 'projectTypes'),
+          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, new Map(), 'queryFormats'),
+          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, new Map(), 'outputFormats'),
+          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), 'projectConfigurations'),
+          this.initializeCurrentProjectConfiguration(),
+          this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads'),
+          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, new Map(), async (result: boolean) => {
+            this.existsVotum = result;
+            if (this.existsVotum) {
+              this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_LABEL_ACTION, new Map(), 'votumLabel');
+            }
+          }),
+          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), async (result: boolean) => {
+            this.existsApplicationForm = result;
+            if (this.existsApplicationForm) {
+              this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_APPLICATION_FORM_LABEL_ACTION, new Map(), 'applicationFormLabel');
+            }
+          }),
+          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), async (result: boolean) => {
+            this.existsScript = result;
+            if (this.existsScript) {
+              this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_SCRIPT_LABEL_ACTION, new Map(), 'scriptLabel');
+            }
+          }),
+          this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript'),
+          this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, new Map(), 'projectRoles'),
+          this.initializeData(Module.USER_MODULE, Action.EXIST_INVITED_USERS_ACTION, new Map(), 'existInvitedUsers'),
+          this.initializeData(Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, new Map(), 'currentUser'),
+          this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment')
+        ]);
         if (this.project.type) {
           const params = new Map<string, string>;
           params.set('project-type', this.project.type)
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, params, 'exporterTemplateIds');
+          await this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, params, 'exporterTemplateIds');
           if (this.project.type == 'DATASHIELD') {
-            this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, new Map(), 'dataShieldStatus');
+            await this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, new Map(), 'dataShieldStatus');
           }
         }
-        this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads');
-        this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, new Map(), (result: boolean) => {
-          this.existsVotum = result;
-          if (this.existsVotum) {
-            this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_LABEL_ACTION, new Map(), 'votumLabel');
-          }
-        });
-        this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), (result: boolean) => {
-          this.existsApplicationForm = result;
-          if (this.existsApplicationForm) {
-            this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_APPLICATION_FORM_LABEL_ACTION, new Map(), 'applicationFormLabel');
-          }
-        })
-        this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), (result: boolean) => {
-          this.existsScript = result;
-          if (this.existsScript) {
-            this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_SCRIPT_LABEL_ACTION, new Map(), 'scriptLabel');
-          }
-        });
-        this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript');
-        this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, new Map(), 'projectRoles');
-        this.initializeData(Module.USER_MODULE, Action.EXIST_INVITED_USERS_ACTION, new Map(), 'existInvitedUsers');
-        this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment');
+        this.fetchButtons()
+        this.checkButtonVisibility()
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
-        setTimeout(() => {
-          this.getButtons()
-          this.checkButtonVisibility()
-        }, 1000);
       }
     },
 
     initializeCurrentProjectConfiguration() {
-      this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION, new Map(), (result: Record<string, Project>) => {
+      this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION, new Map(), async (result: Record<string, Project>) => {
         if (result) {
           const currentProjectConfigKeys = Object.keys(result);
           if (currentProjectConfigKeys && currentProjectConfigKeys.length > 0) {
@@ -572,22 +580,20 @@ export default defineComponent({
       return this.currentProjectConfiguration === 'CUSTOM' || !this.currentProjectConfigurationFields.includes(field);
     },
 
-    fetchNotifications() {
-      this.initializeData(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(), 'notifications');
+    async initializeData(module: Module, action: Action, params: Map<string, unknown>, dataVariable: string): Promise<any> {
+      return this.initializeDataInCallback(module, action, params, async (result) => {
+        (this.$data as any)[dataVariable] = result;
+      });
     },
 
-    async initializeData(module: Module, action: Action, params: Map<string, unknown>, dataVariable: string) {
-      this.initializeDataInCallback(module, action, params, (result) => (this.$data as any)[dataVariable] = result)
-    },
 
-    async initializeDataInCallback(module: Module, action: Action, params: Map<string, unknown>, callback: (result: any) => void) {
+    async initializeDataInCallback(module: Module, action: Action, params: Map<string, unknown>, callback: (result: any) => Promise<any>) {
       try {
-        this.projectManagerBackendService.isModuleActionActive(module, action).then(condition => {
-          if (condition) {
-            this.projectManagerBackendService.fetchData(module, action, this.context, params)
-                .then(result => callback(result));
-          }
-        })
+        const condition = await this.projectManagerBackendService.isModuleActionActive(module, action);
+        if (condition) {
+          const result = await this.projectManagerBackendService.fetchData(module, action, this.context, params);
+          await callback(result); // Await the callback to handle any async operations inside it
+        }
       } catch (error) {
         console.error('Error calling action ' + action + ' of module ' + module + ':', error);
         throw error;
@@ -638,16 +644,27 @@ export default defineComponent({
         this.removeActionExplanation(Action.REJECT_SCRIPT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.REQUEST_SCRIPT_CHANGES_ACTION, extendedExplanations);
       }
+      if (!this.currentUser){
+        this.removeActionExplanation(Action.DOWNLOAD_SCRIPT_ACTION, extendedExplanations);
+      }
       if (!this.existsAuthenticationScript){
         this.removeActionExplanation(Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION, extendedExplanations);
       }
-      if (!this.canShowBridgeheadAdminButtons()){
+      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) && !this.canShowBridgeheadAdminButtons()){
         this.removeActionExplanation(Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.REJECT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.REQUEST_CHANGES_IN_PROJECT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.SET_DEVELOPER_USER_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.SET_PILOT_USER_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
+      }
+      if (!this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN)){
+        this.removeActionExplanation(Action.SET_DEVELOPER_USER_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.SET_PILOT_USER_ACTION, extendedExplanations);
+        this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
       }
 
       if (this.existsDraftDialog) {
@@ -822,7 +839,7 @@ export default defineComponent({
       ] as ProjectField[]
     },
 
-    getButtons(): void {
+    fetchButtons(): void {
       this.actionButtons = [
         {
           label: "Project",

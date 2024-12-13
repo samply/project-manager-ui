@@ -104,9 +104,9 @@ export enum Action {
     SET_PROJECT_CONFIGURATION_ACTION = "SET_PROJECT_CONFIGURATION",
     FETCH_VISIBLE_PROJECT_BRIDGEHEADS_ACTION = "FETCH_VISIBLE_PROJECT_BRIDGEHEADS",
     FETCH_PROJECT_ROLES_ACTION = "FETCH_PROJECT_ROLES",
-    FETCH_APPLICATION_FORM_LABEL_ACTION = "FETCH_APPLICATION_FORM_LABEL",
-    FETCH_VOTUM_LABEL_ACTION = "FETCH_VOTUM_LABEL",
-    FETCH_SCRIPT_LABEL_ACTION = "FETCH_SCRIPT_LABEL",
+    FETCH_APPLICATION_FORM_DESCRIPTION_ACTION = "FETCH_APPLICATION_FORM_DESCRIPTION",
+    FETCH_VOTUM_DESCRIPTION_ACTION = "FETCH_VOTUM_DESCRIPTION",
+    FETCH_SCRIPT_DESCRIPTION_ACTION = "FETCH_SCRIPT_DESCRIPTION",
     EXIST_INVITED_USERS_ACTION = "EXIST_INVITED_USERS",
     ACCEPT_PROJECT_ANALYSIS_ACTION = "ACCEPT_PROJECT_ANALYSIS",
     REJECT_PROJECT_ANALYSIS_ACTION = "REJECT_PROJECT_ANALYSIS",
@@ -204,12 +204,14 @@ export interface ProjectField {
     redirectUrl?: string
     isEditable: boolean
     possibleValues?: string[]
+    configurations?: Map<string, Project>
     uploadAction?: Action
     downloadAction?: Action
     downloadModule?: Module
     todos?: Explanations
     existFile?: boolean
     transformForSending?: (input: string) => string
+    draftDialogCurrentStep: number
     visibilityCondition: boolean
 }
 
@@ -257,6 +259,12 @@ export type ActionMetadata = {
 }
 
 export type Explanations = Map<string, { number: number, message: string }>
+
+export enum configLabel {
+    type = 'Type',
+    outputFormat = 'Output Format',
+    templateId = 'Template ID'
+}
 
 function jsonToActionMetadata(json: any): ActionMetadata | undefined {
     const methodMapping: Record<string, HttpMethod> = {

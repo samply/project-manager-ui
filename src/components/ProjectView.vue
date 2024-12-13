@@ -54,7 +54,7 @@
                                 :bridgeheads="visibleBridgeheads"
                                 :activeBridgehead="activeBridgehead"/>
             <br/>
-            <table class="table table-bordered" v-if="project?.state !== 'DRAFT' ">
+            <table class="table table-bordered table-overview" v-if="project?.state !== 'DRAFT' ">
               <thead>
               <tr>
                 <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
@@ -83,7 +83,7 @@
                 <td v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')">
                   {{ areExportFilesTransferredToResearchEnvironment }}
                 </td>
-                <td>
+                <td style="display:flex;">
                   {{ project?.creatorName }}
                   <button
                       class="btn btn-link p-0 ms-2 copy-button"
@@ -192,12 +192,14 @@
                                  :redirect-url="projectField.redirectUrl"
                                  :transform-for-sending="projectField.transformForSending"
                                  :possible-values="projectField.possibleValues"
+                                 :configurations="projectField.configurations"
                                  :exists-file="projectField.existFile"
                                  :upload-action="projectField.uploadAction"
                                  :download-action="projectField.downloadAction"
                                  :download-module="projectField.downloadModule"
                                  :todos="extendedExplanations"
                                  :call-refreh-context="refreshContext"
+                                 :draft-dialog-current-step="this.existsDraftDialog ? this.draftDialogCurrentStep : NaN"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
 
               </template>
@@ -292,7 +294,7 @@ import {
   Explanations,
   Module,
   Notification,
-  Project,
+  Project, ProjectDocument,
   ProjectField,
   ProjectManagerBackendService,
   ProjectManagerContext,
@@ -371,16 +373,17 @@ export default defineComponent({
       existsAuthenticationScript: false,
       existsApplicationForm: false,
       existsScript: false,
-      projectConfigurations: [] as string[],
+      projectConfigurations: new Map() as Map<string, Project>,
+      projectConfigurationLabels: [] as string[],
       currentProjectConfiguration: '',
       currentProjectConfigurationFields: [] as string[],
       projectRoles: [] as ProjectRole[],
       steps: ['Project', 'Type', 'Query', 'Output', 'Summary'], // Die einzelnen Schritte des Steppers
       draftDialogCurrentStep: 0, // Der aktuelle Schritt, beginnend bei 0
       existsDraftDialog: false,
-      applicationFormLabel: "",
-      scriptLabel: "",
-      votumLabel: "",
+      applicationFormDescription: {} as ProjectDocument,
+      scriptDescription: {} as ProjectDocument,
+      votumDescription: {} as ProjectDocument,
       existInvitedUsers: false,
       areExportFilesTransferredToResearchEnvironment: false,
       explanations: new Map() as Explanations,
@@ -516,25 +519,28 @@ export default defineComponent({
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, new Map(), 'projectTypes'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, new Map(), 'queryFormats'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, new Map(), 'outputFormats'),
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), 'projectConfigurations'),
+          this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), (result: any) => {
+            this.projectConfigurations = new Map(Object.entries(result));
+            this.projectConfigurationLabels = Array.from(this.projectConfigurations?.keys());
+          }),
           this.initializeCurrentProjectConfiguration(),
           this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads'),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, new Map(), async (result: boolean) => {
             this.existsVotum = result;
             if (this.existsVotum) {
-              this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_LABEL_ACTION, new Map(), 'votumLabel');
+              this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_DESCRIPTION_ACTION, new Map(), 'votumLabel');
             }
           }),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), async (result: boolean) => {
             this.existsApplicationForm = result;
             if (this.existsApplicationForm) {
-              this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_APPLICATION_FORM_LABEL_ACTION, new Map(), 'applicationFormLabel');
+              this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_APPLICATION_FORM_DESCRIPTION_ACTION, new Map(), 'applicationFormLabel');
             }
           }),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), async (result: boolean) => {
             this.existsScript = result;
             if (this.existsScript) {
-              this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_SCRIPT_LABEL_ACTION, new Map(), 'scriptLabel');
+              this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_SCRIPT_DESCRIPTION_ACTION, new Map(), 'scriptLabel');
             }
           }),
           this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript'),
@@ -746,7 +752,8 @@ export default defineComponent({
           fieldValue: [this.currentProjectConfiguration],
           editProjectParam: [EditProjectParam.PROJECT_CONFIGURATION],
           isEditable: true,
-          possibleValues: this.projectConfigurations,
+          possibleValues: this.projectConfigurationLabels,
+          configurations: this.projectConfigurations,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 1 || this.draftDialogCurrentStep == 4
         },
         {
@@ -799,7 +806,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Application form",
-          fieldValue: [this.applicationFormLabel],
+          fieldValue: [this.applicationFormDescription.label, this.applicationFormDescription.originalFilename],
           isEditable: true,
           existFile: this.existsApplicationForm,
           uploadAction: this.Action.UPLOAD_APPLICATION_FORM_ACTION,
@@ -809,7 +816,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Votum",
-          fieldValue: [this.votumLabel],
+          fieldValue: [this.votumDescription.label, this.votumDescription.originalFilename],
           isEditable: true,
           existFile: this.existsVotum,
           uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
@@ -819,7 +826,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Script",
-          fieldValue: [this.scriptLabel],
+          fieldValue: [this.scriptDescription.label, this.scriptDescription.originalFilename],
           isEditable: true,
           existFile: this.existsScript,
           uploadAction: this.Action.UPLOAD_SCRIPT_ACTION,
@@ -1283,11 +1290,14 @@ export default defineComponent({
 }
 .notification-button {
   background: none;
-  border:none;
-  color:#007bff;
-  width:auto;
+  border: none;
+  color: #007bff;
+  width: auto;
   font-size: x-large;
   padding: 0 0 0 15px;
+}
+.table-overview td {
+  vertical-align: middle;
 }
 .state_circle {
   border-radius: 50%;

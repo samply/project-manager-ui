@@ -2,9 +2,9 @@
 import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
-  Action,
+  Action, configLabel,
   EditProjectParam, Explanations,
-  Module,
+  Module, Project,
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
@@ -13,6 +13,11 @@ import UploadButton from "@/components/UploadButton.vue";
 
 @Options({
   name: "ProjectFieldRow",
+  computed: {
+    configLabel() {
+      return configLabel
+    }
+  },
   components: {DownloadButton, UploadButton}
 })
 export default class ProjectFieldRow extends Vue {
@@ -24,6 +29,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
   @Prop({default: null}) readonly redirectUrl!: string | null;
   @Prop() readonly possibleValues!: string[];
+  @Prop() readonly configurations?: Map<string, Project>;
   @Prop() readonly isEditable!: boolean;
   @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
   @Prop() readonly uploadAction!: Action;
@@ -31,6 +37,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly downloadModule!: Module;
   @Prop() readonly todos?: Explanations;
   @Prop() readonly existsFile!: boolean;
+  @Prop() readonly draftDialogCurrentStep!: number;
   @Prop({
     type: Function,
     default: (input: string): string => input
@@ -220,7 +227,12 @@ export default class ProjectFieldRow extends Vue {
   isBridgeheads(): boolean {
     return this.includesEditProjectParam(EditProjectParam.BRIDGEHEADS);
   }
-
+  isConfiguration(): boolean {
+    return this.includesEditProjectParam(EditProjectParam.PROJECT_CONFIGURATION);
+  }
+  isConfigType(): boolean {
+    return this.includesEditProjectParam(EditProjectParam.PROJECT_TYPE) && this.fieldKey === 'Type';
+  }
   isEnvironmentVariables(): boolean {
     return this.includesEditProjectParam(EditProjectParam.QUERY_CONTEXT);
   }
@@ -294,10 +306,36 @@ export default class ProjectFieldRow extends Vue {
 </script>
 
 <template>
-  <tr>
+  <div v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === 1" style="position:absolute;margin:20px 0">
+    <div style="display: flex;padding-left:0;max-width:200px">
+      <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
+           :class="{ 'active': editedValue[0] === step }">
+        <button class="config-button"
+                @click="editedValue[0]=step;saveField()"
+                style="background: none; border:none; color: black; padding:0; height:100%;min-width: fit-content">
+          <div style="height:100%; display: flex; flex-direction: column;">
+            <div class="config-box-header">{{ step }}</div>
+            <div class="config-box-body">
+              <table class="config-box-table">
+                <tr v-for="(param, key) in configurations.get(step)" :key="key">
+                  <template v-if="key !=='customConfig'">
+                    <td style="font-weight: bold">{{configLabel[key]}}:</td>
+                    <td class="truncate-15" v-b-tooltip.hover :title="param">{{param}}</td>
+                  </template>
+                  <td v-else style="font-weight: bold">CUSTOM</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === 1" style="height:260px"></div>
+  <tr v-else>
     <!-- FIRST COLUMN: HEADERS -->
-    <td class="bold-text thinner-column" style="background-color: #f2f2f2;">
-      <div style="display: flex">
+    <td class="bold-text thinner-column" style="background-color: #f2f2f2; max-width: 170px;">
+      <div style="display: flex;">
         <span>{{ fieldKey }}</span>
         <span v-if="todos?.get(this.uploadAction)" class="todo-circle-small">#{{todos?.get(this.uploadAction)?.number}}</span>
         <span v-if="todos?.get(this.downloadAction) && this.existsFile" class="todo-circle-small">#{{todos?.get(this.downloadAction)?.number}}</span>
@@ -417,11 +455,15 @@ export default class ProjectFieldRow extends Vue {
           </div>
           <div v-else-if="tempFieldValue && tempFieldValue.length > 0" style="width:70%">
             <template v-if="isQuery()">
-              <div class="field-value clickable" :class="{ truncate: toggleHumanReadable }"
+              <div class="field-value clickable" :class="{ 'truncate-60': toggleHumanReadable }"
                    @click="toggleHumanReadable = !toggleHumanReadable" v-b-tooltip.hover :title="tempFieldValue[0]">{{ tempFieldValue[0] }}</div>
             </template>
+            <template v-else-if="uploadAction">
+                <span v-if="tempFieldValue[0]?.length > 0" class="truncate-60">{{ tempFieldValue[0] }}</span>
+                <span v-if="!(tempFieldValue[0]?.length > 0) && tempFieldValue[1]?.length > 0" class="truncate-60">{{ tempFieldValue[1] }}</span>
+              </template>
             <template v-else>
-              <div class="field-value truncate">{{ tempFieldValue[0] }}</div>
+              <div class="field-value truncate-60">{{ tempFieldValue[0] }}</div>
             </template>
           </div>
         </div>
@@ -429,7 +471,7 @@ export default class ProjectFieldRow extends Vue {
     </td>
 
     <!-- THIRD COLUMN: ACTIONS -->
-    <td>
+    <td style="min-width: 50px;vertical-align: middle">
       <span style="display:flex; flex-flow:row; align-items: baseline">
           <div style="display:inline-flex; flex-flow:row; align-items: baseline">
             <button v-if="isFieldValueEditable() && (redirectUrl === null || isBridgeheads())" class="btn btn-primary"
@@ -491,7 +533,13 @@ export default class ProjectFieldRow extends Vue {
   background-color: #4caf50;
 }
 
-.truncate {
+.truncate-15 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(15 * 1ch); /* 1ch is the width of one character */
+}
+.truncate-60 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -581,5 +629,50 @@ export default class ProjectFieldRow extends Vue {
 }
 .clickable {
   cursor: pointer;
+}
+.config-box {
+  width: fit-content;
+  text-align: center;
+  margin: 10px;
+  border: 1px solid #0000001E;
+  border-radius: 10px;
+  min-width: 170px;
+  font-size: 14px;
+}
+.config-box.active {
+  box-shadow: 0px 2px 1px -1px rgba(149, 200, 220, 0.8),0px 1px 1px 0px rgba(149, 200, 220, 0.5),0px 1px 3px 0px rgba(149, 200, 220, 0.3);
+}
+.config-box-header {
+  background-color: #95c8dc;
+  padding: 10px 15px;
+  border-radius: 10px 10px 0 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height:62px;
+}
+.config-box.active .config-box-header {
+  color: white;
+  background-color: #007bff;
+  font-weight: bold;
+}
+.config-box-body {
+  padding: 10px;
+  height:100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  border-radius: 0 0 10px 10px;
+}
+.config-box-table {
+  text-align: left;
+  font-size: smaller;
+  border-spacing: 3px;
+}
+
+.config-button {
+  color: black;
+  width: 100%;
 }
 </style>

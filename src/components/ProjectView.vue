@@ -656,51 +656,72 @@ export default defineComponent({
       if (!this.existsAuthenticationScript){
         this.removeActionExplanation(Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION, extendedExplanations);
       }
-      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) && !this.canShowBridgeheadAdminButtons()){
-        this.removeActionExplanation(Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
-        this.removeActionExplanation(Action.REJECT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
-        this.removeActionExplanation(Action.REQUEST_CHANGES_IN_PROJECT_ACTION, extendedExplanations);
-        this.removeActionExplanation(Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
-        this.removeActionExplanation(Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
-        this.removeActionExplanation(Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION, extendedExplanations);
-        this.removeActionExplanation(Action.SET_DEVELOPER_USER_ACTION, extendedExplanations);
-        this.removeActionExplanation(Action.SET_PILOT_USER_ACTION, extendedExplanations);
-        this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
+      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN)){
+        if (!this.canShowBridgeheadAdminButtons()){
+          this.removeActionExplanation(Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
+          this.removeActionExplanation(Action.REJECT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
+          this.removeActionExplanation(Action.REQUEST_CHANGES_IN_PROJECT_ACTION, extendedExplanations);
+          this.removeActionExplanation(Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
+          this.removeActionExplanation(Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
+          this.removeActionExplanation(Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION, extendedExplanations);
+          this.removeActionExplanation(Action.SET_DEVELOPER_USER_ACTION, extendedExplanations);
+          this.removeActionExplanation(Action.SET_PILOT_USER_ACTION, extendedExplanations);
+          this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
+        } else {
+          if (this.activeBridgehead?.queryState === 'FINISHED'){
+            this.removeActionExplanation(Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
+            this.removeActionExplanation(Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION, extendedExplanations);
+          }
+        }
       }
       if (!this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN)){
         this.removeActionExplanation(Action.SET_DEVELOPER_USER_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SET_PILOT_USER_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
       }
-
+      let count = extendedExplanations.size + 1;
       if (this.existsDraftDialog) {
-        const count = extendedExplanations.size + 1;
         if (this.draftDialogCurrentStep === 0) { // Project
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please provide the general project information to proceed."
           });
+          count ++;
         } else if (this.draftDialogCurrentStep === 1) { // Type
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration."
           });
+          count ++;
         } else if (this.draftDialogCurrentStep === 2) { // Query
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."
           });
+          count ++;
         } else if (this.draftDialogCurrentStep === 3) { // Output
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."
           });
+          count ++;
         } else if (this.draftDialogCurrentStep === 4) { // Summary
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please check all of the fields in the summary and click 'Create' if everything seems OK."
           });
+          count ++;
         }
+      }
+      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) &&
+          this.activeBridgehead?.queryState != 'CREATED' &&
+          this.activeBridgehead?.queryState != 'FINISHED' &&
+          this.activeBridgehead?.queryState != 'ERROR'){
+        extendedExplanations.set(count.toString(), {
+          number: count,
+          message: "Please access the Teiler, review the query, and execute it. Once the execution is complete, return here for further instructions."
+        });
+        count ++;
       }
       return extendedExplanations
     },

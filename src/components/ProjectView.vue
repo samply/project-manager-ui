@@ -259,7 +259,7 @@
       </div>
 
 
-      <div v-if="extendedExplanations.size" class="notification-box">
+      <div v-if="extendedExplanations.size > 0" class="notification-box">
         <div v-for="(explanation, index) in Array.from(extendedExplanations.values())" :key="index" class="card mb-3">
           <div class="card-body">
             <div style="display:flex; flex-flow: row;">

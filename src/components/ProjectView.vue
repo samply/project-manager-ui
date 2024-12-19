@@ -673,8 +673,8 @@ export default defineComponent({
           this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
         } else {
           if (this.activeBridgehead?.queryState === 'FINISHED'){
+            this.removeActionExplanation(Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
             this.removeActionExplanation(Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
-            this.removeActionExplanation(Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION, extendedExplanations);
           }
         }
       }

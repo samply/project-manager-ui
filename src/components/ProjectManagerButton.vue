@@ -22,9 +22,11 @@ export default class ProjectManagerButton extends Vue {
   @Prop() readonly buttonClass!: string;
   @Prop() readonly withMessage!: boolean;
   @Prop() readonly visibility?: boolean;
+  @Prop({ type: Boolean, default: false }) readonly isDisabled!: boolean;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly params: Map<string, string> = new Map();
   @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
+  @Prop({ type: String, default: '' }) readonly tooltipText!: string;
 
   isActive = false;
   inputText = '';
@@ -71,16 +73,20 @@ export default class ProjectManagerButton extends Vue {
 <template>
   <span v-if="isActive && withMessage" class="pm-button">
     <input type="text" v-model="inputText" :class="{ 'hidden': hideInput }" class="inputfield" placeholder="optional message">
-    <button :class="[buttonClass, 'button-spacing', {'hidden': !hideInput }]" @click="toggleVisibility">{{ text }}</button>
-    <button :class="[buttonClass, 'button-spacing', {'hidden': hideInput }]" @click="handleButtonClick">Submit</button>
-    <button v-if="!hideInput" :class="[buttonClass, 'button-spacing']" @click="handleCancelClick">Cancel</button>
+    <div :title="tooltipText">
+      <button :class="[buttonClass, 'button-spacing', {'hidden': !hideInput }]" @click="toggleVisibility" :disabled="isDisabled" >{{ text }}</button>
+    </div>
+    <button :class="[buttonClass, 'button-spacing', {'hidden': hideInput }]" @click="handleButtonClick" :disabled="isDisabled">Submit</button>
+    <button v-if="!hideInput" :class="[buttonClass, 'button-spacing']" @click="handleCancelClick" :disabled="isDisabled" >Cancel</button>
     <label v-if="action2" class="pm-checkbox">
       <input type="checkbox" v-model="checkboxChecked" />
       {{ text2 }}
     </label>
   </span>
   <span v-if="isActive && !withMessage" class="pm-button">
-    <button :class="buttonClass" @click="handleButtonClick">{{ text }}</button>
+    <div :title="tooltipText">
+      <button :class="buttonClass" @click="handleButtonClick" :disabled="isDisabled" >{{ text }}</button>
+    </div>
     <label v-if="action2" class="pm-checkbox">
       <br>
       <input type="checkbox" v-model="checkboxChecked" />

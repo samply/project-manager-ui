@@ -167,6 +167,8 @@
                                             :context="context" :call-refreh-context="refreshContext" text="Create"
                                             button-class="btn btn-success mr-2"
                                             :with-message="false"
+                                            :is-disabled="!hasProjectAllMandatoryFields"
+                                            :tooltip-text="tooltipTextForCreateButton"
                                             :project-manager-backend-service="projectManagerBackendService"/>
                       <ProjectManagerButton v-if="project?.state === 'DRAFT' "
                                             :module="Module.PROJECT_STATE_MODULE"
@@ -391,7 +393,9 @@ export default defineComponent({
       buttonGroups: [] as boolean[],
       isButtonGroupVisible: false,
       actionButtons: [] as ActionButtonGroup[],
-      currentUser: undefined as User | undefined
+      currentUser: undefined as User | undefined,
+      hasProjectAllMandatoryFields: false,
+      tooltipTextForCreateButton: ''
     };
   },
   watch: {
@@ -417,6 +421,8 @@ export default defineComponent({
     },
     existsApplicationForm(newValue, oldValue){
       this.extendedExplanations = this.fetchExtendedExplanations();
+      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
     },
     existsVotum(newValue, oldValue){
       this.extendedExplanations = this.fetchExtendedExplanations();
@@ -500,7 +506,31 @@ export default defineComponent({
       // TODO: Control page size
       params.set('page', '' + 0);
       params.set('page-size', '' + 10);
-      this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_ACTION, params, 'project');
+      await this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_ACTION, params, 'project');
+    },
+
+    fetchIfProjectHasAllMandatoryFields(): boolean {
+      return Boolean(this.project && this.project.label && this.project.query && this.bridgeheads && this.project.type &&
+          this.project.queryFormat && this.project.outputFormat && this.project.templateId && this.existsApplicationForm);
+    },
+
+    fetchTooltipTextForCreateButton() {
+      let result = '';
+      if (this.project){
+        result = this.addMissingField(result, 'title', this.project.label);
+        result = this.addMissingField(result, 'query', this.project.query);
+        result = this.addMissingField(result, 'bridgeheads', this.bridgeheads);
+        result = this.addMissingField(result, 'type', this.project.type);
+        result = this.addMissingField(result, 'query format', this.project.queryFormat);
+        result = this.addMissingField(result, 'output format', this.project.outputFormat);
+        result = this.addMissingField(result, 'template id', this.project.templateId);
+        result = this.addMissingField(result, 'application form', this.existsApplicationForm);
+      }
+      return (result.length > 0) ? 'Missing fields: ' + result : result;
+    },
+
+    addMissingField(result: string, field: string, value: any): string{
+      return (!value) ? ((result.length > 0) ? ', ' : '') + field : result;
     },
 
     convertDate(date: Date) {
@@ -509,6 +539,8 @@ export default defineComponent({
 
     async initializeProjectRelatedData() {
       if (this.project) {
+        this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+        this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
         this.existsDraftDialog = (this.project.state === 'DRAFT' && keycloak.getEmail() === this.project.creatorEmail);
         await Promise.all([
           this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), async (result: Bridgehead[]) => {

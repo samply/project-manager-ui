@@ -48,7 +48,6 @@ export default class ProjectFieldRow extends Vue {
   editedValue: string[] = [];
   tempFieldValue: string[] = [];
   isActionEnabled = false;
-  progress = 0;
   Module = Module;
   Action = Action;
   showInputs = false;
@@ -316,9 +315,9 @@ export default class ProjectFieldRow extends Vue {
           <div style="height:100%; display: flex; flex-direction: column;">
             <div class="config-box-header">{{ step }}</div>
             <div class="config-box-body">
-              <table class="config-box-table">
+              <table class="config-box-table" v-if="configurations">
                 <tr v-for="(param, key) in configurations.get(step)" :key="key">
-                  <template v-if="key !=='customConfig'">
+                  <template v-if="key !== 'customConfig'">
                     <td style="font-weight: bold">{{configLabel[key]}}:</td>
                     <td class="truncate-15" v-b-tooltip.hover :title="param">{{param}}</td>
                   </template>
@@ -445,8 +444,7 @@ export default class ProjectFieldRow extends Vue {
                </span>
             </div>
           </div>
-          <div
-              v-else-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] && isEnvironmentVariables()"
+          <div v-else-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] && isEnvironmentVariables()"
               style="display:flex; width:100%">
             <div v-for="(pair, index) in tempFieldValue[0].split(';').filter(Boolean)" :key="index"
                  style="margin-right: 2%;  display: inline;" class="btn btn-primary">

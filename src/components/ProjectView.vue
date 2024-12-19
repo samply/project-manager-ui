@@ -199,7 +199,7 @@
                                  :download-module="projectField.downloadModule"
                                  :todos="extendedExplanations"
                                  :call-refreh-context="refreshContext"
-                                 :draft-dialog-current-step="this.existsDraftDialog ? this.draftDialogCurrentStep : NaN"
+                                 :draft-dialog-current-step="existsDraftDialog ? draftDialogCurrentStep : NaN"
                                  :context="context" :project-manager-backend-service="projectManagerBackendService"/>
 
               </template>

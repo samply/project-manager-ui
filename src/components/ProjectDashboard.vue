@@ -60,7 +60,7 @@
           <button @click="previousPage" class="btn btn-primary" style="rotate: 180deg">
             <i class="bi bi-play-fill" style="font-size: medium"></i>
           </button>
-          <span>{{this.currentPage}} / {{this.totalPages}}</span>
+          <span>{{currentPage}} / {{totalPages}}</span>
           <button @click="nextPage" class="btn btn-primary">
             <i class="bi bi-play-fill" style="font-size: medium"></i>
           </button>

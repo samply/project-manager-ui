@@ -1,7 +1,7 @@
 <template>
   <div class="main-container">
     <div class="left-container">
-      <div class="box-header" style="padding-left:7%">Project Phase</div>
+      <div class="box-header" style="padding-left:7%">Phase</div>
       <!--<div v-if="projectData.projectId">-->
       <div class="vertical-stepper">
         <div v-for="(projectState, index) in getProjectStates()" :key="index" class="stepper-step">
@@ -20,7 +20,7 @@
     <div class="right-container">
       <div class="main-content">
         <div class="info-container">
-          <div v-if="project?.state !== 'DRAFT'" class="box-header">Project Status</div>
+          <div v-if="project?.state !== 'DRAFT'" class="box-header">Status</div>
 
           <div style="padding: 2%">
             <div style="display:flex; flex-flow:row; justify-content: space-between; margin-bottom:10px;">
@@ -102,7 +102,7 @@
           </div>
         </div>
         <div v-if="!(project?.state === 'DRAFT' && projectRoles.includes(ProjectRole.CREATOR)) && isButtonGroupVisible" class="project-actions">
-          <div class="box-header">Project Actions</div>
+          <div class="box-header">Actions</div>
           <div style="padding:2%">
             <!-- Project State Module: Creator View -->
             <!-- v-if="existsApplicationForm" entfernt - statt ganz ausblenden -> design ändern -->
@@ -133,7 +133,7 @@
         </div>
         <div class="data-container mt-12">
           <div v-if="project">
-            <div v-if="project?.state !== 'DRAFT'" class="box-header">Requested Data</div>
+            <div v-if="project?.state !== 'DRAFT'" class="box-header">Request</div>
             <div v-if="project?.state === 'DRAFT'" class="box-header">Request Data</div>
             <div class="table-responsive">
 
@@ -252,7 +252,7 @@
 
     <div v-if="showExplanations" class="custom-width-notifications">
       <div class="box-header" style="display:flex; flex-flow:row; justify-content:space-between ">
-        <div>ToDo List</div>
+        <div>TODO</div>
         <button style="padding: 0 15px 0 0; margin-bottom: -4px" @click="toggleExplanations" class="btn" v-if="showExplanations">
           <i style="font-size: 20px" class="bi bi-x"></i> <!-- Schließsymbol für Progress -->
         </button>
@@ -515,7 +515,7 @@ export default defineComponent({
             this.bridgeheads = result;
           }),
           this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_STATES_ACTION, new Map(), 'projectStates'),
-          this.initializeData(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(), 'notifications'),
+          this.fetchNotifications(),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, new Map(), 'projectTypes'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, new Map(), 'queryFormats'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, new Map(), 'outputFormats'),
@@ -562,6 +562,10 @@ export default defineComponent({
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
       }
+    },
+
+    async fetchNotifications() {
+      return this.initializeData(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(), 'notifications');
     },
 
     initializeCurrentProjectConfiguration() {

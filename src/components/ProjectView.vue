@@ -805,20 +805,20 @@ export default defineComponent({
           visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 0 || this.draftDialogCurrentStep == 4
         },
         {
+          fieldKey: "Type",
+          fieldValue: [this.project?.type],
+          editProjectParam: [EditProjectParam.PROJECT_TYPE],
+          isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
+          possibleValues: this.projectTypes,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 1 || this.draftDialogCurrentStep == 4
+        },
+        {
           fieldKey: "Configuration",
           fieldValue: [this.currentProjectConfiguration],
           editProjectParam: [EditProjectParam.PROJECT_CONFIGURATION],
           isEditable: true,
           possibleValues: this.projectConfigurationLabels,
           configurations: this.projectConfigurations,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 1 || this.draftDialogCurrentStep == 4
-        },
-        {
-          fieldKey: "Type",
-          fieldValue: [this.project?.type],
-          editProjectParam: [EditProjectParam.PROJECT_TYPE],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
-          possibleValues: this.projectTypes,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 1 || this.draftDialogCurrentStep == 4
         },
         {

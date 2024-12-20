@@ -526,11 +526,11 @@ export default defineComponent({
         result = this.addMissingField(result, 'template id', this.project.templateId);
         result = this.addMissingField(result, 'application form', this.existsApplicationForm);
       }
-      return (result.length > 0) ? 'Missing fields: ' + result : result;
+      return (result.length > 0) ? 'missing fields: ' + result : result;
     },
 
     addMissingField(result: string, field: string, value: any): string{
-      return (!value) ? ((result.length > 0) ? ', ' : '') + field : result;
+      return (!value) ? result + ((result.length > 0) ? ', ' : '') + field : result;
     },
 
     convertDate(date: Date) {
@@ -747,6 +747,13 @@ export default defineComponent({
             message: "Please check all of the fields in the summary and click 'Create' if everything seems OK."
           });
           count ++;
+          if (this.tooltipTextForCreateButton?.length > 0){
+            extendedExplanations.set(count.toString(), {
+              number: count,
+              message: 'To proceed with creating the project, kindly fill in the following ' + this.tooltipTextForCreateButton
+            });
+            count ++;
+          }
         }
       }
       if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) &&

@@ -313,15 +313,17 @@ export default class ProjectFieldRow extends Vue {
                 @click="editedValue[0]=step;saveField()"
                 style="background: none; border:none; color: black; padding:0; height:100%;min-width: fit-content">
           <div style="height:100%; display: flex; flex-direction: column;">
-            <div class="config-box-header">{{ step }}</div>
+            <div class="config-box-header">{{ configurations?.get(step)?.label }}</div>
             <div class="config-box-body">
               <table class="config-box-table" v-if="configurations">
+                <tr><td colspan="2">{{ configurations?.get(step)?.description }}</td></tr>
+                <tr><td colspan="2">&nbsp;</td></tr>
                 <tr v-for="(param, key) in configurations.get(step)" :key="key">
-                  <template v-if="key !== 'customConfig'">
+                  <!--<template v-if="key as string !== 'customConfig'">-->
+                  <template v-if="!['customConfig', 'label', 'description'].includes(key as string)">
                     <td style="font-weight: bold">{{configLabel[key]}}:</td>
-                    <td class="truncate-15" v-b-tooltip.hover :title="param">{{param}}</td>
+                    <td class="truncate-15" v-b-tooltip.hover :title="param as string">{{param}}</td>
                   </template>
-                  <td v-else style="font-weight: bold">CUSTOM</td>
                 </tr>
               </table>
             </div>
@@ -634,8 +636,8 @@ export default class ProjectFieldRow extends Vue {
   margin: 10px;
   border: 1px solid #0000001E;
   border-radius: 10px;
-  min-width: 170px;
-  font-size: 14px;
+  min-width: 270px;
+  font-size: 20px;
 }
 .config-box.active {
   box-shadow: 0px 2px 1px -1px rgba(149, 200, 220, 0.8),0px 1px 1px 0px rgba(149, 200, 220, 0.5),0px 1px 3px 0px rgba(149, 200, 220, 0.3);

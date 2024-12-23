@@ -938,22 +938,22 @@ export default defineComponent({
           ] as ActionButton[]
         },
         {
-          label: "Stage",
+          label: "Phase",
           button: [
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_DEVELOP_STAGE_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Start Develop Stage", withMessage: false, cssClass: "btn btn-primary mr-2"
+              text: "Start Develop Phase", withMessage: false, cssClass: "btn btn-primary mr-2"
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_PILOT_STAGE_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Start Pilot Stage", withMessage: false, cssClass: "btn btn-primary mr-2"
+              text: "Start Pilot Phase", withMessage: false, cssClass: "btn btn-primary mr-2"
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_FINAL_STAGE_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Start Final Stage", withMessage: false, cssClass: "btn btn-primary mr-2"
+              text: "Start Final Phase", withMessage: false, cssClass: "btn btn-primary mr-2"
             }
           ] as ActionButton[]
         },
@@ -964,13 +964,13 @@ export default defineComponent({
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
               text: "Authorize", withMessage: false, cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.activeBridgehead && this.activeBridgehead.state !== 'ACCEPTED' && this.canShowBridgeheadAdminButtons
+              visibilityCondition: this.activeBridgehead?.state !== 'ACCEPTED' && this.canShowBridgeheadAdminButtons
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
               text: "Revoke", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
-              visibilityCondition: this.activeBridgehead && this.activeBridgehead.state !== 'REJECTED' && this.canShowBridgeheadAdminButtons
+              visibilityCondition: this.activeBridgehead?.state !== 'REJECTED' && this.canShowBridgeheadAdminButtons
             }
           ] as ActionButton[]
         },
@@ -980,12 +980,14 @@ export default defineComponent({
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_SCRIPT_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2"
+              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2",
+              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_SCRIPT_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2"
+              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
+              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_SCRIPT_CHANGES_ACTION,
@@ -1000,12 +1002,14 @@ export default defineComponent({
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_RESULTS_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2"
+              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2",
+              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_RESULTS_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2"
+              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
+              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ACTION,
@@ -1020,12 +1024,14 @@ export default defineComponent({
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ANALYSIS_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2"
+              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2",
+              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ANALYSIS_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2"
+              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
+              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,

@@ -1,10 +1,14 @@
 <template>
   <div>
-    <nav class="navbar navbar-dark bg-dark" style="display:flex; align-content: flex-start; justify-content: space-between; padding-left:5%">
-      <router-link style="margin-right:3%" class="navbar-brand" to="/">Data Science Orchestrator</router-link>
-<!--      <button @click="toggleSidebar" class="btn btn-dark" style="padding-right:2%"><i class="bi bi-chat-right-text-fill"></i></button>-->
-      <span class="white-text">{{keycloak.getFirstName() + " " + keycloak.getLastName()}}</span>
-      <div style="padding-right:2%">
+    <nav class="navbar navbar-dark bg-dark custom-navbar">
+      <router-link class="navbar-brand" to="/">Data Science Orchestrator</router-link>
+      <div class="user-logout-container">
+        <!-- User information -->
+        <span class="user-info">
+          <i class="bi bi-person-fill user-icon"></i>
+          {{ keycloak.getFirstName() + " " + keycloak.getLastName() }}
+        </span>
+        <!-- Logout button -->
         <button @click="logout" class="btn btn-outline-danger">
           <i class="bi bi-box-arrow-right"></i> logout
         </button>
@@ -35,8 +39,27 @@ export default {
 </script>
 
 <style scoped>
-.white-text {
-  color: white;
+.custom-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 5%;
+}
 
+.user-logout-container {
+  display: flex;
+  align-items: center;
+  padding-right: 2%;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+  color: white;
+}
+
+.user-icon {
+  margin-right: 5px;
 }
 </style>

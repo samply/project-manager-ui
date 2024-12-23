@@ -729,13 +729,13 @@ export default defineComponent({
             message: "Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration."
           });
           count ++;
-        } else if (this.draftDialogCurrentStep === 2) { // Query
+        } else if (this.draftDialogCurrentStep === 2 && !this.project?.query) { // Query
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."
           });
           count ++;
-        } else if (this.draftDialogCurrentStep === 3) { // Output
+        } else if (this.draftDialogCurrentStep === 3 && (!this.project?.outputFormat || !this.project?.templateId) ) { // Output
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."

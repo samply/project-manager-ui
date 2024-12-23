@@ -710,7 +710,7 @@ export default defineComponent({
           }
         }
       }
-      if (!this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN)){
+      if (!this.existInvitedUsers && !this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN)){
         this.removeActionExplanation(Action.SET_DEVELOPER_USER_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SET_PILOT_USER_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);

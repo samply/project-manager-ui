@@ -58,7 +58,7 @@
               <thead>
               <tr>
                 <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
-                <th class="status-table-header" scope="col">Project Phase</th>
+                <th class="status-table-header" scope="col">Phase</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Teiler</th>
                 <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">{{(project?.type == 'DATASHIELD' && project.state != 'FINAL') ? 'Script' : 'Results'}} Acceptance</th>

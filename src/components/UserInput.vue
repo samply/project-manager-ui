@@ -138,7 +138,7 @@ export default class UserInput extends Vue {
 <template>
   <div v-if="isActive" class="button-group-box">
       <div class="button-group-label">
-        Invite user to this stage:
+        Invite the user to this phase:
         <span style="display: flex;flex-direction: row-reverse">
           <span v-if="todos?.get(Action.SET_DEVELOPER_USER_ACTION)" class="todo-circle-small">#{{todos?.get(Action.SET_DEVELOPER_USER_ACTION).number}}</span>
         </span>

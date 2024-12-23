@@ -703,11 +703,6 @@ export default defineComponent({
           this.removeActionExplanation(Action.SET_DEVELOPER_USER_ACTION, extendedExplanations);
           this.removeActionExplanation(Action.SET_PILOT_USER_ACTION, extendedExplanations);
           this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
-        } else {
-          if (this.activeBridgehead?.queryState === 'FINISHED'){
-            this.removeActionExplanation(Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
-            this.removeActionExplanation(Action.SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION, extendedExplanations);
-          }
         }
       }
       if (!this.existInvitedUsers && !this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN)){

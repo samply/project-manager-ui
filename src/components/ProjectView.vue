@@ -395,7 +395,8 @@ export default defineComponent({
       actionButtons: [] as ActionButtonGroup[],
       currentUser: undefined as User | undefined,
       hasProjectAllMandatoryFields: false,
-      tooltipTextForCreateButton: ''
+      tooltipTextForCreateButton: '',
+      canShowBridgeheadAdminButtons: false
     };
   },
   watch: {
@@ -577,7 +578,10 @@ export default defineComponent({
           }),
           this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript'),
           this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, new Map(), 'projectRoles'),
-          this.initializeData(Module.USER_MODULE, Action.EXIST_INVITED_USERS_ACTION, new Map(), 'existInvitedUsers'),
+          this.initializeDataInCallback(Module.USER_MODULE, Action.EXIST_INVITED_USERS_ACTION, new Map(), async result => {
+            this.existInvitedUsers = result;
+            this.canShowBridgeheadAdminButtons = this.fetchIfCanShowBridgeheadAdminButtons();
+          }),
           this.initializeData(Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, new Map(), 'currentUser'),
           this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment')
         ]);
@@ -646,7 +650,7 @@ export default defineComponent({
       this.activeBridgehead = bridgehead;
     },
 
-    canShowBridgeheadAdminButtons(): boolean {
+    fetchIfCanShowBridgeheadAdminButtons(): boolean {
       return (this.project && (this.project.state == 'DEVELOP' || this.project.state == 'PILOT')) ? this.existInvitedUsers : true;
     },
 
@@ -693,7 +697,7 @@ export default defineComponent({
         this.removeActionExplanation(Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION, extendedExplanations);
       }
       if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN)){
-        if (!this.canShowBridgeheadAdminButtons()){
+        if (!this.canShowBridgeheadAdminButtons){
           this.removeActionExplanation(Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
           this.removeActionExplanation(Action.REJECT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
           this.removeActionExplanation(Action.REQUEST_CHANGES_IN_PROJECT_ACTION, extendedExplanations);
@@ -960,13 +964,13 @@ export default defineComponent({
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
               text: "Authorize", withMessage: false, cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.activeBridgehead && this.activeBridgehead.state !== 'ACCEPTED' && this.canShowBridgeheadAdminButtons()
+              visibilityCondition: this.activeBridgehead && this.activeBridgehead.state !== 'ACCEPTED' && this.canShowBridgeheadAdminButtons
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
               text: "Revoke", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
-              visibilityCondition: this.activeBridgehead && this.activeBridgehead.state !== 'REJECTED' && this.canShowBridgeheadAdminButtons()
+              visibilityCondition: this.activeBridgehead && this.activeBridgehead.state !== 'REJECTED' && this.canShowBridgeheadAdminButtons
             }
           ] as ActionButton[]
         },
@@ -1036,8 +1040,8 @@ export default defineComponent({
             {
               module: Module.EXPORT_MODULE, action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
               refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: (this.activeBridgehead?.queryState === 'FINISHED') ? "Resend Query to Teiler" : "Send Query to Teiler", withMessage: false, cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.canShowBridgeheadAdminButtons()
+              text: (this.activeBridgehead?.queryState === 'FINISHED') ? "Resend Query" : "Send Query", withMessage: false, cssClass: "btn btn-primary mr-2",
+              visibilityCondition: this.canShowBridgeheadAdminButtons
             },
             {
               module: Module.EXPORT_MODULE, action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,

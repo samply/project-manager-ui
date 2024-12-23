@@ -19,9 +19,9 @@
             <th scope="col">Data Request Number (DRN)</th>
             <th scope="col">Title</th>
             <th scope="col">Creator</th>
-            <th scope="col">Date</th>
+            <th scope="col">Created at</th>
             <th scope="col" style="display: flex;justify-content: space-between;align-items: baseline">
-              <span>Status</span><span class="filter">
+              <span>Phase</span><span class="filter">
                 <select v-model="selectedState" class="form-select" @change="changeState()">
                   <option v-for="value in projectStates" :key="value" :value="value">{{ value }}</option>
                 </select>

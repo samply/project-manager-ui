@@ -59,8 +59,8 @@
               <tr>
                 <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
                 <th class="status-table-header" scope="col">Project Phase</th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access Control</th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Query Status</th>
+                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access</th>
+                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Teiler</th>
                 <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">{{(project?.type == 'DATASHIELD' && project.state != 'FINAL') ? 'Script' : 'Results'}} Acceptance</th>
                 <th class="status-table-header" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD Status</th>
                 <th class="status-table-header"
@@ -954,7 +954,7 @@ export default defineComponent({
           ] as ActionButton[]
         },
         {
-          label: "Bridgehead Project",
+          label: "User Access",
           button: [
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
@@ -991,7 +991,7 @@ export default defineComponent({
           ] as ActionButton[]
         },
         {
-          label: "Project Result",
+          label: "Result",
           button: [
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_RESULTS_ACTION,
@@ -1011,7 +1011,7 @@ export default defineComponent({
           ] as ActionButton[]
         },
         {
-          label: "Project Analysis",
+          label: "Analysis",
           button: [
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ANALYSIS_ACTION,
@@ -1031,12 +1031,12 @@ export default defineComponent({
           ] as ActionButton[]
         },
         {
-          label: "Export",
+          label: "Teiler",
           button: [
             {
               module: Module.EXPORT_MODULE, action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
               refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: (this.activeBridgehead?.queryState === 'FINISHED') ? "Resend Query to Bridgehead" : "Send Query to Bridgehead", withMessage: false, cssClass: "btn btn-primary mr-2",
+              text: (this.activeBridgehead?.queryState === 'FINISHED') ? "Resend Query to Teiler" : "Send Query to Teiler", withMessage: false, cssClass: "btn btn-primary mr-2",
               visibilityCondition: this.canShowBridgeheadAdminButtons()
             },
             {

@@ -82,6 +82,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Current User in Project View
 - Press create button only if mandatory fields are not empty
 - Missing fields list as todo
+- Logo in navbar
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

@@ -1,7 +1,9 @@
 <template>
   <div>
     <nav class="navbar navbar-dark bg-dark custom-navbar">
-      <router-link class="navbar-brand" to="/">Data Science Orchestrator</router-link>
+      <router-link class="navbar-brand" to="/">
+        <i class="bi bi-boxes navbar-icon"></i> Data Science Orchestrator
+      </router-link>
       <div class="user-logout-container">
         <!-- User information -->
         <span class="user-info">
@@ -46,6 +48,11 @@ export default {
   padding-left: 5%;
 }
 
+.navbar-icon {
+  margin-right: 5px;
+  color: white;
+}
+
 .user-logout-container {
   display: flex;
   align-items: center;
@@ -62,4 +69,5 @@ export default {
 .user-icon {
   margin-right: 5px;
 }
+
 </style>

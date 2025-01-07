@@ -305,34 +305,35 @@ export default class ProjectFieldRow extends Vue {
 </script>
 
 <template>
-  <div v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === 1" style="position:absolute;margin:20px 0">
-    <div style="display: flex;padding-left:0;max-width:200px">
-      <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
-           :class="{ 'active': editedValue[0] === step }">
-        <button class="config-button"
-                @click="editedValue[0]=step;saveField()"
-                style="background: none; border:none; color: black; padding:0; height:100%;min-width: fit-content">
-          <div style="height:100%; display: flex; flex-direction: column;">
-            <div class="config-box-header">{{ configurations?.get(step)?.label }}</div>
-            <div class="config-box-body">
-              <table class="config-box-table" v-if="configurations">
-                <tr><td colspan="2">{{ configurations?.get(step)?.description }}</td></tr>
-                <tr><td colspan="2">&nbsp;</td></tr>
-                <tr v-for="(param, key) in configurations.get(step)" :key="key">
-                  <!--<template v-if="key as string !== 'customConfig'">-->
-                  <template v-if="!['customConfig', 'label', 'description'].includes(key as string)">
-                    <td style="font-weight: bold">{{configLabel[key]}}:</td>
-                    <td class="truncate-15" v-b-tooltip.hover :title="param as string">{{param}}</td>
-                  </template>
-                </tr>
-              </table>
+  <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === 1" class="config-box-row">
+    <td colspan="3">
+      <div style="display: flex;padding-left:0;margin:20px 0">
+        <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
+             :class="{ 'active': editedValue[0] === step }">
+          <button class="config-button"
+                  @click="editedValue[0]=step;saveField()"
+                  style="background: none; border:none; color: black; padding:0; height:100%;min-width: fit-content">
+            <div style="height:100%; display: flex; flex-direction: column;">
+              <div class="config-box-header">{{ configurations?.get(step)?.label }}</div>
+              <div class="config-box-body">
+                <table class="config-box-table" v-if="configurations">
+                  <tr><td colspan="2">{{ configurations?.get(step)?.description }}</td></tr>
+                  <tr><td colspan="2">&nbsp;</td></tr>
+                  <tr v-for="(param, key) in configurations.get(step)" :key="key">
+                    <!--<template v-if="key as string !== 'customConfig'">-->
+                    <template v-if="!['customConfig', 'label', 'description'].includes(key as string)">
+                      <td style="font-weight: bold">{{configLabel[key]}}:</td>
+                      <td class="truncate-15" v-b-tooltip.hover :title="param as string">{{param}}</td>
+                    </template>
+                  </tr>
+                </table>
+              </div>
             </div>
-          </div>
-        </button>
+          </button>
+        </div>
       </div>
-    </div>
-  </div>
-  <div v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === 1" style="height:260px"></div>
+    </td>
+  </tr>
   <tr v-else>
     <!-- FIRST COLUMN: HEADERS -->
     <td class="bold-text thinner-column" style="background-color: #f2f2f2; max-width: 170px;">
@@ -636,7 +637,7 @@ export default class ProjectFieldRow extends Vue {
   margin: 10px;
   border: 1px solid #0000001E;
   border-radius: 10px;
-  min-width: 270px;
+  min-width: 250px;
   font-size: 20px;
 }
 .config-box.active {
@@ -667,10 +668,18 @@ export default class ProjectFieldRow extends Vue {
 }
 .config-box-table {
   text-align: left;
-  font-size: smaller;
+  font-size: 0.7vw;
   border-spacing: 3px;
 }
-
+.config-box-row {
+  border-top: 1px solid white;
+  border-left: 1px solid white;
+  border-right: 1px solid white;
+  background-color: white;
+}
+.config-box-row:hover > * {
+  background-color: white!important;
+}
 .config-button {
   color: black;
   width: 100%;

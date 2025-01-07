@@ -119,7 +119,7 @@ export default class NotificationBox extends Vue {
   height: 300px;
 }
 .card-body {
-  padding: 1.25rem 1rem;
+  padding: 1rem;
 }
 .card {
   border-radius: 10px;

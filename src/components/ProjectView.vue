@@ -111,16 +111,18 @@
               <div v-if="buttonGroups[index]" class="button-group-box">
                 <div class="button-group-label">
                   {{buttonGroup.label}}
-                  <span style="display: flex;flex-direction: row-reverse">
+                  <span style="display: flex">
                     <span v-for="(explanationNumber, index3) in getExplanationsForButtonGroup(buttonGroup)" :key="index3" class="todo-circle-small">#{{explanationNumber}}</span>
                   </span>
                 </div>
-                <ProjectManagerButton v-for="(button, index2) in buttonGroup.button" :key="index2"
-                                      :module="button.module" :action="button.action"
-                                      :context="context" :call-refreh-context="button.refreshContextCallFunction" :text="button.text"
-                                      :button-class="button.cssClass" :with-message="button.withMessage"
-                                      :visibility="button.visibilityCondition"
-                                      :project-manager-backend-service="projectManagerBackendService"/>
+                <div style="display: flex">
+                  <ProjectManagerButton v-for="(button, index2) in buttonGroup.button" :key="index2"
+                                        :module="button.module" :action="button.action"
+                                        :context="context" :call-refreh-context="button.refreshContextCallFunction" :text="button.text"
+                                        :button-class="button.cssClass" :with-message="button.withMessage"
+                                        :visibility="button.visibilityCondition"
+                                        :project-manager-backend-service="projectManagerBackendService"/>
+                </div>
               </div>
             </template>
           </div>
@@ -822,20 +824,20 @@ export default defineComponent({
           visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 0 || this.draftDialogCurrentStep == 4
         },
         {
-          fieldKey: "Type",
-          fieldValue: [this.project?.type],
-          editProjectParam: [EditProjectParam.PROJECT_TYPE],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
-          possibleValues: this.projectTypes,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 1 || this.draftDialogCurrentStep == 4
-        },
-        {
           fieldKey: "Configuration",
           fieldValue: [this.currentProjectConfiguration],
           editProjectParam: [EditProjectParam.PROJECT_CONFIGURATION],
           isEditable: true,
           possibleValues: this.projectConfigurationLabels,
           configurations: this.projectConfigurations,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 1 || this.draftDialogCurrentStep == 4
+        },
+        {
+          fieldKey: "Type",
+          fieldValue: [this.project?.type],
+          editProjectParam: [EditProjectParam.PROJECT_TYPE],
+          isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
+          possibleValues: this.projectTypes,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogCurrentStep == 1 || this.draftDialogCurrentStep == 4
         },
         {

@@ -91,3 +91,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Copy query to clipboard always active, as long as it has a value
 - Alignment of user in navbar
 - Result acceptance in user input as circle
+- Separate Publication and other documents in new section

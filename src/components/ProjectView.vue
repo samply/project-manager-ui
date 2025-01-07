@@ -210,41 +210,44 @@
               </tbody>
             </table>
           </div>
-            <div style="padding: 2%">
-          <DocumentsTable v-if="!existsDraftDialog || draftDialogCurrentStep==4" :context="context"
+          </div>
+        </div>
+        <div class="documents">
+          <div class="box-header">Publications & Other Documents</div>
+          <div style="padding: 2%">
+            <DocumentsTable v-if="!existsDraftDialog || draftDialogCurrentStep==4" :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
+                            :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
+                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Publications: "/>
+            <br/>
+            <UploadButton v-if="!existsDraftDialog || draftDialogCurrentStep==4" :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
-                          :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
-                          :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
-                          :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Publications: "/>
-          <br/>
-          <UploadButton v-if="!existsDraftDialog || draftDialogCurrentStep==4" :context="context"
-                        :project-manager-backend-service="projectManagerBackendService"
-                        :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
-                        text="Upload publication" :call-refreh-context="refreshContext" :is-file="true"/>
-          <br/>
-          <UploadButton v-if="!existsDraftDialog || draftDialogCurrentStep==4" :context="context"
-                        :project-manager-backend-service="projectManagerBackendService"
-                        :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
-                        text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false"/>
-          <br/>
+                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
+                          text="Upload publication" :call-refreh-context="refreshContext" :is-file="true"/>
+            <br/>
+            <UploadButton v-if="!existsDraftDialog || draftDialogCurrentStep==4" :context="context"
+                          :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
+                          text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false"/>
+            <br/>
 
-              <div style="display:flex; flex-flow:row;  width:100% "
-                   v-if="!existsDraftDialog || draftDialogCurrentStep==4">
-                <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                              :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
-                              text="Upload other document" :call-refreh-context="refreshContext" :is-file="true"/>
+            <div style="display:flex; flex-flow:row;  width:100% "
+                 v-if="!existsDraftDialog || draftDialogCurrentStep==4">
+              <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
+                            text="Upload other document" :call-refreh-context="refreshContext" :is-file="true"/>
 
-                <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                              :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
-                              text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false"/>
-              </div>
-              <br/>
-              <DocumentsTable v-if="!existsDraftDialog || draftDialogCurrentStep==4"
-                              :context="context" :project-manager-backend-service="projectManagerBackendService"
-                              :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
-                              :fetch-list-action="Action.FETCH_OTHER_DOCUMENTS_ACTION"
-                              :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Other documents: "/>
+              <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
+                            text="Upload other document URL" :call-refreh-context="refreshContext" :is-file="false"/>
             </div>
+            <br/>
+            <DocumentsTable v-if="!existsDraftDialog || draftDialogCurrentStep==4"
+                            :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
+                            :fetch-list-action="Action.FETCH_OTHER_DOCUMENTS_ACTION"
+                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Other documents: "/>
           </div>
         </div>
         <div v-if="projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)" class="mailing-blacklist">
@@ -1147,6 +1150,12 @@ export default defineComponent({
   margin-top: 1.5%;
 }
 .mailing-blacklist {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  margin-top: 1.5%;
+}
+.documents {
   background-color: white;
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);

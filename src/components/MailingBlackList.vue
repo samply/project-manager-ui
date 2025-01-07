@@ -63,6 +63,7 @@ export default class MailingBlackList extends Vue {
   }
 
   addUserToMailingBlackList(email: string) {
+    this.inputEmail = "";
     this.projectManagerBackendService
         .fetchData(Module.USER_MODULE, Action.ADD_USER_TO_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([['email', email]]))
         .then(() => {
@@ -72,6 +73,7 @@ export default class MailingBlackList extends Vue {
   }
 
   removeUserFromMailingBlackList(email: string) {
+    this.inputEmail = "";
     this.projectManagerBackendService
         .fetchData(Module.USER_MODULE, Action.REMOVE_USER_FROM_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([['email', email]]))
         .then(() => {
@@ -87,6 +89,11 @@ export default class MailingBlackList extends Vue {
 
 <template>
   <div v-if="isActive" class="mailing-blacklist">
+    <!-- Explanation -->
+    <p class="explanation">
+      Users added to the mailing blacklist will not receive any automatic emails.
+      These users can be added or removed from the blacklist at any time.
+    </p>
     <!-- Mailing Blacklist -->
     <ul v-if="mailingBlackList.length">
       <li v-for="user in mailingBlackList" :key="user.email">
@@ -134,4 +141,11 @@ li {
 button {
   margin-left: 1rem;
 }
+
+.explanation {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
 </style>

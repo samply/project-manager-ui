@@ -242,6 +242,9 @@
                               :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
                               :fetch-list-action="Action.FETCH_OTHER_DOCUMENTS_ACTION"
                               :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Other documents: "/>
+              <MailingBlackList v-if="!existsDraftDialog || draftDialogCurrentStep==4"
+                                :project-manager-backend-service="projectManagerBackendService"
+              />
             </div>
           </div>
         </div>
@@ -313,6 +316,7 @@ import UploadButton from "@/components/UploadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
 import keycloak from "@/services/keycloak";
+import MailingBlackList from "@/components/MailingBlackList.vue";
 
 export default defineComponent({
   computed: {
@@ -336,6 +340,7 @@ export default defineComponent({
     }
   },
   components: {
+    MailingBlackList,
     BridgeheadOverview,
     DocumentsTable,
     UploadButton,

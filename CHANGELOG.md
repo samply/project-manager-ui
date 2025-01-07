@@ -84,6 +84,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Missing fields list as todo
 - Logo in navbar
 - Mailing Black List
+- Email while hovering on user
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

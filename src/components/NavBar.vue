@@ -6,7 +6,7 @@
       </router-link>
       <div class="user-logout-container">
         <!-- User information -->
-        <span class="user-info">
+        <span class="user-info" :title="keycloak.getEmail()">
           <i class="bi bi-person-fill user-icon"></i>
           {{ keycloak.getFirstName() + " " + keycloak.getLastName() }}
         </span>

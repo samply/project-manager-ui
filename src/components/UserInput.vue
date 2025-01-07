@@ -170,7 +170,7 @@ export default class UserInput extends Vue {
         <tr>
           <th>User</th>
           <th v-if="bridgeheads.length > 0">Bridgehead</th>
-          <th>State</th> <!-- New column for user state -->
+          <th>Results Acceptance</th> <!-- New column for user state -->
         </tr>
         </thead>
         <tbody>
@@ -193,7 +193,8 @@ export default class UserInput extends Vue {
             </template>
           </td>
           <td v-if="bridgeheads.length > 0">{{ user.humanReadableBridgehead }}</td>
-          <td>{{ user.projectState }}</td> <!-- Display user's state in the second column -->
+          <!-- Display user's state in the second column -->
+          <td><div class="states-circle-container"><div class="state_circle" :class="user?.projectState.toLowerCase()"/></div></td>
         </tr>
         </tbody>
       </table>
@@ -279,5 +280,30 @@ export default class UserInput extends Vue {
   margin-left: 10px;
   font-weight: bold;
   font-size: 9pt;
+}
+.states-circle-container {
+  display: flex;
+  justify-content: center;
+}
+.state_circle {
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+}
+.state_circle.created {
+  border: 1px solid #cccccc;
+  background-color: #f2f2f2;
+}
+.state_circle.request_changes {
+  border: 1px solid #cccccc;
+  background-color: #fff200;
+}
+.state_circle.accepted {
+  border: 1px solid #cccccc;
+  background-color: #009a00;
+}
+.state_circle.rejected{
+  border: 1px solid #cccccc;
+  background-color: red;
 }
 </style>

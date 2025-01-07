@@ -90,3 +90,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Rename reject project bridgehead user state as block
 - Copy query to clipboard always active, as long as it has a value
 - Alignment of user in navbar
+- Result acceptance in user input as circle

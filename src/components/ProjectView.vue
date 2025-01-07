@@ -774,7 +774,7 @@ export default defineComponent({
           this.activeBridgehead?.queryState != 'ERROR'){
         extendedExplanations.set(count.toString(), {
           number: count,
-          message: "Please access the Teiler, review the query, and execute it. Once the execution is complete, return here for further instructions."
+          message: "Please access the Teiler, review the query, and execute it. Note that the query may take some time to arrive at the Teiler. You can find the query in the Exporter app of the Teiler. Once the execution is complete, return here for further instructions."
         });
         count ++;
       }

@@ -87,8 +87,6 @@ export default class MailingBlackList extends Vue {
 
 <template>
   <div v-if="isActive" class="mailing-blacklist">
-    <h3>Mailing Blacklist</h3>
-
     <!-- Mailing Blacklist -->
     <ul v-if="mailingBlackList.length">
       <li v-for="user in mailingBlackList" :key="user.email">
@@ -118,8 +116,6 @@ export default class MailingBlackList extends Vue {
 
 <style scoped>
 .mailing-blacklist {
-  padding: 1rem;
-  border: 1px solid #ccc;
   border-radius: 8px;
 }
 

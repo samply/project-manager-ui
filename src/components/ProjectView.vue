@@ -242,10 +242,15 @@
                               :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
                               :fetch-list-action="Action.FETCH_OTHER_DOCUMENTS_ACTION"
                               :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Other documents: "/>
-              <MailingBlackList v-if="!existsDraftDialog || draftDialogCurrentStep==4"
-                                :project-manager-backend-service="projectManagerBackendService"
-              />
             </div>
+          </div>
+        </div>
+        <div v-if="projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)" class="mailing-blacklist">
+          <div class="box-header">Mailing Blacklist</div>
+          <div style="padding: 2%">
+            <MailingBlackList v-if="!existsDraftDialog || draftDialogCurrentStep==4"
+                              :project-manager-backend-service="projectManagerBackendService"
+            />
           </div>
         </div>
       </div>
@@ -299,7 +304,8 @@ import {
   Explanations,
   Module,
   Notification,
-  Project, ProjectDocument,
+  Project,
+  ProjectDocument,
   ProjectField,
   ProjectManagerBackendService,
   ProjectManagerContext,
@@ -1133,6 +1139,12 @@ export default defineComponent({
   height: 100%;
 }
 .project-actions {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  margin-top: 1.5%;
+}
+.mailing-blacklist {
   background-color: white;
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);

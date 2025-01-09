@@ -9,7 +9,9 @@ import {
   User
 } from "@/services/projectManagerBackendService";
 
-@Options({})
+@Options({
+  name: "MailingBlackList"
+})
 export default class MailingBlackList extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
 

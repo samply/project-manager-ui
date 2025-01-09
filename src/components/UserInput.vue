@@ -5,14 +5,19 @@ import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   Bridgehead,
+  Explanations,
   Module,
   Project,
+  ProjectManagerBackendService,
   ProjectManagerContext,
-  ProjectManagerBackendService, Explanations, User
+  User
 } from "@/services/projectManagerBackendService";
+import '@/assets/styles/state-circle.css'
+import UserAndEmail from "@/components/UserAndEmail.vue";
 
 @Options({
   name: "UserInput",
+  components: {UserAndEmail},
   computed: {
     Action() {
       return Action
@@ -65,7 +70,7 @@ export default class UserInput extends Vue {
     this.autocomplete(this.partialEmail);
   }
 
-  fetchAction(): Action{
+  fetchAction(): Action {
     let action: Action = Action.SET_DEVELOPER_USER_ACTION;
     if (this.project.state === 'PILOT') {
       action = Action.SET_PILOT_USER_ACTION;
@@ -122,27 +127,18 @@ export default class UserInput extends Vue {
     this.showSuggestions = false;
   }
 
-  async copyToClipboard(email: string): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(email);
-      alert('Email copied to clipboard!');
-    } catch (error) {
-      console.error('Failed to copy email:', error);
-      alert('Failed to copy email. Please try again.');
-    }
-  }
-
 }
 </script>
 
 <template>
   <div v-if="isActive" class="button-group-box">
-      <div class="button-group-label">
-        Invite the user to this phase:
-        <span style="display: flex;flex-direction: row-reverse">
-          <span v-if="todos?.get(Action.SET_DEVELOPER_USER_ACTION)" class="todo-circle-small">#{{todos?.get(Action.SET_DEVELOPER_USER_ACTION)?.number}}</span>
+    <div class="button-group-label">
+      Invite the user to this phase:
+      <span style="display: flex;flex-direction: row-reverse">
+          <span v-if="todos?.get(Action.SET_DEVELOPER_USER_ACTION)"
+                class="todo-circle-small">#{{ todos?.get(Action.SET_DEVELOPER_USER_ACTION)?.number }}</span>
         </span>
-      </div>
+    </div>
 
     <div class="user-input-container">
       <select v-model="selectedBridgehead" class="form-select">
@@ -151,7 +147,8 @@ export default class UserInput extends Vue {
         </option>
       </select>
       <div>
-        <input class="user-input" type="text" v-model="partialEmail" @input="handleInput" @keyup.enter="handleSave" placeholder="user email"/>
+        <input class="user-input" type="text" v-model="partialEmail" @input="handleInput" @keyup.enter="handleSave"
+               placeholder="user email"/>
         <ul class="suggestions" v-if="suggestions.length > 0 && showSuggestions">
           <li v-for="(suggestion, index) in suggestions" :key="index" @click="selectSuggestion(suggestion)">
             {{ suggestion.email }}
@@ -176,25 +173,19 @@ export default class UserInput extends Vue {
         <tbody>
         <tr v-for="(user, index) in currentUsers" :key="index">
           <td>
-            <!-- Check if firstName and lastName are available -->
-            <template v-if="user.firstName && user.lastName">
-              {{ user.firstName }} {{ user.lastName }}
-              <button
-                  class="btn btn-link p-0 ms-2"
-                  @click="copyToClipboard(user.email)"
-                  title="Copy email">
-                <i class="bi bi-clipboard"></i>
-              </button>
-            </template>
-
-            <!-- If no firstName or lastName, show just the email -->
-            <template v-else>
-              {{ user.email }}
-            </template>
+            <UserAndEmail
+                :first-name="user.firstName"
+                :last-name="user.lastName"
+                :email="user.email"
+            />
           </td>
           <td v-if="bridgeheads.length > 0">{{ user.humanReadableBridgehead }}</td>
           <!-- Display user's state in the second column -->
-          <td><div class="states-circle-container"><div class="state_circle" :class="user?.projectState.toLowerCase()"/></div></td>
+          <td>
+            <div class="states-circle-container">
+              <div class="state_circle" :class="user?.projectState.toLowerCase()"/>
+            </div>
+          </td>
         </tr>
         </tbody>
       </table>
@@ -209,10 +200,12 @@ export default class UserInput extends Vue {
   display: flex;
   margin: 10px 14px 20px 0;
 }
+
 .form-select {
   width: 300px;
   margin-right: 20px;
 }
+
 .user-input {
   width: 300px; /* Adjust width as needed */
   height: 38px;
@@ -246,6 +239,7 @@ export default class UserInput extends Vue {
 .user-table th {
   background-color: #f2f2f2;
 }
+
 .button-group-box {
   border: 1px solid lightgrey;
   border-radius: 5px;
@@ -255,6 +249,7 @@ export default class UserInput extends Vue {
   margin-right: 2%;
   margin-top: 1%;
 }
+
 .button-group-label {
   border: 1px solid lightgrey;
   border-radius: 5px;
@@ -267,10 +262,11 @@ export default class UserInput extends Vue {
   margin-right: 15px;
   display: flex;
 }
+
 .todo-circle-small {
   min-width: 22px;
   height: 22px;
-  background-color:gold;
+  background-color: gold;
   color: #000;
   border: 1px solid black;
   border-radius: 50%;
@@ -281,29 +277,15 @@ export default class UserInput extends Vue {
   font-weight: bold;
   font-size: 9pt;
 }
+
 .states-circle-container {
   display: flex;
   justify-content: center;
 }
+
 .state_circle {
-  border-radius: 50%;
   width: 20px;
   height: 20px;
 }
-.state_circle.created {
-  border: 1px solid #cccccc;
-  background-color: #f2f2f2;
-}
-.state_circle.request_changes {
-  border: 1px solid #cccccc;
-  background-color: #fff200;
-}
-.state_circle.accepted {
-  border: 1px solid #cccccc;
-  background-color: #009a00;
-}
-.state_circle.rejected{
-  border: 1px solid #cccccc;
-  background-color: red;
-}
+
 </style>

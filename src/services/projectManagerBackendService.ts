@@ -29,6 +29,7 @@ export enum Module {
     PROJECTS_MODULE = "PROJECTS",
     USER_MODULE = "USER",
     PROJECT_STATE_MODULE = "PROJECT_STATE",
+    PROJECT_RESULTS_MODULE= "PROJECT_RESULTS",
     PROJECT_BRIDGEHEAD_MODULE = "PROJECT_BRIDGEHEAD",
     PROJECT_EDITION_MODULE = "PROJECT_EDITION",
     PROJECT_DOCUMENTS_MODULE = "PROJECT_DOCUMENTS",
@@ -116,7 +117,18 @@ export enum Action {
     ADD_USER_TO_MAILING_BLACK_LIST_ACTION = "ADD_USER_TO_MAILING_BLACK_LIST",
     REMOVE_USER_FROM_MAILING_BLACK_LIST_ACTION = "REMOVE_USER_FROM_MAILING_BLACK_LIST",
     FETCH_MAILING_BLACK_LIST_ACTION = "FETCH_MAILING_BLACK_LIST",
-    FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST_ACTION = "FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST"
+    FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST_ACTION = "FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST",
+    ADD_PROJECT_BRIDGHEAD_RESULTS_URL_ACTION = "ADD_PROJECT_BRIDGHEAD_RESULTS_URL",
+    ADD_PROJECT_RESULTS_URL_ACTION = "ADD_PROJECT_RESULTS_URL",
+    ACCEPT_PROJECT_RESULTS_URL_ACTION = "ACCEPT_PROJECT_RESULTS_URL",
+    REJECT_PROJECT_RESULTS_URL_ACTION = "REJECT_PROJECT_RESULTS_URL",
+    REQUEST_CHANGES_IN_PROJECT_RESULTS_URL_ACTION = "REQUEST_CHANGES_IN_PROJECT_RESULTS_URL",
+    ACCEPT_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION = "ACCEPT_PROJECT_BRIDGEHEAD_RESULTS_URL",
+    REJECT_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION = "REJECT_PROJECT_BRIDGEHEAD_RESULTS_URL",
+    REQUEST_CHANGES_IN_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION = "REQUEST_CHANGES_IN_PROJECT_BRIDGEHEAD_RESULTS_URL",
+    FETCH_PROJECT_RESULTS_ACTION = "FETCH_PROJECT_RESULTS",
+    FETCH_PROJECT_BRIDGEHEAD_RESULTS_ACTION = "FETCH_PROJECT_BRIDGEHEAD_RESULTS",
+    FETCH_PROJECT_BRIDGEHEAD_RESULTS_FOR_OWN_BRIDGEHEAD_ACTION = "FETCH_PROJECT_BRIDGEHEAD_RESULTS_FOR_OWN_BRIDGEHEAD"
 }
 
 export enum EditProjectParam {
@@ -152,6 +164,7 @@ export interface Project {
     explorerUrl: string | null;
     queryContext: string | null;
     isCustomConfig: boolean | null;
+    creatorState: string;
 }
 
 export interface Notification {
@@ -186,6 +199,7 @@ export interface Bridgehead {
     state: string;
     modifiedAt: string;
     queryState: string;
+    creatorState: string;
 }
 
 export interface ProjectDocument {
@@ -216,6 +230,18 @@ export interface ProjectField {
     transformForSending?: (input: string) => string
     draftDialogCurrentStep: number
     visibilityCondition: boolean
+}
+
+export interface Results {
+    bridgehead: string
+    humanReadableBridgehead: string
+    email: string
+    firstName: string
+    lastName: string
+    url: string
+    creatorState: string
+    bridgeheadAdminState: string,
+    finalUserState: string
 }
 
 export interface DataShieldProjectStatus {

@@ -2,14 +2,18 @@
 import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
-  Action, configLabel,
-  EditProjectParam, Explanations,
-  Module, Project,
+  Action,
+  configLabel,
+  EditProjectParam,
+  Explanations,
+  Module,
+  Project,
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
+import {DialogStep} from "@/services/dialogStep";
 
 @Options({
   name: "ProjectFieldRow",
@@ -37,7 +41,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly downloadModule!: Module;
   @Prop() readonly todos?: Explanations;
   @Prop() readonly existsFile!: boolean;
-  @Prop() readonly draftDialogCurrentStep!: number;
+  @Prop() readonly draftDialogCurrentStep!: DialogStep;
   @Prop({
     type: Function,
     default: (input: string): string => input
@@ -72,6 +76,10 @@ export default class ProjectFieldRow extends Vue {
   @Watch("redirectUrl", {immediate: true, deep: true})
   onRedirectUrlChange(newValue: string | null, oldValue: string | null) {
     console.log("redirectURL:" + newValue);
+  }
+
+  get dialogStep(){
+    return DialogStep;
   }
 
   created() {
@@ -310,7 +318,7 @@ export default class ProjectFieldRow extends Vue {
 </script>
 
 <template>
-  <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === 1" class="config-box-row">
+  <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === dialogStep.PROFILES" class="config-box-row">
     <td colspan="3">
       <div style="display: flex;padding-left:0;margin:20px 0">
         <div v-for="(step, index) in possibleValues" :key="index" class="config-box"

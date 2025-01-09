@@ -35,13 +35,10 @@
             <td>{{ project.code }}</td>
             <td>{{ project.label }}</td>
             <td>
-              {{ project.creatorName }}
-              <button
-                  class="btn btn-link p-0 ms-2 copy-button"
-                  @click="copyToClipboard(project.creatorEmail)"
-                  title="Copy email">
-                <i class="bi bi-copy"></i>
-              </button>
+              <UserAndEmail
+                  :first-name="project?.creatorName"
+                  :email="project?.creatorEmail"
+              />
             </td>
             <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
             <td>{{ project.state }}</td>
@@ -89,9 +86,10 @@ import {
 } from "@/services/projectManagerBackendService";
 import NotificationBox from "@/components/Notification.vue";
 import {format} from "date-fns";
+import UserAndEmail from "@/components/UserAndEmail.vue";
 
 export default defineComponent({
-  components: {NotificationBox},
+  components: {UserAndEmail, NotificationBox},
 
   data() {
     return {
@@ -129,13 +127,6 @@ export default defineComponent({
     },
     removeNotification(index: number): void {
       this.notifications.splice(index, 1);
-    },
-    copyToClipboard(email: string | null | undefined) {
-      if (email) {
-        navigator.clipboard.writeText(email).then(() => {
-          alert("Email copied to clipboard!");
-        });
-      }
     },
     changeState() {
       this.fetchProjects()

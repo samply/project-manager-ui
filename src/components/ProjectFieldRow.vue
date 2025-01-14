@@ -54,6 +54,7 @@ export default class ProjectFieldRow extends Vue {
   newValue = "";
   newKey = "";
   toggleHumanReadable = true;
+  showDetails: boolean[] = []
 
   @Watch("projectManagerBackendService", {immediate: true, deep: true})
   onProjetManagerBackendServiceChange(
@@ -77,6 +78,10 @@ export default class ProjectFieldRow extends Vue {
     this.tempFieldValue = this.fieldValue.slice(); // Copy fieldValue to tempFieldValue
     this.editedValue = this.fieldValue.slice(); // Copy fieldValue to editedValue
     this.resetIsActionEnabled();
+
+    this.possibleValues?.forEach((value) => {
+      this.showDetails.push(false)
+    })
   }
 
   resetIsActionEnabled() {
@@ -316,17 +321,24 @@ export default class ProjectFieldRow extends Vue {
             <div style="height:100%; display: flex; flex-direction: column;">
               <div class="config-box-header">{{ configurations?.get(step)?.label }}</div>
               <div class="config-box-body">
-                <table class="config-box-table" v-if="configurations">
-                  <tr><td colspan="2">{{ configurations?.get(step)?.description }}</td></tr>
-                  <tr><td colspan="2">&nbsp;</td></tr>
-                  <tr v-for="(param, key) in configurations.get(step)" :key="key">
-                    <!--<template v-if="key as string !== 'customConfig'">-->
-                    <template v-if="!['customConfig', 'label', 'description'].includes(key as string)">
-                      <td style="font-weight: bold">{{configLabel[key]}}:</td>
-                      <td class="truncate-15" v-b-tooltip.hover :title="param as string">{{param}}</td>
-                    </template>
-                  </tr>
-                </table>
+                <div v-if="configurations" style="display: flex;flex-direction: column">
+                  <div style="margin-bottom:2%;text-align:left;min-height:200px">{{ configurations?.get(step)?.description }}</div>
+                  <div v-if="!configurations?.get(step).customConfig" style="text-align: right;margin-bottom:2%">
+                    <button @click.stop="showDetails[index]=!showDetails[index]" style="background: none; border:none; color: #007bff;">
+                      <span v-if="!showDetails[index]">show details</span>
+                      <span v-if="showDetails[index]">hide details</span>
+                    </button>
+                  </div>
+                  <table v-if="showDetails[index]" style="text-align: left">
+                    <tr v-for="(param, key) in configurations?.get(step)" :key="key">
+                      <!--<template v-if="key as string !== 'customConfig'">-->
+                      <template v-if="!['customConfig', 'label', 'description'].includes(key.toString())">
+                        <td style="font-weight: bold">{{configLabel[key]}}:</td>
+                        <td class="truncate-15" v-b-tooltip.hover :title="param.toString()">{{param}}</td>
+                      </template>
+                    </tr>
+                  </table>
+                </div>
               </div>
             </div>
           </button>
@@ -640,7 +652,7 @@ export default class ProjectFieldRow extends Vue {
   min-width: 250px;
   font-size: 20px;
 }
-.config-box.active {
+.config-box.active, .config-box:hover {
   box-shadow: 0px 2px 1px -1px rgba(149, 200, 220, 0.8),0px 1px 1px 0px rgba(149, 200, 220, 0.5),0px 1px 3px 0px rgba(149, 200, 220, 0.3);
 }
 .config-box-header {
@@ -650,27 +662,29 @@ export default class ProjectFieldRow extends Vue {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height:62px;
+  min-height:68px;
 }
 .config-box.active .config-box-header {
   color: white;
   background-color: #007bff;
   font-weight: bold;
+  font-size: 19px;
+}
+.config-box:hover .config-box-header {
+  color: white;
+  background-color: #007bff;
 }
 .config-box-body {
   padding: 10px;
   height:100%;
   display: flex;
   justify-content: center;
-  align-items: center;
+  /*align-items: center;*/
   background-color: white;
   border-radius: 0 0 10px 10px;
-}
-.config-box-table {
-  text-align: left;
   font-size: 0.7vw;
-  border-spacing: 3px;
 }
+
 .config-box-row {
   border-top: 1px solid white;
   border-left: 1px solid white;
@@ -678,7 +692,7 @@ export default class ProjectFieldRow extends Vue {
   background-color: white;
 }
 .config-box-row:hover > * {
-  background-color: white!important;
+  --bs-table-bg-state: white;
 }
 .config-button {
   color: black;

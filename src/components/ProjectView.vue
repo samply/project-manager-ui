@@ -43,7 +43,6 @@
               <thead>
               <tr>
                 <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
-                <th class="status-table-header" scope="col">Phase</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Teiler</th>
                 <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">{{(project?.type == 'DATASHIELD' && project.state != 'FINAL') ? 'Script' : 'Results'}} Acceptance</th>
@@ -60,7 +59,6 @@
               <tbody>
               <tr>
                 <td>{{ project ? project.code : '' }}</td>
-                <td>{{ project ? project.state : '' }}</td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.state"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.queryState"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser"><div  class="state_circle" :class="currentUser?.projectState.toLowerCase()" v-b-tooltip.hover :title="currentUser.projectState"></div></td>
@@ -813,7 +811,7 @@ export default defineComponent({
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
         },
         {
-          fieldKey: "Bridgeheads",
+          fieldKey: "Sites",
           fieldValue: [this.bridgeheads.map(bridghead => bridghead.humanReadable), this.allBridgeheads.map(bridghead => bridghead.humanReadable)],
           editProjectParam: [EditProjectParam.BRIDGEHEADS],
           isEditable: true,

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2024-01-09]
+## [1.1.0 - 2024-01-16]
 ### Added
 - Dockerfile
 - Single Spa
@@ -94,3 +94,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Alignment of user in navbar
 - Result acceptance in user input as circle
 - Separate Publication and other documents in new section
+- Rename bridgeheads with sites for being displayed

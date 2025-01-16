@@ -8,7 +8,7 @@
       <tr v-for="(header, index) in headers" :key="index">
         <!-- Header in the first column -->
         <td class="header-cell">{{ header }}</td>
-        <td v-if="header === 'Bridgeheads'" class="header-summary-cell" style="border-top: 1px solid #dddddd">{{ bridgeheads.length }}</td>
+        <td v-if="header === 'Sites'" class="header-summary-cell" style="border-top: 1px solid #dddddd">{{ bridgeheads.length }}</td>
         <td v-if="header === 'Votum'" class="header-summary-cell status-cell">{{ getVotumStatus()[0] }} <div class="exist-small green"></div> / {{ getVotumStatus()[1]}}<div class="exist-small red"></div></td>
         <td v-if="header === 'User Access'" class="header-summary-cell status-cell">{{ getBridgeheadStatus()[0] }} <div class="exist-small green"></div> / {{ getBridgeheadStatus()[1]}}<div class="exist-small red"></div></td>
         <td v-if="header === 'DataSHIELD Status'" class="header-summary-cell status-cell">{{ getDatashieldStatus()[0] }} <div class="exist-small green"></div> / {{ getDatashieldStatus()[1]}}<div class="exist-small red"></div></td>
@@ -94,7 +94,7 @@ export default class BridgeheadOverview extends Vue {
   Action = Action;
 
   DATASHIELD_STATUS_HEADER = 'DataSHIELD Status';
-  headers = ['Bridgeheads', 'Votum', 'User Access', 'Teiler', 'Creator Results Acceptance'];
+  headers = ['Sites', 'Votum', 'User Access', 'Teiler', 'Creator Results Acceptance'];
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
   selectedBridgehead: number | null = null;

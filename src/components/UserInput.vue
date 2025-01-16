@@ -166,7 +166,7 @@ export default class UserInput extends Vue {
         <thead>
         <tr>
           <th>User</th>
-          <th v-if="bridgeheads.length > 0">Bridgehead</th>
+          <th v-if="bridgeheads.length > 0">Site</th>
           <th>Results Acceptance</th> <!-- New column for user state -->
         </tr>
         </thead>

@@ -72,7 +72,8 @@
     </div>
     <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
                      :show-notification="showNotification" :call-toggle-notification="toggleNotification"
-                     :notifications="notifications" :call-update-notifications="fetchNotifications"/>
+                     :notifications="notifications" :call-update-notifications="fetchNotifications" :show-in-panel="true"
+    />
   </div>
 </template>
 

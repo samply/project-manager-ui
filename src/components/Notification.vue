@@ -20,6 +20,7 @@ export default class NotificationBox extends Vue {
   @Prop() readonly notifications!: Notification[];
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly showNotification!: boolean;
+  @Prop() readonly showInPanel!: boolean;
   @Prop({ type: Function, required: true }) readonly callUpdateNotifications!: () => void;
   @Prop({ type: Function, required: true }) readonly callToggleNotification!: () => void;
 
@@ -38,8 +39,8 @@ export default class NotificationBox extends Vue {
 </script>
 
 <template>
-  <div v-if="showNotification" class="custom-width-notifications">
-    <div class="box-header" style="display:flex; flex-flow:row; justify-content:space-between ">
+  <div v-if="showNotification" :class="{ 'custom-width-notifications': showInPanel }">
+    <div v-if="showInPanel" class="box-header" style="display:flex; flex-flow:row; justify-content:space-between ">
       <div>Notifications</div>
       <button style="padding: 0 15px 0 0; margin-bottom: -4px" @click="callToggleNotification" class="btn" v-if="showNotification">
         <i style="font-size: 20px" class="bi bi-x"></i> <!-- Schließsymbol für Progress -->

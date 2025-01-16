@@ -19,31 +19,17 @@
 
     <div class="right-container">
       <div class="main-content">
-        <div class="info-container">
-          <div v-if="project?.state !== 'DRAFT'" class="box-header">Status</div>
+        <div v-if="project?.state !== 'DRAFT'" class="info-container">
+          <div class="box-header">Status</div>
 
           <div style="padding: 2%">
-            <div style="display:flex; flex-flow:row; justify-content: space-between; margin-bottom:10px;">
-              <router-link to="/" data-placement="top" v-b-tooltip.hover title="Back to Project Dashboard"><i
-                  class="bi bi-arrow-left-square-fill" style="font-size: x-large"></i></router-link>
-
+            <div style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
               <div class="card"
                    v-if="project?.state !== 'DRAFT' && visibleBridgeheads && visibleBridgeheads.length === 1"
                    style="padding: 3px 20px;height: fit-content">
                 <div class="card-body" style="padding: 0px 0px;">
                   <span style="padding: 0px 0px;">{{ context.bridgehead?.humanReadable }}</span>
                 </div>
-              </div>
-
-              <div>
-                <button data-toggle="tooltip" data-placement="top" title="ToDo's" @click="toggleExplanations"
-                        class="btn explanation-button">
-                  <i class="bi bi-card-checklist"></i>
-                </button>
-                <button data-toggle="tooltip" data-placement="top" title="Notifications" @click="toggleNotification"
-                        class="btn notification-button">
-                  <i class="bi bi-chat-right-text-fill"></i>
-                </button>
               </div>
             </div>
             <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
@@ -261,37 +247,48 @@
       </div>
     </div>
 
-    <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
-                     :show-notification="showNotification" :call-toggle-notification="toggleNotification"
-                     :notifications="notifications" :call-update-notifications="fetchNotifications"/>
 
-    <div v-if="showExplanations" class="custom-width-notifications">
-      <div class="box-header" style="display:flex; flex-flow:row; justify-content:space-between ">
-        <div>TODO</div>
-        <button style="padding: 0 15px 0 0; margin-bottom: -4px" @click="toggleExplanations" class="btn" v-if="showExplanations">
-          <i style="font-size: 20px" class="bi bi-x"></i> <!-- Schließsymbol für Progress -->
-        </button>
-      </div>
+    <div :class="showRightPanel ? 'custom-width-notifications' : 'open-right-panel'">
+      <button style="" @click="showRightPanel=true" class="btn" v-if="!showRightPanel" data-toggle="tooltip" data-placement="top" title="Show ToDos & Notifications">
+        <i style="font-size: 20px" class="bi bi-chevron-double-left"></i> <!-- Schließsymbol für Progress -->
+      </button>
+      <div v-if="showRightPanel">
+        <div class="box-header" style="display:flex; flex-flow:row; justify-content:space-between;padding-bottom:0px; ">
+          <div style="display:flex; flex-flow:row;">
+            <div class="notification-tab" :class="{ 'active': !showNotification }" @click="toggleNotification">TODO</div>
+            <div class="notification-tab" :class="{ 'active': showNotification }" @click="toggleNotification">Notifications</div>
+          </div>
+          <button style="padding: 0 15px 0 0; margin-bottom: 5px" @click="showRightPanel=false" class="btn" v-if="showRightPanel" data-toggle="tooltip" data-placement="top" title="Hide Panel">
+            <i style="font-size: 20px" class="bi bi-chevron-double-right"></i> <!-- Schließsymbol für Progress -->
+          </button>
+        </div>
 
+        <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
+                         :show-notification="showNotification" :call-toggle-notification="toggleNotification"
+                         :notifications="notifications" :call-update-notifications="fetchNotifications" :show-in-panel="false"
+        />
 
-      <div v-if="extendedExplanations.size > 0" class="notification-box">
-        <div v-for="(explanation, index) in Array.from(extendedExplanations.values())" :key="index" class="card mb-3">
-          <div class="card-body">
-            <div style="display:flex; flex-flow: row;">
-              <div class="todo-circle"><span>#{{ explanation.number }}</span></div>
-              <h5 class="card-title">{{ explanation.message }}</h5>
+        <div v-if="!showNotification">
+          <div v-if="extendedExplanations.size > 0" class="notification-box">
+            <div v-for="(explanation, index) in Array.from(extendedExplanations.values())" :key="index" class="card mb-3">
+              <div class="card-body">
+                <div style="display:flex; flex-flow: row;">
+                  <div class="todo-circle"><span>#{{ explanation.number }}</span></div>
+                  <h5 class="card-title">{{ explanation.message }}</h5>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED'" class="notification-box">
+            <div class="card mb-3">
+              <div class="card-body">
+                <h5 class="card-title">No action is required at the moment. Please wait for the next notification, which will
+                  also be sent to you via email.</h5>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED'" class="notification-box">
-      <div class="card mb-3">
-        <div class="card-body">
-          <h5 class="card-title">No action is required at the moment. Please wait for the next notification, which will
-            also be sent to you via email.</h5>
-        </div>
-      </div>
-    </div>
     </div>
   </div>
 
@@ -387,6 +384,7 @@ export default defineComponent({
       notifications: [] as Notification[],
       showNotification: false,
       showExplanations: true,
+      showRightPanel: true,
       existsVotum: false,
       existsAuthenticationScript: false,
       existsApplicationForm: false,
@@ -1105,7 +1103,9 @@ export default defineComponent({
   color: black;
   font-size: large;
   font-weight: bold;
-  border: 1px solid #95c8dc;
+  border-top: 1px solid #95c8dc;
+  border-left: 1px solid #95c8dc;
+  border-right: 1px solid #95c8dc;
   border-radius: 10px 10px 0 0;
 }
 .stepper {
@@ -1133,6 +1133,7 @@ export default defineComponent({
   background-color: white;
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  margin-bottom: 1.5%;
 }
 .data-container {
   display: flex;
@@ -1140,14 +1141,13 @@ export default defineComponent({
   background-color: white;
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
-  margin-top: 1.5%;
   height: 100%;
 }
 .project-actions {
   background-color: white;
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
-  margin-top: 1.5%;
+  margin-bottom: 1.5%;
 }
 .mailing-blacklist {
   background-color: white;
@@ -1312,7 +1312,9 @@ export default defineComponent({
   margin-bottom: 4%;
   margin-right: 0.5%;
 }
-
+.open-right-panel {
+  margin-top: 1.5%;
+}
 
 .custom-width-notifications h2 {
   margin-bottom: 15px;
@@ -1427,5 +1429,17 @@ export default defineComponent({
   background: none;
   border: none;
   color: black;
+}
+.notification-tab {
+  padding: 5px 8% 5px 8%;
+  background-color: #e8f8fd;
+  margin: 0 2%;
+  border-radius: 5px 5px 0 0;
+  font-weight: normal;
+  cursor: pointer;
+}
+.notification-tab.active {
+  font-weight: bold;
+  background-color: white;
 }
 </style>

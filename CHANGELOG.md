@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2024-01-16]
+## [1.1.0 - 2025-01-16]
 ### Added
 - Dockerfile
 - Single Spa
@@ -86,6 +86,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Mailing Black List
 - Email while hovering on user
 - Results
+- Password Sharing Tool for different templates
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

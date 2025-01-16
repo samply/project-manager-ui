@@ -15,7 +15,8 @@ export default class PasswordSharingTool extends Vue {
   password = '';
   emailTemplateCopied = false;
   emailLinkGenerated = false;
-  generatedLink = '';
+  generatedLinks: string[] = [];
+  copiedLinks: boolean[] = []; // Track copied state for each recipient
 
   // Computed to determine if the password input is required
   get passwordRequired(): boolean {
@@ -41,8 +42,11 @@ export default class PasswordSharingTool extends Vue {
   }
 
   copyEmailTemplate(): void {
-    const message = this.generateEmailMessage();
-    navigator.clipboard.writeText(message).then(() => {
+    const concatenatedMessages = this.recipientsEmail
+        .map((email) => this.generateEmailMessage(email))  // Generate email for each recipient
+        .join("\n\n");  // Add line breaks between emails
+
+    navigator.clipboard.writeText(concatenatedMessages).then(() => {
       this.emailTemplateCopied = true;
       setTimeout(() => {
         this.emailTemplateCopied = false;
@@ -50,13 +54,41 @@ export default class PasswordSharingTool extends Vue {
     });
   }
 
+
+  // Generate email links for all recipients
   generateEmailLink(): void {
-    const mailtoLink = this.generateMailtoLink();
-    this.generatedLink = mailtoLink;
+    //this.resetCopiedState();
+    // Generate mailto link for each recipient
+    this.generatedLinks = this.recipientsEmail.map((email) => {
+      return this.generateMailtoLinkForRecipient(email);
+    });
+
+    // Initialize copiedLinks array
+    this.copiedLinks = new Array(this.generatedLinks.length).fill(false);
+
+    // Set the flag to indicate that links have been generated
     this.emailLinkGenerated = true;
   }
 
-  generateEmailMessage(): string {
+  // Generates the mailto link for a single recipient
+  generateMailtoLinkForRecipient(email: string): string {
+    const subject = "Secure File Access Password";
+    const body = this.generateEmailMessage(email);  // Pass the specific email
+    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  // Copy the link to clipboard and display the success icon
+  copyToClipboard(index: number): void {
+    const link = this.generatedLinks[index];
+
+    // Copy the link to the clipboard
+    navigator.clipboard.writeText(link).then(() => {
+      // Set the copied state for this link
+      this.copiedLinks[index] = true;
+    });
+  }
+
+  generateEmailMessage(email: string): string {
     return `
 The password for accessing the secure file is:
 
@@ -69,11 +101,10 @@ Your Team
 `;
   }
 
-  generateMailtoLink(): string {
+  generateMailtoLink(email: string): string {
     const subject = "Secure File Access Password";
-    const body = this.generateEmailMessage();
-    const recipientList = this.recipientsEmail.join("; ");
-    return `mailto:?bcc=${encodeURIComponent(recipientList)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
+    const body = this.generateEmailMessage(email);
+    return `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
         body
     )}`;
   }
@@ -126,11 +157,21 @@ Your Team
     <div class="option">
       <h4>Option 3:</h4>
       <button @click="generateEmailLink" class="btn btn-primary">
-        <i class="bi bi-envelope"></i> Generate Email Link
+        <i class="bi bi-envelope"></i> Generate Email Links
       </button>
-      <p v-if="emailLinkGenerated">Email link generated! Click to open in email app.</p>
-      <a v-if="generatedLink" :href="generatedLink" target="_blank" class="btn btn-link">Open Email App</a>
+      <p v-if="emailLinkGenerated">Email links generated! Click to open in email app.</p>
+      <div v-if="emailLinkGenerated">
+        <p v-for="(link, index) in generatedLinks" :key="index">
+          <a :href="link" target="_blank" class="btn btn-link" @click="copyToClipboard(index)">
+            Open Email App for Recipient {{ index + 1 }}
+          </a>
+          <!-- Bootstrap icon to show when copied -->
+          <i v-if="copiedLinks[index]" class="bi bi-check-circle text-success"></i>
+        </p>
+      </div>
     </div>
+
+
 
     <!-- User recommendation -->
     <div class="recommendation">

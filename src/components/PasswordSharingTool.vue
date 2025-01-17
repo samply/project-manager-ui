@@ -1,14 +1,22 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop} from "vue-property-decorator";
-import {ProjectManagerBackendService} from "@/services/projectManagerBackendService";
+import {Prop, Watch} from "vue-property-decorator";
+import {
+  Action,
+  MessageSubject,
+  Module,
+  ProjectManagerBackendService,
+  ProjectManagerContext
+} from "@/services/projectManagerBackendService";
+import {EmailRole} from "@/services/emailRole";
 
 @Options({
   name: "PasswordSharingTool",
 })
 export default class PasswordSharingTool extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly recipientsEmail!: string[];
+  @Prop() readonly recipientsEmails!: EmailRole[];
+  @Prop() readonly context!: ProjectManagerContext;
 
   recipientsCopied = false;
   passwordVisible = false;
@@ -17,8 +25,37 @@ export default class PasswordSharingTool extends Vue {
   emailLinkGenerated = false;
   generatedLinks: string[] = [];
   copiedLinks: boolean[] = []; // Track copied state for each recipient
+  recipientsMessageSubjects: MessageSubject[] = [];
 
-  // Computed to determine if the password input is required
+  @Watch('projectManagerBackendService', {immediate: true})
+  onProjectManagerBackendService(newValue: EmailRole[], oldValue: EmailRole[]) {
+    this.updateRecipientMessagesSubjects()
+  }
+
+  updateRecipientMessagesSubjects(): void {
+    this.recipientsMessageSubjects = [];
+    if (this.recipientsEmails){
+      this.recipientsEmails.forEach(emailRole => {
+        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_EMAIL_MESSAGE_AND_SUBJECT_ACTION).then(condition => {
+          if (condition){
+            this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.FETCH_EMAIL_MESSAGE_AND_SUBJECT_ACTION, this.context,
+                new Map([['email', emailRole.email], ['project-role', emailRole.projectRole], ['email-template-type', 'SEND_PASSWORD']])).then(messageSubject => {
+              if (messageSubject){
+                messageSubject.emailTo = emailRole.email;
+                this.addMessageSubject(messageSubject);
+              }
+            })
+          }
+        })
+      });
+    }
+  }
+
+  addMessageSubject(messageSubject: MessageSubject){
+    this.recipientsMessageSubjects.push(messageSubject);
+  }
+
+    // Computed to determine if the password input is required
   get passwordRequired(): boolean {
     return true; // Always show the password field for options 2 and 3
   }
@@ -28,8 +65,8 @@ export default class PasswordSharingTool extends Vue {
   }
 
   copyRecipients(): void {
-    if (Array.isArray(this.recipientsEmail)) {
-      const recipientsStr = this.recipientsEmail.join("; ");
+    if (Array.isArray(this.recipientsEmails)) {
+      const recipientsStr = this.recipientsEmails.map(recipient => recipient.email).join("; ");
       navigator.clipboard.writeText(recipientsStr).then(() => {
         this.recipientsCopied = true;
         setTimeout(() => {
@@ -42,9 +79,9 @@ export default class PasswordSharingTool extends Vue {
   }
 
   copyEmailTemplate(): void {
-    const concatenatedMessages = this.recipientsEmail
-        .map((email) => this.generateEmailMessage(email))  // Generate email for each recipient
-        .join("\n\n");  // Add line breaks between emails
+    const concatenatedMessages = this.recipientsMessageSubjects
+        .map((recipient) => this.generateEmailInEmlFormat(recipient))  // Generate email for each recipient
+        .join("\n\n********************************\n\n");  // Add line breaks between emails
 
     navigator.clipboard.writeText(concatenatedMessages).then(() => {
       this.emailTemplateCopied = true;
@@ -54,13 +91,17 @@ export default class PasswordSharingTool extends Vue {
     });
   }
 
+  generateEmailInEmlFormat(recipient: MessageSubject): string {
+    return 'To: ' + recipient.emailTo + '\nSubject: ' + recipient.subject + '\nContent-Type: text/html; charset="UTF-8"\n\n' + this.generateEmailMessage(recipient);
+  }
+
 
   // Generate email links for all recipients
   generateEmailLink(): void {
     //this.resetCopiedState();
     // Generate mailto link for each recipient
-    this.generatedLinks = this.recipientsEmail.map((email) => {
-      return this.generateMailtoLinkForRecipient(email);
+    this.generatedLinks = this.recipientsMessageSubjects.map((recipient) => {
+      return this.generateMailtoLink(recipient);
     });
 
     // Initialize copiedLinks array
@@ -68,13 +109,6 @@ export default class PasswordSharingTool extends Vue {
 
     // Set the flag to indicate that links have been generated
     this.emailLinkGenerated = true;
-  }
-
-  // Generates the mailto link for a single recipient
-  generateMailtoLinkForRecipient(email: string): string {
-    const subject = "Secure File Access Password";
-    const body = this.generateEmailMessage(email);  // Pass the specific email
-    return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
 
   // Copy the link to clipboard and display the success icon
@@ -88,26 +122,14 @@ export default class PasswordSharingTool extends Vue {
     });
   }
 
-  generateEmailMessage(email: string): string {
-    return `
-The password for accessing the secure file is:
-
-${this.password}
-
-To enhance security, we recommend encrypting and signing this email using your email client.
-
-Best regards,
-Your Team
-`;
+  generateMailtoLink(recipient: MessageSubject): string {
+    return `mailto:${recipient.emailTo}?subject=${encodeURIComponent(recipient.subject)}&body=${encodeURIComponent(this.generateEmailMessage(recipient))}`;
   }
 
-  generateMailtoLink(email: string): string {
-    const subject = "Secure File Access Password";
-    const body = this.generateEmailMessage(email);
-    return `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
-        body
-    )}`;
+  generateEmailMessage(recipient: MessageSubject): string {
+    return recipient.message.replace("{{password}}", this.password);
   }
+
 }
 </script>
 
@@ -118,7 +140,7 @@ Your Team
 
     <!-- Option 1: Copy emails of recipients -->
     <div class="option">
-      <h4>Option 1:</h4>
+      <h5>Option 1:</h5>
       <button @click="copyRecipients" class="btn btn-primary">
         <i class="bi bi-clipboard"></i> Copy Recipients' Emails
       </button>
@@ -128,7 +150,7 @@ Your Team
 
     <!-- Password input field -->
     <div class="password-section" v-if="passwordRequired">
-      <h5>Enter Password (For Options 2 and 3):</h5>
+      <h6>Enter Password (For Options 2 and 3):</h6>
       <div class="input-group">
         <input
             :type="passwordVisible ? 'text' : 'password'"
@@ -145,7 +167,7 @@ Your Team
 
     <!-- Option 2: Copy email template -->
     <div class="option">
-      <h4>Option 2:</h4>
+      <h5>Option 2:</h5>
       <button @click="copyEmailTemplate" class="btn btn-primary">
         <i class="bi bi-clipboard"></i> Copy Email Template
       </button>
@@ -155,7 +177,7 @@ Your Team
 
     <!-- Option 3: Generate link for email app -->
     <div class="option">
-      <h4>Option 3:</h4>
+      <h5>Option 3:</h5>
       <button @click="generateEmailLink" class="btn btn-primary">
         <i class="bi bi-envelope"></i> Generate Email Links
       </button>
@@ -163,7 +185,7 @@ Your Team
       <div v-if="emailLinkGenerated">
         <p v-for="(link, index) in generatedLinks" :key="index">
           <a :href="link" target="_blank" class="btn btn-link" @click="copyToClipboard(index)">
-            Open Email App for Recipient {{ index + 1 }}
+            Open Email App for {{recipientsEmails[index].email}} with role {{ recipientsEmails[index].projectRole}}
           </a>
           <!-- Bootstrap icon to show when copied -->
           <i v-if="copiedLinks[index]" class="bi bi-check-circle text-success"></i>

@@ -110,6 +110,7 @@
             <UserInput :project="project" :context="context"
                        :bridgeheads="visibleBridgeheads"
                        :todos="extendedExplanations"
+                       :current-users="currentUsers"
                        :project-manager-backend-service="projectManagerBackendService"/>
           </div>
         </div>
@@ -118,7 +119,9 @@
           <div style="padding: 2%">
             <ResultsBox :call-refreh-context="refreshContext"
                         :project-manager-backend-service="projectManagerBackendService"
+                        :current-users="currentUsers"
                         :context="context"
+                        :project="project"
             />
           </div>
         </div>
@@ -417,7 +420,8 @@ export default defineComponent({
       currentUser: undefined as User | undefined,
       hasProjectAllMandatoryFields: false,
       tooltipTextForCreateButton: '',
-      canShowBridgeheadAdminButtons: false
+      canShowBridgeheadAdminButtons: false,
+      currentUsers: [] as User[]
     };
   },
   watch: {
@@ -567,6 +571,7 @@ export default defineComponent({
           }),
           this.initializeCurrentProjectConfiguration(),
           this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads'),
+          this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, new Map(), 'currentUsers'),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, new Map(), async (result: boolean) => {
             this.existsVotum = result;
             if (this.existsVotum) {

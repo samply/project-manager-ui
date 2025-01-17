@@ -25,17 +25,19 @@ import UserAndEmail from "@/components/UserAndEmail.vue";
   }
 })
 export default class UserInput extends Vue {
+  @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly project!: Project;
   @Prop() readonly bridgeheads!: Bridgehead[];
+  @Prop() readonly currentUsers!: User[];
   @Prop() readonly todos?: Explanations;
+
 
   partialEmail = '';
   selectedBridgehead: Bridgehead | undefined = undefined;
   suggestions: User[] = [];
   isActive = false;
-  currentUsers: User[] = [];
   canInvite = true;
   showSuggestions = false;
 
@@ -53,9 +55,6 @@ export default class UserInput extends Vue {
   updateIsActive() {
     this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, this.fetchAction()).then(isActive => {
       this.isActive = isActive;
-      if (isActive) {
-        this.updateCurrentUsers();
-      }
     });
   }
 
@@ -86,7 +85,7 @@ export default class UserInput extends Vue {
     const context = (this.selectedBridgehead) ? this.createContext(this.selectedBridgehead) : this.context;
     this.projectManagerBackendService.fetchData(Module.USER_MODULE, this.fetchAction(), context, params).then(result => {
       this.partialEmail = '';
-      this.updateCurrentUsers();
+      this.callRefrehContext();
     });
   }
 
@@ -102,19 +101,6 @@ export default class UserInput extends Vue {
       this.suggestions = [];
       this.showSuggestions = false;
     }
-  }
-
-  updateCurrentUsers() {
-    let index = 0;
-    this.bridgeheads.forEach(bridgehead => this.projectManagerBackendService
-        .fetchData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, this.createContext(bridgehead), new Map())
-        .then(currentUsers => {
-          if (index == 0) {
-            this.currentUsers = [];
-          }
-          index += 1;
-          this.currentUsers.push(...currentUsers)
-        }));
   }
 
   createContext(bridgehead: Bridgehead | undefined) {

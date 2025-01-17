@@ -4,15 +4,16 @@ import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   ActionButton,
-  Module,
+  Module, Project,
   ProjectManagerBackendService,
   ProjectManagerContext,
-  Results
+  Results, User
 } from "@/services/projectManagerBackendService";
 import PasswordSharingTool from "@/components/PasswordSharingTool.vue";
 import "@/assets/styles/state-circle.css"
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
+import {EmailRole} from "@/services/emailRole";
 
 
 @Options({
@@ -23,6 +24,8 @@ export default class ResultsBox extends Vue {
   @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
+  @Prop() readonly project!: Project;
+  @Prop() readonly currentUsers!: User[];
 
   resultsUrl = "";
   projectResults: Results | undefined = undefined;
@@ -34,6 +37,7 @@ export default class ResultsBox extends Vue {
   resultsToShow: Results[] = [];
   isPopupVisible = false;
   actionButtons: ActionButton[] = [];
+  emailRecipients: EmailRole[] = [];
 
   projectResultsButtons = [
     {
@@ -70,12 +74,20 @@ export default class ResultsBox extends Vue {
     this.isPopupVisible = true;
   }
 
+  resetEmailRecipients(): void {
+    this.emailRecipients = (this.project?.creatorEmail) ? [new EmailRole(this.project?.creatorEmail, 'CREATOR')] : [];
+    this.currentUsers.forEach(currentUser => {
+      this.emailRecipients.push(new EmailRole(currentUser.email, currentUser.projectRole));
+    });
+  }
+
   closePopup(): void {
     this.isPopupVisible = false;
   }
 
   @Watch('projectManagerBackendService', {immediate: true})
   onProjectManagerBackendServiceChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
+    this.resetEmailRecipients();
     this.resetCanAccept();
     this.resetCanSend();
     this.resetResults();
@@ -228,8 +240,9 @@ export default class ResultsBox extends Vue {
         <div class="modal-content">
           <button @click="closePopup" class="close-btn">&times;</button>
           <PasswordSharingTool
-              :project-manager-backend-service="projectBridgeheadResults"
-              :recipients-email="['example1@test.dkfz.de','example2@test.dkfz.de']"
+              :project-manager-backend-service="projectManagerBackendService"
+              :recipients-emails="emailRecipients"
+              :context="context"
           />
         </div>
       </div>

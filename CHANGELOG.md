@@ -98,3 +98,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Result acceptance in user input as circle
 - Separate Publication and other documents in new section
 - Rename bridgeheads with sites for being displayed
+- Rename Password Sharing Tool with Credentials Sharing Tool

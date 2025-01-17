@@ -11,9 +11,9 @@ import {
 import {EmailRole} from "@/services/emailRole";
 
 @Options({
-  name: "PasswordSharingTool",
+  name: "CredentialsSharingTool",
 })
-export default class PasswordSharingTool extends Vue {
+export default class CredentialsSharingTool extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly recipientsEmails!: EmailRole[];
   @Prop() readonly context!: ProjectManagerContext;
@@ -169,7 +169,7 @@ export default class PasswordSharingTool extends Vue {
 
 <template>
   <div class="password-sharing-tool">
-    <h3>Password Sharing Tool</h3>
+    <h3>Credentials Sharing Tool</h3>
     <p>Please choose an option below to share the password securely. No passwords will be sent automatically, and the tool runs exclusively in your browser.</p>
 
     <!-- Option 1: Copy emails of recipients -->

@@ -9,7 +9,7 @@ import {
   ProjectManagerContext,
   Results, User
 } from "@/services/projectManagerBackendService";
-import PasswordSharingTool from "@/components/PasswordSharingTool.vue";
+import CredentialsSharingTool from "@/components/CredentialsSharingTool.vue";
 import "@/assets/styles/state-circle.css"
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
@@ -18,7 +18,7 @@ import {EmailRole} from "@/services/emailRole";
 
 @Options({
   name: "ResultsBox",
-  components: {ProjectManagerButton, UserAndEmail, PasswordSharingTool}
+  components: {ProjectManagerButton, UserAndEmail, CredentialsSharingTool}
 })
 export default class ResultsBox extends Vue {
   @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
@@ -77,7 +77,7 @@ export default class ResultsBox extends Vue {
   ] as ActionButton[];
 
 
-  openPasswordSharingTool(): void {
+  openCredentialsSharingTool(): void {
     this.isPopupVisible = true;
   }
 
@@ -237,7 +237,7 @@ export default class ResultsBox extends Vue {
         <!-- Short Message -->
         <p>
           For securely sharing passwords or authentication methods with authorized recipients, an optional
-          <strong>Password Sharing Tool</strong> is available. It generates email templates that separate
+          <strong>Credentials Sharing Tool</strong> is available. It generates email templates that separate
           passwords from file URLs, enhancing security without automatically sending passwords.
           <!-- Read More Link -->
           <span
@@ -278,15 +278,15 @@ export default class ResultsBox extends Vue {
           </ul>
         </div>
       </div>
-      <button @click="openPasswordSharingTool" class="btn btn-info">
-        Open Password Sharing Tool
+      <button @click="openCredentialsSharingTool" class="btn btn-info">
+        Open Credentials Sharing Tool
       </button>
 
-      <!-- Password Sharing Tool Popup -->
+      <!-- Credentials Sharing Tool Popup -->
       <div v-if="isPopupVisible" class="modal">
         <div class="modal-content">
           <button @click="closePopup" class="close-btn">&times;</button>
-          <PasswordSharingTool
+          <CredentialsSharingTool
               :project-manager-backend-service="projectManagerBackendService"
               :recipients-emails="emailRecipients"
               :context="context"

@@ -88,6 +88,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Results
 - Password Sharing Tool for different templates
 - Fetch email message and subject
+- Generate eml and html files for Password Sharing Tool
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

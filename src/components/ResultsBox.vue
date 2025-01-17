@@ -38,6 +38,13 @@ export default class ResultsBox extends Vue {
   isPopupVisible = false;
   actionButtons: ActionButton[] = [];
   emailRecipients: EmailRole[] = [];
+  // Reactive property to control the visibility of the long message
+  isExpanded = false;
+
+  // Method to toggle the visibility
+  toggleReadMore() {
+    this.isExpanded = !this.isExpanded;
+  }
 
   projectResultsButtons = [
     {
@@ -226,11 +233,51 @@ export default class ResultsBox extends Vue {
               class="send-button">
         Send Results URL
       </button>
-      <p>
-        For securely sharing passwords with authorized recipients, there is an optional <strong>Password Sharing
-        Tool</strong> available.
-        This tool helps you generate the necessary email templates without sending any password automatically.
-      </p>
+      <div>
+        <!-- Short Message -->
+        <p>
+          For securely sharing passwords or authentication methods with authorized recipients, an optional
+          <strong>Password Sharing Tool</strong> is available. It generates email templates that separate
+          passwords from file URLs, enhancing security without automatically sending passwords.
+          <!-- Read More Link -->
+          <span
+              class="read-more-link"
+              @click="toggleReadMore">
+        {{ isExpanded ? 'Read less' : 'Read more' }}
+      </span>
+        </p>
+
+        <!-- Long Message -->
+        <div v-if="isExpanded">
+          <p>This tool provides additional benefits and functionality to streamline secure sharing:</p>
+          <ul>
+            <li>
+              <strong>Optional Use:</strong> You can share passwords or authentication methods through other means if preferred.
+            </li>
+            <li><strong>Authorized Recipients:</strong> Ensures only approved individuals receive access information.</li>
+            <li>
+              <strong>Comprehensive Instructions:</strong> Prepares detailed email templates with clear instructions for recipients.
+            </li>
+            <li>
+              <strong>Separation of Credentials and File URLs:</strong>
+              <ul>
+                <li>The URL for accessing cloud files is sent via the Data Science Orchestrator's SMTP server.</li>
+                <li>
+                  The password (or other authentication details) is sent through the results provider's SMTP server, ensuring they remain
+                  separate.
+                </li>
+              </ul>
+            </li>
+            <li>
+              <strong>Secure File Access:</strong> Instead of sharing the direct cloud file URL, the email template includes a link to the
+              Data Science Orchestrator, where the file can be securely downloaded.
+            </li>
+            <li>
+              <strong>Flexible Formats:</strong> Offers multiple email formats and solutions to simplify sharing and enhance usability.
+            </li>
+          </ul>
+        </div>
+      </div>
       <button @click="openPasswordSharingTool" class="btn btn-info">
         Open Password Sharing Tool
       </button>
@@ -390,6 +437,19 @@ p {
 .states-circle-container {
   display: flex;
   justify-content: center;
+}
+
+/* Custom style for the Read More link */
+.read-more-link {
+  font-style: italic;
+  color: #007bff;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-left: 8px;
+}
+
+.read-more-link:hover {
+  color: #0056b3;
 }
 
 </style>

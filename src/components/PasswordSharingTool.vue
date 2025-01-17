@@ -23,8 +23,14 @@ export default class PasswordSharingTool extends Vue {
   password = '';
   emailTemplateCopied = false;
   emailLinkGenerated = false;
+  emlLinksGenerated = false;
+  htmlLinksGenerated = false;
   generatedLinks: string[] = [];
-  copiedLinks: boolean[] = []; // Track copied state for each recipient
+  emlLinks: string[] = [];
+  htmlLinks: string[] = [];
+  copiedLinks: boolean[] = []; // Track copied state for email links
+  emlDownloaded: boolean[] = [];
+  htmlDownloaded: boolean[] = [];
   recipientsMessageSubjects: MessageSubject[] = [];
 
   @Watch('projectManagerBackendService', {immediate: true})
@@ -130,6 +136,34 @@ export default class PasswordSharingTool extends Vue {
     return recipient.message.replace("{{password}}", this.password);
   }
 
+  generateEmlFiles(): void {
+    this.emlLinks = this.recipientsMessageSubjects.map((recipient) => {
+      const content = this.generateEmailInEmlFormat(recipient);
+      return this.createDownloadLink(content, 'message/rfc822');
+    });
+    this.emlDownloaded = new Array(this.emlLinks.length).fill(false);
+    this.emlLinksGenerated = true;
+  }
+
+  generateHtmlFiles(): void {
+    this.htmlLinks = this.recipientsMessageSubjects.map((recipient) => {
+      const content = this.generateEmailMessage(recipient);
+      return this.createDownloadLink(content, 'text/html');
+    });
+    this.htmlDownloaded = new Array(this.htmlLinks.length).fill(false);
+    this.htmlLinksGenerated = true;
+  }
+
+  createDownloadLink(content: string, mimeType: string): string {
+    const blob = new Blob([content], { type: mimeType });
+    return URL.createObjectURL(blob);
+  }
+
+  generatePassword(): void {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*";
+    this.password = Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+
 }
 </script>
 
@@ -150,7 +184,7 @@ export default class PasswordSharingTool extends Vue {
 
     <!-- Password input field -->
     <div class="password-section" v-if="passwordRequired">
-      <h6>Enter Password (For Options 2 and 3):</h6>
+      <h6>Enter Password (For Options 2 - 5):</h6>
       <div class="input-group">
         <input
             :type="passwordVisible ? 'text' : 'password'"
@@ -158,8 +192,11 @@ export default class PasswordSharingTool extends Vue {
             placeholder="Enter password"
             class="form-control"
         />
-        <button @click="togglePasswordVisibility" class="btn btn-secondary">
+        <button @click="togglePasswordVisibility" class="btn btn-secondary" title="Toggle password visibility">
           <i :class="passwordVisible ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+        </button>
+        <button @click="generatePassword" class="btn btn-secondary ms-2" title="Generate a new password">
+          <i class="bi bi-shuffle"></i>
         </button>
       </div>
       <br>
@@ -193,7 +230,39 @@ export default class PasswordSharingTool extends Vue {
       </div>
     </div>
 
+    <!-- Option 4: Download EML files -->
+    <div class="option">
+      <h5>Option 4:</h5>
+      <button @click="generateEmlFiles" class="btn btn-primary">
+        <i class="bi bi-download"></i> Generate EML Files
+      </button>
+      <p v-if="emlLinksGenerated">EML files ready for download:</p>
+      <div v-if="emlLinksGenerated">
+        <p v-for="(link, index) in emlLinks" :key="index">
+          <a :href="link" :download="`email_${recipientsEmails[index].email}.eml`" class="btn btn-link">
+            Download EML for {{ recipientsEmails[index].email }}
+          </a>
+          <i v-if="emlDownloaded[index]" class="bi bi-check-circle text-success"></i>
+        </p>
+      </div>
+    </div>
 
+    <!-- Option 5: Download HTML files -->
+    <div class="option">
+      <h5>Option 5:</h5>
+      <button @click="generateHtmlFiles" class="btn btn-primary">
+        <i class="bi bi-download"></i> Generate HTML Files
+      </button>
+      <p v-if="htmlLinksGenerated">HTML files ready for download:</p>
+      <div v-if="htmlLinksGenerated">
+        <p v-for="(link, index) in htmlLinks" :key="index">
+          <a :href="link" :download="`email_${recipientsEmails[index].email}.html`" class="btn btn-link">
+            Download HTML for {{ recipientsEmails[index].email }}
+          </a>
+          <i v-if="htmlDownloaded[index]" class="bi bi-check-circle text-success"></i>
+        </p>
+      </div>
+    </div>
 
     <!-- User recommendation -->
     <div class="recommendation">

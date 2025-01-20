@@ -94,7 +94,7 @@ export default class BridgeheadOverview extends Vue {
   Action = Action;
 
   DATASHIELD_STATUS_HEADER = 'DataSHIELD Status';
-  headers = ['Sites', 'Votum', 'User Access', 'Teiler', 'Creator Results Acceptance'];
+  headers = ['Sites', 'Votum', 'Teiler', 'User Access', 'Creator Results Acceptance'];
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
   selectedBridgehead: number | null = null;

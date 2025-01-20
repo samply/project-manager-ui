@@ -32,9 +32,7 @@ const refreshToken = () => {
     keycloakInstance
         .updateToken()
         .then((refreshed) => {
-            if (refreshed) {
-                console.log('Token refreshed');
-            } else {
+            if (!refreshed) {
                 console.log('Token not refreshed, or the token is still valid');
             }
         })

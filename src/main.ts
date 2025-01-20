@@ -29,7 +29,6 @@ app.use(store);
 export const bootstrap = async () => {
     return new Promise((resolve) => {
         const onAuthenticatedCallback = () => {
-            console.log('Authenticated!');
             resolve(vueLifecycles.bootstrap);
         };
 

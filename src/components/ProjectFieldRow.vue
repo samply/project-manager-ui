@@ -31,7 +31,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly fieldValue!: string[];
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly context!: ProjectManagerContext;
-  @Prop({default: null}) readonly redirectUrl!: string | null;
+  @Prop() readonly redirectUrl?: string;
   @Prop() readonly possibleValues!: string[];
   @Prop() readonly configurations?: Map<string, Project>;
   @Prop() readonly isEditable!: boolean;
@@ -71,11 +71,6 @@ export default class ProjectFieldRow extends Vue {
   @Watch("fieldValue", {immediate: true, deep: true})
   onFieldValueChange(newValue: string[], oldValue: string[]) {
     this.tempFieldValue = newValue;
-  }
-
-  @Watch("redirectUrl", {immediate: true, deep: true})
-  onRedirectUrlChange(newValue: string | null, oldValue: string | null) {
-    console.log("redirectURL:" + newValue);
   }
 
   get dialogStep(){

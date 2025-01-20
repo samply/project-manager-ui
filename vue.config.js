@@ -6,6 +6,11 @@ module.exports = {
         output: {
             libraryTarget: "system",
         },
+        plugins: [
+            new (require('webpack')).DefinePlugin({
+                '__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': 'false', // Set the flag globally to avoid hydration mismatch details
+            }),
+        ],
     },
     chainWebpack: (config) => {
         if (config.plugins.has("SystemJSPublicPathWebpackPlugin")) {

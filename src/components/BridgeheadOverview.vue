@@ -41,18 +41,18 @@
             <div v-else class="states-circle-container"><div class="state_circle red"></div></div>
           </div>
           <div v-else-if="header === 'Teiler'" class="states-circle-container">
-            <div class="state_circle" :class="bridgehead?.queryState?.toLowerCase()" v-b-tooltip.hover :title="bridgehead?.queryState ?? undefined"/>
+            <div class="state_circle" :class="bridgehead?.queryState?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="bridgehead?.queryState ?? undefined"/>
           </div>
           <div v-else-if="header === 'User Access'" class="states-circle-container">
-            <div class="state_circle" :class="bridgehead?.state?.toLowerCase()" v-b-tooltip.hover :title="bridgehead?.state ?? undefined"/>
+            <div class="state_circle" :class="bridgehead?.state?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="bridgehead?.state ?? undefined"/>
           </div>
           <div v-else-if="header === 'Creator Results Acceptance'" class="states-circle-container">
-            <div class="state_circle" :class="getCreatorStatusForBridgehead(bridgehead)?.toLowerCase()" v-b-tooltip.hover :title="getCreatorStatusForBridgehead(bridgehead) ?? undefined"/>
+            <div class="state_circle" :class="getCreatorStatusForBridgehead(bridgehead)?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="getCreatorStatusForBridgehead(bridgehead) ?? undefined"/>
           </div>
           <div v-else-if="header === 'DataSHIELD Status'">
             <div v-if="dataShieldStatusArray[bridgeheadIndex]" class="states-circle-container">
               <div class="state_circle" :class="dataShieldStatusArray[bridgeheadIndex]?.project_status?.toLowerCase()"
-                   v-b-tooltip.hover
+                   data-toggle="tooltip" data-placement="top"
                    :title="dataShieldStatusArray[bridgeheadIndex]?.project_status">
               </div>
             </div>

@@ -59,10 +59,10 @@
               <tbody>
               <tr>
                 <td>{{ project ? project.code : '' }}</td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.state ?? undefined"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState?.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.queryState ?? undefined"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser"><div  class="state_circle" :class="currentUser?.projectState.toLowerCase()" v-b-tooltip.hover :title="currentUser.projectState"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus"><div  class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatus?.project_status"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="activeBridgehead?.state ?? undefined"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="activeBridgehead?.queryState ?? undefined"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser"><div  class="state_circle" :class="currentUser?.projectState.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="currentUser.projectState"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus"><div  class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="dataShieldStatus?.project_status"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')">
                   {{ areExportFilesTransferredToResearchEnvironment }}
                 </td>
@@ -111,7 +111,9 @@
                        :bridgeheads="visibleBridgeheads"
                        :todos="extendedExplanations"
                        :current-users="currentUsers"
-                       :project-manager-backend-service="projectManagerBackendService"/>
+                       :project-manager-backend-service="projectManagerBackendService"
+                       :call-refreh-context="refreshContext"
+            />
           </div>
         </div>
         <div class="documents" v-if="project?.state === 'FINAL' && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN))">

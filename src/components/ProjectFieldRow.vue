@@ -342,7 +342,7 @@ export default class ProjectFieldRow extends Vue {
                       <!--<template v-if="key as string !== 'customConfig'">-->
                       <template v-if="!['customConfig', 'label', 'description'].includes(key.toString())">
                         <td style="font-weight: bold">{{configLabel[key]}}:</td>
-                        <td class="truncate-15" v-b-tooltip.hover :title="param.toString()">{{param}}</td>
+                        <td class="truncate-15" data-toggle="tooltip" data-placement="top" :title="param.toString()">{{param}}</td>
                       </template>
                     </tr>
                   </table>
@@ -477,7 +477,7 @@ export default class ProjectFieldRow extends Vue {
           <div v-else-if="tempFieldValue && tempFieldValue.length > 0" style="width:70%">
             <template v-if="isQuery()">
               <div class="field-value clickable" :class="{ 'truncate-60': toggleHumanReadable }"
-                   @click="toggleHumanReadable = !toggleHumanReadable" v-b-tooltip.hover :title="tempFieldValue[0]">{{ tempFieldValue[0] }}</div>
+                   @click="toggleHumanReadable = !toggleHumanReadable" data-toggle="tooltip" data-placement="top" :title="tempFieldValue[0]">{{ tempFieldValue[0] }}</div>
             </template>
             <template v-else-if="uploadAction">
                 <span v-if="tempFieldValue[0]?.length > 0" class="truncate-60">{{ tempFieldValue[0] }}</span>

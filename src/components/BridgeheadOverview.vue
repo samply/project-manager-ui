@@ -9,24 +9,24 @@
         <!-- Header in the first column -->
         <td class="header-cell">{{ header }}</td>
         <td v-if="header === 'Sites'" class="header-summary-cell" style="border-top: 1px solid #dddddd">{{ bridgeheads.length }}</td>
-        <td v-if="header === 'Votum'" class="header-summary-cell status-cell">{{ getVotumStatus()[0] }} <div class="exist-small green"></div> / {{ getVotumStatus()[1]}}<div class="exist-small red"></div></td>
-        <td v-if="header === 'User Access'" class="header-summary-cell status-cell">{{ getBridgeheadStatus()[0] }} <div class="exist-small green"></div> / {{ getBridgeheadStatus()[1]}}<div class="exist-small red"></div></td>
-        <td v-if="header === 'DataSHIELD Status'" class="header-summary-cell status-cell">{{ getDatashieldStatus()[0] }} <div class="exist-small green"></div> / {{ getDatashieldStatus()[1]}}<div class="exist-small red"></div></td>
-        <td v-if="header === 'Teiler'" class="header-summary-cell status-cell">{{ getQueryStatus()[0] }} <div class="exist-small green"></div> / {{ getQueryStatus()[1]}}<div class="exist-small red"></div></td>
-        <td v-if="header === 'Creator Results Acceptance' " class="header-summary-cell status-cell">{{ getCreatorStatus()[0] }}<div class="exist-small green"></div> / {{ getCreatorStatus()[1]}}<div class="exist-small red"></div></td>
+        <td v-else-if="header === 'Votum'" class="header-summary-cell status-cell">{{ getVotumStatus()[0] }} <div class="exist-small green"></div> / {{ getVotumStatus()[1] }}<div class="exist-small red"></div></td>
+        <td v-else-if="header === 'Teiler'" class="header-summary-cell status-cell">{{ getQueryStatus()[0] }} <div class="exist-small green"></div> / {{ getQueryStatus()[1] }}<div class="exist-small red"></div></td>
+        <td v-if="header === 'DataSHIELD Status' " class="header-summary-cell status-cell">
+          {{ getDatashieldStatus()[0] }} <div class="exist-small green"></div> / {{ getDatashieldStatus()[1] }}<div class="exist-small red"></div>
+        </td>
+        <td v-else-if="header === 'User Access'" class="header-summary-cell status-cell">{{ getBridgeheadStatus()[0] }} <div class="exist-small green"></div> / {{ getBridgeheadStatus()[1] }}<div class="exist-small red"></div></td>
+        <td v-else-if="header === 'Creator Results Acceptance'" class="header-summary-cell status-cell">{{ getCreatorStatus()[0] }} <div class="exist-small green"></div> / {{ getCreatorStatus()[1] }}<div class="exist-small red"></div></td>
         <!-- Data for each bridgehead in subsequent columns -->
         <td
-            v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(scrollIndex,(scrollIndex + numberBridgeheadShown))"
+            v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(scrollIndex, scrollIndex + numberBridgeheadShown)"
             :key="bridgeheadIndex"
             class="data-cell"
             :class="{ 'selected': selectedBridgehead === bridgeheadIndex }"
         >
-          <!-- First row: bridgehead.bridgehead -->
-          <div v-if="index === 0" style="font-weight: bold; text-align: center"
-               @click="selectBridgehead(bridgeheadIndex)"
-          >{{ bridgehead.humanReadable }}</div>
-          <!-- Second row: existVotum -->
-          <div v-else-if="index === 1">
+          <div v-if="header === 'Sites'" style="font-weight: bold; text-align: center" @click="selectBridgehead(bridgeheadIndex)">
+            {{ bridgehead.humanReadable }}
+          </div>
+          <div v-else-if="header === 'Votum'">
             <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]" class="states-circle-container">
               <div class="state_circle green"></div>
               <DownloadButton
@@ -35,19 +35,32 @@
                   icon-class="bi bi-download"
                   button-class="download-button"
                   :module="Module.PROJECT_DOCUMENTS_MODULE"
-                  :action="Action.DOWNLOAD_VOTUM_ACTION"/>
+                  :action="Action.DOWNLOAD_VOTUM_ACTION"
+              />
             </div>
-            <div v-else  class="states-circle-container"><div class="state_circle red"></div></div>
+            <div v-else class="states-circle-container"><div class="state_circle red"></div></div>
           </div>
-          <!-- Third row: bridgehead.state -->
-          <div v-else-if="index === 2" class="states-circle-container"><div class="state_circle" :class="bridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="bridgehead?.state"/></div>
-          <div v-else-if="index === 3" class="states-circle-container"><div class="state_circle" :class="bridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="bridgehead?.queryState"/></div>
-          <div v-else-if="index === 4" class="states-circle-container"><div class="state_circle" :class="getCreatorStatusForBridgehead(bridgehead).toLowerCase()" v-b-tooltip.hover :title="getCreatorStatusForBridgehead(bridgehead)"/></div>
-          <div v-else> <!-- We assume that the DataSHIELD Status is the last header -->
-            <div v-if="dataShieldStatusArray[bridgeheadIndex]" class="states-circle-container"><div class="state_circle" :class="dataShieldStatusArray[bridgeheadIndex]?.project_status?.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatusArray[bridgeheadIndex]?.project_status"></div></div>
+          <div v-else-if="header === 'Teiler'" class="states-circle-container">
+            <div class="state_circle" :class="bridgehead?.queryState?.toLowerCase()" v-b-tooltip.hover :title="bridgehead?.queryState ?? undefined"/>
+          </div>
+          <div v-else-if="header === 'User Access'" class="states-circle-container">
+            <div class="state_circle" :class="bridgehead?.state?.toLowerCase()" v-b-tooltip.hover :title="bridgehead?.state ?? undefined"/>
+          </div>
+          <div v-else-if="header === 'Creator Results Acceptance'" class="states-circle-container">
+            <div class="state_circle" :class="getCreatorStatusForBridgehead(bridgehead)?.toLowerCase()" v-b-tooltip.hover :title="getCreatorStatusForBridgehead(bridgehead) ?? undefined"/>
+          </div>
+          <div v-else-if="header === 'DataSHIELD Status'">
+            <div v-if="dataShieldStatusArray[bridgeheadIndex]" class="states-circle-container">
+              <div class="state_circle" :class="dataShieldStatusArray[bridgeheadIndex]?.project_status?.toLowerCase()"
+                   v-b-tooltip.hover
+                   :title="dataShieldStatusArray[bridgeheadIndex]?.project_status">
+              </div>
+            </div>
             <div v-else></div>
           </div>
+
         </td>
+
       </tr>
       </tbody>
     </table>
@@ -94,7 +107,7 @@ export default class BridgeheadOverview extends Vue {
   Action = Action;
 
   DATASHIELD_STATUS_HEADER = 'DataSHIELD Status';
-  headers = ['Sites', 'Votum', 'User Access', 'Teiler', 'Creator Results Acceptance'];
+  headers = ['Sites', 'Votum', 'Teiler', 'User Access', 'Creator Results Acceptance'];
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
   selectedBridgehead: number | null = null;
@@ -116,7 +129,13 @@ export default class BridgeheadOverview extends Vue {
     this.existsVotums = await this.fetchExistsVotums();
     if (this.project && this.project.type === 'DATASHIELD') {
       if (!this.headers.includes(this.DATASHIELD_STATUS_HEADER)) {
-        this.headers.push(this.DATASHIELD_STATUS_HEADER); // We assume that the DataSHIELD Status is the last header
+        const userAccessIndex = this.headers.indexOf('User Access');
+        if (userAccessIndex !== -1) {
+          this.headers.splice(userAccessIndex, 0, this.DATASHIELD_STATUS_HEADER);
+        } else {
+          // If 'User Access' is not found, append the header as a fallback
+          this.headers.push(this.DATASHIELD_STATUS_HEADER);
+        }
       }
       this.dataShieldStatusArray = await this.fetchDataShieldStates();
     }
@@ -194,16 +213,20 @@ export default class BridgeheadOverview extends Vue {
     if (this.project?.creatorState === 'REJECTED'){
       return [0, 1];
     }
-    const isFinished = this.bridgeheads.filter((bridgehead) => bridgehead?.creatorState === 'ACCEPTED');
-    const notFinished = this.bridgeheads.filter((bridgehead) => bridgehead?.queryState !== 'ACCEPTED');
+    const isFinished = this.bridgeheads.filter((bridgehead) => this.isBridgeheadAcceptedByCreator(bridgehead));
+    const notFinished = this.bridgeheads.filter((bridgehead) => !this.isBridgeheadAcceptedByCreator(bridgehead));
     return [isFinished.length, notFinished.length]
   }
 
-  getCreatorStatusForBridgehead(bridgehead: Bridgehead): string {
+  isBridgeheadAcceptedByCreator(bridgehead: Bridgehead): boolean{
+    return bridgehead?.state === 'ACCEPTED' && bridgehead?.creatorState === 'ACCEPTED';
+  }
+
+  getCreatorStatusForBridgehead(bridgehead: Bridgehead): string | null | undefined {
     if (this.project?.creatorState === 'ACCEPTED' || this.project?.creatorState === 'REJECTED'){
       return this.project?.creatorState;
     }
-    return bridgehead?.creatorState;
+    return (bridgehead?.state === 'ACCEPTED') ? bridgehead?.creatorState : 'CREATED';
   }
 
 }

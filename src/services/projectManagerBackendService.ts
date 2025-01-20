@@ -200,13 +200,13 @@ export interface MessageSubject {
 
 
 export interface Bridgehead {
-    projectCode: string;
+    projectCode: string | null | undefined;
     bridgehead: string;
-    humanReadable: string | null;
-    state: string;
-    modifiedAt: string;
-    queryState: string;
-    creatorState: string;
+    humanReadable: string | null | undefined;
+    state: string | null | undefined;
+    modifiedAt: string | null | undefined;
+    queryState: string | null | undefined;
+    creatorState: string | null | undefined;
 }
 
 export interface ProjectDocument {

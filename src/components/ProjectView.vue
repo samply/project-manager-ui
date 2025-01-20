@@ -59,8 +59,8 @@
               <tbody>
               <tr>
                 <td>{{ project ? project.code : '' }}</td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.state"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.queryState"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.state ?? undefined"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState?.toLowerCase()" v-b-tooltip.hover :title="activeBridgehead?.queryState ?? undefined"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser"><div  class="state_circle" :class="currentUser?.projectState.toLowerCase()" v-b-tooltip.hover :title="currentUser.projectState"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus"><div  class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" v-b-tooltip.hover :title="dataShieldStatus?.project_status"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')">
@@ -126,7 +126,6 @@
             />
           </div>
         </div>
-        <br><br>
         <div class="data-container mt-12">
           <div v-if="project">
             <div class="box-header">Request</div>
@@ -1143,6 +1142,7 @@ export default defineComponent({
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
   height: 100%;
+  margin-bottom: 1.5%;
 }
 .project-actions {
   background-color: white;
@@ -1154,13 +1154,13 @@ export default defineComponent({
   background-color: white;
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
-  margin-top: 1.5%;
+  margin-bottom: 1.5%;
 }
 .documents {
   background-color: white;
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
-  margin-top: 1.5%;
+  margin-bottom: 1.5%;
 }
 .main-container {
   display: flex;
@@ -1175,7 +1175,7 @@ export default defineComponent({
   min-height: 800px;
   margin-top: 1.5%;
   margin-left: 1.5%;
-  margin-bottom: 4%;
+  margin-bottom: 5%;
   background-color: white;
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
@@ -1310,7 +1310,7 @@ export default defineComponent({
   border-radius: 10px;
   box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
   margin-top: 1.5%;
-  margin-bottom: 4%;
+  margin-bottom: 5%;
   margin-right: 0.5%;
 }
 .open-right-panel {

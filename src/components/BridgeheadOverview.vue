@@ -194,16 +194,20 @@ export default class BridgeheadOverview extends Vue {
     if (this.project?.creatorState === 'REJECTED'){
       return [0, 1];
     }
-    const isFinished = this.bridgeheads.filter((bridgehead) => bridgehead?.creatorState === 'ACCEPTED');
-    const notFinished = this.bridgeheads.filter((bridgehead) => bridgehead?.queryState !== 'ACCEPTED');
+    const isFinished = this.bridgeheads.filter((bridgehead) => this.isBridgeheadAcceptedByCreator(bridgehead));
+    const notFinished = this.bridgeheads.filter((bridgehead) => !this.isBridgeheadAcceptedByCreator(bridgehead));
     return [isFinished.length, notFinished.length]
   }
 
-  getCreatorStatusForBridgehead(bridgehead: Bridgehead): string {
+  isBridgeheadAcceptedByCreator(bridgehead: Bridgehead): boolean{
+    return bridgehead?.state === 'ACCEPTED' && bridgehead?.creatorState === 'ACCEPTED';
+  }
+
+  getCreatorStatusForBridgehead(bridgehead: Bridgehead): string | null | undefined {
     if (this.project?.creatorState === 'ACCEPTED' || this.project?.creatorState === 'REJECTED'){
       return this.project?.creatorState;
     }
-    return bridgehead?.creatorState;
+    return (bridgehead?.state === 'ACCEPTED') ? bridgehead?.creatorState : 'CREATED';
   }
 
 }

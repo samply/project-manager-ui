@@ -3,7 +3,7 @@ import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
-  ActionButton,
+  ActionButton, Bridgehead,
   Module,
   Project,
   ProjectManagerBackendService,
@@ -104,6 +104,8 @@ export default class ResultsBox extends Vue {
   }
 
   resetCanSend() {
+    this.canSendProjectResults = false;
+    this.canSendProjectBridgheadResults = false;
     this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_RESULTS_URL_ACTION).then(condition => {
       this.canSendProjectResults = condition;
     });
@@ -113,10 +115,14 @@ export default class ResultsBox extends Vue {
   }
 
   resetCanAccept() {
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ACCEPT_PROJECT_RESULTS_URL_ACTION).then(condition => {
-      this.canAcceptProjectResults = condition;
-      this.updateActionButtons();
-    });
+    this.canAcceptProjectResults = false;
+    this.canAcceptProjectBridgheadResults = false;
+    if (this.currentUsers.length > 0) { // It makes only sense if there are final users
+      this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ACCEPT_PROJECT_RESULTS_URL_ACTION).then(condition => {
+        this.canAcceptProjectResults = condition;
+        this.updateActionButtons();
+      });
+    }
     this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ACCEPT_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION).then(condition => {
       this.canAcceptProjectBridgheadResults = condition;
       this.updateActionButtons();
@@ -212,6 +218,24 @@ export default class ResultsBox extends Vue {
       return false;
     }
     return true;
+  }
+
+  fetchButtonContext(results: Results){
+    if (this.canAcceptProjectResults){
+      return this.context;
+    }
+    if (this.canAcceptProjectBridgheadResults){
+      const bridgehead: Bridgehead = {"bridgehead" : results.bridgehead, "projectCode" : this.context.projectCode, "creatorState" : null, "state": null, "queryState": null, "humanReadable": null, "modifiedAt": null};
+      return new ProjectManagerContext(this.context.projectCode, bridgehead);
+    }
+  }
+
+  fetchUserAccess(results: Results){
+    return results.bridgeheadAdminState ? results.bridgeheadAdminState : results.finalUserState;
+  }
+
+  fetchCreatorState(results: Results){
+    return (this.fetchUserAccess(results) === 'ACCEPTED') ? results.creatorState : 'CREATED';
   }
 
 }
@@ -318,14 +342,11 @@ export default class ResultsBox extends Vue {
     <table v-if="resultsToShow.length">
       <thead>
       <tr>
-        <th v-if="!projectResults">Bridgehead</th>
+        <th v-if="!projectResults">Site</th>
         <th v-if="!projectResults">Bridgehead Admin</th>
         <th v-if="projectResults">Final User</th>
         <th>URL</th>
-        <th>
-          <div v-if="projectResults !== undefined">Final User Acceptance</div>
-          <div v-else>Bridgehead Admin Acceptance</div>
-        </th>
+        <th>User Access</th>
         <th>Creator Acceptance</th>
         <th v-if="actionButtons.length > 0">Actions</th>
       </tr>
@@ -346,20 +367,20 @@ export default class ResultsBox extends Vue {
         <td>
           <div class="states-circle-container">
             <div class="state_circle"
-                 :class="(result.bridgeheadAdminState ? result.bridgeheadAdminState : result.finalUserState)?.toLowerCase()"
-                 :title="result.bridgeheadAdminState ? result.bridgeheadAdminState : result.finalUserState"/>
+                 :class="fetchUserAccess(result)?.toLowerCase()"
+                 :title="fetchUserAccess(result)"/>
           </div>
         </td>
         <td>
           <div class="states-circle-container">
-            <div class="state_circle" :class="result?.creatorState.toLowerCase()" :title="result.creatorState"/>
+            <div class="state_circle" :class="fetchCreatorState(result)?.toLowerCase()" :title="fetchCreatorState(result)"/>
           </div>
         </td>
         <td v-if="actionButtons.length > 0">
           <div style="display: flex">
             <ProjectManagerButton v-for="(button, index) in actionButtons" :key="index"
                                   :module="button.module" :action="button.action"
-                                  :context="context" :call-refreh-context="this.callRefrehContext"
+                                  :context="fetchButtonContext(result)" :call-refreh-context="this.callRefrehContext"
                                   :text="button.text"
                                   :button-class="button.cssClass" :with-message="button.withMessage"
                                   :visibility="isButtonVisible(button, result)"

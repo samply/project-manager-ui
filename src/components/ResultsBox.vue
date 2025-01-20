@@ -4,10 +4,12 @@ import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   ActionButton,
-  Module, Project,
+  Module,
+  Project,
   ProjectManagerBackendService,
   ProjectManagerContext,
-  Results, User
+  Results,
+  User
 } from "@/services/projectManagerBackendService";
 import CredentialsSharingTool from "@/components/CredentialsSharingTool.vue";
 import "@/assets/styles/state-circle.css"
@@ -26,6 +28,7 @@ export default class ResultsBox extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly project!: Project;
   @Prop() readonly currentUsers!: User[];
+  @Prop() readonly sender!: User;
 
   resultsUrl = "";
   projectResults: Results | undefined = undefined;
@@ -123,16 +126,18 @@ export default class ResultsBox extends Vue {
   resetResults() {
     this.projectResults = undefined;
     this.projectBridgeheadResults = undefined;
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_RESULTS_ACTION).then(condition => {
-      if (condition) {
-        this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_RESULTS_ACTION, this.context, new Map()).then(results => {
-          if (results) {
-            this.projectResults = results;
-            this.updateResultsToShow();
-          }
-        });
-      }
-    });
+    if (this.currentUsers.length > 0) { // It makes only sense if there are final users
+      this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_RESULTS_ACTION).then(condition => {
+        if (condition) {
+          this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_RESULTS_ACTION, this.context, new Map()).then(results => {
+            if (results) {
+              this.projectResults = results;
+              this.updateResultsToShow();
+            }
+          });
+        }
+      });
+    }
     this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_BRIDGEHEAD_RESULTS_ACTION).then(condition => {
       if (condition) {
         this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_BRIDGEHEAD_RESULTS_ACTION, this.context, new Map()).then(results => {
@@ -216,82 +221,94 @@ export default class ResultsBox extends Vue {
   <div v-if="canSendProjectResults || canSendProjectBridgheadResults">
     <!-- Text field for user input -->
     <div v-if="projectResults?.finalUserState !== 'ACCEPTED' && projectResults?.bridgeheadAdminState !== 'ACCEPTED'">
-      <p>Please review and accept the results in the 'Actions' section. Once accepted, we recommend securing the results URL with a password before sharing it with the request creator, either through this interface or, if necessary, via other communication methods such as email or messaging.</p>
+      <p>Please review and accept the results in the 'Actions' section. Once accepted, we recommend securing the results
+        URL with a password before sharing it with the request creator, either through this interface or, if necessary,
+        via other communication methods such as email or messaging.</p>
     </div>
     <div v-else>
-      <p>Thank you for accepting the results. Please secure the results URL with a password before sharing it with the request creator, either through this interface or, if necessary, via other communication methods such as email or messaging.</p>
-      <input
-          type="text"
-          v-model="resultsUrl"
-          placeholder="Enter the results URL"
-          class="text-field"
-      />
-      <!-- Button to directly call sendProjectResults -->
-      <button v-if="canSendProjectResults" @click="sendProjectResults(resultsUrl)" class="send-button">Send Results URL
-      </button>
-      <button v-if="canSendProjectBridgheadResults" @click="sendProjectBridgeheadResults(resultsUrl)"
-              class="send-button">
-        Send Results URL
-      </button>
-      <div>
-        <!-- Short Message -->
-        <p>
-          For securely sharing passwords or authentication methods with authorized recipients, an optional
-          <strong>Credentials Sharing Tool</strong> is available. It generates email templates that separate
-          passwords from file URLs, enhancing security without automatically sending passwords.
-          <!-- Read More Link -->
-          <span
-              class="read-more-link"
-              @click="toggleReadMore">
+      <p>Thank you for accepting the results. Please secure the results URL with a password before sharing it with the
+        request creator, either through this interface or, if necessary, via other communication methods such as email
+        or messaging.</p>
+    </div>
+    <input
+        type="text"
+        v-model="resultsUrl"
+        placeholder="Enter the results URL"
+        class="text-field"
+    />
+    <!-- Button to directly call sendProjectResults -->
+    <button v-if="canSendProjectResults" @click="sendProjectResults(resultsUrl)" class="send-button">Send Results URL
+    </button>
+    <button v-if="canSendProjectBridgheadResults" @click="sendProjectBridgeheadResults(resultsUrl)"
+            class="send-button">
+      Send Results URL
+    </button>
+    <div>
+      <!-- Short Message -->
+      <p>
+        For securely sharing passwords or authentication methods with authorized recipients, an optional
+        <strong>Credentials Sharing Tool</strong> is available. It generates email templates that separate
+        credentials from file URLs, enhancing security without automatically sending credentials.
+        <!-- Read More Link -->
+        <span
+            class="read-more-link"
+            @click="toggleReadMore">
         {{ isExpanded ? 'Read less' : 'Read more' }}
       </span>
-        </p>
+      </p>
 
-        <!-- Long Message -->
-        <div v-if="isExpanded">
-          <p>This tool provides additional benefits and functionality to streamline secure sharing:</p>
-          <ul>
-            <li>
-              <strong>Optional Use:</strong> You can share passwords or authentication methods through other means if preferred.
-            </li>
-            <li><strong>Authorized Recipients:</strong> Ensures only approved individuals receive access information.</li>
-            <li>
-              <strong>Comprehensive Instructions:</strong> Prepares detailed email templates with clear instructions for recipients.
-            </li>
-            <li>
-              <strong>Separation of Credentials and File URLs:</strong>
-              <ul>
-                <li>The URL for accessing cloud files is sent via the Data Science Orchestrator's SMTP server.</li>
-                <li>
-                  The password (or other authentication details) is sent through the results provider's SMTP server, ensuring they remain
-                  separate.
-                </li>
-              </ul>
-            </li>
-            <li>
-              <strong>Secure File Access:</strong> Instead of sharing the direct cloud file URL, the email template includes a link to the
-              Data Science Orchestrator, where the file can be securely downloaded.
-            </li>
-            <li>
-              <strong>Flexible Formats:</strong> Offers multiple email formats and solutions to simplify sharing and enhance usability.
-            </li>
-          </ul>
-        </div>
+      <!-- Long Message -->
+      <div v-if="isExpanded">
+        <p>This tool provides additional benefits and functionality to streamline secure sharing:</p>
+        <ul>
+          <li>
+            <strong>Optional Use:</strong> You can share passwords or authentication methods through other means if
+            preferred.
+          </li>
+          <li><strong>Authorized Recipients:</strong> Ensures only approved individuals receive access information.</li>
+          <li>
+            <strong>Comprehensive Instructions:</strong> Prepares detailed email templates with clear instructions for
+            recipients.
+          </li>
+          <li>
+            <strong>Separation of Credentials and File URLs:</strong>
+            <ul>
+              <li>The URL for accessing cloud files is sent via the Data Science Orchestrator's SMTP server and can be
+                found in the Data Science Orchestrator.
+              </li>
+              <li>
+                The password (or other authentication details) is sent through the results provider's SMTP server,
+                ensuring they remain
+                separate.
+              </li>
+            </ul>
+          </li>
+          <li>
+            <strong>Secure File Access:</strong> Instead of sharing the direct cloud file URL, the email template
+            includes a link to the
+            Data Science Orchestrator, where the file can be securely downloaded.
+          </li>
+          <li>
+            <strong>Flexible Formats:</strong> Offers multiple email formats and solutions to simplify sharing and
+            enhance usability.
+          </li>
+        </ul>
       </div>
-      <button @click="openCredentialsSharingTool" class="btn btn-info">
-        Open Credentials Sharing Tool
-      </button>
+    </div>
+    <button @click="openCredentialsSharingTool" class="btn btn-info">
+      Open Credentials Sharing Tool
+    </button>
 
-      <!-- Credentials Sharing Tool Popup -->
-      <div v-if="isPopupVisible" class="modal">
-        <div class="modal-content">
-          <button @click="closePopup" class="close-btn">&times;</button>
-          <CredentialsSharingTool
-              :project-manager-backend-service="projectManagerBackendService"
-              :recipients-emails="emailRecipients"
-              :context="context"
-          />
-        </div>
+    <!-- Credentials Sharing Tool Popup -->
+    <div v-if="isPopupVisible" class="modal">
+      <div class="modal-content">
+        <button @click="closePopup" class="close-btn">&times;</button>
+        <CredentialsSharingTool
+            :project-manager-backend-service="projectManagerBackendService"
+            :recipients-emails="emailRecipients"
+            :context="context"
+            :sender="sender"
+        />
       </div>
     </div>
     <br>
@@ -329,7 +346,7 @@ export default class ResultsBox extends Vue {
         <td>
           <div class="states-circle-container">
             <div class="state_circle"
-                 :class="(result.bridgeheadAdminState ? result.bridgeheadAdminState : result.finalUserState).toLowerCase()"
+                 :class="(result.bridgeheadAdminState ? result.bridgeheadAdminState : result.finalUserState)?.toLowerCase()"
                  :title="result.bridgeheadAdminState ? result.bridgeheadAdminState : result.finalUserState"/>
           </div>
         </td>

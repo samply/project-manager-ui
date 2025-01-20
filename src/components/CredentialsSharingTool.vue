@@ -6,7 +6,7 @@ import {
   MessageSubject,
   Module,
   ProjectManagerBackendService,
-  ProjectManagerContext
+  ProjectManagerContext, User
 } from "@/services/projectManagerBackendService";
 import {EmailRole} from "@/services/emailRole";
 
@@ -17,6 +17,7 @@ export default class CredentialsSharingTool extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly recipientsEmails!: EmailRole[];
   @Prop() readonly context!: ProjectManagerContext;
+  @Prop() readonly sender!: User;
 
   recipientsCopied = false;
   passwordVisible = false;
@@ -33,6 +34,7 @@ export default class CredentialsSharingTool extends Vue {
   htmlDownloaded: boolean[] = [];
   recipientsMessageSubjects: MessageSubject[] = [];
 
+
   @Watch('projectManagerBackendService', {immediate: true})
   onProjectManagerBackendService(newValue: EmailRole[], oldValue: EmailRole[]) {
     this.updateRecipientMessagesSubjects()
@@ -45,7 +47,7 @@ export default class CredentialsSharingTool extends Vue {
         this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_EMAIL_MESSAGE_AND_SUBJECT_ACTION).then(condition => {
           if (condition){
             this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.FETCH_EMAIL_MESSAGE_AND_SUBJECT_ACTION, this.context,
-                new Map([['email', emailRole.email], ['project-role', emailRole.projectRole], ['email-template-type', 'SEND_PASSWORD']])).then(messageSubject => {
+                new Map([['email', emailRole.email], ['project-role', emailRole.projectRole], ['email-template-type', this.fetchEmailTemplateType()]])).then(messageSubject => {
               if (messageSubject){
                 messageSubject.emailTo = emailRole.email;
                 this.addMessageSubject(messageSubject);
@@ -164,13 +166,17 @@ export default class CredentialsSharingTool extends Vue {
     this.password = Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
   }
 
+  fetchEmailTemplateType(): string{
+    return (this.sender?.projectState === 'BRIDGEHEAD_ADMIN') ? 'SEND_CREDENTIALS_FROM_BRIDGEHEAD' : 'SEND_CREDENTIALS';
+  }
+
 }
 </script>
 
 <template>
   <div class="password-sharing-tool">
     <h3>Credentials Sharing Tool</h3>
-    <p>Please choose an option below to share the password securely. No passwords will be sent automatically, and the tool runs exclusively in your browser.</p>
+    <p>Please choose an option below to share the credentials securely. No credentials will be sent automatically to any external server, and the tool runs exclusively in your browser.</p>
 
     <!-- Option 1: Copy emails of recipients -->
     <div class="option">

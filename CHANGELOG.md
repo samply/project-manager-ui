@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2025-01-17]
+## [1.1.0 - 2025-01-20]
 ### Added
 - Dockerfile
 - Single Spa
@@ -99,3 +99,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Separate Publication and other documents in new section
 - Rename bridgeheads with sites for being displayed
 - Rename Password Sharing Tool with Credentials Sharing Tool
+- Improvements in resutls box

@@ -124,7 +124,7 @@
                         :current-users="currentUsers"
                         :context="context"
                         :project="project"
-                        :sender="currentUser"
+                        :project-roles="projectRoles"
             />
           </div>
         </div>

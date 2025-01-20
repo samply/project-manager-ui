@@ -7,7 +7,7 @@ import {
   Module,
   Project,
   ProjectManagerBackendService,
-  ProjectManagerContext,
+  ProjectManagerContext, ProjectRole,
   Results,
   User
 } from "@/services/projectManagerBackendService";
@@ -28,7 +28,7 @@ export default class ResultsBox extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly project!: Project;
   @Prop() readonly currentUsers!: User[];
-  @Prop() readonly sender!: User;
+  @Prop() readonly projectRoles!: ProjectRole[];
 
   resultsUrl = "";
   projectResults: Results | undefined = undefined;
@@ -331,7 +331,7 @@ export default class ResultsBox extends Vue {
             :project-manager-backend-service="projectManagerBackendService"
             :recipients-emails="emailRecipients"
             :context="context"
-            :sender="sender"
+            :project-roles="projectRoles"
         />
       </div>
     </div>

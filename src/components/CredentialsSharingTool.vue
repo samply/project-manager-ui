@@ -6,7 +6,8 @@ import {
   MessageSubject,
   Module,
   ProjectManagerBackendService,
-  ProjectManagerContext, User
+  ProjectManagerContext,
+  ProjectRole
 } from "@/services/projectManagerBackendService";
 import {EmailRole} from "@/services/emailRole";
 
@@ -17,7 +18,7 @@ export default class CredentialsSharingTool extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly recipientsEmails!: EmailRole[];
   @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly sender!: User;
+  @Prop() readonly projectRoles!: ProjectRole[];
 
   recipientsCopied = false;
   passwordVisible = false;
@@ -167,7 +168,7 @@ export default class CredentialsSharingTool extends Vue {
   }
 
   fetchEmailTemplateType(): string{
-    return (this.sender?.projectState === 'BRIDGEHEAD_ADMIN') ? 'SEND_CREDENTIALS_FROM_BRIDGEHEAD' : 'SEND_CREDENTIALS';
+    return (this.projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) ? 'SEND_CREDENTIALS_FROM_BRIDGEHEAD' : 'SEND_CREDENTIALS';
   }
 
 }

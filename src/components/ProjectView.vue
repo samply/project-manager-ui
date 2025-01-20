@@ -43,13 +43,14 @@
               <thead>
               <tr>
                 <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Teiler</th>
-                <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">{{(project?.type == 'DATASHIELD' && project.state != 'FINAL') ? 'Script' : 'Results'}} Acceptance</th>
+                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access</th>
                 <th class="status-table-header" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD Status</th>
                 <th class="status-table-header"
                     v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')" scope="col">Files in Research Environment
                 </th>
+                <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">{{(project?.type == 'DATASHIELD' && project.state != 'FINAL') ? 'Script' : 'Results'}} Acceptance</th>
+                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Creator Results Acceptance</th>
                 <th class="status-table-header" scope="col">Creator</th>
                 <th class="status-table-header" scope="col">Created at</th>
                 <th class="status-table-header" scope="col">Expires at</th>
@@ -59,13 +60,12 @@
               <tbody>
               <tr>
                 <td>{{ project ? project.code : '' }}</td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="activeBridgehead?.state ?? undefined"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="activeBridgehead?.queryState ?? undefined"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser"><div  class="state_circle" :class="currentUser?.projectState.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="currentUser.projectState"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="activeBridgehead?.state ?? undefined"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus"><div  class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="dataShieldStatus?.project_status"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')">
-                  {{ areExportFilesTransferredToResearchEnvironment }}
-                </td>
+                <td v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')">{{ areExportFilesTransferredToResearchEnvironment }}</td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser"><div  class="state_circle" :class="currentUser?.projectState.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="currentUser.projectState"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="creatorAcceptance.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="creatorAcceptance ?? undefined"></div></td>
                 <td style="display:flex;">
                   <UserAndEmail
                       :first-name="project?.creatorName"
@@ -423,13 +423,15 @@ export default defineComponent({
       hasProjectAllMandatoryFields: false,
       tooltipTextForCreateButton: '',
       canShowBridgeheadAdminButtons: false,
-      currentUsers: [] as User[]
+      currentUsers: [] as User[],
+      creatorAcceptance: 'CREATED'
     };
   },
   watch: {
     activeBridgehead(newValue, oldValue) {
       this.activeBridgeheadIndex = this.visibleBridgeheads.findIndex(bridgehead => bridgehead === newValue);
       this.context = new ProjectManagerContext(this.projectCode, newValue);
+      this.creatorAcceptance = (this.project?.creatorState) ? this.project.creatorState : (this.activeBridgehead?.creatorState) ? this.activeBridgehead.creatorState : 'CREATED';
     },
     context(newValue, oldValue) {
       this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);

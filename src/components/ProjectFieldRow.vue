@@ -326,7 +326,7 @@ export default class ProjectFieldRow extends Vue {
               <div class="config-box-body">
                 <div v-if="configurations" style="display: flex;flex-direction: column">
                   <div style="margin-bottom:2%;text-align:left;min-height:200px">{{ configurations?.get(step)?.description }}</div>
-                  <div v-if="!configurations?.get(step).customConfig" style="text-align: right;margin-bottom:2%">
+                  <div v-if="!configurations?.get(step)?.customConfig" style="text-align: right;margin-bottom:2%">
                     <button @click.stop="showDetails[index]=!showDetails[index]" style="background: none; border:none; color: #007bff;">
                       <span v-if="!showDetails[index]">show details</span>
                       <span v-if="showDetails[index]">hide details</span>
@@ -490,7 +490,7 @@ export default class ProjectFieldRow extends Vue {
     <td style="min-width: 50px;vertical-align: middle">
       <span style="display:flex; flex-flow:row; align-items: baseline">
           <div style="display:inline-flex; flex-flow:row; align-items: baseline">
-            <button v-if="isFieldValueEditable() && (redirectUrl === null || isBridgeheads())" class="btn btn-primary"
+            <button v-if="isFieldValueEditable() && (redirectUrl === null || redirectUrl === undefined || isBridgeheads())" class="btn btn-primary"
                     data-toggle="tooltip"
                     data-placement="top" title="Edit"
                     style="background:none; border:none; color:black"><i class="bi bi-pencil me-2" @click="editField"></i>
@@ -499,7 +499,7 @@ export default class ProjectFieldRow extends Vue {
                             :project-manager-backend-service="projectManagerBackendService"
                             :module="downloadModule" :action="downloadAction"/>
         </div>
-        <button v-if="isFieldValueEditable() && redirectUrl !== null" class="btn btn-primary"
+        <button v-if="isFieldValueEditable() && redirectUrl !== null && redirectUrl !== undefined" class="btn btn-primary"
                 data-toggle="tooltip"
                 data-placement="top" title="CCP Explorer"
                 style="background:none; border:none; color:black"><i class="bi bi-arrow-right-circle" @click="redirectToURL"></i>

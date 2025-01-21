@@ -247,7 +247,7 @@ export default class CredentialsSharingTool extends Vue {
       <div v-if="emlLinksGenerated">
         <p v-for="(link, index) in emlLinks" :key="index">
           <a :href="link" :download="`email_${recipientsEmails[index].email}.eml`" class="btn btn-link">
-            Download EML for {{ recipientsEmails[index].email }}
+            Download EML for {{ recipientsEmails[index].email }} with role {{ recipientsEmails[index].projectRole}}
           </a>
           <i v-if="emlDownloaded[index]" class="bi bi-check-circle text-success"></i>
         </p>
@@ -264,7 +264,7 @@ export default class CredentialsSharingTool extends Vue {
       <div v-if="htmlLinksGenerated">
         <p v-for="(link, index) in htmlLinks" :key="index">
           <a :href="link" :download="`email_${recipientsEmails[index].email}.html`" class="btn btn-link">
-            Download HTML for {{ recipientsEmails[index].email }}
+            Download HTML for {{ recipientsEmails[index].email }} with role {{ recipientsEmails[index].projectRole}}
           </a>
           <i v-if="htmlDownloaded[index]" class="bi bi-check-circle text-success"></i>
         </p>

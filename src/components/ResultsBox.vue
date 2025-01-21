@@ -3,11 +3,13 @@ import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
-  ActionButton, Bridgehead,
+  ActionButton,
+  Bridgehead,
   Module,
   Project,
   ProjectManagerBackendService,
-  ProjectManagerContext, ProjectRole,
+  ProjectManagerContext,
+  ProjectRole,
   Results,
   User
 } from "@/services/projectManagerBackendService";
@@ -114,10 +116,14 @@ export default class ResultsBox extends Vue {
     });
   }
 
+  areThereFinalUsers(): boolean{
+    return this.currentUsers?.length > 0 || this.projectRoles.includes(ProjectRole.FINAL);
+  }
+
   resetCanAccept() {
     this.canAcceptProjectResults = false;
     this.canAcceptProjectBridgheadResults = false;
-    if (this.currentUsers.length > 0) { // It makes only sense if there are final users
+    if (this.areThereFinalUsers()) { // It makes only sense if there are final users
       this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ACCEPT_PROJECT_RESULTS_URL_ACTION).then(condition => {
         this.canAcceptProjectResults = condition;
         this.updateActionButtons();
@@ -132,7 +138,7 @@ export default class ResultsBox extends Vue {
   resetResults() {
     this.projectResults = undefined;
     this.projectBridgeheadResults = undefined;
-    if (this.currentUsers.length > 0) { // It makes only sense if there are final users
+    if (this.areThereFinalUsers()) { // It makes only sense if there are final users
       this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_RESULTS_ACTION).then(condition => {
         if (condition) {
           this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_RESULTS_ACTION, this.context, new Map()).then(results => {

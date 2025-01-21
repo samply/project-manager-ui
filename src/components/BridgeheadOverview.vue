@@ -207,10 +207,10 @@ export default class BridgeheadOverview extends Vue {
     return [isFinished.length, notFinished.length]
   }
   getCreatorStatus(): number[] {
-    if (this.project?.creatorState === 'ACCEPTED'){
+    if (this.project?.creatorState === 'ACCEPTED' && this.project?.resultsUrl){
       return [1, 0];
     }
-    if (this.project?.creatorState === 'REJECTED'){
+    if (this.project?.creatorState === 'REJECTED' && this.project?.resultsUrl){
       return [0, 1];
     }
     const isFinished = this.bridgeheads.filter((bridgehead) => this.isBridgeheadAcceptedByCreator(bridgehead));

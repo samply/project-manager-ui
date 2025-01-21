@@ -166,6 +166,7 @@ export interface Project {
     queryContext: string | null;
     isCustomConfig: boolean | null;
     creatorState: string;
+    resultsUrl: string | null | undefined;
 }
 
 export interface Notification {

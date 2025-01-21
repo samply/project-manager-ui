@@ -184,7 +184,7 @@ export default class ResultsBox extends Vue {
       }
       this.resultsToShow = tempResults;
     } else {
-      if (this.projectResults) {
+      if (this.projectResults && this.projectResults.url) {
         this.resultsToShow = [this.projectResults];
       } else {
         this.resultsToShow = this.projectBridgeheadResults || [];

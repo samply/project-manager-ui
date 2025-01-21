@@ -117,7 +117,7 @@ export default class ResultsBox extends Vue {
   }
 
   areThereFinalUsers(): boolean{
-    return this.currentUsers?.length > 0 || this.projectRoles.includes(ProjectRole.FINAL);
+    return this.currentUsers?.length > 0 || this.isFinalUser();
   }
 
   resetCanAccept() {
@@ -174,10 +174,21 @@ export default class ResultsBox extends Vue {
 
   updateResultsToShow() {
     // Update resultsToShow based on the priority of projectResults and projectBridgeheadResults
-    if (this.projectResults) {
-      this.resultsToShow = [this.projectResults];
+    if (this.isFinalUser()){ // If it is final user, they can see all results.
+      const tempResults = [];
+      if (this.projectResults){
+        tempResults.push(this.projectResults);
+      }
+      if (this.projectBridgeheadResults){
+        tempResults.push(...this.projectBridgeheadResults);
+      }
+      this.resultsToShow = tempResults;
     } else {
-      this.resultsToShow = this.projectBridgeheadResults || [];
+      if (this.projectResults) {
+        this.resultsToShow = [this.projectResults];
+      } else {
+        this.resultsToShow = this.projectBridgeheadResults || [];
+      }
     }
   }
 
@@ -242,6 +253,10 @@ export default class ResultsBox extends Vue {
 
   fetchCreatorState(results: Results){
     return (this.fetchUserAccess(results) === 'ACCEPTED') ? results.creatorState : 'CREATED';
+  }
+
+  isFinalUser(): boolean{
+    return this.projectRoles.includes(ProjectRole.FINAL);
   }
 
 }
@@ -350,7 +365,8 @@ export default class ResultsBox extends Vue {
       <tr>
         <th v-if="!projectResults">Site</th>
         <th v-if="!projectResults">Bridgehead Admin</th>
-        <th v-if="projectResults">Final User</th>
+        <th v-if="projectResults && !isFinalUser()">Final User</th>
+        <th v-if="isFinalUser()">Final User / Brigehead Admin</th>
         <th>URL</th>
         <th>User Access</th>
         <th>Creator Acceptance</th>

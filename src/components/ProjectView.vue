@@ -43,6 +43,7 @@
               <thead>
               <tr>
                 <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
+                <th class="status-table-header" scope="col">Votum</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Teiler</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access</th>
                 <th class="status-table-header" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD Status</th>
@@ -60,6 +61,22 @@
               <tbody>
               <tr>
                 <td>{{ project ? project.code : '' }}</td>
+                <td>
+                  <div>
+                    <div v-if="existsVotum" class="states-circle-container">
+                      <div class="state_circle green"></div>
+                      <DownloadButton
+                          :context="context"
+                          :project-manager-backend-service="projectManagerBackendService"
+                          icon-class="bi bi-download"
+                          button-class="download-button"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE"
+                          :action="Action.DOWNLOAD_VOTUM_ACTION"
+                      />
+                    </div>
+                    <div v-else class="states-circle-container"><div class="state_circle red"/></div>
+                  </div>
+                </td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="activeBridgehead?.queryState ?? undefined"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="activeBridgehead?.state ?? undefined"></div></td>
                 <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus"><div  class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="dataShieldStatus?.project_status"></div></td>
@@ -338,6 +355,7 @@ import {DialogStep, DialogStepper} from "@/services/dialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
+import DownloadButton from "@/components/DownloadButton.vue";
 
 
 export default defineComponent({
@@ -365,6 +383,7 @@ export default defineComponent({
     }
   },
   components: {
+    DownloadButton,
     UserAndEmail,
     ResultsBox,
     MailingBlackList,
@@ -1424,4 +1443,9 @@ export default defineComponent({
   font-weight: bold;
   background-color: white;
 }
+.states-circle-container {
+  display: flex;
+  justify-content: center;
+}
+
 </style>

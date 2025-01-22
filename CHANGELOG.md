@@ -91,6 +91,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Generate eml and html files for Password Sharing Tool
 - Results URL in project
 - Results already sent button
+- Votum in project view overview with only one bridgehead
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

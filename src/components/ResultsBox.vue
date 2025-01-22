@@ -32,6 +32,8 @@ export default class ResultsBox extends Vue {
   @Prop() readonly currentUsers!: User[];
   @Prop() readonly projectRoles!: ProjectRole[];
 
+  readonly RESULTS_ALREADY_SENT = 'Results already sent';
+
   resultsUrl = "";
   projectResults: Results | undefined = undefined;
   projectBridgeheadResults: Results[] | undefined = undefined;
@@ -45,6 +47,7 @@ export default class ResultsBox extends Vue {
   emailRecipients: EmailRole[] = [];
   // Reactive property to control the visibility of the long message
   isExpanded = false;
+
 
   // Method to toggle the visibility
   toggleReadMore() {
@@ -204,6 +207,14 @@ export default class ResultsBox extends Vue {
     }
   }
 
+  sendResults(resultsUrl: string){
+    if (this.canSendProjectResults){
+      this.sendProjectResults(resultsUrl);
+    } else if (this.canSendProjectBridgheadResults){
+      this.sendProjectBridgeheadResults(resultsUrl);
+    }
+  }
+
   sendProjectResults(resultsUrl: string) {
     if (resultsUrl && this.canSendProjectResults) {
       this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_RESULTS_URL_ACTION, this.context, new Map([['results-url', resultsUrl]])).then(response => {
@@ -225,7 +236,7 @@ export default class ResultsBox extends Vue {
   }
 
   isButtonVisible(actionButton: ActionButton, results: Results): boolean {
-    if (!this.isUrl(results?.url)) {
+    if (!this.isUrl(results?.url) && results?.url != this.RESULTS_ALREADY_SENT) {
       return false;
     }
     if (results.creatorState === 'ACCEPTED' && actionButton.action.includes('ACCEPT')) {
@@ -259,6 +270,10 @@ export default class ResultsBox extends Vue {
     return this.projectRoles.includes(ProjectRole.FINAL);
   }
 
+  areResultsAlreadyMarkedAsSent(): boolean{
+    return this.resultsToShow?.length > 0 && this.resultsToShow[0].url == this.RESULTS_ALREADY_SENT;
+  }
+
 }
 </script>
 
@@ -275,19 +290,20 @@ export default class ResultsBox extends Vue {
         request creator, either through this interface or, if necessary, via other communication methods such as email
         or messaging.</p>
     </div>
-    <input
-        type="text"
-        v-model="resultsUrl"
-        placeholder="Enter the results URL"
-        class="text-field"
-    />
     <!-- Button to directly call sendProjectResults -->
-    <button v-if="canSendProjectResults" @click="sendProjectResults(resultsUrl)" class="send-button">Send Results URL
-    </button>
-    <button v-if="canSendProjectBridgheadResults" @click="sendProjectBridgeheadResults(resultsUrl)"
-            class="send-button">
-      Send Results URL
-    </button>
+    <div class="results-url-sender" v-if="canSendProjectResults || canSendProjectBridgheadResults">
+      <input
+          type="text"
+          v-model="resultsUrl"
+          placeholder="Enter the results URL"
+          class="text-field"
+      />
+      <button @click="sendResults(resultsUrl)" class="send-button">Send Results URL</button>
+      <button v-if="!areResultsAlreadyMarkedAsSent()" @click="sendResults(RESULTS_ALREADY_SENT)"
+              class="send-button">
+        Mark Results as Sent
+      </button>
+    </div>
     <div>
       <!-- Short Message -->
       <p>
@@ -510,6 +526,11 @@ p {
 
 .read-more-link:hover {
   color: #0056b3;
+}
+
+.results-url-sender{
+  display: flex;
+  gap: 10px; /* Adds space between buttons */
 }
 
 </style>

@@ -18,7 +18,7 @@
           <tr>
             <th scope="col">Data Request Number (DRN)</th>
             <th scope="col">Title</th>
-            <th scope="col">Creator</th>
+            <th scope="col">Applicant</th>
             <th scope="col">Created at</th>
             <th scope="col" style="display: flex;justify-content: space-between;align-items: baseline">
               <span>Phase</span><span class="filter">

@@ -15,7 +15,7 @@
           {{ getDatashieldStatus()[0] }} <div class="exist-small green"></div> / {{ getDatashieldStatus()[1] }}<div class="exist-small red"></div>
         </td>
         <td v-else-if="header === 'User Access'" class="header-summary-cell status-cell">{{ getBridgeheadStatus()[0] }} <div class="exist-small green"></div> / {{ getBridgeheadStatus()[1] }}<div class="exist-small red"></div></td>
-        <td v-else-if="header === 'Creator Results Acceptance'" class="header-summary-cell status-cell">{{ getCreatorStatus()[0] }} <div class="exist-small green"></div> / {{ getCreatorStatus()[1] }}<div class="exist-small red"></div></td>
+        <td v-else-if="header === 'Applicant Results Acceptance'" class="header-summary-cell status-cell">{{ getCreatorStatus()[0] }} <div class="exist-small green"></div> / {{ getCreatorStatus()[1] }}<div class="exist-small red"></div></td>
         <!-- Data for each bridgehead in subsequent columns -->
         <td
             v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(scrollIndex, scrollIndex + numberBridgeheadShown)"
@@ -57,7 +57,7 @@
           <div v-else-if="header === 'User Access'" class="states-circle-container">
             <div class="state_circle" :class="bridgehead?.state?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="bridgehead?.state ?? undefined"/>
           </div>
-          <div v-else-if="header === 'Creator Results Acceptance'" class="states-circle-container">
+          <div v-else-if="header === 'Applicant Results Acceptance'" class="states-circle-container">
             <div class="state_circle" :class="getCreatorStatusForBridgehead(bridgehead)?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="getCreatorStatusForBridgehead(bridgehead) ?? undefined"/>
           </div>
           <div v-else-if="header === 'DataSHIELD Status'">
@@ -119,7 +119,7 @@ export default class BridgeheadOverview extends Vue {
   Action = Action;
 
   DATASHIELD_STATUS_HEADER = 'DataSHIELD Status';
-  headers = ['Sites', 'Votum', 'Teiler', 'User Access', 'Creator Results Acceptance'];
+  headers = ['Sites', 'Votum', 'Teiler', 'User Access', 'Applicant Results Acceptance'];
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
   selectedBridgehead: number | null = null;

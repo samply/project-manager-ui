@@ -101,6 +101,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Alignment of user in navbar
 - Result acceptance in user input as circle
 - Separate Publication and other documents in new section
-- Rename bridgeheads with sites for being displayed
-- Rename Password Sharing Tool with Credentials Sharing Tool
+- Rename bridgeheads to sites for being displayed
+- Rename Password Sharing Tool to Credentials Sharing Tool
 - Improvements in resutls box
+- Rename creator to applicant

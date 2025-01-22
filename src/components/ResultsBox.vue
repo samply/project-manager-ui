@@ -282,12 +282,12 @@ export default class ResultsBox extends Vue {
     <!-- Text field for user input -->
     <div v-if="projectResults?.finalUserState !== 'ACCEPTED' && projectResults?.bridgeheadAdminState !== 'ACCEPTED'">
       <p>Please review and accept the results in the 'Actions' section. Once accepted, we recommend securing the results
-        URL with a password before sharing it with the request creator, either through this interface or, if necessary,
+        URL with a password before sharing it with the request applicant, either through this interface or, if necessary,
         via other communication methods such as email or messaging.</p>
     </div>
     <div v-else>
       <p>Thank you for accepting the results. Please secure the results URL with a password before sharing it with the
-        request creator, either through this interface or, if necessary, via other communication methods such as email
+        request applicant, either through this interface or, if necessary, via other communication methods such as email
         or messaging.</p>
     </div>
     <!-- Button to directly call sendProjectResults -->
@@ -385,7 +385,7 @@ export default class ResultsBox extends Vue {
         <th v-if="isFinalUser()">Final User / Brigehead Admin</th>
         <th>URL</th>
         <th>User Access</th>
-        <th>Creator Acceptance</th>
+        <th>Applicant Acceptance</th>
         <th v-if="actionButtons.length > 0">Actions</th>
       </tr>
       </thead>

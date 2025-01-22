@@ -52,8 +52,8 @@
                     v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')" scope="col">Files in Research Environment
                 </th>
                 <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">{{(project?.type == 'DATASHIELD' && project.state != 'FINAL') ? 'Script' : 'Results'}} Acceptance</th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Creator Results Acceptance</th>
-                <th class="status-table-header" scope="col">Creator</th>
+                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Applicant Results Acceptance</th>
+                <th class="status-table-header" scope="col">Applicant</th>
                 <th class="status-table-header" scope="col">Created at</th>
                 <th class="status-table-header" scope="col">Expires at</th>
                 <th class="status-table-header" scope="col">Last modified</th>

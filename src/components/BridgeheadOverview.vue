@@ -38,6 +38,17 @@
                   :action="Action.DOWNLOAD_VOTUM_ACTION"
               />
             </div>
+            <div v-else-if="existsVotumForAllBridgeheads" class="states-circle-container">
+              <div class="state_circle green"></div>
+              <DownloadButton
+                  :context="fetchContext(bridgehead)"
+                  :project-manager-backend-service="projectManagerBackendService"
+                  icon-class="bi bi-download"
+                  button-class="download-button"
+                  :module="Module.PROJECT_DOCUMENTS_MODULE"
+                  :action="Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION"
+              />
+            </div>
             <div v-else class="states-circle-container"><div class="state_circle red"></div></div>
           </div>
           <div v-else-if="header === 'Teiler'" class="states-circle-container">
@@ -100,6 +111,7 @@ export default class BridgeheadOverview extends Vue {
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly bridgeheads!: Bridgehead[];
   @Prop() readonly project!: Project;
+  @Prop() readonly existsVotumForAllBridgeheads!: boolean;
   @Prop({type: Function, required: true}) readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
 
 
@@ -189,6 +201,9 @@ export default class BridgeheadOverview extends Vue {
   getVotumStatus(): number[] {
     const hasVotum = this.existsVotums.filter((votum) => votum);
     const noVotum = this.existsVotums.filter((votum) => !votum);
+    if (this.existsVotumForAllBridgeheads && hasVotum.length == 0){
+      return [1, 0];
+    }
     return [hasVotum.length, noVotum.length]
   }
   getBridgeheadStatus(): number[] {

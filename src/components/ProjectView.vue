@@ -36,6 +36,7 @@
                                 :call-update-active-bridgehead="updateActiveBridgehead"
                                 :context="context"
                                 :project="project"
+                                :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
                                 :bridgeheads="visibleBridgeheads"
                                 :activeBridgehead="activeBridgehead"/>
             <br/>
@@ -72,6 +73,17 @@
                           button-class="download-button"
                           :module="Module.PROJECT_DOCUMENTS_MODULE"
                           :action="Action.DOWNLOAD_VOTUM_ACTION"
+                      />
+                    </div>
+                    <div v-else-if="existsVotumForAllBridgeheads" class="states-circle-container">
+                      <div class="state_circle green"></div>
+                      <DownloadButton
+                          :context="context"
+                          :project-manager-backend-service="projectManagerBackendService"
+                          icon-class="bi bi-download"
+                          button-class="download-button"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE"
+                          :action="Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION"
                       />
                     </div>
                     <div v-else class="states-circle-container"><div class="state_circle red"/></div>
@@ -418,6 +430,7 @@ export default defineComponent({
       showExplanations: true,
       showRightPanel: true,
       existsVotum: false,
+      existsVotumForAllBridgeheads: false,
       existsAuthenticationScript: false,
       existsApplicationForm: false,
       existsScript: false,
@@ -431,6 +444,7 @@ export default defineComponent({
       applicationFormDescription: {} as ProjectDocument,
       scriptDescription: {} as ProjectDocument,
       votumDescription: {} as ProjectDocument,
+      votumForAllBridgeheadsDescription: {} as ProjectDocument,
       existInvitedUsers: false,
       areExportFilesTransferredToResearchEnvironment: false,
       explanations: new Map() as Explanations,
@@ -599,6 +613,12 @@ export default defineComponent({
             this.existsVotum = result;
             if (this.existsVotum) {
               this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_DESCRIPTION_ACTION, new Map(), 'votumDescription');
+            }
+          }),
+          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION, new Map(), async (result: boolean) => {
+            this.existsVotumForAllBridgeheads = result;
+            if (this.existsVotumForAllBridgeheads) {
+              this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION_ACTION, new Map(), 'votumForAllBridgeheadsDescription');
             }
           }),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), async (result: boolean) => {
@@ -921,6 +941,16 @@ export default defineComponent({
           existFile: this.existsVotum,
           uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
+          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+        },
+        {
+          fieldKey: "Votum for all bridgeheads",
+          fieldValue: [this.votumForAllBridgeheadsDescription.label, this.votumForAllBridgeheadsDescription.originalFilename],
+          isEditable: true,
+          existFile: this.existsVotumForAllBridgeheads,
+          uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
+          downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
         },

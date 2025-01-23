@@ -40,6 +40,8 @@ export default class UserInput extends Vue {
   isActive = false;
   canInvite = true;
   showSuggestions = false;
+  isValidEmail = false;
+
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
   onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
@@ -66,6 +68,7 @@ export default class UserInput extends Vue {
         this.canInvite = false;
       }
     }
+    this.isValidEmail = this.isEmailValid(this.partialEmail);
     this.autocomplete(this.partialEmail);
   }
 
@@ -113,6 +116,12 @@ export default class UserInput extends Vue {
     this.showSuggestions = false;
   }
 
+  private isEmailValid(email: string): boolean {
+    // Simple email validation regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
 }
 </script>
 
@@ -140,7 +149,8 @@ export default class UserInput extends Vue {
             {{ suggestion.email }}
           </li>
         </ul>&nbsp;
-        <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite">Invite</button>
+        <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite && isValidEmail">Invite</button>
+        <p v-if="partialEmail.length > 0 && canInvite && !isValidEmail" class="error-message">Please enter a valid email address.</p>
       </div>
     </div>
   </div>
@@ -272,6 +282,11 @@ export default class UserInput extends Vue {
 .state_circle {
   width: 20px;
   height: 20px;
+}
+
+.error-message {
+  color: red;
+  font-size: 0.9em;
 }
 
 </style>

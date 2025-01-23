@@ -1,6 +1,7 @@
 import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router';
 import ProjectView from '../components/ProjectView.vue';
 import ProjectDashboard from "@/components/ProjectDashboard.vue";
+import AdminConfig from "@/components/AdminConfig.vue";
 
 import { createStore } from 'vuex';
 
@@ -40,6 +41,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'ProjectDashboard',
         meta: {title: 'Data Science Orchestrator'},
         component: ProjectDashboard,
+    },
+    {
+        path: '/admin-config',
+        name: 'AdminConfig',
+        meta: {title: 'PM-Admin Configuration'},
+        component: AdminConfig,
     }
 ];
 

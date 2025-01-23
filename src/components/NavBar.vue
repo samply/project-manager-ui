@@ -10,6 +10,10 @@
           <i class="bi bi-person-fill user-icon"></i>
           {{ keycloak.getFirstName() + " " + keycloak.getLastName() }}
         </span>
+        <!-- PM-Admin Config  -->
+        <router-link v-if="isProjectManagerAdmin" class="btn admin-button" to="/admin-config">
+          <i class="bi bi-gear"></i>
+        </router-link>
         <!-- Logout button -->
         <button @click="logout" class="btn btn-outline-danger">
           <i class="bi bi-box-arrow-right"></i> logout
@@ -19,25 +23,61 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import keycloak from "../services/keycloak";
+import {
+  Action,
+  Module,
+  Project,
+  ProjectManagerBackendService,
+  ProjectManagerContext,
+  ProjectRole,
+  Site
+} from "@/services/projectManagerBackendService";
+import {defineComponent} from "vue";
 
-export default {
-  name: 'NavBar',
+export default defineComponent({
   computed: {
     keycloak() {
-      return keycloak
-    }
+      return keycloak;
+    },
+    ProjectRole() {
+      return ProjectRole;
+    },
+  },
+  data() {
+    return {
+      isProjectManagerAdmin: false,
+      context: new ProjectManagerContext(undefined, undefined),
+      projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.NAVIGATION_BAR_SITE),
+    };
+  },
+
+  mounted() {
+    this.fetchProjectRoles()
   },
   methods: {
-    toggleSidebar() {
-      this.$store.commit('toggleSidebar');
-    },
-    logout(){
+    logout() {
       keycloak.logout();
-    }
+    },
+
+    async fetchProjectRoles() {
+      try {
+        this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, Action.IS_PROJECT_MANAGER_ADMIN_ACTION).then(condition => {
+          this.isProjectManagerAdmin = false;
+          if (condition) {
+            this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.IS_PROJECT_MANAGER_ADMIN_ACTION, this.context, new Map()).then(isProjectManagerAdmin => {
+              this.isProjectManagerAdmin = isProjectManagerAdmin;
+            })
+          }
+        })
+      } catch (error) {
+        console.error('Error loading user roles:', error);
+      }
+    },
+
   },
-};
+});
 </script>
 
 <style scoped>
@@ -70,4 +110,13 @@ export default {
   margin-right: 5px;
 }
 
+.admin-button {
+  color: white;
+  margin-right: 10px;
+}
+.admin-button:hover {
+  color: white;
+  font-size: large;
+  padding:0.3rem 0.68rem;
+}
 </style>

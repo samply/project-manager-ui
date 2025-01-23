@@ -32,7 +32,7 @@ export default class UserAndEmail extends Vue {
 
 <template>
   <!-- Check if firstName or lastName is available -->
-  <div v-if="firstName || lastName">
+  <div v-if="firstName || lastName" :title="email" >
     {{ completeName }}
     <button
         class="btn btn-link p-0 ms-2"

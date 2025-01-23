@@ -313,7 +313,7 @@ export default class ProjectFieldRow extends Vue {
 </script>
 
 <template>
-  <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === dialogStep.PROFILES" class="config-box-row">
+  <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === dialogStep.SERVICES" class="config-box-row">
     <td colspan="3">
       <div style="display: flex;padding-left:0;margin:20px 0">
         <div v-for="(step, index) in possibleValues" :key="index" class="config-box"

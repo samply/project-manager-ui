@@ -779,7 +779,7 @@ export default defineComponent({
             message: "Please provide the general project information to proceed."
           });
           count ++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.PROFILES) { // Profiles
+        } else if (this.draftDialogStepper.currentStep === DialogStep.SERVICES) { // Services
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration."
@@ -874,7 +874,7 @@ export default defineComponent({
           isEditable: true,
           possibleValues: this.projectConfigurationLabels,
           configurations: this.projectConfigurations,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROFILES || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SERVICES || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
         },
         {
           fieldKey: "Type",

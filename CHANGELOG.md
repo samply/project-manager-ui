@@ -106,3 +106,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Rename Password Sharing Tool to Credentials Sharing Tool
 - Improvements in resutls box
 - Rename creator to applicant
+- Rename profiles to services

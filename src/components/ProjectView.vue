@@ -44,7 +44,7 @@
               <thead>
               <tr>
                 <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
-                <th class="status-table-header" scope="col">Votum</th>
+                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Votum</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Teiler</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access</th>
                 <th class="status-table-header" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD Status</th>
@@ -62,7 +62,7 @@
               <tbody>
               <tr>
                 <td>{{ project ? project.code : '' }}</td>
-                <td>
+                <td v-if="visibleBridgeheads?.length == 1">
                   <div>
                     <div v-if="existsVotum" class="states-circle-container">
                       <div class="state_circle green"></div>

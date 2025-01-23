@@ -108,3 +108,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Improvements in resutls box
 - Rename creator to applicant
 - Rename profiles to services
+- Don't show votum during draft phase

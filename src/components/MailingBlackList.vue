@@ -113,7 +113,7 @@ export default class MailingBlackList extends Vue {
           placeholder="Enter email to add"
           @input="updateSuggestions"
       />
-      <ul v-if="showSuggestions">
+      <ul v-if="showSuggestions" style="padding:10px 20px">
         <li v-for="user in suggestions" :key="user.email">
           {{ user.email }}
           <button class="btn btn-primary mr-2" @click="addUserToMailingBlackList(user.email)">Add</button>

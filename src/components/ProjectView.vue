@@ -130,6 +130,7 @@
                                         :context="context" :call-refreh-context="button.refreshContextCallFunction" :text="button.text"
                                         :button-class="button.cssClass" :with-message="button.withMessage"
                                         :visibility="button.visibilityCondition"
+                                        :do-action-on-click="button.doActionOnClick"
                                         :project-manager-backend-service="projectManagerBackendService"/>
                 </div>
               </div>
@@ -447,7 +448,9 @@ export default defineComponent({
       tooltipTextForCreateButton: '',
       canShowBridgeheadAdminButtons: false,
       currentUsers: [] as User[],
-      creatorAcceptance: 'CREATED'
+      creatorAcceptance: 'CREATED',
+      existsResearchEnvironmentWorkspace: false,
+      researchEnvironmentUrl: undefined as string | undefined
     };
   },
   watch: {
@@ -598,6 +601,8 @@ export default defineComponent({
           }),
           this.initializeCurrentProjectConfiguration(),
           this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads'),
+          this.initializeData(Module.USER_MODULE, Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION, new Map(), 'existsResearchEnvironmentWorkspace'),
+          this.initializeData(Module.USER_MODULE, Action.FETCH_RESEARCH_ENVIRONMENT_URL_ACTION, new Map(), 'researchEnvironmentUrl'),
           this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, new Map(), 'currentUsers'),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, new Map(), async (result: boolean) => {
             this.existsVotum = result;
@@ -830,6 +835,12 @@ export default defineComponent({
 
     getExplanationsForButtonGroup(buttonGroup: ActionButtonGroup): number[] {
       return buttonGroup.button?.map((button) => this.explanations?.get(button.action)?.number).filter((number): number is number => number !== undefined) || []
+    },
+
+    goToReseachEnvironment() {
+      if (this.researchEnvironmentUrl){
+        window.open(this.researchEnvironmentUrl, '_blank');
+      }
     },
 
     getProjectFields(): ProjectField[] {
@@ -1094,6 +1105,18 @@ export default defineComponent({
               module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
               text: "Request Changes", withMessage: true, cssClass: "btn btn-primary mr-2"
+            }
+          ] as ActionButton[]
+        },
+        {
+          label: "Research Environment",
+          button: [
+            {
+              module: Module.USER_MODULE, action: Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Go", withMessage: false, cssClass: "btn btn-primary mr-2",
+              visibilityCondition: this.researchEnvironmentUrl !== undefined && this.existsResearchEnvironmentWorkspace,
+              doActionOnClick: this.goToReseachEnvironment as () => void
             }
           ] as ActionButton[]
         },

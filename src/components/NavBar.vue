@@ -11,7 +11,7 @@
           {{ keycloak.getFirstName() + " " + keycloak.getLastName() }}
         </span>
         <!-- PM-Admin Config  -->
-        <router-link v-if="isProjectManagerAdmin" class="btn admin-button" to="/admin-config">
+        <router-link v-if="isProjectManagerAdmin" class="btn admin-button" to="/config">
           <i class="bi bi-gear"></i>
         </router-link>
         <!-- Logout button -->
@@ -28,7 +28,6 @@ import keycloak from "../services/keycloak";
 import {
   Action,
   Module,
-  Project,
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,

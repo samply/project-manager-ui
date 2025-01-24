@@ -43,7 +43,7 @@ const routes: Array<RouteRecordRaw> = [
         component: ProjectDashboard,
     },
     {
-        path: '/admin-config',
+        path: '/config',
         name: 'AdminConfig',
         meta: {title: 'PM-Admin Configuration'},
         component: AdminConfig,

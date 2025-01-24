@@ -112,6 +112,7 @@ export default class UserInput extends Vue {
 
   selectSuggestion(suggestion: User) {
     this.partialEmail = suggestion.email;
+    this.isValidEmail = true;
     this.suggestions = this.suggestions.filter(item => item != suggestion);
     this.showSuggestions = false;
   }

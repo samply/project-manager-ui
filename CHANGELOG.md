@@ -95,6 +95,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Votum for all
 - Show email while hovering on user
 - Check email validity
+- Go to research environment link
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

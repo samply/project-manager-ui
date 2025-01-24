@@ -27,6 +27,7 @@ export default class ProjectManagerButton extends Vue {
   @Prop() readonly params: Map<string, string> = new Map();
   @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
   @Prop({ type: String, default: '' }) readonly tooltipText!: string;
+  @Prop({type: Function}) readonly doActionOnClick?: () => void;
 
   isActive = false;
   inputText = '';
@@ -51,10 +52,14 @@ export default class ProjectManagerButton extends Vue {
   }
 
   async handleButtonClick() {
-    const actionToUse = this.checkboxChecked && this.action2 ? this.action2 : this.action;
-    this.params.set('message', this.inputText);
-    this.projectManagerBackendService.fetchData(this.module, actionToUse, this.context, this.params).then(result => this.callRefrehContext());
-    this.toggleVisibility();
+    if (this.doActionOnClick){
+      this.doActionOnClick();
+    } else {
+      const actionToUse = this.checkboxChecked && this.action2 ? this.action2 : this.action;
+      this.params.set('message', this.inputText);
+      this.projectManagerBackendService.fetchData(this.module, actionToUse, this.context, this.params).then(result => this.callRefrehContext());
+      this.toggleVisibility();
+    }
   }
 
   toggleVisibility() {

@@ -10,6 +10,8 @@ export default class UserAndEmail extends Vue {
   @Prop() readonly lastName?: string;  // Optional property
   @Prop() readonly email!: string;
 
+  copiedToClipboard = false;
+
   get completeName(): string {
     return (
         (this.firstName ? this.firstName : "") +
@@ -21,10 +23,9 @@ export default class UserAndEmail extends Vue {
   async copyToClipboard(email: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(email);
-      alert("Email copied to clipboard!");
+      this.copiedToClipboard = true;
     } catch (error) {
       console.error("Failed to copy email:", error);
-      alert("Failed to copy email. Please try again.");
     }
   }
 }
@@ -39,7 +40,7 @@ export default class UserAndEmail extends Vue {
         @click="copyToClipboard(email)"
         title="Copy email"
     >
-      <i class="bi bi-clipboard"></i>
+      <i :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"></i>
     </button>
   </div>
   <!-- If no firstName or lastName, show just the email -->

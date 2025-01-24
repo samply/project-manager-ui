@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2025-01-23]
+## [1.1.0 - 2025-01-24]
 ### Added
 - Dockerfile
 - Single Spa
@@ -109,3 +109,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Rename creator to applicant
 - Rename profiles to services
 - Don't show votum during draft phase
+- Get Votum status in Bridgehead Overview

@@ -201,8 +201,12 @@ export default class BridgeheadOverview extends Vue {
   getVotumStatus(): number[] {
     const hasVotum = this.existsVotums.filter((votum) => votum);
     const noVotum = this.existsVotums.filter((votum) => !votum);
-    if (this.existsVotumForAllBridgeheads && hasVotum.length == 0){
-      return [1, 0];
+    if (this.existsVotumForAllBridgeheads){
+      if (hasVotum.length == 0){
+        return [1, 0];
+      } else {
+        return [hasVotum.length, 0];
+      }
     }
     return [hasVotum.length, noVotum.length]
   }

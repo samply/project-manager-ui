@@ -58,7 +58,8 @@ export default class ProjectFieldRow extends Vue {
   newValue = "";
   newKey = "";
   toggleHumanReadable = true;
-  showDetails: boolean[] = []
+  showDetails: boolean[] = [];
+  copiedToClipboard = false;
 
   @Watch("projectManagerBackendService", {immediate: true, deep: true})
   onProjetManagerBackendServiceChange(
@@ -302,10 +303,9 @@ export default class ProjectFieldRow extends Vue {
   async copyToClipboard(text: string) {
     try {
       await navigator.clipboard.writeText(text);
-      alert("Query copied to clipboard!");
+      this.copiedToClipboard = true;
     } catch ($e) {
       console.log($e)
-      alert("Query copied to clipboard!");
     }
   }
 
@@ -313,7 +313,7 @@ export default class ProjectFieldRow extends Vue {
 </script>
 
 <template>
-  <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === dialogStep.PROFILES" class="config-box-row">
+  <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === dialogStep.SERVICES" class="config-box-row">
     <td colspan="3">
       <div style="display: flex;padding-left:0;margin:20px 0">
         <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
@@ -507,7 +507,7 @@ export default class ProjectFieldRow extends Vue {
         <button v-if="isQuery() && fieldValue[0]" class="btn btn-primary"
                 data-toggle="tooltip"
                 data-placement="top" title="Copy Query to Clipboard"
-                style="background:none; border:none; color:black"><i class="bi bi-copy" @click="copyToClipboard(editedValue[1])"></i>
+                style="background:none; border:none; color:black"><i :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'" @click="copyToClipboard(editedValue[1])"></i>
         </button>
       </span>
     </td>

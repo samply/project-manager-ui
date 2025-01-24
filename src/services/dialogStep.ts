@@ -1,7 +1,7 @@
 export enum DialogStep {
     PROJECT = "Project",
     QUERY = "Query",
-    PROFILES = "Profiles",
+    SERVICES = "Services",
     OUTPUT = "Output",
     SUMMARY = "Summary",
 }

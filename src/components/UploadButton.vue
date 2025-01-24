@@ -75,7 +75,7 @@ export default class UploadButton extends Vue {
 </script>
 
 <template>
-  <div v-if="isActive" style="width: fit-content; margin-right: 2%">
+  <div v-if="isActive" style="width: auto; margin-right: 2%">
     <div class="row align-items-center" style="display: flex;width: 100%">
       <div style="display: flex; width: 100%;">
         <div class="form-group" style="width: 100%; flex-flow: column;">

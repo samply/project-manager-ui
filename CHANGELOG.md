@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2025-01-22]
+## [1.1.0 - 2025-01-24]
 ### Added
 - Dockerfile
 - Single Spa
@@ -93,6 +93,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Results already sent button
 - Votum in project view overview with only one bridgehead
 - Votum for all
+- Show email while hovering on user
+- Check email validity
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)
@@ -105,3 +107,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Rename Password Sharing Tool to Credentials Sharing Tool
 - Improvements in resutls box
 - Rename creator to applicant
+- Rename profiles to services
+- Don't show votum during draft phase
+- Get Votum status in Bridgehead Overview

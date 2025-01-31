@@ -110,7 +110,7 @@
 
           </div>
         </div>
-        <div v-if="!(project?.state === 'DRAFT' && projectRoles.includes(ProjectRole.CREATOR)) && isButtonGroupVisible" class="project-actions">
+        <div v-if="!(project?.state === 'DRAFT' && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible" class="project-actions">
           <div class="box-header">Actions</div>
           <div style="padding:2%">
             <!-- Project State Module: Creator View -->
@@ -441,7 +441,7 @@ export default defineComponent({
       explanations: new Map() as Explanations,
       extendedExplanations: new Map() as Explanations,
       buttonGroups: [] as boolean[],
-      isButtonGroupVisible: false,
+      isAnyButtonVisible: false,
       actionButtons: [] as ActionButtonGroup[],
       currentUser: undefined as User | undefined,
       hasProjectAllMandatoryFields: false,
@@ -1140,19 +1140,32 @@ export default defineComponent({
     },
 
     async checkButtonVisibility() {
-      this.actionButtons.forEach((buttonGroup, index) => {
-        const statusArray = buttonGroup.button.map(async (button) => {
-          const visibility1 = button.visibilityCondition !== undefined ? button.visibilityCondition :  true
-          const visibility2 = await this.projectManagerBackendService.isModuleActionActive(button.module, button.action)
-          return visibility1 && visibility2
-        })
-        Promise.all(statusArray).then((result) => {
-          this.buttonGroups[index] = result.includes(true);
-          this.isButtonGroupVisible = this.isButtonGroupVisible || this.buttonGroups[index]
-        })
-      })
+      let flagChanged = false;  // Track if the flag changes
+      await Promise.all(
+          this.actionButtons.map(async (buttonGroup, index) => {
+            const statusArray = await Promise.all(
+                buttonGroup.button.map(async (button) => {
+                  const visibility1 = button.visibilityCondition !== undefined ? button.visibilityCondition : true;
+                  const visibility2 = await this.projectManagerBackendService.isModuleActionActive(button.module, button.action);
+                  // Check if a button is visible and the flag hasn't been set to true yet
+                  if (visibility1 && visibility2 && !this.isAnyButtonVisible) {
+                    this.isAnyButtonVisible = true; // Set flag to true immediately if a visible button is found
+                    flagChanged = true;  // Mark the flag as changed
+                  }
+                  return visibility1 && visibility2;
+                })
+            );
+            // Update the visibility for the button group
+            this.buttonGroups[index] = statusArray.includes(true);
+          })
+      );
 
+      // If the flag changed, trigger watcher by updating the property
+      if (flagChanged) {
+        // You can put any additional logic to notify the watcher if necessary here
+      }
     }
+
 
   }
 

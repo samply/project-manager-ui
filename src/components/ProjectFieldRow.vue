@@ -2,7 +2,7 @@
 import {Options, Vue} from "vue-class-component";
 import {Prop, Watch} from "vue-property-decorator";
 import {
-  Action,
+  Action, Bridgehead,
   configLabel,
   EditProjectParam,
   Explanations,
@@ -42,6 +42,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly todos?: Explanations;
   @Prop() readonly existsFile!: boolean;
   @Prop() readonly draftDialogCurrentStep!: DialogStep;
+  @Prop() readonly visibleBridgeheads!: Bridgehead[];
   @Prop({
     type: Function,
     default: (input: string): string => input
@@ -375,6 +376,7 @@ export default class ProjectFieldRow extends Vue {
               </div>
               <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
+                            :visible-bridgeheads="visibleBridgeheads" :use-bridgehead-chooser="fieldKey === 'Votum'"
                             :text="'Upload '+ fieldKey" :call-refreh-context="exitAndCallRefreshContext"
                             :is-file="true"/>
             </div>

@@ -497,7 +497,7 @@ p {
   padding: 20px;
   border-radius: 8px;
   width: 80%;
-  max-width: 500px;
+  max-width: 800px;
 }
 
 .close-btn {

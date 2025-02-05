@@ -10,7 +10,11 @@ import {
   ProjectRole
 } from "@/services/projectManagerBackendService";
 import {EmailRole} from "@/services/emailRole";
-
+interface options {
+  label: string,
+  shortDescription: string,
+  longDescription: string
+}
 @Options({
   name: "CredentialsSharingTool",
 })
@@ -34,7 +38,31 @@ export default class CredentialsSharingTool extends Vue {
   emlDownloaded: boolean[] = [];
   htmlDownloaded: boolean[] = [];
   recipientsMessageSubjects: MessageSubject[] = [];
-
+  selectedOption = 0;
+  optionDropdownToggle = false;
+  credentialOptions = [
+    {
+      label: "Option1: Copy Recipients' Email",
+      shortDescription: "Copy a list of mail addresses to your clipboard",
+      longDescription: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua....."
+    },{
+      label: "Option2: Copy Email Template",
+      shortDescription: "Copy an email template of mail addresses to your clipboard",
+      longDescription: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua....."
+    },{
+      label: "Option3: Generate Email Links",
+      shortDescription: "generate  a link to your email template ...",
+      longDescription: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua....."
+    },{
+      label: "Option4: Generate EML Files",
+      shortDescription: "generate an EML file template ...",
+      longDescription: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua....."
+    },{
+      label: "Option5: Generate HTML Files",
+      shortDescription: "generate an HTML file template ...",
+      longDescription: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua....."
+    }
+  ] as options[]
 
   @Watch('projectManagerBackendService', {immediate: true})
   onProjectManagerBackendService(newValue: EmailRole[], oldValue: EmailRole[]) {
@@ -179,95 +207,115 @@ export default class CredentialsSharingTool extends Vue {
     <h3>Credentials Sharing Tool</h3>
     <p>Please choose an option below to share the credentials securely. No credentials will be sent automatically to any external server, and the tool runs exclusively in your browser.</p>
 
-    <!-- Option 1: Copy emails of recipients -->
-    <div class="option">
-      <h5>Option 1:</h5>
-      <button @click="copyRecipients" class="btn btn-primary">
-        <i class="bi bi-clipboard"></i> Copy Recipients' Emails
-      </button>
-      <p v-if="recipientsCopied">Recipients' emails copied to clipboard!</p>
-      <br>
-    </div>
-
-    <!-- Password input field -->
-    <div class="password-section" v-if="passwordRequired">
-      <h6>Enter Password (For Options 2 - 5):</h6>
-      <div class="input-group">
-        <input
-            :type="passwordVisible ? 'text' : 'password'"
-            v-model="password"
-            placeholder="Enter password"
-            class="form-control"
-        />
-        <button @click="togglePasswordVisibility" class="btn btn-secondary" title="Toggle password visibility">
-          <i :class="passwordVisible ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+    <div class="options">
+      <div style="margin-right: 10%;">
+        <button class="option-button" @click="optionDropdownToggle = !optionDropdownToggle">
+          <div class="dropdown-display">
+            <div class="dropdown-label">{{credentialOptions[selectedOption].label}}</div>
+            <div class="dropdown-short">{{credentialOptions[selectedOption].shortDescription}}</div>
+          </div>
+          <div class="dropdown-icon">
+            <i class="bi bi-chevron-down"></i>
+          </div>
         </button>
-        <button @click="generatePassword" class="btn btn-secondary ms-2" title="Generate a new password">
-          <i class="bi bi-shuffle"></i>
-        </button>
+
+        <div style="display:flex">
+          <div v-if="optionDropdownToggle" class="dropdown-div">
+            <div v-for="(option2, index) in credentialOptions" :key="index"
+                 class="dropdown-display dropdown-display-hover"
+                 @click="selectedOption=index;optionDropdownToggle=false"
+            >
+              <div class="dropdown-label">{{option2.label}}</div>
+              <div class="dropdown-short">{{option2.shortDescription}}</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <br>
-    </div>
+      <div class="option-variants">
+        <!-- Option 1: Copy emails of recipients -->
+        <div v-if="selectedOption === 0" class="option">
+          <button @click="copyRecipients" class="btn btn-primary">
+            <i class="bi bi-clipboard"></i> Copy Recipients' Emails
+          </button>
+          <p v-if="recipientsCopied">Recipients' emails copied to clipboard!</p>
+        </div>
 
-    <!-- Option 2: Copy email template -->
-    <div class="option">
-      <h5>Option 2:</h5>
-      <button @click="copyEmailTemplate" class="btn btn-primary">
-        <i class="bi bi-clipboard"></i> Copy Email Template
-      </button>
-      <p v-if="emailTemplateCopied">Email template copied to clipboard!</p>
-      <br>
-    </div>
+        <!-- Password input field -->
+        <div v-if="passwordRequired && selectedOption > 0">
+          <div class="input-group">
+            <input
+                :type="passwordVisible ? 'text' : 'password'"
+                v-model="password"
+                placeholder="Enter password"
+                class="form-control"
+            />
+            <button @click="togglePasswordVisibility" class="btn btn-secondary" title="Toggle password visibility">
+              <i :class="passwordVisible ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+            </button>
+            <button @click="generatePassword" class="btn btn-secondary ms-2" title="Generate a new password">
+              <i class="bi bi-shuffle"></i>
+            </button>
+          </div>
+          <br>
+        </div>
 
-    <!-- Option 3: Generate link for email app -->
-    <div class="option">
-      <h5>Option 3:</h5>
-      <button @click="generateEmailLink" class="btn btn-primary">
-        <i class="bi bi-envelope"></i> Generate Email Links
-      </button>
-      <p v-if="emailLinkGenerated">Email links generated! Click to open in email app.</p>
-      <div v-if="emailLinkGenerated">
-        <p v-for="(link, index) in generatedLinks" :key="index">
-          <a :href="link" target="_blank" class="btn btn-link" @click="copyToClipboard(index)">
-            Open Email App for {{recipientsEmails[index].email}} with role {{ recipientsEmails[index].projectRole}}
-          </a>
-          <!-- Bootstrap icon to show when copied -->
-          <i v-if="copiedLinks[index]" class="bi bi-check-circle text-success"></i>
-        </p>
-      </div>
-    </div>
+        <!-- Option 2: Copy email template -->
+        <div v-if="selectedOption === 1" class="option">
+          <button @click="copyEmailTemplate" class="btn btn-primary">
+            <i class="bi bi-clipboard"></i> Copy Email Template
+          </button>
+          <p v-if="emailTemplateCopied">Email template copied to clipboard!</p>
+        </div>
 
-    <!-- Option 4: Download EML files -->
-    <div class="option">
-      <h5>Option 4:</h5>
-      <button @click="generateEmlFiles" class="btn btn-primary">
-        <i class="bi bi-download"></i> Generate EML Files
-      </button>
-      <p v-if="emlLinksGenerated">EML files ready for download:</p>
-      <div v-if="emlLinksGenerated">
-        <p v-for="(link, index) in emlLinks" :key="index">
-          <a :href="link" :download="`email_${recipientsEmails[index].email}.eml`" class="btn btn-link">
-            Download EML for {{ recipientsEmails[index].email }} with role {{ recipientsEmails[index].projectRole}}
-          </a>
-          <i v-if="emlDownloaded[index]" class="bi bi-check-circle text-success"></i>
-        </p>
-      </div>
-    </div>
+        <!-- Option 3: Generate link for email app -->
+        <div v-if="selectedOption === 2" class="option">
+          <button @click="generateEmailLink" class="btn btn-primary">
+            <i class="bi bi-envelope"></i> Generate Email Links
+          </button>
+          <p v-if="emailLinkGenerated">Email links generated! Click to open in email app.</p>
+          <div v-if="emailLinkGenerated">
+            <p v-for="(link, index) in generatedLinks" :key="index">
+              <a :href="link" target="_blank" class="btn btn-link" @click="copyToClipboard(index)">
+                Open Email App for {{recipientsEmails[index].email}} with role {{ recipientsEmails[index].projectRole}}
+              </a>
+              <!-- Bootstrap icon to show when copied -->
+              <i v-if="copiedLinks[index]" class="bi bi-check-circle text-success"></i>
+            </p>
+          </div>
+        </div>
 
-    <!-- Option 5: Download HTML files -->
-    <div class="option">
-      <h5>Option 5:</h5>
-      <button @click="generateHtmlFiles" class="btn btn-primary">
-        <i class="bi bi-download"></i> Generate HTML Files
-      </button>
-      <p v-if="htmlLinksGenerated">HTML files ready for download:</p>
-      <div v-if="htmlLinksGenerated">
-        <p v-for="(link, index) in htmlLinks" :key="index">
-          <a :href="link" :download="`email_${recipientsEmails[index].email}.html`" class="btn btn-link">
-            Download HTML for {{ recipientsEmails[index].email }} with role {{ recipientsEmails[index].projectRole}}
-          </a>
-          <i v-if="htmlDownloaded[index]" class="bi bi-check-circle text-success"></i>
-        </p>
+        <!-- Option 4: Download EML files -->
+        <div v-if="selectedOption === 3" class="option">
+          <button @click="generateEmlFiles" class="btn btn-primary">
+            <i class="bi bi-download"></i> Generate EML Files
+          </button>
+          <p v-if="emlLinksGenerated">EML files ready for download:</p>
+          <div v-if="emlLinksGenerated">
+            <p v-for="(link, index) in emlLinks" :key="index">
+              <a :href="link" :download="`email_${recipientsEmails[index].email}.eml`" class="btn btn-link">
+                Download EML for {{ recipientsEmails[index].email }} with role {{ recipientsEmails[index].projectRole}}
+              </a>
+              <i v-if="emlDownloaded[index]" class="bi bi-check-circle text-success"></i>
+            </p>
+          </div>
+        </div>
+
+        <!-- Option 5: Download HTML files -->
+        <div v-if="selectedOption === 4" class="option">
+          <button @click="generateHtmlFiles" class="btn btn-primary">
+            <i class="bi bi-download"></i> Generate HTML Files
+          </button>
+          <p v-if="htmlLinksGenerated">HTML files ready for download:</p>
+          <div v-if="htmlLinksGenerated">
+            <p v-for="(link, index) in htmlLinks" :key="index">
+              <a :href="link" :download="`email_${recipientsEmails[index].email}.html`" class="btn btn-link">
+                Download HTML for {{ recipientsEmails[index].email }} with role {{ recipientsEmails[index].projectRole}}
+              </a>
+              <i v-if="htmlDownloaded[index]" class="bi bi-check-circle text-success"></i>
+            </p>
+          </div>
+        </div>
+        <p>{{credentialOptions[selectedOption].longDescription}}</p>
       </div>
     </div>
 
@@ -283,14 +331,6 @@ export default class CredentialsSharingTool extends Vue {
 <style scoped>
 .password-sharing-tool {
   padding: 20px;
-}
-
-.option {
-  margin-bottom: 20px;
-}
-
-.password-section {
-  margin-top: 20px;
 }
 
 .input-group {
@@ -324,5 +364,55 @@ p {
 
 .recommendation a:hover {
   text-decoration: underline;
+}
+.option-button {
+  display: flex;
+  border-radius: 5px;
+  border: 1px solid grey;
+  background: none;
+  padding:0;
+  position: relative;
+  width: 310px;
+  max-height: 78px;
+}
+.dropdown-display {
+  text-align: left;
+  padding: 10px 15px;
+}
+.dropdown-icon {
+  margin: auto;
+  padding-right: 10px;
+}
+.dropdown-label {
+  font-size: 16px;
+  font-weight: bold
+}
+.dropdown-short {
+  font-size: 11px;
+}
+.dropdown-div {
+  background: white;
+  position: absolute;
+  padding-top: 5px;
+  border-bottom: 1px solid grey;
+  border-left: 1px solid grey;
+  border-right: 1px solid grey;
+  width: 310px;
+}
+.dropdown-display-hover:hover {
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+}
+.options {
+  display: flex;
+  min-height: 200px;
+}
+.option-variants {
+  max-width: 350px;
+  min-height: 120px;
+}
+.option {
+  margin-bottom: 20px;
 }
 </style>

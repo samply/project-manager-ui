@@ -47,7 +47,7 @@ export default class CredentialsSharingTool extends Vue {
       longDescription: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua....."
     },{
       label: "Option2: Copy Email Template",
-      shortDescription: "Copy an email template of mail addresses to your clipboard",
+      shortDescription: "Copy an email template to your clipboard",
       longDescription: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua....."
     },{
       label: "Option3: Generate Email Links",

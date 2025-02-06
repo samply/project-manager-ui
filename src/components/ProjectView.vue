@@ -692,9 +692,13 @@ export default defineComponent({
           const result = await this.projectManagerBackendService.fetchData(module, action, this.context, params);
           await callback(result); // Await the callback to handle any async operations inside it
         }
-      } catch (error) {
-        console.error('Error calling action ' + action + ' of module ' + module + ':', error);
-        throw error;
+      } catch (error: any) {
+        if (error.response && error.response.status === 404) {
+          console.warn(`Error 404: Resource not found for action '${action}' of module '${module}'`);
+        } else {
+          console.error(`Error calling action '${action}' of module '${module}':`, error);
+          throw error; // Re-throw the error if it's not a 404
+        }
       }
     },
 

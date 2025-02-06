@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2025-01-31]
+## [1.1.0 - 2025-02-06]
 ### Added
 - Dockerfile
 - Single Spa
@@ -112,3 +112,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Don't show votum during draft phase
 - Get Votum status in Bridgehead Overview
 - Show actions as soon as possible
+- In initializeDataInCallback: Just log in the console if 404, but not throw an error

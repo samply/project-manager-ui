@@ -333,6 +333,12 @@ export default class CredentialsSharingTool extends Vue {
           </div>
         </div>
         <p>{{credentialOptions[selectedOption].longDescription}}</p>
+        <p>
+          <strong>Advantages:</strong> {{ credentialOptions[selectedOption].advantages }}
+        </p>
+        <p>
+          <strong>Use Cases:</strong> {{ credentialOptions[selectedOption].useCases }}
+        </p>
       </div>
     </div>
 

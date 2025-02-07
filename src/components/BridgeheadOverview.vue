@@ -274,7 +274,7 @@ export default class BridgeheadOverview extends Vue {
 .header-summary-cell {
   background-color: #f2f2f2;
   border-bottom: 1px solid #dddddd;
-  padding: 5px; /* Verringere die Padding-Größe */
+  padding: 7px; /* Verringere die Padding-Größe */
   font-size: 14px; /* Reduziere die Schriftgröße */
   text-align: center;
   width: 12%;

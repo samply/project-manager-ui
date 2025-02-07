@@ -6,7 +6,8 @@ import {
   Module,
   ProjectManagerContext,
   ProjectManagerBackendService,
-  UPLOAD_DOCUMENT_PARAM, UPLOAD_DOCUMENT_URL_PARAM
+  UPLOAD_DOCUMENT_PARAM, UPLOAD_DOCUMENT_URL_PARAM,
+  Bridgehead
 } from "@/services/projectManagerBackendService";
 
 @Options({
@@ -21,11 +22,14 @@ export default class UploadButton extends Vue {
   @Prop() readonly action!: Action;
   @Prop() readonly text!: string;
   @Prop() readonly isFile!: boolean;
+  @Prop() readonly useBridgeheadChooser!: boolean;
+  @Prop() readonly visibleBridgeheads!: Bridgehead[];
   file: File | undefined = undefined;
   label = '';
   url = '';
   isActive = false;
   fileSelected = false;
+  selectedBridgehead: string | undefined = undefined;
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
   onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
@@ -38,6 +42,7 @@ export default class UploadButton extends Vue {
 
   updateIsActive() {
     this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result)
+    this.selectedBridgehead = this.context.bridgehead?.bridgehead
   }
 
   onFileSelected(event: Event): void {
@@ -62,7 +67,8 @@ export default class UploadButton extends Vue {
       params.set(UPLOAD_DOCUMENT_URL_PARAM, this.url);
     }
     params.set('label', this.label);
-    this.projectManagerBackendService.fetchHttpResponse(this.module, this.action, this.context, params).then(httpResponse => {
+
+    this.projectManagerBackendService.fetchHttpResponse(this.module, this.action, this.getContext(), params).then(httpResponse => {
       this.file = undefined;
       this.label = '';
       this.url = '';
@@ -70,6 +76,15 @@ export default class UploadButton extends Vue {
       this.updateIsActive();
       this.fileSelected = false;
     });
+  }
+
+  getContext(): ProjectManagerContext {
+    const bridgehead = this.visibleBridgeheads.find((bridgehead) => bridgehead.bridgehead === this.selectedBridgehead)
+    if (this.useBridgeheadChooser) {
+      return new ProjectManagerContext(this.context.projectCode,bridgehead)
+    } else {
+      return this.context
+    }
   }
 }
 </script>
@@ -86,7 +101,11 @@ export default class UploadButton extends Vue {
           </template>
 
           <div style="display: flex; width: 100%; flex-flow: row;">
-
+            <template v-if="useBridgeheadChooser && visibleBridgeheads.length > 1">
+              <select v-model="selectedBridgehead" class="form-select">
+                <option v-for="value in visibleBridgeheads" :key="value" :value="value.bridgehead">{{ value.humanReadable ? value.humanReadable : value.bridgehead }}</option>
+              </select>
+            </template>
             <div v-if="isFile">
               <div style="display: flex; flex-flow: row; align-items: center; width: 110%;">
                 <label for="fileInput" class="btn btn-primary fileChooser">
@@ -152,6 +171,11 @@ export default class UploadButton extends Vue {
   width: 100%;
   font-size: small;
   padding: .5rem .75rem;
+  margin-right: 3%;
+}
+.form-select {
+  height: fit-content;
+  width: fit-content;
   margin-right: 3%;
 }
 </style>

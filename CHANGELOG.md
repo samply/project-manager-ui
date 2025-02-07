@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2025-02-06]
+## [1.1.0 - 2025-02-07]
 ### Added
 - Dockerfile
 - Single Spa
@@ -96,6 +96,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Show email while hovering on user
 - Check email validity
 - Go to research environment link
+- Long Description to options of credential sharing tools
+- Advantages and use cases to options of credential sharing tools
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

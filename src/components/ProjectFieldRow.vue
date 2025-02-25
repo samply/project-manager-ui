@@ -492,7 +492,7 @@ export default class ProjectFieldRow extends Vue {
     <td style="min-width: 50px;vertical-align: middle">
       <span style="display:flex; flex-flow:row; align-items: baseline">
           <div style="display:inline-flex; flex-flow:row; align-items: baseline">
-            <button v-if="isFieldValueEditable() && (redirectUrl === null || redirectUrl === undefined || isBridgeheads())" class="btn btn-primary"
+            <button v-if="isFieldValueEditable() && (redirectUrl === null || redirectUrl === undefined || isBridgeheads() || isQuery())" class="btn btn-primary"
                     data-toggle="tooltip"
                     data-placement="top" title="Edit"
                     style="background:none; border:none; color:black"><i class="bi bi-pencil me-2" @click="editField"></i>

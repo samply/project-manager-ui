@@ -1,0 +1,8 @@
+{
+  "realm": "${VUE_APP_KEYCLOAK_REALM}",
+  "auth-server-url": "${VUE_APP_KEYCLOAK_URL}",
+  "ssl-required": "external",
+  "resource": "${VUE_APP_KEYCLOAK_CLIENT_ID}",
+  "public-client": true,
+  "confidential-port": 0
+}

@@ -1,3 +1,5 @@
 {
-  "VUE_APP_PROJECT_MANAGER_BACKEND_URL" : "http://localhost:8097"
+  "VUE_APP_PROJECT_MANAGER_BACKEND_URL" : "http://localhost:8097",
+  "OIDC_URL" : "https://sso.verbis.dkfz.de/application/o/project-manager-ui/",
+  "OIDC_CLIENT_ID": "AyLFIH3yMUIwNxNZhIKdPwcQlHAYMpekRAWVieac"
 }

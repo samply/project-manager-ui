@@ -20,7 +20,7 @@
     "bootstrap-vue": "^2.23.1",
     "core-js": "^3.8.3",
     "date-fns": "^3.3.1",
-    "keycloak-js": "^23.0.1",
+    "oidc-client-ts": "^3.4.1",
     "single-spa-vue": "^2.1.0",
     "vue": "^3.2.13",
     "vue-class-component": "^8.0.0-0",

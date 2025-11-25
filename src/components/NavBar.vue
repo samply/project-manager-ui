@@ -6,9 +6,9 @@
       </router-link>
       <div class="user-logout-container">
         <!-- User information -->
-        <span class="user-info" :title="keycloak.getEmail()">
+        <span class="user-info" :title="auth.getEmail()">
           <i class="bi bi-person-fill user-icon"></i>
-          {{ keycloak.getFirstName() + " " + keycloak.getLastName() }}
+          {{ auth.getFirstName() + " " + auth.getLastName() }}
         </span>
         <!-- PM-Admin Config  -->
         <router-link v-if="isProjectManagerAdmin" class="btn admin-button" to="/config">
@@ -24,7 +24,6 @@
 </template>
 
 <script lang="ts">
-import keycloak from "../services/keycloak";
 import {
   Action,
   Module,
@@ -34,14 +33,15 @@ import {
   Site
 } from "@/services/projectManagerBackendService";
 import {defineComponent} from "vue";
+import {AuthService} from "@/services/auth";
 
 export default defineComponent({
   computed: {
-    keycloak() {
-      return keycloak;
-    },
-    ProjectRole() {
-      return ProjectRole;
+      auth() {
+        return AuthService;
+      },
+      ProjectRole() {
+        return ProjectRole;
     },
   },
   data() {
@@ -57,7 +57,7 @@ export default defineComponent({
   },
   methods: {
     logout() {
-      keycloak.logout();
+      this.auth.logout();
     },
 
     async fetchProjectRoles() {

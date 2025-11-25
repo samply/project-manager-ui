@@ -4,6 +4,7 @@ import ProjectDashboard from "@/components/ProjectDashboard.vue";
 import AdminConfig from "@/components/AdminConfig.vue";
 
 import { createStore } from 'vuex';
+import OidcCallback from "@/components/OidcCallback.vue";
 
 createStore({
     state: {

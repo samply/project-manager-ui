@@ -1,8 +1,8 @@
 //projectManagerBackendService.ts
 import axios, {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
 import axiosRetry from "axios-retry";
-import KeyCloakService from "@/services/keycloak";
 import {getConfig} from "@/services/configLoader";
+import {AuthService} from "@/services/auth";
 
 
 const bridgeheadParam = 'bridgehead'
@@ -565,7 +565,7 @@ export class ProjectManagerBackendService {
 
         const config: AxiosRequestConfig = {
             headers: {
-                Authorization: `Bearer ${KeyCloakService.getToken()}`,
+                Authorization: `Bearer ${AuthService.getToken()}`,
             },
             params: this.convertToUrlSearchParams(params),
             withCredentials: true,

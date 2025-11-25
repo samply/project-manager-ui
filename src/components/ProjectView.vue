@@ -355,12 +355,12 @@ import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
-import keycloak from "@/services/keycloak";
 import {DialogStep, DialogStepper} from "@/services/dialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
+import {AuthService} from "@/services/auth";
 
 
 export default defineComponent({
@@ -586,7 +586,7 @@ export default defineComponent({
       if (this.project) {
         this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
         this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
-        this.existsDraftDialog = (this.project.state === 'DRAFT' && keycloak.getEmail() === this.project.creatorEmail);
+        this.existsDraftDialog = (this.project.state === 'DRAFT' && AuthService.getEmail() === this.project.creatorEmail);
         await Promise.all([
           this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), async (result: Bridgehead[]) => {
             this.bridgeheads = result;

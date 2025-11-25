@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2025-02-07]
+## [1.1.0 - 2025-11-25]
 ### Added
 - Dockerfile
 - Single Spa
@@ -98,6 +98,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Go to research environment link
 - Long Description to options of credential sharing tools
 - Advantages and use cases to options of credential sharing tools
+- General OIDC configuration instead of Keycloak
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

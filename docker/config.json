@@ -3,3 +3,4 @@
   "OIDC_URL" : "${OIDC_URL}",
   "OIDC_CLIENT_ID": "${OIDC_CLIENT_ID}"
 }
+

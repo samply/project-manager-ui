@@ -20,7 +20,7 @@ jobs:
     uses: samply/github-workflows/.github/workflows/docker-ci.yml@main
     with:
       image-name: "samply/project-manager-ui"
-      push-to: dockerhub
+      push-to: docker.io
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

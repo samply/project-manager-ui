@@ -14,7 +14,7 @@ export async function getUserManager(): Promise<UserManager> {
         userManager = new UserManager({
             authority: config.VUE_APP_OIDC_URL,
             client_id: config.VUE_APP_OIDC_CLIENT_ID,
-            redirect_uri: window.location.origin,
+            redirect_uri: window.location.href,
             post_logout_redirect_uri: window.location.origin,
             response_type: "code",
             scope: "openid profile email",

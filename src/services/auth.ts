@@ -12,8 +12,8 @@ export async function getUserManager(): Promise<UserManager> {
         const config = await getConfig();
 
         userManager = new UserManager({
-            authority: config.OIDC_URL,
-            client_id: config.OIDC_CLIENT_ID,
+            authority: config.VUE_APP_OIDC_URL,
+            client_id: config.VUE_APP_OIDC_CLIENT_ID,
             redirect_uri: window.location.origin,
             post_logout_redirect_uri: window.location.origin,
             response_type: "code",

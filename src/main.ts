@@ -26,16 +26,19 @@ app.use(router);
 app.use(store);
 
 async function handleOidcRedirect() {
-    const urlParams = new URLSearchParams(window.location.search);
+    const url = new URL(window.location.href);
 
-    if (urlParams.has("code")) {
-        // Process the login callback automatically
+    if (url.searchParams.has("code")) {
         await finishLoginFlow();
 
-        // Replace URL so user sees main app page instead of query parameters
-        window.history.replaceState({}, document.title, "/");
+        // Remove only code & state, keep everything else
+        url.searchParams.delete("code");
+        url.searchParams.delete("state");
+
+        window.history.replaceState({}, document.title, url.toString());
     }
 }
+
 
 export const bootstrap = async () => {
     // Try to load cached user first

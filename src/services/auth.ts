@@ -15,11 +15,12 @@ export async function getUserManager(): Promise<UserManager> {
             authority: config.VUE_APP_OIDC_URL,
             client_id: config.VUE_APP_OIDC_CLIENT_ID,
             redirect_uri: window.location.href,
-            post_logout_redirect_uri: window.location.origin,
+            post_logout_redirect_uri: window.location.href,
+            silent_redirect_uri: `${window.location.origin}/silent-renew.html`,
             response_type: "code",
             scope: "openid profile email",
             userStore: new WebStorageStateStore({ store: window.localStorage }),
-            automaticSilentRenew: true
+            automaticSilentRenew: true,
         });
     }
     return userManager;

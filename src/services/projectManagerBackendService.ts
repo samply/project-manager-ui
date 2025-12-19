@@ -563,9 +563,10 @@ export class ProjectManagerBackendService {
     ): Promise<AxiosResponse<any, any>> {
         if (!this.axiosInstance) throw new Error("Axios instance not initialized");
 
+        const token = await AuthService.getToken();
         const config: AxiosRequestConfig = {
             headers: {
-                Authorization: `Bearer ${AuthService.getToken()}`,
+                Authorization: `Bearer ${token}`,
             },
             params: this.convertToUrlSearchParams(params),
             withCredentials: true,

@@ -22,6 +22,25 @@ export async function getUserManager(): Promise<UserManager> {
             userStore: new WebStorageStateStore({ store: window.localStorage }),
             automaticSilentRenew: true,
         });
+
+        userManager.events.addUserLoaded(user => {
+            cachedUser = user;
+        });
+
+        userManager.events.addUserUnloaded(() => {
+            cachedUser = null;
+        });
+
+        userManager.events.addAccessTokenExpired(() => {
+            console.warn("Access token expired");
+            cachedUser = null;
+        });
+
+        userManager.events.addSilentRenewError(err => {
+            console.error("Silent renew failed", err);
+            cachedUser = null;
+        });
+
     }
     return userManager;
 }
@@ -60,7 +79,21 @@ export async function tryLoadUserFromStorage(): Promise<void> {
  */
 export const AuthService = {
 
-    getToken(): string | null {
+    async getToken(): Promise<string | null> {
+        const mgr = await getUserManager();
+
+        // If no user or token expired, try silent renew
+        if (!cachedUser || cachedUser.expired) {
+            try {
+                const user = await mgr.signinSilent();
+                cachedUser = user ?? null;
+            } catch (err) {
+                console.error("Silent renew failed, redirecting to login", err);
+                await mgr.signinRedirect();
+                return null; // user will be redirected
+            }
+        }
+
         return cachedUser?.access_token ?? null;
     },
 
@@ -77,7 +110,7 @@ export const AuthService = {
     },
 
     isLoggedIn(): boolean {
-        return cachedUser != null;
+        return cachedUser != null && !cachedUser.expired;
     },
 
     async login(): Promise<void> {

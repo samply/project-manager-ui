@@ -21,6 +21,7 @@ export async function getUserManager(): Promise<UserManager> {
             scope: "openid profile email",
             userStore: new WebStorageStateStore({ store: window.localStorage }),
             automaticSilentRenew: true,
+            revokeTokensOnSignout: true
         });
 
         userManager.events.addUserLoaded(user => {
@@ -119,6 +120,13 @@ export const AuthService = {
 
     async logout(): Promise<void> {
         const mgr = await getUserManager();
-        return mgr.signoutRedirect();
+
+        // Clear local user first
+        cachedUser = null;
+        await mgr.removeUser();
+
+        // Redirect to IdP logout endpoint (ends Authentik SSO session)
+        await mgr.signoutRedirect();
     }
+
 };

@@ -14,7 +14,7 @@ export async function getUserManager(): Promise<UserManager> {
         userManager = new UserManager({
             authority: config.VUE_APP_OIDC_URL,
             client_id: config.VUE_APP_OIDC_CLIENT_ID,
-            redirect_uri: window.location.href,
+            redirect_uri: `${window.location.origin}/`,
             post_logout_redirect_uri: window.location.origin,
             silent_redirect_uri: `${window.location.origin}/silent-renew.html`,
             response_type: "code",
@@ -51,8 +51,14 @@ export async function getUserManager(): Promise<UserManager> {
  */
 export async function startLoginFlow(): Promise<void> {
     const mgr = await getUserManager();
-    return mgr.signinRedirect();
+
+    await mgr.signinRedirect({
+        state: {
+            targetUrl: window.location.pathname + window.location.search
+        }
+    });
 }
+
 
 /**
  * Finish login after Authentik redirects back to /callback
@@ -61,8 +67,13 @@ export async function finishLoginFlow(): Promise<void> {
     const mgr = await getUserManager();
     const user = await mgr.signinCallback();
 
-    // Normalize undefined/null → null
     cachedUser = user ?? null;
+
+    const state = user?.state as { targetUrl?: string } | undefined;
+    const targetUrl = state?.targetUrl;
+    if (targetUrl) {
+        window.history.replaceState({}, document.title, targetUrl);
+    }
 }
 
 /**

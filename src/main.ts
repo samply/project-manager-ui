@@ -31,22 +31,22 @@ async function handleOidcRedirect() {
     if (url.searchParams.has("code")) {
         await finishLoginFlow();
 
-        // Remove only code & state, keep everything else
-        url.searchParams.delete("code");
-        url.searchParams.delete("state");
+        // Remove code & state via router, not window.history
+        const cleanPath = url.pathname + url.search
+            .replace(/([&?])(code|state)=[^&]+/g, '')
+            .replace(/^&/, '?');
 
-        window.history.replaceState({}, document.title, url.toString());
+        await router.replace(cleanPath || "/");
     }
 }
 
 
 export const bootstrap = async () => {
-    // Try to load cached user first
-    await tryLoadUserFromStorage();
 
     // If coming from OIDC redirect, process login
     await handleOidcRedirect();
-
+    // Try to load cached user first
+    await tryLoadUserFromStorage();
     // Trigger login if no valid user exists
     if (!AuthService.isLoggedIn()) {
         await AuthService.login();

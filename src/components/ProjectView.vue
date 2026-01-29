@@ -143,7 +143,7 @@
           <div class="box-header">Actions</div>
           <div style="padding:2%">
             <!-- Project State Module: Creator View -->
-            <!-- v-if="existsApplicationForm" entfernt - statt ganz ausblenden -> design ändern -->
+            <!-- v-if="existsApplicationForm" removed - instead of hiding completely -> change design -->
             <!-- Project State Module: PM-ADMIN View -->
             <template v-for="(buttonGroup, index) in actionButtons" :key="index">
               <div v-if="buttonGroups[index]" class="button-group-box">
@@ -167,7 +167,8 @@
               </div>
             </template>
           </div>
-          <div v-if="!existsDraftDialog || draftDialogStepper.currentStep === DialogStep.SUMMARY" class="inviteUser">
+          <div v-if="!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
+               class="inviteUser">
             <UserInput :project="project" :context="context"
                        :bridgeheads="visibleBridgeheads"
                        :todos="extendedExplanations"
@@ -203,14 +204,14 @@
                       <div v-for="(step, index) in draftDialogStepper.currentSteps" :key="index" class="stepper-item"
                            :class="{ 'active': draftDialogStepper.currentStep === step }">
                         <button style="background: none; border:none; color: black;"
-                                @click="draftDialogStepper.setCurrentStep(step)"
+                                @click="draftDialogStepper.setCurrentStep(step.id)"
                                 :style="{ fontWeight: draftDialogStepper.currentStep === step ? 'bold' : 'normal' }">{{
-                            step
+                            step.displayName
                           }}
                         </button>
                       </div>
                     </div>
-                    <!-- Navigationstasten -->
+                    <!-- Navigation keys -->
                     <div class="button-container mt-3">
                       <button class="btn btn-primary me-2" @click="draftDialogStepper.previousStep()"
                               :disabled="!draftDialogStepper.hasPreviousStep">
@@ -220,7 +221,7 @@
                               v-if="draftDialogStepper.hasNextStep">
                         Continue
                       </button>
-                      <ProjectManagerButton v-if="draftDialogStepper.currentStep === DialogStep.SUMMARY"
+                      <ProjectManagerButton v-if="draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
                                             :module="Module.PROJECT_STATE_MODULE"
                                             :action="Action.CREATE_PROJECT_ACTION"
                                             :context="context" :call-refreh-context="refreshContext" text="Create"
@@ -246,7 +247,10 @@
                 <tbody>
                 <template v-for="(projectField, index) in getProjectFields()" :key="index">
                   <ProjectFieldRow
-                      v-if="projectField.visibilityCondition && (!existsDraftDialog || projectField.isEditable && draftDialogStepper.currentStep !== DialogStep.SUMMARY || draftDialogStepper.currentStep === DialogStep.SUMMARY)"
+                      v-if="projectField.visibilityCondition &&
+                      (!existsDraftDialog ||
+                      projectField.isEditable && draftDialogStepper.currentStep?.id !== DialogStep.SUMMARY ||
+                      draftDialogStepper.currentStep?.id === DialogStep.SUMMARY)"
                       :field-key="projectField.fieldKey"
                       :field-value="projectField.fieldValue"
                       :edit-project-param="projectField.editProjectParam"
@@ -291,7 +295,7 @@
                           text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false"/>
           </div>
         </div>
-        <div class="documents" v-if="!existsDraftDialog || draftDialogStepper.currentStep === DialogStep.SUMMARY">
+        <div class="documents" v-if="!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY">
           <div class="box-header">Documents</div>
           <div style="padding: 2%">
             <div style="display:flex; flex-flow:row;  width:100% ">
@@ -317,7 +321,7 @@
     <div :class="showRightPanel ? 'custom-width-notifications' : 'open-right-panel'">
       <button style="" @click="showRightPanel=true" class="btn" v-if="!showRightPanel" data-toggle="tooltip"
               data-placement="top" title="Show ToDos & Notifications">
-        <i style="font-size: 20px" class="bi bi-chevron-double-left"></i> <!-- Schließsymbol für Progress -->
+        <i style="font-size: 20px" class="bi bi-chevron-double-left"></i> <!-- Close symbol for Progress -->
       </button>
       <div v-if="showRightPanel">
         <div class="box-header" style="display:flex; flex-flow:row; justify-content:space-between;padding-bottom:0px; ">
@@ -330,7 +334,7 @@
           </div>
           <button style="padding: 0 15px 0 0; margin-bottom: 5px" @click="showRightPanel=false" class="btn"
                   v-if="showRightPanel" data-toggle="tooltip" data-placement="top" title="Hide Panel">
-            <i style="font-size: 20px" class="bi bi-chevron-double-right"></i> <!-- Schließsymbol für Progress -->
+            <i style="font-size: 20px" class="bi bi-chevron-double-right"></i> <!-- Close symbol for Progress -->
           </button>
         </div>
 
@@ -402,7 +406,7 @@ import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
-import {DialogStep, DialogStepper} from "@/services/dialogStep";
+import {DialogStepper, FixedDialogStep} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
@@ -413,7 +417,7 @@ import {AuthService} from "@/services/auth";
 export default defineComponent({
   computed: {
     DialogStep() {
-      return DialogStep
+      return FixedDialogStep
     },
     ProjectRole() {
       return ProjectRole
@@ -542,9 +546,9 @@ export default defineComponent({
     },
     currentProjectConfiguration(newValue, oldValue) {
       if (newValue !== 'CUSTOM') {
-        this.draftDialogStepper.filterStep(DialogStep.OUTPUT);
+        this.draftDialogStepper.filterStep(FixedDialogStep.OUTPUT);
       } else {
-        this.draftDialogStepper.removeFilteredStep(DialogStep.OUTPUT);
+        this.draftDialogStepper.removeFilteredStep(FixedDialogStep.OUTPUT);
       }
     }
   },
@@ -690,7 +694,7 @@ export default defineComponent({
           this.initializeData(Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, new Map(), 'currentUser'),
           this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment'),
           this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async result => {
-            this.fillForm(result);
+            this.addFormFields(result);
           }),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_TEMPLATES_ACTION, new Map(), 'formTemplates')
         ]);
@@ -709,9 +713,11 @@ export default defineComponent({
       }
     },
 
-    fillForm(formFieldArray: FormField[]): void {
+    addFormFields(formFieldArray: FormField[]): void {
       this.formFields.clear();
       this.formTitles = [];
+
+      const seenTitles = new Set<string>(); // <-- move outside the loop
 
       for (const field of formFieldArray) {
         const key = field.title;
@@ -723,7 +729,6 @@ export default defineComponent({
         this.formFields.get(key)!.push(field);
 
         // ---- Titles list ----
-        const seenTitles = new Set<string>();
         if (!seenTitles.has(key)) {
           seenTitles.add(key);
 
@@ -734,8 +739,9 @@ export default defineComponent({
           });
         }
       }
-    }
-    ,
+
+      this.draftDialogStepper.addFormTitles(this.formTitles);
+    },
 
     async fetchNotifications() {
       return this.initializeData(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(), 'notifications');
@@ -857,31 +863,31 @@ export default defineComponent({
       }
       let count = extendedExplanations.size + 1;
       if (this.existsDraftDialog) {
-        if (this.draftDialogStepper.currentStep === DialogStep.PROJECT) { // Project
+        if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT) { // Project
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please provide the general project information to proceed."
           });
           count++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.SERVICES) { // Services
+        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES) { // Services
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration."
           });
           count++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.QUERY && !this.project?.query) { // Query
+        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY && !this.project?.query) { // Query
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."
           });
           count++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.OUTPUT && (!this.project?.outputFormat || !this.project?.templateId)) { // Output
+        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT && (!this.project?.outputFormat || !this.project?.templateId)) { // Output
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."
           });
           count++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.SUMMARY) { // Summary
+        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY) { // Summary
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please check all of the fields in the summary and click 'Create' if everything seems OK."
@@ -926,7 +932,7 @@ export default defineComponent({
       return buttonGroup.button?.map((button) => this.explanations?.get(button.action)?.number).filter((number): number is number => number !== undefined) || []
     },
 
-    goToReseachEnvironment() {
+    goToResearchEnvironment() {
       if (this.researchEnvironmentUrl) {
         window.open(this.researchEnvironmentUrl, '_blank');
       }
@@ -939,23 +945,23 @@ export default defineComponent({
           fieldValue: [this.project?.label],
           editProjectParam: [EditProjectParam.LABEL],
           isEditable: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Description",
           fieldValue: [this.project?.description],
           editProjectParam: [EditProjectParam.DESCRIPTION],
           isEditable: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Sites",
-          fieldValue: [this.bridgeheads.map(bridghead => bridghead.humanReadable), this.allBridgeheads.map(bridghead => bridghead.humanReadable)],
+          fieldValue: [this.bridgeheads.map(bridgehead => bridgehead.humanReadable), this.allBridgeheads.map(bridgehead => bridgehead.humanReadable)],
           editProjectParam: [EditProjectParam.BRIDGEHEADS],
           isEditable: true,
           redirectUrl: this.project?.explorerUrl,
           transformForSending: (humanReadable: string) => this.allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Configuration",
@@ -964,7 +970,7 @@ export default defineComponent({
           isEditable: true,
           possibleValues: this.projectConfigurationLabels,
           configurations: this.projectConfigurations,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SERVICES || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Type",
@@ -972,7 +978,7 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.PROJECT_TYPE],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
           possibleValues: this.projectTypes,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.OUTPUT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Query",
@@ -980,7 +986,7 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
           isEditable: true,
           redirectUrl: this.project?.explorerUrl,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.QUERY || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Query Format",
@@ -989,7 +995,7 @@ export default defineComponent({
           isEditable: true,
           redirectUrl: this.project?.explorerUrl,
           possibleValues: this.queryFormats,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.QUERY || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Output Format",
@@ -997,7 +1003,7 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('outputFormat'),
           possibleValues: this.outputFormats,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.OUTPUT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Template ID",
@@ -1005,14 +1011,14 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.TEMPLATE_ID],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('templateId'),
           possibleValues: this.exporterTemplateIds,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.OUTPUT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Environment Variables",
           fieldValue: [this.project?.queryContext],
           editProjectParam: [EditProjectParam.QUERY_CONTEXT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('queryContext'),
-          visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === 'CUSTOM' && this.draftDialogStepper.currentStep === DialogStep.OUTPUT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === 'CUSTOM' && this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Application form",
@@ -1022,7 +1028,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_APPLICATION_FORM_ACTION,
           downloadAction: this.Action.DOWNLOAD_APPLICATION_FORM_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Votum",
@@ -1032,7 +1038,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.project?.state !== 'DRAFT' && (!this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SUMMARY)
+          visibilityCondition: this.project?.state !== 'DRAFT' && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Votum for all bridgeheads",
@@ -1042,7 +1048,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.project?.state !== 'DRAFT' && (!this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SUMMARY)
+          visibilityCondition: this.project?.state !== 'DRAFT' && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Script",
@@ -1052,7 +1058,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_SCRIPT_ACTION,
           downloadAction: this.Action.DOWNLOAD_SCRIPT_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.dataShieldStatus && (!this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SUMMARY)
+          visibilityCondition: this.dataShieldStatus && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Authentication Script",
@@ -1205,7 +1211,7 @@ export default defineComponent({
               refreshContextCallFunction: this.refreshContext as () => void,
               text: "Go", withMessage: false, cssClass: "btn btn-primary mr-2",
               visibilityCondition: this.researchEnvironmentUrl !== undefined && this.existsResearchEnvironmentWorkspace,
-              doActionOnClick: this.goToReseachEnvironment as () => void
+              doActionOnClick: this.goToResearchEnvironment as () => void
             }
           ] as ActionButton[]
         },
@@ -1241,7 +1247,7 @@ export default defineComponent({
                   const visibility2 = await this.projectManagerBackendService.isModuleActionActive(button.module, button.action);
                   // Check if a button is visible and the flag hasn't been set to true yet
                   if (visibility1 && visibility2 && !this.isAnyButtonVisible) {
-                    this.isAnyButtonVisible = true; // Set flag to true immediately if a visible button is found
+                    this.isAnyButtonVisible = true; // Set the flag to true immediately if a visible button is found
                     flagChanged = true;  // Mark the flag as changed
                   }
                   return visibility1 && visibility2;
@@ -1252,7 +1258,7 @@ export default defineComponent({
           })
       );
 
-      // If the flag changed, trigger watcher by updating the property
+      // If the flag changed, trigger the watcher by updating the property
       if (flagChanged) {
         // You can put any additional logic to notify the watcher if necessary here
       }

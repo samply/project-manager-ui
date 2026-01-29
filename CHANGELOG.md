@@ -103,6 +103,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Check expired token
 - Form actions
 - Form fields and templates
+- Dynamic and Fixed dialog steps
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)
@@ -120,4 +121,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Get Votum status in Bridgehead Overview
 - Show actions as soon as possible
 - In initializeDataInCallback: Just log in the console if 404, but not throw an error
-- Upgrade libraries
+- Upgrade libraries 

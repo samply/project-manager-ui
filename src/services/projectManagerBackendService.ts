@@ -139,7 +139,6 @@ export enum Action {
     IS_PROJECT_MANAGER_ADMIN_ACTION = "IS_PROJECT_MANAGER_ADMIN",
     FETCH_RESEARCH_ENVIRONMENT_URL_ACTION = "FETCH_RESEARCH_ENVIRONMENT_URL",
     EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION = "EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE",
-    FETCH_PROJECT_FORM_TITLES_ACTION = "FETCH_PROJECT_FORM_TITLES",
     FETCH_PROJECT_FORM_FIELDS_ACTION = "FETCH_PROJECT_FORM_FIELDS",
     FETCH_PROJECT_FORM_TEMPLATES_ACTION = "FETCH_FORM_TEMPLATES",
     EDIT_PROJECT_FORM_FIELDS_ACTION = "EDIT_PROJECT_FORM_FIELDS",
@@ -271,6 +270,7 @@ export interface DataShieldProjectStatus {
     bk: string;
     project_status: string;
 }
+
 export interface ActionButtonGroup {
     label: string
     button: ActionButton[]
@@ -286,6 +286,46 @@ export interface ActionButton {
     visibilityCondition?: boolean
     doActionOnClick?: () => void
 }
+
+export interface FormFieldGroup {
+    group: string
+    displayName: string
+    description: string
+}
+
+export enum FormDataType {
+    INTEGER = "INTEGER",
+    DOUBLE = "DOUBLE",
+    BOOLEAN = "BOOLEAN",
+    STRING = "STRING",
+    DATE = "DATE",
+    TIMESTAMP = "TIMESTAMP",
+}
+
+export interface FormTitle {
+    title: string;
+    titleDisplayName: string;
+    titleDescription?: string;
+}
+
+export interface FormField extends FormTitle {
+    label?: string;
+    labelDisplayName?: string;
+    labelDescription?: string;
+    groups?: FormFieldGroup[];
+    type?: FormDataType;
+    mandatory?: boolean;
+    order?: number;
+    value?: string;
+}
+
+export interface FormTemplate {
+    template: string
+    displayName: string
+}
+
+export type Form = Map<string, FormField[]>
+
 
 function getActionFromString(value: string): Action | undefined {
     return Object.values(Action).find((action) => action === value) as Action | undefined;

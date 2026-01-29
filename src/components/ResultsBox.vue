@@ -114,7 +114,7 @@ export default class ResultsBox extends Vue {
     this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_RESULTS_URL_ACTION).then(condition => {
       this.canSendProjectResults = condition;
     });
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGHEAD_RESULTS_URL_ACTION).then(condition => {
+    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION).then(condition => {
       this.canSendProjectBridgheadResults = condition;
     });
   }
@@ -225,7 +225,7 @@ export default class ResultsBox extends Vue {
 
   sendProjectBridgeheadResults(resultsUrl: string) {
     if (resultsUrl && this.canSendProjectBridgheadResults) {
-      this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGHEAD_RESULTS_URL_ACTION, this.context, new Map([['results-url', resultsUrl]])).then(response => {
+      this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION, this.context, new Map([['results-url', resultsUrl]])).then(response => {
         this.resetResults();
       });
     }

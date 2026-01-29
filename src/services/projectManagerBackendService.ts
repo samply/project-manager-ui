@@ -124,7 +124,7 @@ export enum Action {
     REMOVE_USER_FROM_MAILING_BLACK_LIST_ACTION = "REMOVE_USER_FROM_MAILING_BLACK_LIST",
     FETCH_MAILING_BLACK_LIST_ACTION = "FETCH_MAILING_BLACK_LIST",
     FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST_ACTION = "FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST",
-    ADD_PROJECT_BRIDGHEAD_RESULTS_URL_ACTION = "ADD_PROJECT_BRIDGHEAD_RESULTS_URL",
+    ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION = "ADD_PROJECT_BRIDGEHEAD_RESULTS_URL",
     ADD_PROJECT_RESULTS_URL_ACTION = "ADD_PROJECT_RESULTS_URL",
     ACCEPT_PROJECT_RESULTS_URL_ACTION = "ACCEPT_PROJECT_RESULTS_URL",
     REJECT_PROJECT_RESULTS_URL_ACTION = "REJECT_PROJECT_RESULTS_URL",
@@ -271,12 +271,6 @@ export interface DataShieldProjectStatus {
     bk: string;
     project_status: string;
 }
-
-export interface ActionModule {
-    module: Module
-    action: Action
-}
-
 export interface ActionButtonGroup {
     label: string
     button: ActionButton[]
@@ -388,7 +382,7 @@ export class ProjectManagerBackendService {
     private axiosInstance?: AxiosInstance;
     private activeModuleActionsMetadata?: Map<Module, Map<Action, ActionMetadata>> | undefined;
     private activeModuleActionsMetadataWithExplanation?: Map<Module, Map<Action, ActionMetadata>> | undefined;
-    private initializedPromise: Promise<void> | undefined;
+    private readonly initializedPromise: Promise<void> | undefined;
 
     constructor(context: ProjectManagerContext, site: Site) {
         this.initializedPromise = this.initialize(context, site);
@@ -428,7 +422,7 @@ export class ProjectManagerBackendService {
             const filteredActionMap = new Map<Action, ActionMetadata>();
 
             for (const [action, metadata] of actionMap) {
-                // Only include actions where explanation is not null or undefined
+                // Only include actions where the explanation is not null or undefined
                 if (metadata.explanation) {
                     filteredActionMap.set(action, metadata);
                 }

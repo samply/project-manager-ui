@@ -64,6 +64,7 @@ export default class ProjectFieldRow extends Vue {
   toggleHumanReadable = true;
   showDetails: boolean[] = [];
   copiedToClipboard = false;
+  editingBridgeheads: Bridgehead[] = [];
 
   @Watch("projectManagerBackendService", {immediate: true, deep: true})
   onProjectManagerBackendServiceChange(
@@ -87,14 +88,19 @@ export default class ProjectFieldRow extends Vue {
   }
 
   created() {
+    this.editingBridgeheads = this.bridgeheads
+        ? [...this.bridgeheads.selected]
+        : [];
+
     this.tempFieldValue = this.fieldValue.slice();
     this.editedValue = this.fieldValue.slice();
     this.resetIsActionEnabled();
 
-    this.possibleValues?.forEach((value) => {
+    this.possibleValues?.forEach(() => {
       this.showDetails.push(false);
     });
   }
+
 
   resetIsActionEnabled() {
     const action = this.uploadAction ? this.uploadAction : this.action;
@@ -107,7 +113,12 @@ export default class ProjectFieldRow extends Vue {
   editField() {
     this.editing = true;
     this.editedValue = this.tempFieldValue.slice();
+
+    if (this.isBridgeheads() && this.bridgeheads) {
+      this.editingBridgeheads = [...this.bridgeheads.selected];
+    }
   }
+
 
   isFieldValueEditable() {
     return !this.editing && this.isEditable && this.isActionEnabled;
@@ -126,9 +137,14 @@ export default class ProjectFieldRow extends Vue {
         params.set("template-id", "opal-ccp");
       }
 
-      for (let i = 0; i < this.editProjectParam.length; i++) {
-        if (i < this.editedValue.length) {
-          params.set(this.editProjectParam[i], this.applyTransformToSend(this.editedValue[i]));
+      if (this.isBridgeheads() && this.bridgeheads) {
+        const ids = this.editingBridgeheads.map(b => b.bridgehead).join(',');
+        params.set(this.editProjectParam[0], ids);
+      } else {
+        for (let i = 0; i < this.editProjectParam.length; i++) {
+          if (i < this.editedValue.length) {
+            params.set(this.editProjectParam[i], this.applyTransformToSend(this.editedValue[i]));
+          }
         }
       }
 
@@ -154,7 +170,11 @@ export default class ProjectFieldRow extends Vue {
   cancelEdit() {
     this.editing = false;
     this.showInputs = false;
+    this.editingBridgeheads = this.bridgeheads
+        ? [...this.bridgeheads.selected]
+        : [];
   }
+
 
   redirectToURL() {
     if (this.redirectUrl) {
@@ -167,28 +187,42 @@ export default class ProjectFieldRow extends Vue {
   }
 
   /** BRIDGEHEADS METHODS **/
-  addBridgehead(newValue: string) {
-    if (this.bridgeheads && newValue) {
-      this.bridgeheads.selected.push(newValue);
+  addBridgehead(newBridgeheadId: string) {
+    if (!this.bridgeheads) return;
+
+    const bridgehead = this.bridgeheads.available.find(
+        b => b.bridgehead === newBridgeheadId
+    );
+
+    if (bridgehead) {
+      this.editingBridgeheads.push(bridgehead);
       this.newValue = "";
     }
   }
 
+
   removeBridgehead(index: number) {
-    if (this.bridgeheads && index >= 0 && index < this.bridgeheads.selected.length) {
-      this.bridgeheads.selected.splice(index, 1);
+    if (index >= 0 && index < this.editingBridgeheads.length) {
+      this.editingBridgeheads.splice(index, 1);
     }
   }
 
-  fetchOtherAvailableBridgeheadsToAdd(): string[] {
+
+  fetchOtherAvailableBridgeheadsToAdd(): Bridgehead[] {
     if (!this.bridgeheads) return [];
-    return this.bridgeheads.available.filter(b => !this.bridgeheads!.selected.includes(b));
+
+    const selectedIds = this.editingBridgeheads.map(b => b.bridgehead);
+
+    return this.bridgeheads.available.filter(
+        b => !selectedIds.includes(b.bridgehead)
+    );
   }
 
+
   areThereMoreBridgeheadsAvailableToAdd(): boolean {
-    if (!this.bridgeheads) return false;
-    return this.bridgeheads.selected.length < this.bridgeheads.available.length;
+    return this.fetchOtherAvailableBridgeheadsToAdd().length > 0;
   }
+
 
   addEnvVariable() {
     if (this.newKey && this.newValue) {
@@ -351,11 +385,11 @@ export default class ProjectFieldRow extends Vue {
                 <div v-else-if="isDescription()" style="width:70%">
                   <textarea type="text" v-model="editedValue[0]" class="form-control"></textarea>
                 </div>
-                <div v-else-if="isBridgeheads()" style="width: 75%">
-                  <span v-if="bridgeheads && bridgeheads.selected.length > 0">
-                    <span v-for="(bridgehead, index) in bridgeheads.selected" :key="index" class="btn btn-primary"
+                <div v-else-if="isBridgeheads() && editing" style="width: 75%">
+                  <span v-if="editingBridgeheads && editingBridgeheads.length > 0">
+                    <span v-for="(bridgehead, index) in editingBridgeheads" :key="index" class="btn btn-primary"
                           style="margin-right: 2%; margin-bottom: 0.5%">
-                         <span>{{ bridgehead }}</span>
+                         <span>{{ bridgehead.humanReadable ?? bridgehead.bridgehead }}</span>
                       <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i
                           style="color: white; font-size: 18px" class="bi bi-x"></i></button>
                     </span>
@@ -364,9 +398,10 @@ export default class ProjectFieldRow extends Vue {
                     <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
                     <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
                       <select class="form-select" v-model="newValue" placeholder="Bridgehead">
-                        <option v-for="(value, index) in fetchOtherAvailableBridgeheadsToAdd()" :key="index"
-                                :value="value">
-                          {{ value }}
+                        <option v-for="b in fetchOtherAvailableBridgeheadsToAdd()"
+                                :key="b.bridgehead"
+                                :value="b.bridgehead">
+                            {{ b.humanReadable ?? b.bridgehead }}
                         </option>
                       </select>
                       <button class="btn btn-primary" @click="addBridgehead(newValue)">
@@ -420,7 +455,7 @@ export default class ProjectFieldRow extends Vue {
             <div v-if="bridgeheads && bridgeheads.selected.length > 0" class="field-value">
               <span v-for="(bridgehead, index) in bridgeheads.selected" :key="index" class="btn btn-primary"
                     style="margin-right: 2%; margin-bottom: 0.5%">
-                {{ bridgehead }}
+                {{ bridgehead?.humanReadable ?? bridgehead?.bridgehead }}
               </span>
             </div>
           </div>

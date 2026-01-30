@@ -590,7 +590,7 @@ export class ProjectManagerBackendService {
             config.responseType = 'blob';
         }
 
-        // If this is an upload, send as multipart/form-data
+        // If this is an upload, send it as multipart/form-data
         if (endpoint.includes('upload')) {
             config.headers!["Content-Type"] = 'multipart/form-data';
             const uploadFile = params.get(UPLOAD_DOCUMENT_PARAM);

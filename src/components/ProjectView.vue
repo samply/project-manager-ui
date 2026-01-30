@@ -411,7 +411,7 @@ import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
-import {extractHumanReadable, ProjectField} from "@/services/utils";
+import {ProjectField} from "@/services/utils";
 
 
 export default defineComponent({
@@ -957,8 +957,8 @@ export default defineComponent({
           fieldKey: "Sites",
           fieldValue: [],
           bridgeheads: {
-            selected: extractHumanReadable(this.bridgeheads),
-            available: extractHumanReadable(this.allBridgeheads),
+            selected: this.bridgeheads,
+            available: this.allBridgeheads,
           },
           editProjectParam: [EditProjectParam.BRIDGEHEADS],
           isEditable: true,

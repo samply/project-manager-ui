@@ -8,8 +8,8 @@ import {
 } from "@/services/projectManagerBackendService";
 
 export interface BridgeheadsProjectField {
-    selected: string[];
-    available: string[];
+    selected: Bridgehead[];
+    available: Bridgehead[];
 }
 
 export interface ProjectField {
@@ -32,8 +32,3 @@ export interface ProjectField {
     action?: Action
     module?: Module
 }
-
-export const extractHumanReadable = (list: Bridgehead[]): string[] =>
-    list
-        .map(b => b.humanReadable)
-        .filter((v): v is string => typeof v === "string");

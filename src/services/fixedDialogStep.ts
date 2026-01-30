@@ -49,7 +49,7 @@ export const FixedDialogSteps: readonly DialogStep[] = [
 function formTitleToDialogStep(formTitle: FormTitle): DialogStep {
     return {
         id: formTitle.title,
-        displayName: formTitle.titleDisplayName,
+        displayName: formTitle.titleDisplayName ?? formTitle.title,
         description: formTitle.titleDescription ?? "",
     };
 }

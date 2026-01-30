@@ -157,7 +157,7 @@
                 <div style="display: flex">
                   <ProjectManagerButton v-for="(button, index2) in buttonGroup.button" :key="index2"
                                         :module="button.module" :action="button.action"
-                                        :context="context" :call-refreh-context="button.refreshContextCallFunction"
+                                        :context="context" :call-refresh-context="button.refreshContextCallFunction"
                                         :text="button.text"
                                         :button-class="button.cssClass" :with-message="button.withMessage"
                                         :visibility="button.visibilityCondition"
@@ -174,7 +174,7 @@
                        :todos="extendedExplanations"
                        :current-users="currentUsers"
                        :project-manager-backend-service="projectManagerBackendService"
-                       :call-refreh-context="refreshContext"
+                       :call-refresh-context="refreshContext"
             />
           </div>
         </div>
@@ -182,7 +182,7 @@
              v-if="project?.state === 'FINAL' && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN))">
           <div class="box-header">Results</div>
           <div style="padding: 2%">
-            <ResultsBox :call-refreh-context="refreshContext"
+            <ResultsBox :call-refresh-context="refreshContext"
                         :project-manager-backend-service="projectManagerBackendService"
                         :current-users="currentUsers"
                         :context="context"
@@ -224,7 +224,7 @@
                       <ProjectManagerButton v-if="draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
                                             :module="Module.PROJECT_STATE_MODULE"
                                             :action="Action.CREATE_PROJECT_ACTION"
-                                            :context="context" :call-refreh-context="refreshContext" text="Create"
+                                            :context="context" :call-refresh-context="refreshContext" text="Create"
                                             button-class="btn btn-success mr-2"
                                             :with-message="false"
                                             :is-disabled="!hasProjectAllMandatoryFields"
@@ -233,7 +233,7 @@
                       <ProjectManagerButton v-if="project?.state === 'DRAFT' "
                                             :module="Module.PROJECT_STATE_MODULE"
                                             :action="Action.REJECT_PROJECT_ACTION"
-                                            :context="context" :call-refreh-context="refreshContext" text="Discard"
+                                            :context="context" :call-refresh-context="refreshContext" text="Discard"
                                             button-class="btn btn-danger btn-secondary mr-2"
                                             :with-message="true"
                                             :project-manager-backend-service="projectManagerBackendService"/>
@@ -253,6 +253,9 @@
                       draftDialogStepper.currentStep?.id === DialogStep.SUMMARY)"
                       :field-key="projectField.fieldKey"
                       :field-value="projectField.fieldValue"
+                      :bridgeheads="projectField.bridgeheads"
+                      :action="projectField.action"
+                      :module="projectField.module"
                       :edit-project-param="projectField.editProjectParam"
                       :is-editable="projectField.isEditable"
                       :redirect-url="projectField.redirectUrl"
@@ -265,10 +268,9 @@
                       :download-module="projectField.downloadModule"
                       :todos="extendedExplanations"
                       :visible-bridgeheads="visibleBridgeheads"
-                      :call-refreh-context="refreshContext"
+                      :call-refresh-context="refreshContext"
                       :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : NaN"
                       :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-
                 </template>
                 </tbody>
               </table>
@@ -287,12 +289,12 @@
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
-                          text="Upload publication" :call-refreh-context="refreshContext" :is-file="true"/>
+                          text="Upload publication" :call-refresh-context="refreshContext" :is-file="true"/>
             <br/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
-                          text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false"/>
+                          text="Upload publication URL" :call-refresh-context="refreshContext" :is-file="false"/>
           </div>
         </div>
         <div class="documents" v-if="!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY">
@@ -301,11 +303,11 @@
             <div style="display:flex; flex-flow:row;  width:100% ">
               <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
-                            text="Upload document" :call-refreh-context="refreshContext" :is-file="true"/>
+                            text="Upload document" :call-refresh-context="refreshContext" :is-file="true"/>
 
               <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
-                            text="Upload document URL" :call-refreh-context="refreshContext" :is-file="false"/>
+                            text="Upload document URL" :call-refresh-context="refreshContext" :is-file="false"/>
             </div>
             <br/>
             <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
@@ -383,7 +385,6 @@ import {
   DataShieldProjectStatus,
   EditProjectParam,
   Explanations,
-  Form,
   FormField,
   FormTemplate,
   FormTitle,
@@ -391,7 +392,6 @@ import {
   Notification,
   Project,
   ProjectDocument,
-  ProjectField,
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,
@@ -412,6 +412,7 @@ import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
+import {extractHumanReadable, ProjectField} from "@/services/utils";
 
 
 export default defineComponent({
@@ -505,7 +506,7 @@ export default defineComponent({
       researchEnvironmentUrl: undefined as string | undefined,
       formTemplates: [] as FormTemplate[],
       formTitles: [] as FormTitle[],
-      formFields: new Map() as Form
+      formFields: [] as FormField[]
     };
   },
   watch: {
@@ -714,19 +715,13 @@ export default defineComponent({
     },
 
     addFormFields(formFieldArray: FormField[]): void {
-      this.formFields.clear();
+      this.formFields = formFieldArray;
       this.formTitles = [];
 
       const seenTitles = new Set<string>(); // <-- move outside the loop
 
       for (const field of formFieldArray) {
         const key = field.title;
-
-        // ---- Map grouping ----
-        if (!this.formFields.has(key)) {
-          this.formFields.set(key, []);
-        }
-        this.formFields.get(key)!.push(field);
 
         // ---- Titles list ----
         if (!seenTitles.has(key)) {
@@ -799,6 +794,30 @@ export default defineComponent({
 
     fetchIfCanShowBridgeheadAdminButtons(): boolean {
       return (this.project && (this.project.state == 'DEVELOP' || this.project.state == 'PILOT')) ? this.existInvitedUsers : true;
+    },
+    buildDynamicProjectFields(formFields: FormField[]): ProjectField[] {
+      return formFields.map(formField => ({
+        fieldKey: formField.labelDisplayName ?? formField.label,
+        fieldValue: formField.value != null ? [formField.value] : [],
+        editProjectParam: [EditProjectParam.FORM_FIELDS],
+        isEditable: true,
+        action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
+        transformForSending: this.buildTransformForSending(formField),
+        visibilityCondition:
+            !this.existsDraftDialog ||
+            this.draftDialogStepper.currentStep?.id === formField.title ||
+            this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+      }));
+    },
+
+    buildTransformForSending(formField: FormField): (input: string) => any {
+      return (input: string) => {
+        return [{
+          title: formField.title,
+          label: formField.label,
+          value: input
+        }];
+      };
     },
 
     getProjectStates(): string[] {
@@ -939,27 +958,31 @@ export default defineComponent({
     },
 
     getProjectFields(): ProjectField[] {
-      return [
+      const fixedFields: ProjectField[] = [
         {
           fieldKey: "Title",
-          fieldValue: [this.project?.label],
+          fieldValue: this.project?.label ? [this.project.label] : [],
           editProjectParam: [EditProjectParam.LABEL],
           isEditable: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Description",
-          fieldValue: [this.project?.description],
+          fieldValue: this.project?.description ? [this.project.description] : [],
           editProjectParam: [EditProjectParam.DESCRIPTION],
           isEditable: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Sites",
-          fieldValue: [this.bridgeheads.map(bridgehead => bridgehead.humanReadable), this.allBridgeheads.map(bridgehead => bridgehead.humanReadable)],
+          fieldValue: [],
+          bridgeheads: {
+            selected: extractHumanReadable(this.bridgeheads),
+            available: extractHumanReadable(this.allBridgeheads),
+          },
           editProjectParam: [EditProjectParam.BRIDGEHEADS],
           isEditable: true,
-          redirectUrl: this.project?.explorerUrl,
+          redirectUrl: this.project?.explorerUrl ?? undefined,
           transformForSending: (humanReadable: string) => this.allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
@@ -970,11 +993,12 @@ export default defineComponent({
           isEditable: true,
           possibleValues: this.projectConfigurationLabels,
           configurations: this.projectConfigurations,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+          action: Action.SET_PROJECT_CONFIGURATION_ACTION
         },
         {
           fieldKey: "Type",
-          fieldValue: [this.project?.type],
+          fieldValue: this.project?.type ? [this.project.type] : [],
           editProjectParam: [EditProjectParam.PROJECT_TYPE],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
           possibleValues: this.projectTypes,
@@ -982,24 +1006,24 @@ export default defineComponent({
         },
         {
           fieldKey: "Query",
-          fieldValue: [this.project?.humanReadable, this.project?.query],
+          fieldValue: (this.project?.humanReadable && this.project?.query) ? [this.project.humanReadable, this.project.query] : [],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
           isEditable: true,
-          redirectUrl: this.project?.explorerUrl,
+          redirectUrl: this.project?.explorerUrl ?? undefined,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Query Format",
-          fieldValue: [this.project?.queryFormat],
+          fieldValue: this.project?.queryFormat ? [this.project.queryFormat] : [],
           editProjectParam: [EditProjectParam.QUERY_FORMAT],
           isEditable: true,
-          redirectUrl: this.project?.explorerUrl,
+          redirectUrl: this.project?.explorerUrl ?? undefined,
           possibleValues: this.queryFormats,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Output Format",
-          fieldValue: [this.project?.outputFormat],
+          fieldValue: this.project?.outputFormat ? [this.project.outputFormat] : [],
           editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('outputFormat'),
           possibleValues: this.outputFormats,
@@ -1007,7 +1031,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Template ID",
-          fieldValue: [this.project?.templateId],
+          fieldValue: this.project?.templateId ? [this.project.templateId] : [],
           editProjectParam: [EditProjectParam.TEMPLATE_ID],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('templateId'),
           possibleValues: this.exporterTemplateIds,
@@ -1015,7 +1039,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Environment Variables",
-          fieldValue: [this.project?.queryContext],
+          fieldValue: this.project?.queryContext ? [this.project.queryContext] : [],
           editProjectParam: [EditProjectParam.QUERY_CONTEXT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('queryContext'),
           visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === 'CUSTOM' && this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
@@ -1058,7 +1082,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_SCRIPT_ACTION,
           downloadAction: this.Action.DOWNLOAD_SCRIPT_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.dataShieldStatus && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+          visibilityCondition: !!this.dataShieldStatus && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Authentication Script",
@@ -1067,9 +1091,12 @@ export default defineComponent({
           existFile: this.existsAuthenticationScript,
           downloadAction: this.Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION,
           downloadModule: this.Module.TOKEN_MANAGER_MODULE,
-          visibilityCondition: this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && this.existsAuthenticationScript
+          visibilityCondition: !!this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && !!this.existsAuthenticationScript
         }
-      ] as ProjectField[]
+      ];
+      const dynamicFields = this.buildDynamicProjectFields(this.formFields);
+
+      return [...fixedFields, ...dynamicFields];
     },
 
     fetchButtons(): void {

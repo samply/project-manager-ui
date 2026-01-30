@@ -15,7 +15,7 @@ import {
 })
 
 export default class UploadButton extends Vue {
-  @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
+  @Prop({type: Function, required: true}) readonly callRefreshContext!: () => void;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly module!: Module;
@@ -72,7 +72,7 @@ export default class UploadButton extends Vue {
       this.file = undefined;
       this.label = '';
       this.url = '';
-      this.callRefrehContext();
+      this.callRefreshContext();
       this.updateIsActive();
       this.fileSelected = false;
     });

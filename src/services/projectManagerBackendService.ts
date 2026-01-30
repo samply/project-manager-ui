@@ -155,53 +155,54 @@ export enum EditProjectParam {
     TEMPLATE_ID = "template-id",
     HUMAN_READABLE = "human-readable",
     PROJECT_TYPE = "project-type",
-    QUERY_CONTEXT = "query-context"
+    QUERY_CONTEXT = "query-context",
+    FORM_FIELDS = "form-fields"
 }
 
 export interface Project {
-    code: string | null;
-    creatorEmail: string | null | undefined;
-    creatorName: string | null;
-    createdAt: Date | null;
-    expiresAt: Date | null;
-    archivedAt: Date | null;
-    modifiedAt: Date | null;
-    state: string | null;
-    type: string | null;
-    query: string | null;
-    humanReadable: string | null;
-    queryFormat: string | null;
-    outputFormat: string | null;
-    templateId: string | null;
-    label: string | null;
-    description: string | null;
-    explorerUrl: string | null;
-    queryContext: string | null;
-    isCustomConfig: boolean | null;
-    creatorState: string;
-    resultsUrl: string | null | undefined;
+    code?: string;
+    creatorEmail?: string;
+    creatorName?: string;
+    createdAt?: Date;
+    expiresAt?: Date;
+    archivedAt?: Date;
+    modifiedAt?: Date;
+    state?: string;
+    type?: string;
+    query?: string;
+    humanReadable?: string;
+    queryFormat?: string;
+    outputFormat?: string;
+    templateId?: string;
+    label?: string;
+    description?: string;
+    explorerUrl?: string;
+    queryContext?: string;
+    isCustomConfig?: boolean;
+    creatorState?: string;
+    resultsUrl?: string;
 }
 
 export interface Notification {
-    id: number | null;
-    email: string | null;
-    timestamp: Date | null;
-    projectCode: string | null;
-    bridgehead: string | null;
-    humanReadableBridgehead: string | null;
-    operationType: string | null;
-    details: string | null;
-    error: string | null;
-    httpStatus: number | null;
-    read: boolean | null;
+    id?: number;
+    email?: string;
+    timestamp?: Date;
+    projectCode?: string;
+    bridgehead?: string;
+    humanReadableBridgehead?: string;
+    operationType?: string;
+    details?: string;
+    error?: string;
+    httpStatus?: number;
+    read?: boolean;
 }
 
 export interface User {
     email: string;
-    firstName: string | null;
-    lastName: string | null;
+    firstName?: string;
+    lastName?: string;
     bridgehead: string;
-    humanReadableBridgehead: string | null;
+    humanReadableBridgehead?: string;
     projectRole: string;
     projectState: string;
 }
@@ -214,13 +215,13 @@ export interface MessageSubject {
 
 
 export interface Bridgehead {
-    projectCode: string | null | undefined;
     bridgehead: string;
-    humanReadable: string | null | undefined;
-    state: string | null | undefined;
-    modifiedAt: string | null | undefined;
-    queryState: string | null | undefined;
-    creatorState: string | null | undefined;
+    humanReadable?: string;
+    projectCode?: string;
+    state?: string;
+    modifiedAt?: string;
+    queryState?: string;
+    creatorState?: string;
 }
 
 export interface ProjectDocument {
@@ -233,24 +234,6 @@ export interface ProjectDocument {
     creatorEmail: string;
     label: string;
     type: string;
-}
-
-export interface ProjectField {
-    fieldKey: string
-    editProjectParam: EditProjectParam[]
-    fieldValue: string[]
-    redirectUrl?: string
-    isEditable: boolean
-    possibleValues?: string[]
-    configurations?: Map<string, Project>
-    uploadAction?: Action
-    downloadAction?: Action
-    downloadModule?: Module
-    todos?: Explanations
-    existFile?: boolean
-    transformForSending?: (input: string) => string
-    draftDialogCurrentStep: number
-    visibilityCondition: boolean
 }
 
 export interface Results {
@@ -304,12 +287,12 @@ export enum FormDataType {
 
 export interface FormTitle {
     title: string;
-    titleDisplayName: string;
+    titleDisplayName?: string;
     titleDescription?: string;
 }
 
 export interface FormField extends FormTitle {
-    label?: string;
+    label: string;
     labelDisplayName?: string;
     labelDescription?: string;
     groups?: FormFieldGroup[];
@@ -323,9 +306,6 @@ export interface FormTemplate {
     template: string
     displayName: string
 }
-
-export type Form = Map<string, FormField[]>
-
 
 function getActionFromString(value: string): Action | undefined {
     return Object.values(Action).find((action) => action === value) as Action | undefined;
@@ -607,33 +587,55 @@ export class ProjectManagerBackendService {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
-            params: this.convertToUrlSearchParams(params),
             withCredentials: true,
         };
 
-        if (endpoint.includes('download')) config.responseType = 'blob';
+        // If this is a download, expect blob
+        if (endpoint.includes('download')) {
+            config.responseType = 'blob';
+        }
 
+        // If this is an upload, send as multipart/form-data
         if (endpoint.includes('upload')) {
             config.headers!["Content-Type"] = 'multipart/form-data';
             const uploadFile = params.get(UPLOAD_DOCUMENT_PARAM);
             if (!uploadFile) throw new Error("Upload file not provided");
             params.delete(UPLOAD_DOCUMENT_PARAM);
+
             const data = new FormData();
             data.append('document', uploadFile as File);
+
+            // Append all other params to FormData
+            for (const [key, value] of params) {
+                if (value !== undefined && value !== null) {
+                    data.append(key, String(value));
+                }
+            }
+
             return this.axiosInstance.post(endpoint, data, config);
         }
 
+        // Retry configuration for normal requests
         axiosRetry(this.axiosInstance, {retries: 2, retryDelay: axiosRetry.exponentialDelay});
 
         switch (httpMethod) {
             case HttpMethod.GET:
+                config.params = this.convertToUrlSearchParams(params);
                 return this.axiosInstance.get(endpoint, config);
+
             case HttpMethod.POST:
-                return this.axiosInstance.post(endpoint, {}, config);
+                // For POST (non-upload), send JSON body
+                const body: Record<string, unknown> = {};
+                for (const [key, value] of params) {
+                    body[key] = value;
+                }
+                return this.axiosInstance.post(endpoint, body, config);
+
             default:
                 throw new Error(`Unsupported HTTP method: ${httpMethod}`);
         }
     }
+
 
     private convertToUrlSearchParams(map: Map<string, unknown>): URLSearchParams {
         const result = new URLSearchParams();

@@ -15,6 +15,7 @@ import {
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import {DialogStep, FixedDialogStep} from "@/services/fixedDialogStep";
+import {BridgeheadsProjectField} from "@/services/utils";
 
 @Options({
   name: "ProjectFieldRow",
@@ -27,16 +28,18 @@ import {DialogStep, FixedDialogStep} from "@/services/fixedDialogStep";
 })
 export default class ProjectFieldRow extends Vue {
   @Prop() readonly fieldKey!: string;
-  // The index of editProjectParam, fieldValue, editedValue and tempFieldValue is the same
   @Prop() readonly editProjectParam!: EditProjectParam[];
   @Prop() readonly fieldValue!: string[];
+  @Prop() readonly bridgeheads?: BridgeheadsProjectField; // Use this for bridgeheads
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly redirectUrl?: string;
+  @Prop({type: String, default: Module.PROJECT_EDITION_MODULE}) readonly module!: Module;
+  @Prop({type: String, default: Action.EDIT_PROJECT_ACTION}) readonly action!: Action;
   @Prop() readonly possibleValues!: string[];
   @Prop() readonly configurations?: Map<string, Project>;
   @Prop() readonly isEditable!: boolean;
-  @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
+  @Prop({type: Function, required: true}) readonly callRefreshContext!: () => void;
   @Prop() readonly uploadAction!: Action;
   @Prop() readonly downloadAction!: Action;
   @Prop() readonly downloadModule!: Module;
@@ -48,7 +51,6 @@ export default class ProjectFieldRow extends Vue {
     type: Function,
     default: (input: string): string => input
   }) readonly transformForSending!: (input: string) => string;
-
 
   editing = false;
   editedValue: string[] = [];
@@ -64,7 +66,7 @@ export default class ProjectFieldRow extends Vue {
   copiedToClipboard = false;
 
   @Watch("projectManagerBackendService", {immediate: true, deep: true})
-  onProjetManagerBackendServiceChange(
+  onProjectManagerBackendServiceChange(
       newValue: ProjectManagerBackendService,
       oldValue: ProjectManagerBackendService
   ) {
@@ -80,19 +82,23 @@ export default class ProjectFieldRow extends Vue {
     return FixedDialogStep;
   }
 
+  get configLabel(): Record<string, string> {
+    return configLabel;
+  }
+
   created() {
-    this.tempFieldValue = this.fieldValue.slice(); // Copy fieldValue to tempFieldValue
-    this.editedValue = this.fieldValue.slice(); // Copy fieldValue to editedValue
+    this.tempFieldValue = this.fieldValue.slice();
+    this.editedValue = this.fieldValue.slice();
     this.resetIsActionEnabled();
 
     this.possibleValues?.forEach((value) => {
-      this.showDetails.push(false)
-    })
+      this.showDetails.push(false);
+    });
   }
 
   resetIsActionEnabled() {
-    const action = (this.uploadAction) ? this.uploadAction : Action.EDIT_PROJECT_ACTION;
-    const module = (this.uploadAction) ? Module.PROJECT_DOCUMENTS_MODULE : Module.PROJECT_EDITION_MODULE;
+    const action = this.uploadAction ? this.uploadAction : this.action;
+    const module = this.uploadAction ? Module.PROJECT_DOCUMENTS_MODULE : this.module;
     this.projectManagerBackendService
         .isModuleActionActive(module, action)
         .then((isActive) => (this.isActionEnabled = isActive));
@@ -100,7 +106,6 @@ export default class ProjectFieldRow extends Vue {
 
   editField() {
     this.editing = true;
-    // Copy tempFieldValue to editedValue when editing starts
     this.editedValue = this.tempFieldValue.slice();
   }
 
@@ -111,36 +116,33 @@ export default class ProjectFieldRow extends Vue {
   saveField() {
     this.showInputs = false;
     this.editing = false;
-    this.tempFieldValue = this.editedValue.slice(); // Copy editedValue back to tempFieldValue
+    this.tempFieldValue = this.editedValue.slice();
+
     const params = new Map<string, string>();
 
     if (this.editProjectParam && this.editProjectParam.length > 0) {
-      //TODO: Please remove hardcoded output format and template id. These values only make sense for DKTK and not always
       if (this.includesEditProjectParam(EditProjectParam.PROJECT_TYPE) && this.tempFieldValue[0] === "DATASHIELD") {
         params.set("output-format", "OPAL");
         params.set("template-id", "opal-ccp");
       }
+
       for (let i = 0; i < this.editProjectParam.length; i++) {
         if (i < this.editedValue.length) {
           params.set(this.editProjectParam[i], this.applyTransformToSend(this.editedValue[i]));
         }
       }
-      if (this.includesEditProjectParam(EditProjectParam.PROJECT_CONFIGURATION)) {
-        this.projectManagerBackendService
-            .fetchData(Module.PROJECT_EDITION_MODULE, Action.SET_PROJECT_CONFIGURATION_ACTION, this.context, params)
-            .then((result) => this.callRefrehContext());
-      } else {
-        this.projectManagerBackendService
-            .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params)
-            .then((result) => this.callRefrehContext());
-      }
-    }
 
+      this.projectManagerBackendService
+          .fetchData(this.module, this.action, this.context, params)
+          .then(() => this.callRefreshContext());
+    }
   }
 
   applyTransformToSend(editedValue: any): any {
     if (editedValue) {
-      return (Array.isArray(editedValue)) ? editedValue.map(input => this.transformForSending(input)) : this.transformForSending(editedValue);
+      return Array.isArray(editedValue)
+          ? editedValue.map(input => this.transformForSending(input))
+          : this.transformForSending(editedValue);
     }
     return "";
   }
@@ -152,7 +154,6 @@ export default class ProjectFieldRow extends Vue {
   cancelEdit() {
     this.editing = false;
     this.showInputs = false;
-
   }
 
   redirectToURL() {
@@ -161,48 +162,33 @@ export default class ProjectFieldRow extends Vue {
     }
   }
 
-
   showInputFields() {
     this.showInputs = true;
   }
 
-  addFieldValue() {
-    if (this.newValue) {
-      if (Array.isArray(this.tempFieldValue) && this.tempFieldValue.length > 0 && Array.isArray(this.tempFieldValue[0])) {
-        const targetArray = this.tempFieldValue[0];
-        targetArray.push(this.newValue);
-        this.tempFieldValue[0] = targetArray;
-      }
-      this.newValue = '';
+  /** BRIDGEHEADS METHODS **/
+  addBridgehead(newValue: string) {
+    if (this.bridgeheads && newValue) {
+      this.bridgeheads.selected.push(newValue);
+      this.newValue = "";
     }
   }
 
-  areThereMoreBridgeheadsAvailableToAdd(): boolean {
-    return (this.fieldValue !== null && this.fieldValue.length >= 2
-        && this.fieldValue[0] !== null && this.fieldValue[1] !== null
-        && Array.isArray(this.fieldValue[0]) && Array.isArray(this.fieldValue[1])
-        && (this.fieldValue[0] as string[]).length < (this.fieldValue[1] as string[]).length);
+  removeBridgehead(index: number) {
+    if (this.bridgeheads && index >= 0 && index < this.bridgeheads.selected.length) {
+      this.bridgeheads.selected.splice(index, 1);
+    }
   }
 
   fetchOtherAvailableBridgeheadsToAdd(): string[] {
-    return (this.fieldValue !== null && this.fieldValue.length >= 2
-        && this.fieldValue[0] !== null && this.fieldValue[1] !== null
-        && Array.isArray(this.fieldValue[0]) && Array.isArray(this.fieldValue[1])) ?
-        (this.fieldValue[1] as string[]).filter((element: string) => !this.fieldValue[0].includes(element)) : [];
-
-
+    if (!this.bridgeheads) return [];
+    return this.bridgeheads.available.filter(b => !this.bridgeheads!.selected.includes(b));
   }
 
-  removeBridgehead(index: any) {
-    if (Array.isArray(this.tempFieldValue) && this.tempFieldValue.length > 0 && Array.isArray(this.tempFieldValue[0])) {
-      const targetArray = this.tempFieldValue[0]; // Direkt auf das Ziel-Array zugreifen
-      if (index >= 0 && index < targetArray.length) {
-        targetArray.splice(index, 1);
-        this.tempFieldValue[0] = targetArray;
-      }
-    }
+  areThereMoreBridgeheadsAvailableToAdd(): boolean {
+    if (!this.bridgeheads) return false;
+    return this.bridgeheads.selected.length < this.bridgeheads.available.length;
   }
-
 
   addEnvVariable() {
     if (this.newKey && this.newValue) {
@@ -223,7 +209,7 @@ export default class ProjectFieldRow extends Vue {
 
   exitAndCallRefreshContext() {
     this.cancelEdit();
-    this.callRefrehContext();
+    this.callRefreshContext();
   }
 
   isQuery(): boolean {
@@ -259,49 +245,23 @@ export default class ProjectFieldRow extends Vue {
   }
 
   getEditFieldCssClass() {
-    if (this.isQuery()) {
-      return 'query-edit-field';
-    }
-    if (this.isDescription()) {
-      return 'description-edit-field';
-    }
-    if (this.isBridgeheads()) {
-      return 'bridgeheads-edit-field';
-    }
-    if (this.isEnvironmentVariables()) {
-      return 'environment-variables-edit-field';
-    }
-    if (this.isSelection()) {
-      return 'selection-edit-fields';
-    }
-    if (this.uploadAction) {
-      return 'upload-edit-field'
-    }
+    if (this.isQuery()) return 'query-edit-field';
+    if (this.isDescription()) return 'description-edit-field';
+    if (this.isBridgeheads()) return 'bridgeheads-edit-field';
+    if (this.isEnvironmentVariables()) return 'environment-variables-edit-field';
+    if (this.isSelection()) return 'selection-edit-fields';
+    if (this.uploadAction) return 'upload-edit-field';
     return 'other-edit-fields';
   }
 
   getButtonContainerCssClass() {
-    if (this.isQuery()) {
-      return 'query-button-container';
-    }
-    if (this.isSelection()) {
-      return 'selection-button-container';
-    }
-    if (this.isDescription()) {
-      return 'description-button-container';
-    }
-    if (this.isBridgeheads()) {
-      return 'bridgeheads-button-container';
-    }
-    if (this.isEnvironmentVariables()) {
-      return 'environment-variables-button-container';
-    }
-    if (this.isApplicationForm()) {
-      return 'application-form-button-container';
-    }
-    if (this.uploadAction) {
-      return 'upload-button-container';
-    }
+    if (this.isQuery()) return 'query-button-container';
+    if (this.isSelection()) return 'selection-button-container';
+    if (this.isDescription()) return 'description-button-container';
+    if (this.isBridgeheads()) return 'bridgeheads-button-container';
+    if (this.isEnvironmentVariables()) return 'environment-variables-button-container';
+    if (this.isApplicationForm()) return 'application-form-button-container';
+    if (this.uploadAction) return 'upload-button-container';
     return 'other-button-container';
   }
 
@@ -310,11 +270,11 @@ export default class ProjectFieldRow extends Vue {
       await navigator.clipboard.writeText(text);
       this.copiedToClipboard = true;
     } catch ($e) {
-      console.log($e)
+      console.log($e);
     }
   }
-
 }
+
 </script>
 
 <template>
@@ -334,7 +294,7 @@ export default class ProjectFieldRow extends Vue {
                   <div style="margin-bottom:2%;text-align:left;min-height:200px">
                     {{ configurations?.get(step)?.description }}
                   </div>
-                  <div v-if="!configurations?.get(step)?.customConfig" style="text-align: right;margin-bottom:2%">
+                  <div v-if="!configurations?.get(step)?.isCustomConfig" style="text-align: right;margin-bottom:2%">
                     <button @click.stop="showDetails[index]=!showDetails[index]"
                             style="background: none; border:none; color: #007bff;">
                       <span v-if="!showDetails[index]">show details</span>
@@ -343,10 +303,9 @@ export default class ProjectFieldRow extends Vue {
                   </div>
                   <table v-if="showDetails[index]" style="text-align: left">
                     <tr v-for="(param, key) in configurations?.get(step)" :key="key">
-                      <!--<template v-if="key as string !== 'customConfig'">-->
                       <template v-if="!['customConfig', 'label', 'description'].includes(key.toString())">
                         <td style="font-weight: bold">{{ configLabel[key] }}:</td>
-                        <td class="truncate-15" data-toggle="tooltip" data-placement="top" :title="param.toString()">
+                        <td class="truncate-15" data-toggle="tooltip" data-placement="top" :title="param?.toString()">
                           {{ param }}
                         </td>
                       </template>
@@ -360,6 +319,7 @@ export default class ProjectFieldRow extends Vue {
       </div>
     </td>
   </tr>
+
   <tr v-else>
     <!-- FIRST COLUMN: HEADERS -->
     <td class="bold-text thinner-column" style="background-color: #f2f2f2; max-width: 170px;">
@@ -378,7 +338,7 @@ export default class ProjectFieldRow extends Vue {
         <!-- If editing -->
         <div v-if="editing" style="width:100%">
           <div :class="getEditFieldCssClass()">
-            <div v-if="uploadAction" style="width:75%"> <!-- If uploading a file -->
+            <div v-if="uploadAction" style="width:75%">
               <div v-if="uploadAction === Action.UPLOAD_APPLICATION_FORM_ACTION">
                 <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                                 :module="Module.PROJECT_DOCUMENTS_MODULE"
@@ -389,10 +349,10 @@ export default class ProjectFieldRow extends Vue {
               <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
                             :visible-bridgeheads="visibleBridgeheads" :use-bridgehead-chooser="fieldKey === 'Votum'"
-                            :text="'Upload '+ fieldKey" :call-refreh-context="exitAndCallRefreshContext"
+                            :text="'Upload '+ fieldKey" :call-refresh-context="exitAndCallRefreshContext"
                             :is-file="true"/>
             </div>
-            <div v-else style="width:75%"> <!-- If not uploading a file -->
+            <div v-else style="width:75%">
               <div>
                 <div v-if="isQuery()" style="width: 70%;">
                   <span><strong>Human readable</strong></span>
@@ -404,8 +364,8 @@ export default class ProjectFieldRow extends Vue {
                   <textarea type="text" v-model="editedValue[0]" class="form-control"></textarea>
                 </div>
                 <div v-else-if="isBridgeheads()" style="width: 75%">
-                  <span v-if="tempFieldValue && tempFieldValue[0]">
-                    <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary"
+                  <span v-if="bridgeheads && bridgeheads.selected.length > 0">
+                    <span v-for="(bridgehead, index) in bridgeheads.selected" :key="index" class="btn btn-primary"
                           style="margin-right: 2%; margin-bottom: 0.5%">
                          <span>{{ bridgehead }}</span>
                       <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i
@@ -416,19 +376,19 @@ export default class ProjectFieldRow extends Vue {
                     <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
                     <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
                       <select class="form-select" v-model="newValue" placeholder="Bridgehead">
-                        <option
-                            v-for="(value, index) in fetchOtherAvailableBridgeheadsToAdd()"
-                            :key="index" :value="value">{{ value }}
+                        <option v-for="(value, index) in fetchOtherAvailableBridgeheadsToAdd()" :key="index"
+                                :value="value">
+                          {{ value }}
                         </option>
                       </select>
-                      <button class="btn btn-primary" @click="addFieldValue"><i style="font-size: 18px"
-                                                                                class="bi bi-check"></i>
+                      <button class="btn btn-primary" @click="addBridgehead(newValue)">
+                        <i style="font-size: 18px" class="bi bi-check"></i>
                       </button>
                     </div>
                   </span>
                 </div>
                 <div v-else-if="isEnvironmentVariables()" style="width:75%;">
-                  <span v-if="editedValue && editedValue.length > 0 && editedValue[0] " style="width: 75%">
+                  <span v-if="editedValue && editedValue.length > 0 && editedValue[0]" style="width: 75%">
                     <span v-for="(pair, index) in editedValue[0].split(';')" :key="index"
                           style="margin-right: 2%;  display: inline;" class="btn btn-primary">
                       <span style="display: inline; margin-bottom: 2%">{{ pair }}</span>
@@ -451,7 +411,6 @@ export default class ProjectFieldRow extends Vue {
                   </select>
                 </div>
                 <div v-else style="width: 70%;">
-                  <!-- Normal case -->
                   <input type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;">
                 </div>
               </div>
@@ -466,14 +425,15 @@ export default class ProjectFieldRow extends Vue {
             </div>
           </div>
         </div>
+
         <!-- If not editing -->
         <div v-else style="display:flex; width:100%">
           <div v-if="isBridgeheads()" style="width:100%">
-            <div v-if="tempFieldValue" class="field-value">
-               <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary"
-                     style="margin-right: 2%; margin-bottom: 0.5%">
-                   <span>{{ bridgehead }}</span>
-               </span>
+            <div v-if="bridgeheads && bridgeheads.selected.length > 0" class="field-value">
+              <span v-for="(bridgehead, index) in bridgeheads.selected" :key="index" class="btn btn-primary"
+                    style="margin-right: 2%; margin-bottom: 0.5%">
+                {{ bridgehead }}
+              </span>
             </div>
           </div>
           <div v-else-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] && isEnvironmentVariables()"
@@ -506,17 +466,17 @@ export default class ProjectFieldRow extends Vue {
     <!-- THIRD COLUMN: ACTIONS -->
     <td style="min-width: 50px;vertical-align: middle">
       <span style="display:flex; flex-flow:row; align-items: baseline">
-          <div style="display:inline-flex; flex-flow:row; align-items: baseline">
-            <button
-                v-if="isFieldValueEditable() && (redirectUrl === null || redirectUrl === undefined || isBridgeheads() || isQuery())"
-                class="btn btn-primary"
-                data-toggle="tooltip"
-                data-placement="top" title="Edit"
-                style="background:none; border:none; color:black"><i class="bi bi-pencil me-2" @click="editField"></i>
-            </button>
-            <DownloadButton v-if="existsFile && downloadAction" :context="context"
-                            :project-manager-backend-service="projectManagerBackendService"
-                            :module="downloadModule" :action="downloadAction"/>
+        <div style="display:inline-flex; flex-flow:row; align-items: baseline">
+          <button
+              v-if="isFieldValueEditable() && (redirectUrl === null || redirectUrl === undefined || isBridgeheads() || isQuery())"
+              class="btn btn-primary"
+              data-toggle="tooltip"
+              data-placement="top" title="Edit"
+              style="background:none; border:none; color:black"><i class="bi bi-pencil me-2" @click="editField"></i>
+          </button>
+          <DownloadButton v-if="existsFile && downloadAction" :context="context"
+                          :project-manager-backend-service="projectManagerBackendService"
+                          :module="downloadModule" :action="downloadAction"/>
         </div>
         <button v-if="isFieldValueEditable() && redirectUrl !== null && redirectUrl !== undefined"
                 class="btn btn-primary"

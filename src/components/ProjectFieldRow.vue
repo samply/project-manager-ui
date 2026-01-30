@@ -240,10 +240,6 @@ export default class ProjectFieldRow extends Vue {
     return this.possibleValues && this.possibleValues.length > 0;
   }
 
-  isApplicationForm(): boolean {
-    return this.uploadAction === Action.UPLOAD_APPLICATION_FORM_ACTION;
-  }
-
   getEditFieldCssClass() {
     if (this.isQuery()) return 'query-edit-field';
     if (this.isDescription()) return 'description-edit-field';
@@ -260,7 +256,6 @@ export default class ProjectFieldRow extends Vue {
     if (this.isDescription()) return 'description-button-container';
     if (this.isBridgeheads()) return 'bridgeheads-button-container';
     if (this.isEnvironmentVariables()) return 'environment-variables-button-container';
-    if (this.isApplicationForm()) return 'application-form-button-container';
     if (this.uploadAction) return 'upload-button-container';
     return 'other-button-container';
   }
@@ -339,13 +334,6 @@ export default class ProjectFieldRow extends Vue {
         <div v-if="editing" style="width:100%">
           <div :class="getEditFieldCssClass()">
             <div v-if="uploadAction" style="width:75%">
-              <div v-if="uploadAction === Action.UPLOAD_APPLICATION_FORM_ACTION">
-                <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                :module="Module.PROJECT_DOCUMENTS_MODULE"
-                                :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION"
-                                text="Download application form template"/>
-                <br/>
-              </div>
               <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
                             :visible-bridgeheads="visibleBridgeheads" :use-bridgehead-chooser="fieldKey === 'Votum'"

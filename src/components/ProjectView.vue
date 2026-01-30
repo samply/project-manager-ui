@@ -143,7 +143,6 @@
           <div class="box-header">Actions</div>
           <div style="padding:2%">
             <!-- Project State Module: Creator View -->
-            <!-- v-if="existsApplicationForm" removed - instead of hiding completely -> change design -->
             <!-- Project State Module: PM-ADMIN View -->
             <template v-for="(buttonGroup, index) in actionButtons" :key="index">
               <div v-if="buttonGroups[index]" class="button-group-box">
@@ -476,7 +475,6 @@ export default defineComponent({
       existsVotum: false,
       existsVotumForAllBridgeheads: false,
       existsAuthenticationScript: false,
-      existsApplicationForm: false,
       existsScript: false,
       projectConfigurations: new Map() as Map<string, Project>,
       projectConfigurationLabels: [] as string[],
@@ -485,7 +483,6 @@ export default defineComponent({
       projectRoles: [] as ProjectRole[],
       draftDialogStepper: new DialogStepper() as DialogStepper,
       existsDraftDialog: false,
-      applicationFormDescription: {} as ProjectDocument,
       scriptDescription: {} as ProjectDocument,
       votumDescription: {} as ProjectDocument,
       votumForAllBridgeheadsDescription: {} as ProjectDocument,
@@ -530,11 +527,6 @@ export default defineComponent({
     },
     existsAuthenticationScript(newValue, oldValue) {
       this.extendedExplanations = this.fetchExtendedExplanations();
-    },
-    existsApplicationForm(newValue, oldValue) {
-      this.extendedExplanations = this.fetchExtendedExplanations();
-      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
-      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
     },
     existsVotum(newValue, oldValue) {
       this.extendedExplanations = this.fetchExtendedExplanations();
@@ -611,7 +603,7 @@ export default defineComponent({
 
     fetchIfProjectHasAllMandatoryFields(): boolean {
       return Boolean(this.project && this.project.label && this.project.query && this.bridgeheads && this.project.type &&
-          this.project.queryFormat && this.project.outputFormat && this.project.templateId && this.existsApplicationForm);
+          this.project.queryFormat && this.project.outputFormat && this.project.templateId);
     },
 
     fetchTooltipTextForCreateButton() {
@@ -624,7 +616,6 @@ export default defineComponent({
         result = this.addMissingField(result, 'query format', this.project.queryFormat);
         result = this.addMissingField(result, 'output format', this.project.outputFormat);
         result = this.addMissingField(result, 'template id', this.project.templateId);
-        result = this.addMissingField(result, 'application form', this.existsApplicationForm);
       }
       return (result.length > 0) ? 'missing fields: ' + result : result;
     },
@@ -672,12 +663,6 @@ export default defineComponent({
             this.existsVotumForAllBridgeheads = result;
             if (this.existsVotumForAllBridgeheads) {
               await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION_ACTION, new Map(), 'votumForAllBridgeheadsDescription');
-            }
-          }),
-          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), async (result: boolean) => {
-            this.existsApplicationForm = result;
-            if (this.existsApplicationForm) {
-              await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_APPLICATION_FORM_DESCRIPTION_ACTION, new Map(), 'applicationFormDescription');
             }
           }),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), async (result: boolean) => {
@@ -838,11 +823,6 @@ export default defineComponent({
 
     fetchExtendedExplanations(): Explanations {
       const extendedExplanations = new Map(this.explanations)
-      if (this.existsApplicationForm) {
-        this.removeActionExplanation(Action.UPLOAD_APPLICATION_FORM_ACTION, extendedExplanations);
-      } else {
-        this.removeActionExplanation(Action.DOWNLOAD_APPLICATION_FORM_ACTION, extendedExplanations);
-      }
       if (this.existsVotum) {
         this.removeActionExplanation(Action.UPLOAD_VOTUM_ACTION, extendedExplanations);
       } else {
@@ -1045,16 +1025,6 @@ export default defineComponent({
           visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === 'CUSTOM' && this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
-          fieldKey: "Application form",
-          fieldValue: [this.applicationFormDescription.label, this.applicationFormDescription.originalFilename],
-          isEditable: true,
-          existFile: this.existsApplicationForm,
-          uploadAction: this.Action.UPLOAD_APPLICATION_FORM_ACTION,
-          downloadAction: this.Action.DOWNLOAD_APPLICATION_FORM_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
-        },
-        {
           fieldKey: "Votum",
           fieldValue: [this.votumDescription.label, this.votumDescription.originalFilename],
           isEditable: true,
@@ -1091,7 +1061,7 @@ export default defineComponent({
           existFile: this.existsAuthenticationScript,
           downloadAction: this.Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION,
           downloadModule: this.Module.TOKEN_MANAGER_MODULE,
-          visibilityCondition: !!this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && !!this.existsAuthenticationScript
+          visibilityCondition: !!this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && this.existsAuthenticationScript
         }
       ];
       const dynamicFields = this.buildDynamicProjectFields(this.formFields);

@@ -123,3 +123,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Show actions as soon as possible
 - In initializeDataInCallback: Just log in the console if 404, but not throw an error
 - Upgrade libraries 
+
+### Removed
+- Application Form

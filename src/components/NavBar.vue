@@ -2,7 +2,7 @@
   <div>
     <nav class="navbar navbar-dark bg-dark custom-navbar">
       <router-link class="navbar-brand" to="/">
-        <i class="bi bi-boxes navbar-icon"></i> Samply.Requester
+        <i class="bi bi-boxes navbar-icon"></i> <b>Samply</b>.Requester
       </router-link>
       <div class="user-logout-container">
         <!-- User information -->

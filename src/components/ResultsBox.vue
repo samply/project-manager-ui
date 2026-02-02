@@ -332,8 +332,8 @@ export default class ResultsBox extends Vue {
           <li>
             <strong>Separation of Credentials and File URLs:</strong>
             <ul>
-              <li>The URL for accessing cloud files is sent via the Data Science Orchestrator's SMTP server and can be
-                found in the Data Science Orchestrator.
+              <li>The URL for accessing cloud files is sent via the Samply.Requester's SMTP server and can be
+                found in the Samply.Requester.
               </li>
               <li>
                 The password (or other authentication details) is sent through the results provider's SMTP server,
@@ -345,7 +345,7 @@ export default class ResultsBox extends Vue {
           <li>
             <strong>Secure File Access:</strong> Instead of sharing the direct cloud file URL, the email template
             includes a link to the
-            Data Science Orchestrator, where the file can be securely downloaded.
+            Samply.Requester, where the file can be securely downloaded.
           </li>
           <li>
             <strong>Flexible Formats:</strong> Offers multiple email formats and solutions to simplify sharing and

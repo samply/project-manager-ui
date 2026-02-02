@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-01-30]
+## [1.1.0 - 2026-02-02]
 ### Added
 - Dockerfile
 - Single Spa
@@ -123,6 +123,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Show actions as soon as possible
 - In initializeDataInCallback: Just log in the console if 404, but not throw an error
 - Upgrade libraries 
+- Rename Data Science Orchestrator to Samply.Requester
 
 ### Removed
 - Application Form

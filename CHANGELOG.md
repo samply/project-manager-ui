@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-02-02]
+## [1.1.0 - 2026-02-03]
 ### Added
 - Dockerfile
 - Single Spa
@@ -105,6 +105,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Form fields and templates
 - Dynamic and Fixed dialog steps
 - View and edit form fields
+- Form Field New Groups to generate titles in project field row
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

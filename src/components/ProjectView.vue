@@ -267,6 +267,7 @@
                       :download-module="projectField.downloadModule"
                       :todos="extendedExplanations"
                       :visible-bridgeheads="visibleBridgeheads"
+                      :groups="projectField.groups"
                       :call-refresh-context="refreshContext"
                       :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : NaN"
                       :context="context" :project-manager-backend-service="projectManagerBackendService"/>
@@ -411,7 +412,7 @@ import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
-import {ProjectField} from "@/services/utils";
+import {Groups, ProjectField} from "@/services/utils";
 
 
 export default defineComponent({
@@ -822,7 +823,7 @@ export default defineComponent({
       return (this.project && (this.project.state == 'DEVELOP' || this.project.state == 'PILOT')) ? this.existInvitedUsers : true;
     },
     buildDynamicProjectFields(formFields: FormField[]): ProjectField[] {
-      return formFields.map(formField => ({
+      return formFields.map((formField, index) => ({
         fieldKey: formField.labelDisplayName ?? formField.label,
         fieldValue: formField.value != null ? [formField.value] : [],
         editProjectParam: [EditProjectParam.FORM_FIELDS],
@@ -832,7 +833,9 @@ export default defineComponent({
         visibilityCondition:
             !this.existsDraftDialog ||
             this.draftDialogStepper.currentStep?.id === formField.title ||
-            this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+            this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+
+        groups: new Groups(formFields, index)
       }));
     },
 

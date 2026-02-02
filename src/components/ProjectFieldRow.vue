@@ -15,7 +15,7 @@ import {
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import {DialogStep, FixedDialogStep} from "@/services/fixedDialogStep";
-import {BridgeheadsProjectField} from "@/services/utils";
+import {BridgeheadsProjectField, Groups} from "@/services/utils";
 
 @Options({
   name: "ProjectFieldRow",
@@ -47,6 +47,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly existsFile!: boolean;
   @Prop() readonly draftDialogCurrentStep!: DialogStep;
   @Prop() readonly visibleBridgeheads!: Bridgehead[];
+  @Prop() readonly groups!: Groups;
   @Prop({
     type: Function,
     default: (input: string): string => input
@@ -88,6 +89,15 @@ export default class ProjectFieldRow extends Vue {
   }
 
   created() {
+    if (this.groups) {
+      let newSections = this.groups.fetchNewSections();
+      if (newSections && newSections.length > 0) {
+        newSections.forEach(section => {
+          console.log("level: " + section.level + " | group: " + section.displayName);
+        });
+      }
+      console.log("[" + this.groups.fetchFieldLevel() + "] " + this.fieldKey);
+    }
     this.editingBridgeheads = this.bridgeheads
         ? [...this.bridgeheads.selected]
         : [];

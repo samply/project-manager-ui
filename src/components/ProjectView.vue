@@ -352,7 +352,7 @@
               <div class="card-body">
                 <div style="display:flex; flex-flow: row;">
                   <div class="todo-circle"><span>#{{ explanation.number }}</span></div>
-                  <h5 class="card-title">{{ explanation.message }}</h5>
+                  <h5 class="card-title" v-html="explanation.message"></h5>
                 </div>
               </div>
             </div>
@@ -602,13 +602,29 @@ export default defineComponent({
     },
 
     fetchIfProjectHasAllMandatoryFields(): boolean {
-      return Boolean(this.project && this.project.label && this.project.query && this.bridgeheads && this.project.type &&
-          this.project.queryFormat && this.project.outputFormat && this.project.templateId);
+      const baseFieldsValid = Boolean(
+          this.project &&
+          this.project.label &&
+          this.project.query &&
+          this.bridgeheads &&
+          this.project.type &&
+          this.project.queryFormat &&
+          this.project.outputFormat &&
+          this.project.templateId
+      );
+
+      const mandatoryFormFieldsValid = this.formFields
+          ?.filter(field => field.mandatory)
+          .every(field => field.value != null && field.value !== '');
+
+      return baseFieldsValid && mandatoryFormFieldsValid;
     },
 
     fetchTooltipTextForCreateButton() {
       let result = '';
+
       if (this.project) {
+        // ✅ project-level fields stay inline
         result = this.addMissingField(result, 'title', this.project.label);
         result = this.addMissingField(result, 'query', this.project.query);
         result = this.addMissingField(result, 'bridgeheads', this.bridgeheads);
@@ -616,9 +632,33 @@ export default defineComponent({
         result = this.addMissingField(result, 'query format', this.project.queryFormat);
         result = this.addMissingField(result, 'output format', this.project.outputFormat);
         result = this.addMissingField(result, 'template id', this.project.templateId);
+
+        // 👇 group missing mandatory form fields
+        const groupedMissingFields = this.formFields
+            ?.filter(field => field.mandatory && !field.value)
+            .reduce((acc, field) => {
+              const title = field.titleDisplayName ?? field.title;
+              const label = field.labelDisplayName ?? field.label;
+
+              if (!acc[title]) acc[title] = [];
+              acc[title].push(label);
+              return acc;
+            }, {} as Record<string, string[]>);
+
+        // Create blocks for each title
+        const blocks = Object.entries(groupedMissingFields ?? {}).map(
+            ([title, fields]) => `<strong>${title}</strong>: ${fields.join(', ')}`
+        );
+
+        // If there are blocks, append them with two line-breaks between
+        if (blocks.length > 0) {
+          result += (result.length > 0 ? '<br><br>' : '') + blocks.join('<br><br>');
+        }
       }
-      return (result.length > 0) ? 'missing fields: ' + result : result;
+
+      return result.length > 0 ? 'missing fields:<br><br>' + result : result;
     },
+
 
     addMissingField(result: string, field: string, value: any): string {
       return (!value) ? result + ((result.length > 0) ? ', ' : '') + field : result;
@@ -630,8 +670,6 @@ export default defineComponent({
 
     async initializeProjectRelatedData() {
       if (this.project) {
-        this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
-        this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
         this.existsDraftDialog = (this.project.state === 'DRAFT' && AuthService.getEmail() === this.project.creatorEmail);
         await Promise.all([
           this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), async (result: Bridgehead[]) => {
@@ -718,6 +756,9 @@ export default defineComponent({
             titleDescription: field.titleDescription,
           });
         }
+
+        this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+        this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
       }
 
       this.draftDialogStepper.addFormTitles(this.formTitles);

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2025-12-26]
+## [1.1.0 - 2026-02-02]
 ### Added
 - Dockerfile
 - Single Spa
@@ -16,16 +16,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Token Bearer to doHttpRequest
 - Project Manager Button
 - Project Manager Button: Developer, Pilot, Final and BK-Admin Views
-- Project information in project view
-- Notifications in project view
+- Project information in the project view
+- Notifications in the project view
 - Project Field Row
-- Notifications in project dashboard
+- Notifications in the project dashboard
 - Fetch project states
 - DataSHIELD status
 - Filter draft projects to project manager admin
-- If type is DataSHIELD, use template opal-ccp and output format Opal
+- If the type is DataSHIELD, use template opal-ccp and output format Opal
 - Creator in main dashboard
-- Invite users to project
+- Invite users to a project
 - Downloads
 - Upload Button
 - Download Button
@@ -34,12 +34,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Exists Script
 - Fetch publications and other documents
 - Documents Table
-- project-code as parameter in project-view
+- project-code as a parameter in project-view
 - Bridgehead state
 - Add URL to publications and other documents
 - User State
 - Keycloak profile
-- Bridgehead for profile with only one bridgehead in project view
+- Bridgehead for profile with only one bridgehead in the project view
 - Project configuration
 - Fetch visible bridgeheads and fetch project bridgeheads
 - Refresh Keycloak token
@@ -50,72 +50,80 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Documents Table for visible bridgeheads
 - DataSHIELD Status in bridgehead overview
 - Fetch project roles
-- Show Draft Dialog only if user is CREATOR and the state is DRAFT
+- Show Draft Dialog only if the user is CREATOR and the state is DRAFT
 - EditProjectParam
 - Bridgeheads list for adding new bridgeheads to a project
 - Bridgehead can accept only if not accepted and reject only if not rejected
 - Fetch labels of script, application form and votum
-- Update active bridgehead after clicking on bridgehead in bridgehead overview
-- Exist invited users -> can show bridgehead admin buttons
-- Buttons with message
+- Update the active bridgehead after clicking on the bridgehead in bridgehead overview
+- There exist invited users → can show bridgehead admin buttons
+- Buttons with a message
 - Query State
 - Research environment buttons
-- Query execution as checkbox
+- Query execution as a checkbox
 - Github CI
 - VUE_APP_PUBLIC_PATH
 - Nginx conf
 - Config Loader
 - Human Readable to bridgehead
-- Show minimal information in project form
+- Show minimal information in the project form
 - Show User TODOs
 - Extended explanations
 - Extended explanations Messages for draft
 - First and Last Name in User
 - Show query state, project bridgehead state, datashield state and coder state only for one bridgehead
 - Creator Name and creator email button
-- User name and email button
-- Hide project rows in dialog if they are not editable except on summary
+- Username and email button
+- Hide project rows in the dialog if they are not editable except on summary
 - Resend query to bridgehead button
 - Explanation priority
-- Cancel Reject button
+- Cancel the Reject button
 - Archive button requires message too
 - Current User in Project View
-- Press create button only if mandatory fields are not empty
+- Press the creation button only if mandatory fields are not empty
 - Missing fields list as todo
 - Logo in navbar
-- Mailing Black List
-- Email while hovering on user
+- Mailing Blacklist
+- Email while hovering on a user
 - Results
 - Password Sharing Tool for different templates
 - Fetch email message and subject
-- Generate eml and html files for Password Sharing Tool
-- Results URL in project
+- Generate eml and HTML files for Password Sharing Tool
+- Results URL in a project
 - Results already sent button
 - Votum in project view overview with only one bridgehead
 - Votum for all
-- Show email while hovering on user
+- Show email while hovering on a user
 - Check email validity
-- Go to research environment link
+- Go to a research environment link
 - Long Description to options of credential sharing tools
 - Advantages and use cases to options of credential sharing tools
 - General OIDC configuration instead of Keycloak
 - OIDC silent renew
-- Check expired token
+- Check the expired token
+- Form actions
+- Form fields and templates
+- Dynamic and Fixed dialog steps
+- View and edit form fields
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)
-- Rename reject project bridgehead user state as block
-- Copy query to clipboard always active, as long as it has a value
+- Rename reject project bridgehead user state as a block
+- Copy query to clipboard is always active, as long as it has a value
 - Alignment of user in navbar
 - Result acceptance in user input as circle
-- Separate Publication and other documents in new section
+- Separate Publication and other documents in a new section
 - Rename bridgeheads to sites for being displayed
 - Rename Password Sharing Tool to Credentials Sharing Tool
-- Improvements in resutls box
+- Improvements in the results box
 - Rename creator to applicant
 - Rename profiles to services
 - Don't show votum during draft phase
 - Get Votum status in Bridgehead Overview
 - Show actions as soon as possible
 - In initializeDataInCallback: Just log in the console if 404, but not throw an error
-- Upgrade libraries
+- Upgrade libraries 
+- Rename Data Science Orchestrator to Samply.Requester
+
+### Removed
+- Application Form

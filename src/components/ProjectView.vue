@@ -44,15 +44,24 @@
               <thead>
               <tr>
                 <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
-                <th v-if="visibleBridgeheads?.length == 1 && project?.state !== 'DRAFT'" class="status-table-header" scope="col">Votum</th>
+                <th v-if="visibleBridgeheads?.length == 1 && project?.state !== 'DRAFT'" class="status-table-header"
+                    scope="col">Votum
+                </th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Teiler</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access</th>
-                <th class="status-table-header" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD Status</th>
-                <th class="status-table-header"
-                    v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')" scope="col">Files in Research Environment
+                <th class="status-table-header" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">
+                  DataSHIELD Status
                 </th>
-                <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">{{(project?.type == 'DATASHIELD' && project.state != 'FINAL') ? 'Script' : 'Results'}} Acceptance</th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Applicant Results Acceptance</th>
+                <th class="status-table-header"
+                    v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')" scope="col">
+                  Files in Research Environment
+                </th>
+                <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">
+                  {{ (project?.type == 'DATASHIELD' && project.state != 'FINAL') ? 'Script' : 'Results' }} Acceptance
+                </th>
+                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Applicant Results
+                  Acceptance
+                </th>
                 <th class="status-table-header" scope="col">Applicant</th>
                 <th class="status-table-header" scope="col">Created at</th>
                 <th class="status-table-header" scope="col">Expires at</th>
@@ -86,15 +95,34 @@
                           :action="Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION"
                       />
                     </div>
-                    <div v-else class="states-circle-container"><div class="state_circle red"/></div>
+                    <div v-else class="states-circle-container">
+                      <div class="state_circle red"/>
+                    </div>
                   </div>
                 </td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="activeBridgehead?.queryState ?? undefined"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="activeBridgehead?.state ?? undefined"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus"><div  class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="dataShieldStatus?.project_status"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')">{{ areExportFilesTransferredToResearchEnvironment }}</td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser"><div  class="state_circle" :class="currentUser?.projectState.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="currentUser.projectState"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="creatorAcceptance.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="creatorAcceptance ?? undefined"></div></td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
+                  <div class="state_circle" :class="activeBridgehead?.queryState?.toLowerCase()" data-toggle="tooltip"
+                       data-placement="top" :title="activeBridgehead?.queryState ?? undefined"></div>
+                </td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
+                  <div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()" data-toggle="tooltip"
+                       data-placement="top" :title="activeBridgehead?.state ?? undefined"></div>
+                </td>
+                <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus">
+                  <div class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()"
+                       data-toggle="tooltip" data-placement="top" :title="dataShieldStatus?.project_status"></div>
+                </td>
+                <td v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')">
+                  {{ areExportFilesTransferredToResearchEnvironment }}
+                </td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser">
+                  <div class="state_circle" :class="currentUser?.projectState.toLowerCase()" data-toggle="tooltip"
+                       data-placement="top" :title="currentUser.projectState"></div>
+                </td>
+                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
+                  <div class="state_circle" :class="creatorAcceptance.toLowerCase()" data-toggle="tooltip"
+                       data-placement="top" :title="creatorAcceptance ?? undefined"></div>
+                </td>
                 <td style="display:flex;">
                   <UserAndEmail
                       :first-name="project?.creatorName"
@@ -110,24 +138,26 @@
 
           </div>
         </div>
-        <div v-if="!(project?.state === 'DRAFT' && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible" class="project-actions">
+        <div v-if="!(project?.state === 'DRAFT' && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible"
+             class="project-actions">
           <div class="box-header">Actions</div>
           <div style="padding:2%">
             <!-- Project State Module: Creator View -->
-            <!-- v-if="existsApplicationForm" entfernt - statt ganz ausblenden -> design ändern -->
             <!-- Project State Module: PM-ADMIN View -->
             <template v-for="(buttonGroup, index) in actionButtons" :key="index">
               <div v-if="buttonGroups[index]" class="button-group-box">
                 <div class="button-group-label">
-                  {{buttonGroup.label}}
+                  {{ buttonGroup.label }}
                   <span style="display: flex">
-                    <span v-for="(explanationNumber, index3) in getExplanationsForButtonGroup(buttonGroup)" :key="index3" class="todo-circle-small">#{{explanationNumber}}</span>
+                    <span v-for="(explanationNumber, index3) in getExplanationsForButtonGroup(buttonGroup)"
+                          :key="index3" class="todo-circle-small">#{{ explanationNumber }}</span>
                   </span>
                 </div>
                 <div style="display: flex">
                   <ProjectManagerButton v-for="(button, index2) in buttonGroup.button" :key="index2"
                                         :module="button.module" :action="button.action"
-                                        :context="context" :call-refreh-context="button.refreshContextCallFunction" :text="button.text"
+                                        :context="context" :call-refresh-context="button.refreshContextCallFunction"
+                                        :text="button.text"
                                         :button-class="button.cssClass" :with-message="button.withMessage"
                                         :visibility="button.visibilityCondition"
                                         :do-action-on-click="button.doActionOnClick"
@@ -136,20 +166,22 @@
               </div>
             </template>
           </div>
-          <div v-if="!existsDraftDialog || draftDialogStepper.currentStep === DialogStep.SUMMARY" class="inviteUser">
+          <div v-if="!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
+               class="inviteUser">
             <UserInput :project="project" :context="context"
                        :bridgeheads="visibleBridgeheads"
                        :todos="extendedExplanations"
                        :current-users="currentUsers"
                        :project-manager-backend-service="projectManagerBackendService"
-                       :call-refreh-context="refreshContext"
+                       :call-refresh-context="refreshContext"
             />
           </div>
         </div>
-        <div class="documents" v-if="project?.state === 'FINAL' && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN))">
+        <div class="documents"
+             v-if="project?.state === 'FINAL' && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN))">
           <div class="box-header">Results</div>
           <div style="padding: 2%">
-            <ResultsBox :call-refreh-context="refreshContext"
+            <ResultsBox :call-refresh-context="refreshContext"
                         :project-manager-backend-service="projectManagerBackendService"
                         :current-users="currentUsers"
                         :context="context"
@@ -171,26 +203,27 @@
                       <div v-for="(step, index) in draftDialogStepper.currentSteps" :key="index" class="stepper-item"
                            :class="{ 'active': draftDialogStepper.currentStep === step }">
                         <button style="background: none; border:none; color: black;"
-                                @click="draftDialogStepper.setCurrentStep(step)"
+                                @click="draftDialogStepper.setCurrentStep(step.id)"
                                 :style="{ fontWeight: draftDialogStepper.currentStep === step ? 'bold' : 'normal' }">{{
-                            step
+                            step.displayName
                           }}
                         </button>
                       </div>
                     </div>
-                    <!-- Navigationstasten -->
+                    <!-- Navigation keys -->
                     <div class="button-container mt-3">
-                      <button class="btn btn-primary me-2" @click="draftDialogStepper.previousStep()" :disabled="!draftDialogStepper.hasPreviousStep">
+                      <button class="btn btn-primary me-2" @click="draftDialogStepper.previousStep()"
+                              :disabled="!draftDialogStepper.hasPreviousStep">
                         Back
                       </button>
                       <button class="btn btn-primary me-2" @click="draftDialogStepper.nextStep()"
                               v-if="draftDialogStepper.hasNextStep">
                         Continue
                       </button>
-                      <ProjectManagerButton v-if="draftDialogStepper.currentStep === DialogStep.SUMMARY"
+                      <ProjectManagerButton v-if="draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
                                             :module="Module.PROJECT_STATE_MODULE"
                                             :action="Action.CREATE_PROJECT_ACTION"
-                                            :context="context" :call-refreh-context="refreshContext" text="Create"
+                                            :context="context" :call-refresh-context="refreshContext" text="Create"
                                             button-class="btn btn-success mr-2"
                                             :with-message="false"
                                             :is-disabled="!hasProjectAllMandatoryFields"
@@ -199,7 +232,7 @@
                       <ProjectManagerButton v-if="project?.state === 'DRAFT' "
                                             :module="Module.PROJECT_STATE_MODULE"
                                             :action="Action.REJECT_PROJECT_ACTION"
-                                            :context="context" :call-refreh-context="refreshContext" text="Discard"
+                                            :context="context" :call-refresh-context="refreshContext" text="Discard"
                                             button-class="btn btn-danger btn-secondary mr-2"
                                             :with-message="true"
                                             :project-manager-backend-service="projectManagerBackendService"/>
@@ -208,33 +241,39 @@
                 </div>
               </div>
 
-            <br/>
-            <table class="table table-bordered custom-table  table-hover">
-              <tbody>
-              <template v-for="(projectField, index) in getProjectFields()" :key="index">
-                <ProjectFieldRow v-if="projectField.visibilityCondition && (!existsDraftDialog || projectField.isEditable && draftDialogStepper.currentStep !== DialogStep.SUMMARY || draftDialogStepper.currentStep === DialogStep.SUMMARY)"
-                                 :field-key="projectField.fieldKey"
-                                 :field-value="projectField.fieldValue"
-                                 :edit-project-param="projectField.editProjectParam"
-                                 :is-editable="projectField.isEditable"
-                                 :redirect-url="projectField.redirectUrl"
-                                 :transform-for-sending="projectField.transformForSending"
-                                 :possible-values="projectField.possibleValues"
-                                 :configurations="projectField.configurations"
-                                 :exists-file="projectField.existFile"
-                                 :upload-action="projectField.uploadAction"
-                                 :download-action="projectField.downloadAction"
-                                 :download-module="projectField.downloadModule"
-                                 :todos="extendedExplanations"
-                                 :visible-bridgeheads="visibleBridgeheads"
-                                 :call-refreh-context="refreshContext"
-                                 :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : NaN"
-                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-
-              </template>
-              </tbody>
-            </table>
-          </div>
+              <br/>
+              <table class="table table-bordered custom-table  table-hover">
+                <tbody>
+                <template v-for="(projectField, index) in getProjectFields()" :key="index">
+                  <ProjectFieldRow
+                      v-if="projectField.visibilityCondition &&
+                      (!existsDraftDialog ||
+                      projectField.isEditable && draftDialogStepper.currentStep?.id !== DialogStep.SUMMARY ||
+                      draftDialogStepper.currentStep?.id === DialogStep.SUMMARY)"
+                      :field-key="projectField.fieldKey"
+                      :field-value="projectField.fieldValue"
+                      :bridgeheads="projectField.bridgeheads"
+                      :action="projectField.action"
+                      :module="projectField.module"
+                      :edit-project-param="projectField.editProjectParam"
+                      :is-editable="projectField.isEditable"
+                      :redirect-url="projectField.redirectUrl"
+                      :transform-for-sending="projectField.transformForSending"
+                      :possible-values="projectField.possibleValues"
+                      :configurations="projectField.configurations"
+                      :exists-file="projectField.existFile"
+                      :upload-action="projectField.uploadAction"
+                      :download-action="projectField.downloadAction"
+                      :download-module="projectField.downloadModule"
+                      :todos="extendedExplanations"
+                      :visible-bridgeheads="visibleBridgeheads"
+                      :call-refresh-context="refreshContext"
+                      :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : NaN"
+                      :context="context" :project-manager-backend-service="projectManagerBackendService"/>
+                </template>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
         <div class="documents" v-if="project?.state === 'FINISHED'">
@@ -249,25 +288,25 @@
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
-                          text="Upload publication" :call-refreh-context="refreshContext" :is-file="true"/>
+                          text="Upload publication" :call-refresh-context="refreshContext" :is-file="true"/>
             <br/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
-                          text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false"/>
+                          text="Upload publication URL" :call-refresh-context="refreshContext" :is-file="false"/>
           </div>
         </div>
-        <div class="documents" v-if="!existsDraftDialog || draftDialogStepper.currentStep === DialogStep.SUMMARY">
+        <div class="documents" v-if="!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY">
           <div class="box-header">Documents</div>
           <div style="padding: 2%">
             <div style="display:flex; flex-flow:row;  width:100% ">
               <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
-                            text="Upload document" :call-refreh-context="refreshContext" :is-file="true"/>
+                            text="Upload document" :call-refresh-context="refreshContext" :is-file="true"/>
 
               <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
-                            text="Upload document URL" :call-refreh-context="refreshContext" :is-file="false"/>
+                            text="Upload document URL" :call-refresh-context="refreshContext" :is-file="false"/>
             </div>
             <br/>
             <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
@@ -281,40 +320,49 @@
 
 
     <div :class="showRightPanel ? 'custom-width-notifications' : 'open-right-panel'">
-      <button style="" @click="showRightPanel=true" class="btn" v-if="!showRightPanel" data-toggle="tooltip" data-placement="top" title="Show ToDos & Notifications">
-        <i style="font-size: 20px" class="bi bi-chevron-double-left"></i> <!-- Schließsymbol für Progress -->
+      <button style="" @click="showRightPanel=true" class="btn" v-if="!showRightPanel" data-toggle="tooltip"
+              data-placement="top" title="Show ToDos & Notifications">
+        <i style="font-size: 20px" class="bi bi-chevron-double-left"></i> <!-- Close symbol for Progress -->
       </button>
       <div v-if="showRightPanel">
         <div class="box-header" style="display:flex; flex-flow:row; justify-content:space-between;padding-bottom:0px; ">
           <div style="display:flex; flex-flow:row;">
-            <div class="notification-tab" :class="{ 'active': !showNotification }" @click="toggleNotification">TODO</div>
-            <div class="notification-tab" :class="{ 'active': showNotification }" @click="toggleNotification">Notifications</div>
+            <div class="notification-tab" :class="{ 'active': !showNotification }" @click="toggleNotification">TODO
+            </div>
+            <div class="notification-tab" :class="{ 'active': showNotification }" @click="toggleNotification">
+              Notifications
+            </div>
           </div>
-          <button style="padding: 0 15px 0 0; margin-bottom: 5px" @click="showRightPanel=false" class="btn" v-if="showRightPanel" data-toggle="tooltip" data-placement="top" title="Hide Panel">
-            <i style="font-size: 20px" class="bi bi-chevron-double-right"></i> <!-- Schließsymbol für Progress -->
+          <button style="padding: 0 15px 0 0; margin-bottom: 5px" @click="showRightPanel=false" class="btn"
+                  v-if="showRightPanel" data-toggle="tooltip" data-placement="top" title="Hide Panel">
+            <i style="font-size: 20px" class="bi bi-chevron-double-right"></i> <!-- Close symbol for Progress -->
           </button>
         </div>
 
         <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
                          :show-notification="showNotification" :call-toggle-notification="toggleNotification"
-                         :notifications="notifications" :call-update-notifications="fetchNotifications" :show-in-panel="false"
+                         :notifications="notifications" :call-update-notifications="fetchNotifications"
+                         :show-in-panel="false"
         />
 
         <div v-if="!showNotification">
           <div v-if="extendedExplanations.size > 0" class="notification-box">
-            <div v-for="(explanation, index) in Array.from(extendedExplanations.values())" :key="index" class="card mb-3">
+            <div v-for="(explanation, index) in Array.from(extendedExplanations.values())" :key="index"
+                 class="card mb-3">
               <div class="card-body">
                 <div style="display:flex; flex-flow: row;">
                   <div class="todo-circle"><span>#{{ explanation.number }}</span></div>
-                  <h5 class="card-title">{{ explanation.message }}</h5>
+                  <h5 class="card-title" v-html="explanation.message"></h5>
                 </div>
               </div>
             </div>
           </div>
-          <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED'" class="notification-box">
+          <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED'"
+               class="notification-box">
             <div class="card mb-3">
               <div class="card-body">
-                <h5 class="card-title">No action is required at the moment. Please wait for the next notification, which will
+                <h5 class="card-title">No action is required at the moment. Please wait for the next notification, which
+                  will
                   also be sent to you via email.</h5>
               </div>
             </div>
@@ -336,11 +384,13 @@ import {
   DataShieldProjectStatus,
   EditProjectParam,
   Explanations,
+  FormField,
+  FormTemplate,
+  FormTitle,
   Module,
   Notification,
   Project,
   ProjectDocument,
-  ProjectField,
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,
@@ -355,18 +405,19 @@ import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
-import {DialogStep, DialogStepper} from "@/services/dialogStep";
+import {DialogStepper, FixedDialogStep} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
+import {ProjectField} from "@/services/utils";
 
 
 export default defineComponent({
   computed: {
     DialogStep() {
-      return DialogStep
+      return FixedDialogStep
     },
     ProjectRole() {
       return ProjectRole
@@ -424,7 +475,6 @@ export default defineComponent({
       existsVotum: false,
       existsVotumForAllBridgeheads: false,
       existsAuthenticationScript: false,
-      existsApplicationForm: false,
       existsScript: false,
       projectConfigurations: new Map() as Map<string, Project>,
       projectConfigurationLabels: [] as string[],
@@ -433,7 +483,6 @@ export default defineComponent({
       projectRoles: [] as ProjectRole[],
       draftDialogStepper: new DialogStepper() as DialogStepper,
       existsDraftDialog: false,
-      applicationFormDescription: {} as ProjectDocument,
       scriptDescription: {} as ProjectDocument,
       votumDescription: {} as ProjectDocument,
       votumForAllBridgeheadsDescription: {} as ProjectDocument,
@@ -451,7 +500,10 @@ export default defineComponent({
       currentUsers: [] as User[],
       creatorAcceptance: 'CREATED',
       existsResearchEnvironmentWorkspace: false,
-      researchEnvironmentUrl: undefined as string | undefined
+      researchEnvironmentUrl: undefined as string | undefined,
+      formTemplates: [] as FormTemplate[],
+      formTitles: [] as FormTitle[],
+      formFields: [] as FormField[]
     };
   },
   watch: {
@@ -467,34 +519,29 @@ export default defineComponent({
     async project(newValue, oldValue) {
       await this.initializeProjectRelatedData();
     },
-    'draftDialogStepper.currentStep': function(newValue, oldValue) {
+    'draftDialogStepper.currentStep': function (newValue, oldValue) {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    existsScript(newValue, oldValue){
+    existsScript(newValue, oldValue) {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    existsAuthenticationScript(newValue, oldValue){
+    existsAuthenticationScript(newValue, oldValue) {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    existsApplicationForm(newValue, oldValue){
-      this.extendedExplanations = this.fetchExtendedExplanations();
-      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
-      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
-    },
-    existsVotum(newValue, oldValue){
+    existsVotum(newValue, oldValue) {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    existInvitedUsers(newValue, oldValue){
+    existInvitedUsers(newValue, oldValue) {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    currentUser(newValue, oldValue){
+    currentUser(newValue, oldValue) {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    currentProjectConfiguration(newValue, oldValue){
-      if (newValue !== 'CUSTOM'){
-        this.draftDialogStepper.filterStep(DialogStep.OUTPUT);
+    currentProjectConfiguration(newValue, oldValue) {
+      if (newValue !== 'CUSTOM') {
+        this.draftDialogStepper.filterStep(FixedDialogStep.OUTPUT);
       } else {
-        this.draftDialogStepper.removeFilteredStep(DialogStep.OUTPUT);
+        this.draftDialogStepper.removeFilteredStep(FixedDialogStep.OUTPUT);
       }
     }
   },
@@ -555,13 +602,29 @@ export default defineComponent({
     },
 
     fetchIfProjectHasAllMandatoryFields(): boolean {
-      return Boolean(this.project && this.project.label && this.project.query && this.bridgeheads && this.project.type &&
-          this.project.queryFormat && this.project.outputFormat && this.project.templateId && this.existsApplicationForm);
+      const baseFieldsValid = Boolean(
+          this.project &&
+          this.project.label &&
+          this.project.query &&
+          this.bridgeheads &&
+          this.project.type &&
+          this.project.queryFormat &&
+          this.project.outputFormat &&
+          this.project.templateId
+      );
+
+      const mandatoryFormFieldsValid = this.formFields
+          ?.filter(field => field.mandatory)
+          .every(field => field.value != null && field.value !== '');
+
+      return baseFieldsValid && mandatoryFormFieldsValid;
     },
 
     fetchTooltipTextForCreateButton() {
       let result = '';
-      if (this.project){
+
+      if (this.project) {
+        // ✅ project-level fields stay inline
         result = this.addMissingField(result, 'title', this.project.label);
         result = this.addMissingField(result, 'query', this.project.query);
         result = this.addMissingField(result, 'bridgeheads', this.bridgeheads);
@@ -569,12 +632,35 @@ export default defineComponent({
         result = this.addMissingField(result, 'query format', this.project.queryFormat);
         result = this.addMissingField(result, 'output format', this.project.outputFormat);
         result = this.addMissingField(result, 'template id', this.project.templateId);
-        result = this.addMissingField(result, 'application form', this.existsApplicationForm);
+
+        // 👇 group missing mandatory form fields
+        const groupedMissingFields = this.formFields
+            ?.filter(field => field.mandatory && !field.value)
+            .reduce((acc, field) => {
+              const title = field.titleDisplayName ?? field.title;
+              const label = field.labelDisplayName ?? field.label;
+
+              if (!acc[title]) acc[title] = [];
+              acc[title].push(label);
+              return acc;
+            }, {} as Record<string, string[]>);
+
+        // Create blocks for each title
+        const blocks = Object.entries(groupedMissingFields ?? {}).map(
+            ([title, fields]) => `<strong>${title}</strong>: ${fields.join(', ')}`
+        );
+
+        // If there are blocks, append them with two line-breaks between
+        if (blocks.length > 0) {
+          result += (result.length > 0 ? '<br><br>' : '') + blocks.join('<br><br>');
+        }
       }
-      return (result.length > 0) ? 'missing fields: ' + result : result;
+
+      return result.length > 0 ? 'missing fields:<br><br>' + result : result;
     },
 
-    addMissingField(result: string, field: string, value: any): string{
+
+    addMissingField(result: string, field: string, value: any): string {
       return (!value) ? result + ((result.length > 0) ? ', ' : '') + field : result;
     },
 
@@ -584,8 +670,6 @@ export default defineComponent({
 
     async initializeProjectRelatedData() {
       if (this.project) {
-        this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
-        this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
         this.existsDraftDialog = (this.project.state === 'DRAFT' && AuthService.getEmail() === this.project.creatorEmail);
         await Promise.all([
           this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), async (result: Bridgehead[]) => {
@@ -619,12 +703,6 @@ export default defineComponent({
               await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION_ACTION, new Map(), 'votumForAllBridgeheadsDescription');
             }
           }),
-          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), async (result: boolean) => {
-            this.existsApplicationForm = result;
-            if (this.existsApplicationForm) {
-              await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_APPLICATION_FORM_DESCRIPTION_ACTION, new Map(), 'applicationFormDescription');
-            }
-          }),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), async (result: boolean) => {
             this.existsScript = result;
             if (this.existsScript) {
@@ -638,7 +716,11 @@ export default defineComponent({
             this.canShowBridgeheadAdminButtons = this.fetchIfCanShowBridgeheadAdminButtons();
           }),
           this.initializeData(Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, new Map(), 'currentUser'),
-          this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment')
+          this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment'),
+          this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async result => {
+            this.addFormFields(result);
+          }),
+          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_TEMPLATES_ACTION, new Map(), 'formTemplates')
         ]);
         if (this.project.type) {
           const params = new Map<string, string>;
@@ -649,10 +731,37 @@ export default defineComponent({
           }
         }
         this.fetchButtons()
-        this.checkButtonVisibility()
+        await this.checkButtonVisibility()
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
       }
+    },
+
+    addFormFields(formFieldArray: FormField[]): void {
+      this.formFields = formFieldArray;
+      this.formTitles = [];
+
+      const seenTitles = new Set<string>(); // <-- move outside the loop
+
+      for (const field of formFieldArray) {
+        const key = field.title;
+
+        // ---- Titles list ----
+        if (!seenTitles.has(key)) {
+          seenTitles.add(key);
+
+          this.formTitles.push({
+            title: field.title,
+            titleDisplayName: field.titleDisplayName,
+            titleDescription: field.titleDescription,
+          });
+        }
+
+        this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+        this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
+      }
+
+      this.draftDialogStepper.addFormTitles(this.formTitles);
     },
 
     async fetchNotifications() {
@@ -712,6 +821,30 @@ export default defineComponent({
     fetchIfCanShowBridgeheadAdminButtons(): boolean {
       return (this.project && (this.project.state == 'DEVELOP' || this.project.state == 'PILOT')) ? this.existInvitedUsers : true;
     },
+    buildDynamicProjectFields(formFields: FormField[]): ProjectField[] {
+      return formFields.map(formField => ({
+        fieldKey: formField.labelDisplayName ?? formField.label,
+        fieldValue: formField.value != null ? [formField.value] : [],
+        editProjectParam: [EditProjectParam.FORM_FIELDS],
+        isEditable: true,
+        action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
+        transformForSending: this.buildTransformForSending(formField),
+        visibilityCondition:
+            !this.existsDraftDialog ||
+            this.draftDialogStepper.currentStep?.id === formField.title ||
+            this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+      }));
+    },
+
+    buildTransformForSending(formField: FormField): (input: string) => any {
+      return (input: string) => {
+        return [{
+          title: formField.title,
+          label: formField.label,
+          value: input
+        }];
+      };
+    },
 
     getProjectStates(): string[] {
       let visibleProjectStates: string[] = this.projectStates.slice();
@@ -731,32 +864,27 @@ export default defineComponent({
 
     fetchExtendedExplanations(): Explanations {
       const extendedExplanations = new Map(this.explanations)
-      if (this.existsApplicationForm){
-        this.removeActionExplanation(Action.UPLOAD_APPLICATION_FORM_ACTION, extendedExplanations);
-      } else {
-        this.removeActionExplanation(Action.DOWNLOAD_APPLICATION_FORM_ACTION, extendedExplanations);
-      }
-      if (this.existsVotum){
+      if (this.existsVotum) {
         this.removeActionExplanation(Action.UPLOAD_VOTUM_ACTION, extendedExplanations);
       } else {
         this.removeActionExplanation(Action.DOWNLOAD_VOTUM_ACTION, extendedExplanations);
       }
-      if (this.existsScript){
+      if (this.existsScript) {
         this.removeActionExplanation(Action.UPLOAD_SCRIPT_ACTION, extendedExplanations);
-      } else{
+      } else {
         this.removeActionExplanation(Action.DOWNLOAD_SCRIPT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.ACCEPT_SCRIPT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.REJECT_SCRIPT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.REQUEST_SCRIPT_CHANGES_ACTION, extendedExplanations);
       }
-      if (!this.currentUser){
+      if (!this.currentUser) {
         this.removeActionExplanation(Action.DOWNLOAD_SCRIPT_ACTION, extendedExplanations);
       }
-      if (!this.existsAuthenticationScript){
+      if (!this.existsAuthenticationScript) {
         this.removeActionExplanation(Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION, extendedExplanations);
       }
-      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN)){
-        if (!this.canShowBridgeheadAdminButtons){
+      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN)) {
+        if (!this.canShowBridgeheadAdminButtons) {
           this.removeActionExplanation(Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
           this.removeActionExplanation(Action.REJECT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
           this.removeActionExplanation(Action.REQUEST_CHANGES_IN_PROJECT_ACTION, extendedExplanations);
@@ -768,72 +896,72 @@ export default defineComponent({
           this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
         }
       }
-      if (!this.existInvitedUsers && !this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN)){
+      if (!this.existInvitedUsers && !this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN)) {
         this.removeActionExplanation(Action.SET_DEVELOPER_USER_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SET_PILOT_USER_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
       }
       let count = extendedExplanations.size + 1;
       if (this.existsDraftDialog) {
-        if (this.draftDialogStepper.currentStep === DialogStep.PROJECT) { // Project
+        if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT) { // Project
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please provide the general project information to proceed."
           });
-          count ++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.SERVICES) { // Services
+          count++;
+        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES) { // Services
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration."
           });
-          count ++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.QUERY && !this.project?.query) { // Query
+          count++;
+        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY && !this.project?.query) { // Query
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."
           });
-          count ++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.OUTPUT && (!this.project?.outputFormat || !this.project?.templateId) ) { // Output
+          count++;
+        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT && (!this.project?.outputFormat || !this.project?.templateId)) { // Output
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."
           });
-          count ++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.SUMMARY) { // Summary
+          count++;
+        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY) { // Summary
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please check all of the fields in the summary and click 'Create' if everything seems OK."
           });
-          count ++;
-          if (this.tooltipTextForCreateButton?.length > 0){
+          count++;
+          if (this.tooltipTextForCreateButton?.length > 0) {
             extendedExplanations.set(count.toString(), {
               number: count,
               message: 'To proceed with creating the project, kindly fill in the following ' + this.tooltipTextForCreateButton
             });
-            count ++;
+            count++;
           }
         }
       }
       if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) &&
           this.activeBridgehead?.queryState != 'CREATED' &&
           this.activeBridgehead?.queryState != 'FINISHED' &&
-          this.activeBridgehead?.queryState != 'ERROR'){
+          this.activeBridgehead?.queryState != 'ERROR') {
         extendedExplanations.set(count.toString(), {
           number: count,
           message: "Please access the Teiler, review the query, and execute it. Note that the query may take some time to arrive at the Teiler. You can find the query in the Exporter app of the Teiler. Once the execution is complete, return here for further instructions."
         });
-        count ++;
+        count++;
       }
       return extendedExplanations
     },
 
     removeActionExplanation(action: Action, explanations: Explanations) {
       const explanation = explanations.get(action);
-      if (explanation){
+      if (explanation) {
         const explanationNumber = explanation.number;
         explanations.delete(action);
         explanations.forEach((value, key) => {
-          if (value.number > explanationNumber){
+          if (value.number > explanationNumber) {
             value.number--;
           }
         })
@@ -844,36 +972,40 @@ export default defineComponent({
       return buttonGroup.button?.map((button) => this.explanations?.get(button.action)?.number).filter((number): number is number => number !== undefined) || []
     },
 
-    goToReseachEnvironment() {
-      if (this.researchEnvironmentUrl){
+    goToResearchEnvironment() {
+      if (this.researchEnvironmentUrl) {
         window.open(this.researchEnvironmentUrl, '_blank');
       }
     },
 
     getProjectFields(): ProjectField[] {
-      return [
+      const fixedFields: ProjectField[] = [
         {
           fieldKey: "Title",
-          fieldValue: [this.project?.label],
+          fieldValue: this.project?.label ? [this.project.label] : [],
           editProjectParam: [EditProjectParam.LABEL],
           isEditable: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Description",
-          fieldValue: [this.project?.description],
+          fieldValue: this.project?.description ? [this.project.description] : [],
           editProjectParam: [EditProjectParam.DESCRIPTION],
           isEditable: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Sites",
-          fieldValue: [this.bridgeheads.map(bridghead => bridghead.humanReadable), this.allBridgeheads.map(bridghead => bridghead.humanReadable)],
+          fieldValue: [],
+          bridgeheads: {
+            selected: this.bridgeheads,
+            available: this.allBridgeheads,
+          },
           editProjectParam: [EditProjectParam.BRIDGEHEADS],
           isEditable: true,
-          redirectUrl: this.project?.explorerUrl,
+          redirectUrl: this.project?.explorerUrl ?? undefined,
           transformForSending: (humanReadable: string) => this.allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Configuration",
@@ -882,65 +1014,56 @@ export default defineComponent({
           isEditable: true,
           possibleValues: this.projectConfigurationLabels,
           configurations: this.projectConfigurations,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SERVICES || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+          action: Action.SET_PROJECT_CONFIGURATION_ACTION
         },
         {
           fieldKey: "Type",
-          fieldValue: [this.project?.type],
+          fieldValue: this.project?.type ? [this.project.type] : [],
           editProjectParam: [EditProjectParam.PROJECT_TYPE],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
           possibleValues: this.projectTypes,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.OUTPUT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Query",
-          fieldValue: [this.project?.humanReadable, this.project?.query],
+          fieldValue: (this.project?.humanReadable && this.project?.query) ? [this.project.humanReadable, this.project.query] : [],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
           isEditable: true,
-          redirectUrl: this.project?.explorerUrl,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.QUERY || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          redirectUrl: this.project?.explorerUrl ?? undefined,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Query Format",
-          fieldValue: [this.project?.queryFormat],
+          fieldValue: this.project?.queryFormat ? [this.project.queryFormat] : [],
           editProjectParam: [EditProjectParam.QUERY_FORMAT],
           isEditable: true,
-          redirectUrl: this.project?.explorerUrl,
+          redirectUrl: this.project?.explorerUrl ?? undefined,
           possibleValues: this.queryFormats,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.QUERY || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Output Format",
-          fieldValue: [this.project?.outputFormat],
+          fieldValue: this.project?.outputFormat ? [this.project.outputFormat] : [],
           editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('outputFormat'),
           possibleValues: this.outputFormats,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.OUTPUT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Template ID",
-          fieldValue: [this.project?.templateId],
+          fieldValue: this.project?.templateId ? [this.project.templateId] : [],
           editProjectParam: [EditProjectParam.TEMPLATE_ID],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('templateId'),
           possibleValues: this.exporterTemplateIds,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.OUTPUT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Environment Variables",
-          fieldValue: [this.project?.queryContext],
+          fieldValue: this.project?.queryContext ? [this.project.queryContext] : [],
           editProjectParam: [EditProjectParam.QUERY_CONTEXT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('queryContext'),
-          visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === 'CUSTOM' && this.draftDialogStepper.currentStep === DialogStep.OUTPUT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Application form",
-          fieldValue: [this.applicationFormDescription.label, this.applicationFormDescription.originalFilename],
-          isEditable: true,
-          existFile: this.existsApplicationForm,
-          uploadAction: this.Action.UPLOAD_APPLICATION_FORM_ACTION,
-          downloadAction: this.Action.DOWNLOAD_APPLICATION_FORM_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === 'CUSTOM' && this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Votum",
@@ -950,7 +1073,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.project?.state !== 'DRAFT' && (!this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SUMMARY)
+          visibilityCondition: this.project?.state !== 'DRAFT' && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Votum for all bridgeheads",
@@ -960,7 +1083,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.project?.state !== 'DRAFT' && (!this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SUMMARY)
+          visibilityCondition: this.project?.state !== 'DRAFT' && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Script",
@@ -970,7 +1093,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_SCRIPT_ACTION,
           downloadAction: this.Action.DOWNLOAD_SCRIPT_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.dataShieldStatus && (!this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SUMMARY)
+          visibilityCondition: !!this.dataShieldStatus && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Authentication Script",
@@ -979,9 +1102,12 @@ export default defineComponent({
           existFile: this.existsAuthenticationScript,
           downloadAction: this.Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION,
           downloadModule: this.Module.TOKEN_MANAGER_MODULE,
-          visibilityCondition: this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && this.existsAuthenticationScript
+          visibilityCondition: !!this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && this.existsAuthenticationScript
         }
-      ] as ProjectField[]
+      ];
+      const dynamicFields = this.buildDynamicProjectFields(this.formFields);
+
+      return [...fixedFields, ...dynamicFields];
     },
 
     fetchButtons(): void {
@@ -1123,7 +1249,7 @@ export default defineComponent({
               refreshContextCallFunction: this.refreshContext as () => void,
               text: "Go", withMessage: false, cssClass: "btn btn-primary mr-2",
               visibilityCondition: this.researchEnvironmentUrl !== undefined && this.existsResearchEnvironmentWorkspace,
-              doActionOnClick: this.goToReseachEnvironment as () => void
+              doActionOnClick: this.goToResearchEnvironment as () => void
             }
           ] as ActionButton[]
         },
@@ -1131,9 +1257,12 @@ export default defineComponent({
           label: "Teiler",
           button: [
             {
-              module: Module.EXPORT_MODULE, action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
+              module: Module.EXPORT_MODULE,
+              action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
               refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: (this.activeBridgehead?.queryState === 'FINISHED') ? "Resend Query" : "Send Query", withMessage: false, cssClass: "btn btn-primary mr-2",
+              text: (this.activeBridgehead?.queryState === 'FINISHED') ? "Resend Query" : "Send Query",
+              withMessage: false,
+              cssClass: "btn btn-primary mr-2",
               visibilityCondition: this.canShowBridgeheadAdminButtons
             },
             {
@@ -1156,7 +1285,7 @@ export default defineComponent({
                   const visibility2 = await this.projectManagerBackendService.isModuleActionActive(button.module, button.action);
                   // Check if a button is visible and the flag hasn't been set to true yet
                   if (visibility1 && visibility2 && !this.isAnyButtonVisible) {
-                    this.isAnyButtonVisible = true; // Set flag to true immediately if a visible button is found
+                    this.isAnyButtonVisible = true; // Set the flag to true immediately if a visible button is found
                     flagChanged = true;  // Mark the flag as changed
                   }
                   return visibility1 && visibility2;
@@ -1167,7 +1296,7 @@ export default defineComponent({
           })
       );
 
-      // If the flag changed, trigger watcher by updating the property
+      // If the flag changed, trigger the watcher by updating the property
       if (flagChanged) {
         // You can put any additional logic to notify the watcher if necessary here
       }
@@ -1194,6 +1323,7 @@ export default defineComponent({
   border-right: 1px solid #95c8dc;
   border-radius: 10px 10px 0 0;
 }
+
 .stepper {
   display: flex;
   width: 100%;
@@ -1218,30 +1348,34 @@ export default defineComponent({
   flex-direction: column;
   background-color: white;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
   margin-bottom: 1.5%;
 }
+
 .data-container {
   display: flex;
   flex-direction: column;
   background-color: white;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
   height: 100%;
   margin-bottom: 1.5%;
 }
+
 .project-actions {
   background-color: white;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
   margin-bottom: 1.5%;
 }
+
 .documents {
   background-color: white;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
   margin-bottom: 1.5%;
 }
+
 .main-container {
   display: flex;
   flex-flow: row;
@@ -1258,7 +1392,7 @@ export default defineComponent({
   margin-bottom: 5%;
   background-color: white;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
 }
 
 .right-container {
@@ -1269,7 +1403,7 @@ export default defineComponent({
 }
 
 .main-content {
-  display:flex;
+  display: flex;
   flex-flow: column;
   width: 100%;
 }
@@ -1340,20 +1474,24 @@ export default defineComponent({
   font-size: 16px;
   padding-top: 2px;
 }
+
 .active-step {
   font-weight: bold;
 }
+
 .active-step .step-circle {
   background-color: #007bff;
 }
+
 .notification-box {
   padding: 2%;
   font-family: "Calibri Light";
 }
+
 .todo-circle {
   min-width: 32px;
   height: 32px;
-  background-color:gold;
+  background-color: gold;
   color: #000;
   border: 1px solid black;
   border-radius: 50%;
@@ -1364,10 +1502,11 @@ export default defineComponent({
   font-size: 12pt;
   font-weight: bold;
 }
+
 .todo-circle-small {
   min-width: 22px;
   height: 22px;
-  background-color:gold;
+  background-color: gold;
   color: #000;
   border: 1px solid black;
   border-radius: 50%;
@@ -1378,6 +1517,7 @@ export default defineComponent({
   font-weight: bold;
   font-size: 9pt;
 }
+
 .custom-width-notifications {
   width: 22%;
   background-color: white;
@@ -1388,11 +1528,12 @@ export default defineComponent({
   overflow-y: auto;
   transition: transform 0.3s ease-in-out;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
   margin-top: 1.5%;
   margin-bottom: 5%;
   margin-right: 0.5%;
 }
+
 .open-right-panel {
   margin-top: 1.5%;
 }
@@ -1405,19 +1546,23 @@ export default defineComponent({
   border-radius: 10px;
   background-color: rgba(149, 200, 220, 0.1);
 }
+
 .button-container {
   display: flex;
   justify-content: flex-end;
   text-align: center;
 }
+
 .inviteUser {
   padding: 2%;
   display: flex;
 }
+
 .status-table-header {
   background-color: #f2f2f2;
   vertical-align: middle;
 }
+
 .explanation-box {
   border: 1px solid red;
   padding: 10px;
@@ -1431,6 +1576,7 @@ export default defineComponent({
   font-weight: bold;
   margin: 5px 0;
 }
+
 .button-group-box {
   border: 1px solid lightgrey;
   border-radius: 5px;
@@ -1440,6 +1586,7 @@ export default defineComponent({
   margin-right: 2%;
   margin-top: 1%;
 }
+
 .button-group-label {
   border: 1px solid lightgrey;
   border-radius: 5px;
@@ -1452,22 +1599,26 @@ export default defineComponent({
   margin-right: 15px;
   display: flex;
 }
+
 .explanation-button {
   background-color: #007bff;
   color: white;
-  width:auto;
+  width: auto;
   font-size: x-large;
   padding: 0 1px;
   height: 22px;
 }
+
 .explanation-button i {
   position: relative;
   top: -9px;
 }
+
 .explanation-button:hover {
   background-color: black;
-  color:white;
+  color: white;
 }
+
 .notification-button {
   background: none;
   border: none;
@@ -1476,14 +1627,17 @@ export default defineComponent({
   font-size: x-large;
   padding: 0 0 0 15px;
 }
+
 .table-overview td {
   vertical-align: middle;
 }
+
 .copy-button {
   background: none;
   border: none;
   color: black;
 }
+
 .state_circle {
   margin: 10px auto;
 }
@@ -1496,10 +1650,12 @@ export default defineComponent({
   font-weight: normal;
   cursor: pointer;
 }
+
 .notification-tab.active {
   font-weight: bold;
   background-color: white;
 }
+
 .states-circle-container {
   display: flex;
   justify-content: center;

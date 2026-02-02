@@ -31,7 +31,7 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/project-view',
         name: 'ProjectView',
-        meta: {title: 'Data Science Orchestrator'},
+        meta: {title: 'Samply.Requester'},
         component: ProjectView,
         props: (route) => ({
             projectCode: route.query['project-code'] // Accessing the project-code query parameter
@@ -40,7 +40,7 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/',
         name: 'ProjectDashboard',
-        meta: {title: 'Data Science Orchestrator'},
+        meta: {title: 'Samply.Requester'},
         component: ProjectDashboard,
     },
     {

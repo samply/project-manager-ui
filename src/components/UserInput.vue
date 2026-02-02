@@ -25,7 +25,7 @@ import UserAndEmail from "@/components/UserAndEmail.vue";
   }
 })
 export default class UserInput extends Vue {
-  @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
+  @Prop({type: Function, required: true}) readonly callRefreshContext!: () => void;
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly project!: Project;
@@ -88,7 +88,7 @@ export default class UserInput extends Vue {
     const context = (this.selectedBridgehead) ? this.createContext(this.selectedBridgehead) : this.context;
     this.projectManagerBackendService.fetchData(Module.USER_MODULE, this.fetchAction(), context, params).then(result => {
       this.partialEmail = '';
-      this.callRefrehContext();
+      this.callRefreshContext();
     });
   }
 

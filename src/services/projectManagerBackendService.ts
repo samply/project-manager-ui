@@ -151,7 +151,8 @@ export enum EditProjectParam {
     HUMAN_READABLE = "human-readable",
     PROJECT_TYPE = "project-type",
     QUERY_CONTEXT = "query-context",
-    FORM_FIELDS = "form-fields"
+    FORM_FIELDS = "form-fields",
+    FORM_TEMPLATE = "form-template"
 }
 
 export interface Project {

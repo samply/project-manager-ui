@@ -107,6 +107,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - View and edit form fields
 - Form Field New Groups to generate titles in project field row
 - Sections in project field rows
+- Download Form Template PDF Buttons
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

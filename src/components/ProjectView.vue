@@ -303,6 +303,10 @@
         <div class="documents" v-if="!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY">
           <div class="box-header">Documents</div>
           <div style="padding: 2%">
+            <DownloadFormTemplatePdfButtons :form-templates="formTemplates" :context="context"
+                                            :project-manager-backend-service="projectManagerBackendService"/>
+          </div>
+          <div style="padding: 2%">
             <div style="display:flex; flex-flow:row;  width:100% ">
               <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
@@ -416,6 +420,7 @@ import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
 import {Section, ProjectField} from "@/services/utils";
+import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
 
 
 export default defineComponent({
@@ -443,6 +448,7 @@ export default defineComponent({
     }
   },
   components: {
+    DownloadFormTemplatePdfButtons,
     DownloadButton,
     UserAndEmail,
     ResultsBox,

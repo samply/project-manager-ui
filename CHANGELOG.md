@@ -106,6 +106,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Dynamic and Fixed dialog steps
 - View and edit form fields
 - Form Field New Groups to generate titles in project field row
+- Sections in project field rows
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

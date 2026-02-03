@@ -252,6 +252,7 @@
                       draftDialogStepper.currentStep?.id === DialogStep.SUMMARY)"
                       :field-key="projectField.fieldKey"
                       :field-value="projectField.fieldValue"
+                      :field-description="projectField.fieldDescription"
                       :bridgeheads="projectField.bridgeheads"
                       :action="projectField.action"
                       :module="projectField.module"
@@ -267,7 +268,9 @@
                       :download-module="projectField.downloadModule"
                       :todos="extendedExplanations"
                       :visible-bridgeheads="visibleBridgeheads"
-                      :groups="projectField.groups"
+                      :mandatory="projectField.mandatory"
+                      :type="projectField.type"
+                      :section="projectField.section"
                       :call-refresh-context="refreshContext"
                       :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : NaN"
                       :context="context" :project-manager-backend-service="projectManagerBackendService"/>
@@ -412,7 +415,7 @@ import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
-import {Groups, ProjectField} from "@/services/utils";
+import {Section, ProjectField} from "@/services/utils";
 
 
 export default defineComponent({
@@ -827,6 +830,9 @@ export default defineComponent({
         fieldKey: formField.labelDisplayName ?? formField.label,
         fieldValue: formField.value != null ? [formField.value] : [],
         editProjectParam: [EditProjectParam.FORM_FIELDS],
+        mandatory: formField.mandatory,
+        fieldDescription: formField.labelDescription,
+        type: formField.type,
         isEditable: true,
         action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
         transformForSending: this.buildTransformForSending(formField),
@@ -835,7 +841,7 @@ export default defineComponent({
             this.draftDialogStepper.currentStep?.id === formField.title ||
             this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
 
-        groups: new Groups(formFields, index)
+        section: new Section(formFields, index)
       }));
     },
 
@@ -988,6 +994,7 @@ export default defineComponent({
           fieldValue: this.project?.label ? [this.project.label] : [],
           editProjectParam: [EditProjectParam.LABEL],
           isEditable: true,
+          mandatory: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
@@ -1006,6 +1013,7 @@ export default defineComponent({
           },
           editProjectParam: [EditProjectParam.BRIDGEHEADS],
           isEditable: true,
+          mandatory: true,
           redirectUrl: this.project?.explorerUrl ?? undefined,
           transformForSending: (humanReadable: string) => this.allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
@@ -1026,6 +1034,7 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.PROJECT_TYPE],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
           possibleValues: this.projectTypes,
+          mandatory: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
@@ -1033,6 +1042,7 @@ export default defineComponent({
           fieldValue: (this.project?.humanReadable && this.project?.query) ? [this.project.humanReadable, this.project.query] : [],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
           isEditable: true,
+          mandatory: true,
           redirectUrl: this.project?.explorerUrl ?? undefined,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
@@ -1043,6 +1053,7 @@ export default defineComponent({
           isEditable: true,
           redirectUrl: this.project?.explorerUrl ?? undefined,
           possibleValues: this.queryFormats,
+          mandatory: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
@@ -1051,6 +1062,7 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('outputFormat'),
           possibleValues: this.outputFormats,
+          mandatory: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
@@ -1059,6 +1071,7 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.TEMPLATE_ID],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('templateId'),
           possibleValues: this.exporterTemplateIds,
+          mandatory: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {

@@ -3,8 +3,7 @@ import {
     Bridgehead,
     EditProjectParam,
     Explanations,
-    FormField,
-    FormFieldGroup,
+    FormDataType, FormField, FormFieldGroup,
     Module,
     Project
 } from "@/services/projectManagerBackendService";
@@ -18,6 +17,7 @@ export interface ProjectField {
     fieldKey: string
     editProjectParam?: EditProjectParam[]
     fieldValue: string[]
+    fieldDescription?: string
     bridgeheads?: BridgeheadsProjectField
     redirectUrl?: string
     isEditable: boolean
@@ -33,7 +33,9 @@ export interface ProjectField {
     visibilityCondition: boolean
     action?: Action
     module?: Module,
-    groups?: Groups
+    section?: Section,
+    mandatory?: boolean
+    type?: FormDataType
 }
 
 
@@ -55,7 +57,7 @@ export interface NewSection {
     description?: string;
 }
 
-export class Groups {
+export class Section {
     private formFields: FormField[];
     private index: number;
 
@@ -145,6 +147,25 @@ export class Groups {
     fetchFieldLevel(): number {
         return this.getCurrentGroups().length;
     }
+
+    /**
+     * Returns the change in group depth compared to the previous field.
+     * Positive → current field is deeper
+     * Negative → current field is shallower
+     * 0 → same level
+     */
+    fetchLevelChange(): number {
+        const currentGroups = this.getCurrentGroups() ?? [];
+        const previousGroups = this.getPreviousGroups() ?? [];
+
+        // Safety: length always a number
+        const currentLength = Array.isArray(currentGroups) ? currentGroups.length : 0;
+        const previousLength = Array.isArray(previousGroups) ? previousGroups.length : 0;
+
+        return currentLength - previousLength;
+    }
+
+
 }
 
 

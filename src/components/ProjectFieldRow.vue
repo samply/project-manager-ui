@@ -7,6 +7,7 @@ import {
   configLabel,
   EditProjectParam,
   Explanations,
+  FormDataType,
   Module,
   Project,
   ProjectManagerBackendService,
@@ -15,7 +16,7 @@ import {
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import {DialogStep, FixedDialogStep} from "@/services/fixedDialogStep";
-import {BridgeheadsProjectField, Groups} from "@/services/utils";
+import {BridgeheadsProjectField, Section} from "@/services/utils";
 
 @Options({
   name: "ProjectFieldRow",
@@ -30,6 +31,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly fieldKey!: string;
   @Prop() readonly editProjectParam!: EditProjectParam[];
   @Prop() readonly fieldValue!: string[];
+  @Prop() readonly fieldDescription!: string[];
   @Prop() readonly bridgeheads?: BridgeheadsProjectField; // Use this for bridgeheads
   @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
   @Prop() readonly context!: ProjectManagerContext;
@@ -45,9 +47,11 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly downloadModule!: Module;
   @Prop() readonly todos?: Explanations;
   @Prop() readonly existsFile!: boolean;
+  @Prop() readonly mandatory!: boolean;
+  @Prop() readonly type!: FormDataType;
   @Prop() readonly draftDialogCurrentStep!: DialogStep;
   @Prop() readonly visibleBridgeheads!: Bridgehead[];
-  @Prop() readonly groups!: Groups;
+  @Prop() readonly section!: Section;
   @Prop({
     type: Function,
     default: (input: string): string => input
@@ -89,15 +93,6 @@ export default class ProjectFieldRow extends Vue {
   }
 
   created() {
-    if (this.groups) {
-      let newSections = this.groups.fetchNewSections();
-      if (newSections && newSections.length > 0) {
-        newSections.forEach(section => {
-          console.log("level: " + section.level + " | group: " + section.displayName);
-        });
-      }
-      console.log("[" + this.groups.fetchFieldLevel() + "] " + this.fieldKey);
-    }
     this.editingBridgeheads = this.bridgeheads
         ? [...this.bridgeheads.selected]
         : [];
@@ -284,6 +279,10 @@ export default class ProjectFieldRow extends Vue {
     return this.possibleValues && this.possibleValues.length > 0;
   }
 
+  isTypeBoolean(): boolean {
+    return this.type === FormDataType.BOOLEAN
+  }
+
   getEditFieldCssClass() {
     if (this.isQuery()) return 'query-edit-field';
     if (this.isDescription()) return 'description-edit-field';
@@ -317,6 +316,33 @@ export default class ProjectFieldRow extends Vue {
 </script>
 
 <template>
+
+  <!-- Section -->
+  <template v-if="section">
+    <template v-for="newSection in section.fetchNewSections()"
+              :key="`${newSection.level}-${newSection.displayName ?? 'root'}`">
+
+      <!-- Spacer row when displayName is undefined -->
+      <tr v-if="!newSection.displayName" class="section-row spacer-row">
+        <td colspan="100">&nbsp;</td>
+      </tr>
+
+      <!-- Regular section row -->
+      <tr v-else class="section-row">
+        <td colspan="100">
+          <div class="section-title"
+               :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
+            {{ newSection.displayName }}
+          </div>
+          <div v-if="newSection.description" class="section-description">
+            {{ newSection.description }}
+          </div>
+        </td>
+      </tr>
+    </template>
+  </template>
+
+
   <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep.id === dialogStep.SERVICES"
       class="config-box-row">
     <td colspan="3">
@@ -364,11 +390,13 @@ export default class ProjectFieldRow extends Vue {
     <td class="bold-text thinner-column" style="background-color: #f2f2f2; max-width: 170px;">
       <div style="display: flex;">
         <span>{{ fieldKey }}</span>
+        <span v-if="this.mandatory">&nbsp*</span>
         <span v-if="todos?.get(this.uploadAction)"
               class="todo-circle-small">#{{ todos?.get(this.uploadAction)?.number }}</span>
         <span v-if="todos?.get(this.downloadAction) && this.existsFile"
               class="todo-circle-small">#{{ todos?.get(this.downloadAction)?.number }}</span>
       </div>
+      <div class="field-description" v-html="fieldDescription"></div>
     </td>
 
     <!-- SECOND COLUMN: CONTENT -->
@@ -386,7 +414,10 @@ export default class ProjectFieldRow extends Vue {
             </div>
             <div v-else style="width:75%">
               <div>
-                <div v-if="isQuery()" style="width: 70%;">
+                <div v-if="isTypeBoolean()" style="width: 70%;">
+                  <input type="checkbox" v-model="editedValue[0]">
+                </div>
+                <div v-else-if="isQuery()" style="width: 70%;">
                   <span><strong>Human readable</strong></span>
                   <input type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;"><br/>
                   <span><strong>Query</strong></span>
@@ -728,4 +759,92 @@ export default class ProjectFieldRow extends Vue {
   color: black;
   width: 100%;
 }
+
+.field-description {
+  font-size: small;
+  font-weight: normal;
+}
+
+/* Regular section rows */
+.section-row {
+  color: white;
+}
+
+/* Spacer row for sections without displayName */
+.section-row.spacer-row td {
+  background-color: transparent; /* no color */
+  height: 0.25rem;               /* smaller vertical space */
+  border-left: none;
+  border-right: none;
+  padding: 0;                     /* remove padding */
+}
+
+/* Section titles */
+.section-title {
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0.75rem 0 0.25rem;
+}
+
+/* Prefix arrows for levels */
+.section-title::before {
+  display: inline-block;
+  margin-right: 0.5rem;
+  opacity: 0.8;
+}
+
+.section-title.level-0::before {
+  content: "";
+}
+
+.section-title.level-1::before {
+  content: "";
+}
+
+.section-title.level-2::before {
+  content: "❯";
+}
+
+.section-title.level-3::before {
+  content: "❯❯";
+}
+
+.section-title.level-4::before {
+  content: "❯❯❯";
+}
+
+/* Font sizes & weights per level */
+.section-title.level-0 {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.section-title.level-1 {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.section-title.level-2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.section-title.level-3 {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.section-title.level-4 {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Section description styling */
+.section-description {
+  font-size: 0.85rem;
+  color: #e0e0e0;
+  margin-left: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
 </style>

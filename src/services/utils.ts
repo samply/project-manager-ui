@@ -3,7 +3,9 @@ import {
     Bridgehead,
     EditProjectParam,
     Explanations,
-    FormDataType, FormField, FormFieldGroup,
+    FormDataType,
+    FormField,
+    FormFieldGroup,
     Module,
     Project
 } from "@/services/projectManagerBackendService";
@@ -31,7 +33,7 @@ export interface ProjectField {
     transformForSending?: (input: string) => string
     draftDialogCurrentStep?: number
     visibilityCondition: boolean
-    action?: Action
+    action?: Action | ActionFunction
     module?: Module,
     section?: Section,
     mandatory?: boolean
@@ -97,7 +99,7 @@ export class Section {
          * grouped → ungrouped
          */
         if (previousLevel > 0 && currentLevel === 0) {
-            sections.push({ level: 0 });
+            sections.push({level: 0});
             return sections;
         }
 
@@ -106,7 +108,7 @@ export class Section {
          * (emit level 0 once, then level 1+ below)
          */
         if (previousLevel === 0 && currentLevel > 0) {
-            sections.push({ level: 0 });
+            sections.push({level: 0});
         }
 
         /**
@@ -169,3 +171,14 @@ export class Section {
 }
 
 
+export class ActionFunction {
+
+    constructor(
+        private readonly fn: (input: string[]) => Action) {
+    }
+
+    fetchAction(input: string[]): Action {
+        return this.fn(input);
+    }
+
+}

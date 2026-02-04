@@ -16,7 +16,7 @@ import {
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import {DialogStep, FixedDialogStep} from "@/services/fixedDialogStep";
-import {BridgeheadsProjectField, Section} from "@/services/utils";
+import {ActionFunction, BridgeheadsProjectField, Section} from "@/services/utils";
 
 @Options({
   name: "ProjectFieldRow",
@@ -37,7 +37,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly redirectUrl?: string;
   @Prop({type: String, default: Module.PROJECT_EDITION_MODULE}) readonly module!: Module;
-  @Prop({type: String, default: Action.EDIT_PROJECT_ACTION}) readonly action!: Action;
+  @Prop({type: String, default: Action.EDIT_PROJECT_ACTION}) readonly action!: Action | ActionFunction;
   @Prop() readonly possibleValues!: string[];
   @Prop() readonly configurations?: Map<string, Project>;
   @Prop() readonly isEditable!: boolean;
@@ -108,11 +108,19 @@ export default class ProjectFieldRow extends Vue {
 
 
   resetIsActionEnabled() {
-    const action = this.uploadAction ? this.uploadAction : this.action;
+    const action = this.fetchAction();
     const module = this.uploadAction ? Module.PROJECT_DOCUMENTS_MODULE : this.module;
     this.projectManagerBackendService
         .isModuleActionActive(module, action)
         .then((isActive) => (this.isActionEnabled = isActive));
+  }
+
+  private fetchAction(): Action {
+    let action = this.uploadAction ? this.uploadAction : this.action;
+    if (action instanceof ActionFunction) {
+      action = action.fetchAction(this.editedValue);
+    }
+    return action;
   }
 
   editField() {
@@ -154,18 +162,15 @@ export default class ProjectFieldRow extends Vue {
       }
 
       this.projectManagerBackendService
-          .fetchData(this.module, this.action, this.context, params)
+          .fetchData(this.module, this.fetchAction(), this.context, params)
           .then(() => this.callRefreshContext());
     }
   }
 
   applyTransformToSend(editedValue: any): any {
-    if (editedValue) {
       return Array.isArray(editedValue)
           ? editedValue.map(input => this.transformForSending(input))
           : this.transformForSending(editedValue);
-    }
-    return "";
   }
 
   includesEditProjectParam(param: EditProjectParam): boolean {
@@ -773,10 +778,10 @@ export default class ProjectFieldRow extends Vue {
 /* Spacer row for sections without displayName */
 .section-row.spacer-row td {
   background-color: transparent; /* no color */
-  height: 0.25rem;               /* smaller vertical space */
+  height: 0.25rem; /* smaller vertical space */
   border-left: none;
   border-right: none;
-  padding: 0;                     /* remove padding */
+  padding: 0; /* remove padding */
 }
 
 /* Section titles */

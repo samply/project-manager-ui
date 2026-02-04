@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-02-03]
+## [1.1.0 - 2026-02-05]
 ### Added
 - Dockerfile
 - Single Spa
@@ -108,6 +108,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Form Field New Groups to generate titles in project field row
 - Sections in project field rows
 - Download Form Template PDF Buttons
+- Selected Forms as Project View Row
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

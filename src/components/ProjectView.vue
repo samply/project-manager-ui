@@ -392,6 +392,7 @@ import {
   DataShieldProjectStatus,
   EditProjectParam,
   Explanations,
+  FormDataType,
   FormField,
   FormTemplate,
   FormTitle,
@@ -419,7 +420,7 @@ import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
-import {Section, ProjectField} from "@/services/utils";
+import {ActionFunction, ProjectField, Section} from "@/services/utils";
 import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
 
 
@@ -513,7 +514,8 @@ export default defineComponent({
       researchEnvironmentUrl: undefined as string | undefined,
       formTemplates: [] as FormTemplate[],
       formTitles: [] as FormTitle[],
-      formFields: [] as FormField[]
+      formFields: [] as FormField[],
+      selectedForms: [] as FormTitle[]
     };
   },
   watch: {
@@ -727,10 +729,13 @@ export default defineComponent({
           }),
           this.initializeData(Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, new Map(), 'currentUser'),
           this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment'),
-          this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async result => {
-            this.addFormFields(result);
-          }),
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_TEMPLATES_ACTION, new Map(), 'formTemplates')
+          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_TEMPLATES_ACTION, new Map(), 'formTemplates'),
+          this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_SELECTED_PROJECT_FORMS_ACTION, new Map(), async result => {
+            this.selectedForms = result;
+            await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async result => {
+              this.addFormFields(result);
+            })
+          })
         ]);
         if (this.project.type) {
           const params = new Map<string, string>;
@@ -770,8 +775,8 @@ export default defineComponent({
         this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
         this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
       }
-
-      this.draftDialogStepper.addFormTitles(this.formTitles);
+      this.draftDialogStepper.resetFormTitles();
+      this.draftDialogStepper.addFormTitles(this.selectedForms);
     },
 
     async fetchNotifications() {
@@ -831,7 +836,7 @@ export default defineComponent({
     fetchIfCanShowBridgeheadAdminButtons(): boolean {
       return (this.project && (this.project.state == 'DEVELOP' || this.project.state == 'PILOT')) ? this.existInvitedUsers : true;
     },
-    buildDynamicProjectFields(formFields: FormField[]): ProjectField[] {
+    buildDynamicProjectFieldsFromFormFields(formFields: FormField[]): ProjectField[] {
       return formFields.map((formField, index) => ({
         fieldKey: formField.labelDisplayName ?? formField.label,
         fieldValue: formField.value != null ? [formField.value] : [],
@@ -841,17 +846,56 @@ export default defineComponent({
         type: formField.type,
         isEditable: true,
         action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
-        transformForSending: this.buildTransformForSending(formField),
+        transformForSending: this.buildTransformForSendingFormField(formField),
         visibilityCondition:
-            !this.existsDraftDialog ||
-            this.draftDialogStepper.currentStep?.id === formField.title ||
-            this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+            this.selectedForms.some(f => f.title === formField.title) && // only if the field is already selected
+            (!this.existsDraftDialog ||
+                this.draftDialogStepper.currentStep?.id === formField.title ||
+                this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
 
         section: new Section(formFields, index)
       }));
     },
 
-    buildTransformForSending(formField: FormField): (input: string) => any {
+    buildDynamicProjectFieldsFromFormTitles(formTitles: FormTitle[]): ProjectField[] {
+      return formTitles.map((formTitle) => ({
+        fieldKey: formTitle.titleDisplayName ?? formTitle.title,
+        fieldValue: [this.selectedForms.some(f => f.title === formTitle.title) ? "true" : "false"],
+        editProjectParam: [EditProjectParam.FORM_TITLE],
+        mandatory: false,
+        fieldDescription: formTitle.titleDescription,
+        type: FormDataType.BOOLEAN,
+        isEditable: true,
+        action: new ActionFunction((input: string[]) => {
+          //@ts-ignore
+          if (input && input.length > 0 && input[0] === false) {
+            return Action.REMOVE_SELECTED_PROJECT_FORM_ACTION;
+          } else {
+            return Action.ADD_SELECTED_PROJECT_FORM_ACTION;
+          }
+        }),
+        transformForSending: (input: string) => formTitle.title,
+        visibilityCondition:
+            !this.existsDraftDialog ||
+            this.draftDialogStepper.currentStep?.id === 'Services' ||
+            this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+      }));
+    },
+
+    /*
+            {
+              fieldKey: "Selected Data",
+              fieldValue: this.selectedForms,
+              editProjectParam: [EditProjectParam.FORM_TITLE],
+              isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
+              possibleValues: this.projectTypes,
+              mandatory: true,
+              visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+            },
+
+     */
+
+    buildTransformForSendingFormField(formField: FormField): (input: string) => any {
       return (input: string) => {
         return [{
           title: formField.title,
@@ -1127,9 +1171,9 @@ export default defineComponent({
           visibilityCondition: !!this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && this.existsAuthenticationScript
         }
       ];
-      const dynamicFields = this.buildDynamicProjectFields(this.formFields);
-
-      return [...fixedFields, ...dynamicFields];
+      const dynamicFields = this.buildDynamicProjectFieldsFromFormFields(this.formFields);
+      const dynamicSelectedForms = this.buildDynamicProjectFieldsFromFormTitles(this.formTitles);
+      return [...fixedFields, ...dynamicSelectedForms, ...dynamicFields];
     },
 
     fetchButtons(): void {

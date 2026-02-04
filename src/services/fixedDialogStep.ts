@@ -142,6 +142,25 @@ export class DialogStepper {
         }
     }
 
+    public resetFormTitles(): void {
+        const previousStepId = this.currentStepId;
+
+        // Rebuild step structure to fixed-only
+        this.initializeFixedSteps();
+
+        // If the previously selected step still exists, keep it
+        if (
+            previousStepId &&
+            this.allSteps.some(step => step.id === previousStepId)
+        ) {
+            this.currentStepId = previousStepId;
+        } else {
+            this.currentStepId = this.allSteps[0]?.id ?? null;
+        }
+
+        this.updateFields();
+    }
+
     public nextStep(): void {
         const next = this.getRelativeStep(1);
         if (next) {

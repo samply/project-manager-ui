@@ -8,7 +8,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap';
 import store from './services/store';
-import {AuthService, finishLoginFlow, startLoginFlow, tryLoadUserFromStorage} from "@/services/auth";
+import {AuthService, finishLoginFlow, tryLoadUserFromStorage} from "@/services/auth";
 
 
 const app = createApp(App);
@@ -49,8 +49,13 @@ export const bootstrap = async () => {
     await tryLoadUserFromStorage();
     // Trigger login if no valid user exists
     if (!AuthService.isLoggedIn()) {
-        await AuthService.login();
+        try {
+            await AuthService.getToken(); // triggers silent renew first
+        } catch {
+            await AuthService.login();
+        }
     }
+
 
     return vueLifecycles.bootstrap;
 };

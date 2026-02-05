@@ -1,5 +1,5 @@
-import { UserManager, WebStorageStateStore, User } from "oidc-client-ts";
-import { getConfig } from "@/services/configLoader";
+import {User, UserManager, WebStorageStateStore} from "oidc-client-ts";
+import {getConfig} from "@/services/configLoader";
 
 let userManager: UserManager | null = null;
 let cachedUser: User | null = null;
@@ -19,7 +19,7 @@ export async function getUserManager(): Promise<UserManager> {
             silent_redirect_uri: `${window.location.origin}/silent-renew.html`,
             response_type: "code",
             scope: "openid profile email",
-            userStore: new WebStorageStateStore({ store: window.localStorage }),
+            userStore: new WebStorageStateStore({store: window.localStorage}),
             automaticSilentRenew: true,
             revokeTokensOnSignout: true
         });
@@ -81,7 +81,16 @@ export async function finishLoginFlow(): Promise<void> {
  */
 export async function tryLoadUserFromStorage(): Promise<void> {
     const mgr = await getUserManager();
-    const user = await mgr.getUser();
+    let user = await mgr.getUser();
+
+    if (user && user.expired) {
+        try {
+            user = await mgr.signinSilent();
+        } catch (err) {
+            console.warn("Silent renew failed on startup", err);
+            user = null;
+        }
+    }
 
     cachedUser = user ?? null;
 }

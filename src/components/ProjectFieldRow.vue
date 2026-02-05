@@ -168,9 +168,12 @@ export default class ProjectFieldRow extends Vue {
   }
 
   applyTransformToSend(editedValue: any): any {
-      return Array.isArray(editedValue)
-          ? editedValue.map(input => this.transformForSending(input))
-          : this.transformForSending(editedValue);
+    if (editedValue === undefined || editedValue === null) {
+      return ""
+    }
+    return Array.isArray(editedValue)
+        ? editedValue.map(input => this.transformForSending(input))
+        : this.transformForSending(editedValue);
   }
 
   includesEditProjectParam(param: EditProjectParam): boolean {
@@ -327,13 +330,12 @@ export default class ProjectFieldRow extends Vue {
     <template v-for="newSection in section.fetchNewSections()"
               :key="`${newSection.level}-${newSection.displayName ?? 'root'}`">
 
-      <!-- Spacer row when displayName is undefined -->
       <tr v-if="!newSection.displayName" class="section-row spacer-row">
         <td colspan="100">&nbsp;</td>
       </tr>
 
       <!-- Regular section row -->
-      <tr v-else class="section-row">
+      <tr v-if="newSection.displayName" class="section-row" :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
         <td colspan="100">
           <div class="section-title"
                :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
@@ -775,6 +777,17 @@ export default class ProjectFieldRow extends Vue {
   color: white;
 }
 
+.section-row.level-1 {
+  margin-top: 10px;
+}
+
+.section-row.level-1 td {
+  background-color: #0056b3;
+  color: white;
+  border-left: none;
+  border-right: none;
+}
+
 /* Spacer row for sections without displayName */
 .section-row.spacer-row td {
   background-color: transparent; /* no color */
@@ -784,11 +797,19 @@ export default class ProjectFieldRow extends Vue {
   padding: 0; /* remove padding */
 }
 
+.section-row.empty-row td {
+  background-color: transparent; /* no color */
+  height: 0px; /* smaller vertical space */
+  border-left: none;
+  border-right: none;
+  padding: 0; /* remove padding */
+}
+
 /* Section titles */
 .section-title {
   font-weight: 600;
   line-height: 1.4;
-  margin: 0.75rem 0 0.25rem;
+  margin: 0.5rem 0;
 }
 
 /* Prefix arrows for levels */

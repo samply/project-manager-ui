@@ -167,6 +167,10 @@ export class Section {
         return currentLength - previousLength;
     }
 
+    fetchGroups(): string[] {
+        return this.getCurrentGroups().map(group => group.group);
+    }
+
 
 }
 

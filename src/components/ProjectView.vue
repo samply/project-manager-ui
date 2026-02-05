@@ -1,6 +1,6 @@
 <template>
   <div class="main-container">
-    <div class="left-container">
+    <div class="left-container" v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)">
       <div class="box-header" style="padding-left:7%">Phase</div>
       <div class="vertical-stepper">
         <div v-for="(projectState, index) in getProjectStates()" :key="index" class="stepper-step">
@@ -337,7 +337,8 @@
           <div style="display:flex; flex-flow:row;">
             <div class="notification-tab" :class="{ 'active': !showNotification }" @click="toggleNotification">TODO
             </div>
-            <div class="notification-tab" :class="{ 'active': showNotification }" @click="toggleNotification">
+            <div v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)"
+                 class="notification-tab" :class="{ 'active': showNotification }" @click="toggleNotification">
               Notifications
             </div>
           </div>
@@ -348,7 +349,8 @@
         </div>
 
         <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
-                         :show-notification="showNotification" :call-toggle-notification="toggleNotification"
+                         :show-notification="showNotification"
+                         :call-toggle-notification="toggleNotification"
                          :notifications="notifications" :call-update-notifications="fetchNotifications"
                          :show-in-panel="false"
         />

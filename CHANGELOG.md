@@ -128,6 +128,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - In initializeDataInCallback: Just log in the console if 404, but not throw an error
 - Upgrade libraries 
 - Rename Data Science Orchestrator to Samply.Requester
+- Notifications and phases only for project admin in project view
 
 ### Removed
 - Application Form

@@ -628,7 +628,7 @@ export default defineComponent({
       );
 
       const mandatoryFormFieldsValid = this.formFields
-          ?.filter(field => field.mandatory)
+          ?.filter(field => field.mandatory && this.selectedForms.some(ft => ft.title === field.title))
           .every(field => field.value != null && field.value !== '');
 
       return baseFieldsValid && mandatoryFormFieldsValid;
@@ -649,7 +649,7 @@ export default defineComponent({
 
         // 👇 group missing mandatory form fields
         const groupedMissingFields = this.formFields
-            ?.filter(field => field.mandatory && !field.value)
+            ?.filter(field => field.mandatory && !field.value && this.selectedForms.some(ft => ft.title === field.title))
             .reduce((acc, field) => {
               const title = field.titleDisplayName ?? field.title;
               const label = field.labelDisplayName ?? field.label;

@@ -135,3 +135,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - Update the dialog stepper only if necessary
+- consider only selected forms for mandatory fields in project view

@@ -871,8 +871,7 @@ export default defineComponent({
         type: FormDataType.BOOLEAN,
         isEditable: true,
         action: new ActionFunction((input: string[]) => {
-          //@ts-ignore
-          if (input && input.length > 0 && input[0] === false) {
+          if (input && input.length > 0 && input[0] === "false") {
             return Action.REMOVE_SELECTED_PROJECT_FORM_ACTION;
           } else {
             return Action.ADD_SELECTED_PROJECT_FORM_ACTION;

@@ -37,7 +37,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop() readonly context!: ProjectManagerContext;
   @Prop() readonly redirectUrl?: string;
   @Prop({type: String, default: Module.PROJECT_EDITION_MODULE}) readonly module!: Module;
-  @Prop({type: String, default: Action.EDIT_PROJECT_ACTION}) readonly action!: Action | ActionFunction;
+  @Prop({type: [String, Object], default: Action.EDIT_PROJECT_ACTION}) readonly action!: Action | ActionFunction;
   @Prop() readonly possibleValues!: string[];
   @Prop() readonly configurations?: Map<string, Project>;
   @Prop() readonly isEditable!: boolean;
@@ -319,6 +319,12 @@ export default class ProjectFieldRow extends Vue {
       console.log($e);
     }
   }
+
+  onBooleanValueChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.editedValue[0] = input.checked ? 'true' : 'false';
+  }
+
 }
 
 </script>
@@ -422,7 +428,11 @@ export default class ProjectFieldRow extends Vue {
             <div v-else style="width:75%">
               <div>
                 <div v-if="isTypeBoolean()" style="width: 70%;">
-                  <input type="checkbox" v-model="editedValue[0]">
+                  <input
+                      type="checkbox"
+                      :checked="editedValue[0] === 'true'"
+                      @change="onBooleanValueChange"
+                  />
                 </div>
                 <div v-else-if="isQuery()" style="width: 70%;">
                   <span><strong>Human readable</strong></span>

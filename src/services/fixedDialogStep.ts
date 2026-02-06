@@ -82,7 +82,7 @@ export class DialogStepper {
 
     /* ---------- Public API ---------- */
 
-    /** Reset navigation (filters cleared, first step selected) */
+    /** Reset navigation (filters cleared, the first step selected) */
     public reset(): void {
         this.filteredStepIds.clear();
         this.currentStepId = this.allSteps[0]?.id ?? null;
@@ -132,7 +132,7 @@ export class DialogStepper {
             }
         }
 
-        // If current step was filtered out or removed, recover gracefully
+        // If the current step was filtered out or removed, recover gracefully
         if (!this.isCurrentStepActive()) {
             this.currentStepId = this.fetchActiveSteps()[0]?.id ?? null;
         }

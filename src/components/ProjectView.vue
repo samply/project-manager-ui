@@ -777,8 +777,10 @@ export default defineComponent({
         this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
         this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
       }
-      this.draftDialogStepper.resetFormTitles();
-      this.draftDialogStepper.addFormTitles(this.selectedForms);
+      if (!this.draftDialogStepper.hasSameFormTitles(this.selectedForms)) {
+        this.draftDialogStepper.resetFormTitles();
+        this.draftDialogStepper.addFormTitles(this.selectedForms);
+      }
     },
 
     async fetchNotifications() {

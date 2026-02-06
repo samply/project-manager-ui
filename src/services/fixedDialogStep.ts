@@ -142,6 +142,42 @@ export class DialogStepper {
         }
     }
 
+    public hasSameFormTitles(formTitles: FormTitle[]): boolean {
+        // Build the set of current dynamic steps (exclude fixed ones)
+        const fixedIds = new Set(FixedDialogSteps.map(s => s.id));
+
+        const currentDynamicSteps = this.allSteps.filter(
+            step => !fixedIds.has(step.id)
+        );
+
+        if (currentDynamicSteps.length !== formTitles.length) {
+            return false;
+        }
+
+        // Map current steps by id for fast lookup
+        const currentById = new Map(
+            currentDynamicSteps.map(step => [step.id, step])
+        );
+
+        for (const formTitle of formTitles) {
+            const step = formTitleToDialogStep(formTitle);
+            const existing = currentById.get(step.id);
+
+            if (!existing) {
+                return false;
+            }
+
+            if (
+                existing.displayName !== step.displayName ||
+                existing.description !== step.description
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public resetFormTitles(): void {
         const previousStepId = this.currentStepId;
 

@@ -1,9 +1,9 @@
 import {FormTitle} from "@/services/projectManagerBackendService";
 
 export enum FixedDialogStep {
+    SERVICES = "Services",
     PROJECT = "Project",
     QUERY = "Query",
-    SERVICES = "Services",
     OUTPUT = "Output",
     SUMMARY = "Summary",
 }
@@ -16,6 +16,11 @@ export interface DialogStep {
 
 export const FixedDialogSteps: readonly DialogStep[] = [
     {
+        id: FixedDialogStep.SERVICES,
+        displayName: "Services",
+        description: "Choose which services will process the query.",
+    },
+    {
         id: FixedDialogStep.PROJECT,
         displayName: "Project",
         description: "Define the project’s core metadata and context.",
@@ -24,11 +29,6 @@ export const FixedDialogSteps: readonly DialogStep[] = [
         id: FixedDialogStep.QUERY,
         displayName: "Query",
         description: "Specify the query logic and selection criteria.",
-    },
-    {
-        id: FixedDialogStep.SERVICES,
-        displayName: "Services",
-        description: "Choose which services will process the query.",
     },
     {
         id: FixedDialogStep.OUTPUT,

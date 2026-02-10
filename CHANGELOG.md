@@ -105,7 +105,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Form fields and templates
 - Dynamic and Fixed dialog steps
 - View and edit form fields
-- Form Field New Groups to generate titles in project field row
+- Form Field New Groups to generate titles in the project field row
 - Sections in project field rows
 - Download Form Template PDF Buttons
 - Selected Forms as Project View Row
@@ -129,11 +129,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - In initializeDataInCallback: Just log in the console if 404, but not throw an error
 - Upgrade libraries 
 - Rename Data Science Orchestrator to Samply.Requester
-- Notifications and phases only for project admin in project view
+- Notifications and phases only for project admin in the project view
+- Services in the first place
 
 ### Removed
 - Application Form
 
 ### Fixed
 - Update the dialog stepper only if necessary
-- consider only selected forms for mandatory fields in project view
+- consider only selected forms for mandatory fields in the project view

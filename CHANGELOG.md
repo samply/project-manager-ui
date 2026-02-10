@@ -132,6 +132,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Notifications and phases only for project admin in the project view
 - Services in the first place
 - Project Type
+- Filter boolean form fields for creation rules
 
 ### Removed
 - Application Form

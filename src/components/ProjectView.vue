@@ -638,8 +638,9 @@ export default defineComponent({
           )
       );
 
+      // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
       const mandatoryFormFieldsValid = this.formFields
-          ?.filter(field => field.mandatory && this.selectedForms.some(ft => ft.title === field.title))
+          ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && this.selectedForms.some(ft => ft.title === field.title))
           .every(field => field.value != null && field.value !== '');
 
       return baseFieldsValid && mandatoryFormFieldsValid;
@@ -661,8 +662,9 @@ export default defineComponent({
         }
 
         // 👇 group missing mandatory form fields
+        // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
         const groupedMissingFields = this.formFields
-            ?.filter(field => field.mandatory && !field.value && this.selectedForms.some(ft => ft.title === field.title))
+            ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && !field.value && this.selectedForms.some(ft => ft.title === field.title))
             .reduce((acc, field) => {
               const title = field.titleDisplayName ?? field.title;
               const label = field.labelDisplayName ?? field.label;

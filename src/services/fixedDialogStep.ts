@@ -73,9 +73,15 @@ export class DialogStepper {
     public hasNextStep = false;
     public hasPreviousStep = false;
 
+    /* ---------- External callback ---------- */
+
+    /** Called whenever the current step changes */
+    public onCurrentStepChanged?: (step: DialogStep | null) => void;
+
     /* ---------- Initialization ---------- */
 
-    constructor() {
+    constructor(onCurrentStepChanged?: (step: DialogStep | null) => void) {
+        this.onCurrentStepChanged = onCurrentStepChanged;
         this.initializeFixedSteps();
         this.reset();
     }
@@ -276,6 +282,8 @@ export class DialogStepper {
     }
 
     private updateFields(): void {
+        const previousStep = this.currentStep;
+
         this.currentSteps = this.fetchActiveSteps();
 
         this.currentStep =
@@ -288,5 +296,10 @@ export class DialogStepper {
         this.hasNextStep =
             this.currentStep !== null &&
             this.currentSteps[this.currentSteps.length - 1]?.id !== this.currentStep.id;
+
+        // --- Notify external listener if the step actually changed ---
+        if (this.onCurrentStepChanged && this.currentStep !== previousStep) {
+            this.onCurrentStepChanged(this.currentStep);
+        }
     }
 }

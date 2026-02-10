@@ -53,11 +53,13 @@
                   DataSHIELD Status
                 </th>
                 <th class="status-table-header"
-                    v-if="visibleBridgeheads?.length == 1 && (project?.type === ProjectType.RESEARCH_ENVIRONMENT)" scope="col">
+                    v-if="visibleBridgeheads?.length == 1 && (project?.type === ProjectType.RESEARCH_ENVIRONMENT)"
+                    scope="col">
                   Files in Research Environment
                 </th>
                 <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">
-                  {{ (project?.type == ProjectType.DATASHIELD && project.state != 'FINAL') ? 'Script' : 'Results' }} Acceptance
+                  {{ (project?.type == ProjectType.DATASHIELD && project.state != 'FINAL') ? 'Script' : 'Results' }}
+                  Acceptance
                 </th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Applicant Results
                   Acceptance
@@ -444,7 +446,7 @@ export default defineComponent({
     Module() {
       return Module
     },
-    ProjectType(){
+    ProjectType() {
       return ProjectType
     }
   },
@@ -498,7 +500,7 @@ export default defineComponent({
       currentProjectConfiguration: '',
       currentProjectConfigurationFields: [] as string[],
       projectRoles: [] as ProjectRole[],
-      draftDialogStepper: new DialogStepper() as DialogStepper,
+      draftDialogStepper: new DialogStepper(() => this.updateProjectFields()) as DialogStepper,
       existsDraftDialog: false,
       scriptDescription: {} as ProjectDocument,
       votumDescription: {} as ProjectDocument,
@@ -653,7 +655,7 @@ export default defineComponent({
         result = this.addMissingField(result, 'bridgeheads', this.bridgeheads);
         result = this.addMissingField(result, 'type', this.project.type);
         result = this.addMissingField(result, 'query format', this.project.queryFormat);
-        if (this.project.type !== ProjectType.SAMPLES){
+        if (this.project.type !== ProjectType.SAMPLES) {
           result = this.addMissingField(result, 'output format', this.project.outputFormat);
           result = this.addMissingField(result, 'template id', this.project.templateId);
         }
@@ -758,11 +760,17 @@ export default defineComponent({
             await this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, new Map(), 'dataShieldStatus');
           }
         }
-        this.projectFields = this.fetchProjectFields()
+        this.updateProjectFields()
         this.fetchButtons()
         await this.checkButtonVisibility()
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
+      }
+    },
+
+    updateProjectFields() {
+      if (this.project){
+        this.projectFields = this.fetchProjectFields();
       }
     },
 
@@ -818,7 +826,7 @@ export default defineComponent({
     },
 
     isNotIncludedInCurrentProjectConfiguration(field: string) {
-      return this.currentProjectConfiguration === 'CUSTOM' || !this.currentProjectConfigurationFields.includes(field);
+      return this.currentProjectConfiguration === 'CUSTOM' || this.currentProjectConfigurationFields.includes(field);
     },
 
     async initializeData(module: Module, action: Action, params: Map<string, unknown>, dataVariable: string): Promise<any> {
@@ -892,23 +900,10 @@ export default defineComponent({
         transformForSending: (input: string) => formTitle.title,
         visibilityCondition:
             !this.existsDraftDialog ||
-            this.draftDialogStepper.currentStep?.id === 'Services' ||
+            this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES ||
             this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
       }));
     },
-
-    /*
-            {
-              fieldKey: "Selected Data",
-              fieldValue: this.selectedForms,
-              editProjectParam: [EditProjectParam.FORM_TITLE],
-              isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
-              possibleValues: this.projectTypes,
-              mandatory: true,
-              visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
-            },
-
-     */
 
     buildTransformForSendingFormField(formField: FormField): (input: string) => any {
       return (input: string) => {

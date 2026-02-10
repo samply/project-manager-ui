@@ -2,7 +2,7 @@
   <div>
     <nav class="navbar navbar-dark bg-dark custom-navbar">
       <router-link class="navbar-brand" to="/">
-        <i class="bi bi-boxes navbar-icon"></i> <b>Samply</b>.Requester
+        <i class="bi bi-boxes navbar-icon" v-html="'&nbsp' + frontendName"></i>
       </router-link>
       <div class="user-logout-container">
         <!-- User information -->
@@ -47,13 +47,15 @@ export default defineComponent({
   data() {
     return {
       isProjectManagerAdmin: false,
+      frontendName: '<b>Samply</b>.Requester',
       context: new ProjectManagerContext(undefined, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.NAVIGATION_BAR_SITE),
     };
   },
 
   mounted() {
-    this.fetchProjectRoles()
+    this.fetchProjectRoles();
+    this.fetchFrontendName();
   },
   methods: {
     logout() {
@@ -72,6 +74,19 @@ export default defineComponent({
         })
       } catch (error) {
         console.error('Error loading user roles:', error);
+      }
+    },
+    async fetchFrontendName() {
+      try {
+        this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, Action.FETCH_FRONTEND_NAME_ACTION).then(condition => {
+          if (condition) {
+            this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.FETCH_FRONTEND_NAME_ACTION, this.context, new Map()).then(frontendName => {
+              this.frontendName = frontendName;
+            })
+          }
+        })
+      } catch (error) {
+        console.error('Error loading frontend name:', error);
       }
     },
 

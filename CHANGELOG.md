@@ -141,4 +141,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - consider only selected forms for mandatory fields in the project view
 
 ### Changed
-- Notification only if project manager admin
+- Notification only if the project manager admin

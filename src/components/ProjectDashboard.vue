@@ -5,10 +5,10 @@
         <div class="col-md-8">
           <div>Requests</div>
         </div>
-        <div class="col-md-4 text-end">
+        <div class="col-md-4 text-end" v-if="isProjectManagerAdmin">
           <button @click="toggleNotification" class="btn btn-dark notification-button"
-                  style="padding-right:2%; background:none; border:none; color:#007bff"><i style="font-size: x-large"
-              class="bi bi-chat-right-text-fill"></i></button>
+                  style="padding-right:2%; background:none; border:none; color:#007bff"><i style="font-size: x-large" class="bi bi-chat-right-text-fill"></i>
+          </button>
         </div>
       </div>
 
@@ -57,7 +57,7 @@
           <button @click="previousPage" class="btn btn-primary" style="rotate: 180deg">
             <i class="bi bi-play-fill" style="font-size: medium"></i>
           </button>
-          <span>{{currentPage}} / {{totalPages}}</span>
+          <span>{{ currentPage }} / {{ totalPages }}</span>
           <button @click="nextPage" class="btn btn-primary">
             <i class="bi bi-play-fill" style="font-size: medium"></i>
           </button>
@@ -69,7 +69,8 @@
     </div>
     <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
                      :show-notification="showNotification" :call-toggle-notification="toggleNotification"
-                     :notifications="notifications" :call-update-notifications="fetchNotifications" :show-in-panel="true"
+                     :notifications="notifications" :call-update-notifications="fetchNotifications"
+                     :show-in-panel="true"
     />
   </div>
 </template>
@@ -80,8 +81,8 @@ import {
   Action,
   Module,
   Project,
-  ProjectManagerContext,
   ProjectManagerBackendService,
+  ProjectManagerContext,
   Site
 } from "@/services/projectManagerBackendService";
 import NotificationBox from "@/components/Notification.vue";
@@ -102,16 +103,20 @@ export default defineComponent({
       currentPage: 1,
       totalPages: 1,
       projectStates: ["ALL"],
-      selectedState: "ALL"
+      selectedState: "ALL",
+      isProjectManagerAdmin: false
     };
   },
   watch: {
     context(newValue, oldValue) {
       this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
       this.fetchProjects();
+      this.fetchIfIsProjectManagerAdmin();
     },
     projects(newValue, oldValue) {
-      this.fetchNotifications();
+      if (this.isProjectManagerAdmin) {
+        this.fetchNotifications();
+      }
     }
   },
   mounted() {
@@ -141,7 +146,9 @@ export default defineComponent({
     async fetchProjects() {
       try {
         const params = new Map<string, string>();
-        if (this.selectedState !== "ALL") { params.set('project-state', this.selectedState)}
+        if (this.selectedState !== "ALL") {
+          params.set('project-state', this.selectedState)
+        }
         params.set('page', (this.currentPage - 1).toString());
         params.set('page-size', '10');
         params.set('site', Site.PROJECT_DASHBOARD_SITE);
@@ -156,6 +163,21 @@ export default defineComponent({
         });
       } catch (error) {
         console.error('Error loading projects:', error);
+      }
+    },
+    async fetchIfIsProjectManagerAdmin() {
+      try {
+        const response = await this.projectManagerBackendService.fetchData(
+            Module.USER_MODULE,
+            Action.IS_PROJECT_MANAGER_ADMIN_ACTION,
+            this.context,
+            new Map()
+        ).then(result => {
+          this.isProjectManagerAdmin = result;
+        });
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+        throw error;
       }
     },
 
@@ -185,10 +207,26 @@ export default defineComponent({
         throw error;
       }
     },
-    firstPage() {this.currentPage = 1;this.fetchProjects()},
-    previousPage() {if (this.currentPage > 1) {this.currentPage--} this.fetchProjects()},
-    nextPage() {if (this.currentPage < this.totalPages) {this.currentPage++} this.fetchProjects()},
-    lastPage() {this.currentPage = this.totalPages; this.fetchProjects()}
+    firstPage() {
+      this.currentPage = 1;
+      this.fetchProjects()
+    },
+    previousPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--
+      }
+      this.fetchProjects()
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++
+      }
+      this.fetchProjects()
+    },
+    lastPage() {
+      this.currentPage = this.totalPages;
+      this.fetchProjects()
+    }
   },
 });
 </script>
@@ -197,11 +235,12 @@ export default defineComponent({
 .custom-width-projects {
   flex: 1;
   margin-top: 2%;
-  border-radius: 10px!important;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  border-radius: 10px !important;
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
   background-color: white;
   height: 100%;
 }
+
 .box-header {
   padding: 12px 0 0 2%;
   background-color: #95c8dc;
@@ -211,6 +250,7 @@ export default defineComponent({
   border: 1px solid #95c8dc;
   border-radius: 10px 10px 0 0;
 }
+
 .custom-width-notifications {
   width: 22%;
   background-color: white;
@@ -221,7 +261,7 @@ export default defineComponent({
   overflow-y: auto;
   transition: transform 0.3s ease-in-out;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
   margin-top: 1.5%;
   margin-bottom: 4%;
   margin-right: 0.5%;
@@ -264,10 +304,12 @@ export default defineComponent({
 .expand-icon i.rotate {
   transform: rotate(180deg);
 }
+
 .pager {
   display: flex;
   justify-content: end;
 }
+
 .pager span {
   display: flex;
   border: 1px solid #cccccc;
@@ -275,23 +317,27 @@ export default defineComponent({
   padding: 0 10px 1px 10px;
   background-color: white;
 }
+
 .pager button {
   padding-top: 3px;
   padding-bottom: 3px;
 }
+
 .pager button, .pager span {
   margin-left: 10px;
   align-items: center;
 }
 
 .notification-button:hover {
-  color:black!important;
+  color: black !important;
 }
+
 .table-box {
   margin: 3% 2% 5% 2%;
 }
+
 th {
-  background-color: #95c8dc!important;
+  background-color: #95c8dc !important;
   vertical-align: middle;
 }
 
@@ -300,10 +346,11 @@ th {
   border: none;
   color: black;
 }
+
 .form-select {
   background-color: transparent;
-  border:none;
-  height:35px;
+  border: none;
+  height: 35px;
   font-size: smaller;
   text-align: left;
   cursor: pointer;

@@ -131,6 +131,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Rename Data Science Orchestrator to Samply.Requester
 - Notifications and phases only for project admin in the project view
 - Services in the first place
+- Project Type
 
 ### Removed
 - Application Form

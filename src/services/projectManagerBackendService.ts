@@ -159,6 +159,13 @@ export enum EditProjectParam {
     FORM_TITLE = "form-title",
 }
 
+export enum ProjectType {
+    EXPORT = "EXPORT",
+    SAMPLES = "SAMPLES", // Interacts with Negotiator
+    DATASHIELD = "DATASHIELD",
+    RESEARCH_ENVIRONMENT = "RESEARCH_ENVIRONMENT"
+}
+
 export interface Project {
     code?: string;
     creatorEmail?: string;
@@ -168,7 +175,7 @@ export interface Project {
     archivedAt?: Date;
     modifiedAt?: Date;
     state?: string;
-    type?: string;
+    type?: ProjectType;
     query?: string;
     humanReadable?: string;
     queryFormat?: string;

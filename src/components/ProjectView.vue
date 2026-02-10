@@ -53,11 +53,11 @@
                   DataSHIELD Status
                 </th>
                 <th class="status-table-header"
-                    v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')" scope="col">
+                    v-if="visibleBridgeheads?.length == 1 && (project?.type === ProjectType.RESEARCH_ENVIRONMENT)" scope="col">
                   Files in Research Environment
                 </th>
                 <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">
-                  {{ (project?.type == 'DATASHIELD' && project.state != 'FINAL') ? 'Script' : 'Results' }} Acceptance
+                  {{ (project?.type == ProjectType.DATASHIELD && project.state != 'FINAL') ? 'Script' : 'Results' }} Acceptance
                 </th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Applicant Results
                   Acceptance
@@ -112,7 +112,7 @@
                   <div class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()"
                        data-toggle="tooltip" data-placement="top" :title="dataShieldStatus?.project_status"></div>
                 </td>
-                <td v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')">
+                <td v-if="visibleBridgeheads?.length == 1 && (project?.type == ProjectType.RESEARCH_ENVIRONMENT)">
                   {{ areExportFilesTransferredToResearchEnvironment }}
                 </td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser">
@@ -405,6 +405,7 @@ import {
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,
+  ProjectType,
   Site,
   User
 } from "@/services/projectManagerBackendService";
@@ -442,6 +443,9 @@ export default defineComponent({
     },
     Module() {
       return Module
+    },
+    ProjectType(){
+      return ProjectType
     }
   },
   props: {
@@ -616,6 +620,8 @@ export default defineComponent({
     },
 
     fetchIfProjectHasAllMandatoryFields(): boolean {
+      const isSamples = this.project?.type === ProjectType.SAMPLES;
+
       const baseFieldsValid = Boolean(
           this.project &&
           this.project.label &&
@@ -623,8 +629,10 @@ export default defineComponent({
           this.bridgeheads &&
           this.project.type &&
           this.project.queryFormat &&
-          this.project.outputFormat &&
-          this.project.templateId
+          (
+              !isSamples ||
+              (this.project.outputFormat && this.project.templateId)
+          )
       );
 
       const mandatoryFormFieldsValid = this.formFields
@@ -644,8 +652,10 @@ export default defineComponent({
         result = this.addMissingField(result, 'bridgeheads', this.bridgeheads);
         result = this.addMissingField(result, 'type', this.project.type);
         result = this.addMissingField(result, 'query format', this.project.queryFormat);
-        result = this.addMissingField(result, 'output format', this.project.outputFormat);
-        result = this.addMissingField(result, 'template id', this.project.templateId);
+        if (this.project.type !== ProjectType.SAMPLES){
+          result = this.addMissingField(result, 'output format', this.project.outputFormat);
+          result = this.addMissingField(result, 'template id', this.project.templateId);
+        }
 
         // 👇 group missing mandatory form fields
         const groupedMissingFields = this.formFields

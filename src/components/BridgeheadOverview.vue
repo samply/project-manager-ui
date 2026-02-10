@@ -82,16 +82,17 @@
 </template>
 
 <script lang="ts">
-import { Options, Vue } from "vue-class-component";
-import { Prop, Watch } from "vue-property-decorator";
+import {Options, Vue} from "vue-class-component";
+import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   Bridgehead,
   DataShieldProjectStatus,
   Module,
   Project,
+  ProjectManagerBackendService,
   ProjectManagerContext,
-  ProjectManagerBackendService
+  ProjectType
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import '@/assets/styles/state-circle.css'
@@ -139,7 +140,7 @@ export default class BridgeheadOverview extends Vue {
 
   async updateBridgeheadExtraInfo() {
     this.existsVotums = await this.fetchExistsVotums();
-    if (this.project && this.project.type === 'DATASHIELD') {
+    if (this.project && this.project.type === ProjectType.DATASHIELD) {
       if (!this.headers.includes(this.DATASHIELD_STATUS_HEADER)) {
         const userAccessIndex = this.headers.indexOf('User Access');
         if (userAccessIndex !== -1) {

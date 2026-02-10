@@ -34,14 +34,15 @@ import {
 } from "@/services/projectManagerBackendService";
 import {defineComponent} from "vue";
 import {AuthService} from "@/services/auth";
+import {getConfig} from "@/services/configLoader";
 
 export default defineComponent({
   computed: {
-      auth() {
-        return AuthService;
-      },
-      ProjectRole() {
-        return ProjectRole;
+    auth() {
+      return AuthService;
+    },
+    ProjectRole() {
+      return ProjectRole;
     },
   },
   data() {
@@ -77,17 +78,8 @@ export default defineComponent({
       }
     },
     async fetchFrontendName() {
-      try {
-        this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, Action.FETCH_FRONTEND_NAME_ACTION).then(condition => {
-          if (condition) {
-            this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.FETCH_FRONTEND_NAME_ACTION, this.context, new Map()).then(frontendName => {
-              this.frontendName = frontendName;
-            })
-          }
-        })
-      } catch (error) {
-        console.error('Error loading frontend name:', error);
-      }
+      const config = await getConfig();
+      this.frontendName = config.VUE_APP_FRONTEND_NAME;
     },
 
   },
@@ -128,9 +120,10 @@ export default defineComponent({
   color: white;
   margin-right: 10px;
 }
+
 .admin-button:hover {
   color: white;
   font-size: large;
-  padding:0.3rem 0.68rem;
+  padding: 0.3rem 0.68rem;
 }
 </style>

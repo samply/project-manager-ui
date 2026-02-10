@@ -1,5 +1,6 @@
 {
   "VUE_APP_PROJECT_MANAGER_BACKEND_URL" : "http://localhost:8097",
   "VUE_APP_OIDC_URL" : "https://sso.verbis.dkfz.de/application/o/dev-project-manager-ui/",
-  "VUE_APP_OIDC_CLIENT_ID": "eg2OZHypH6x6L1UaMcxaaW1AaaJNVGGhaNaBxxjy"
+  "VUE_APP_OIDC_CLIENT_ID": "eg2OZHypH6x6L1UaMcxaaW1AaaJNVGGhaNaBxxjy",
+  "VUE_APP_FRONTEND_NAME": "<b>Samply</b>.Requester"
 }

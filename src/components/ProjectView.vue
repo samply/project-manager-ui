@@ -244,7 +244,7 @@
               <br/>
               <table class="table table-bordered custom-table  table-hover">
                 <tbody>
-                <template v-for="(projectField, index) in getProjectFields()" :key="index">
+                <template v-for="(projectField, index) in projectFields" :key="index">
                   <ProjectFieldRow
                       v-if="projectField.visibilityCondition &&
                       (!existsDraftDialog ||
@@ -521,7 +521,8 @@ export default defineComponent({
       formTemplates: [] as FormTemplate[],
       formTitles: [] as FormTitle[],
       formFields: [] as FormField[],
-      selectedForms: [] as FormTitle[]
+      selectedForms: [] as FormTitle[],
+      projectFields: [] as ProjectField[]
     };
   },
   watch: {
@@ -757,6 +758,7 @@ export default defineComponent({
             await this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, new Map(), 'dataShieldStatus');
           }
         }
+        this.projectFields = this.fetchProjectFields()
         this.fetchButtons()
         await this.checkButtonVisibility()
         this.explanations = this.projectManagerBackendService.fetchExplanations();
@@ -1050,7 +1052,7 @@ export default defineComponent({
       }
     },
 
-    getProjectFields(): ProjectField[] {
+    fetchProjectFields(): ProjectField[] {
       const fixedFields: ProjectField[] = [
         {
           fieldKey: "Title",

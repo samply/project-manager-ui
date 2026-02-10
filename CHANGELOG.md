@@ -139,6 +139,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Update the dialog stepper only if necessary
 - consider only selected forms for mandatory fields in the project view
+- Render project fields on time
 
 ### Changed
 - Notification only if the project manager admin

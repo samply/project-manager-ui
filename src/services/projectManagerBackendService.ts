@@ -11,6 +11,8 @@ const siteParam = 'site'
 
 const actionsPath = '/actions'
 
+export const CUSTOM_PROJECT_CONFIGURATION = 'CUSTOM';
+
 export enum ProjectRole {
     CREATOR = "CREATOR",
     DEVELOPER = "DEVELOPER",
@@ -307,6 +309,12 @@ export interface FormField extends FormTitle {
     mandatory?: boolean;
     order?: number;
     value?: string;
+}
+
+export interface ProjectAndForms {
+    project?: Project;
+    forms?: FormTitle[];
+    formFields: FormField[];
 }
 
 export interface FormTemplate {

@@ -7,7 +7,7 @@ import {
     FormField,
     FormFieldGroup,
     Module,
-    Project
+    Project, ProjectAndForms
 } from "@/services/projectManagerBackendService";
 
 export interface BridgeheadsProjectField {
@@ -24,7 +24,7 @@ export interface ProjectField {
     redirectUrl?: string
     isEditable: boolean
     possibleValues?: string[]
-    configurations?: Map<string, Project>
+    configurations?: Map<string, ProjectAndForms>
     uploadAction?: Action
     downloadAction?: Action
     downloadModule?: Module

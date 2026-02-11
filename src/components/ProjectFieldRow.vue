@@ -9,7 +9,7 @@ import {
   Explanations,
   FormDataType,
   Module,
-  Project,
+  Project, ProjectAndForms,
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
@@ -39,7 +39,7 @@ export default class ProjectFieldRow extends Vue {
   @Prop({type: String, default: Module.PROJECT_EDITION_MODULE}) readonly module!: Module;
   @Prop({type: [String, Object], default: Action.EDIT_PROJECT_ACTION}) readonly action!: Action | ActionFunction;
   @Prop() readonly possibleValues!: string[];
-  @Prop() readonly configurations?: Map<string, Project>;
+  @Prop() readonly configurations?: Map<string, ProjectAndForms>;
   @Prop() readonly isEditable!: boolean;
   @Prop({type: Function, required: true}) readonly callRefreshContext!: () => void;
   @Prop() readonly uploadAction!: Action;
@@ -366,13 +366,13 @@ export default class ProjectFieldRow extends Vue {
                   @click="editedValue[0]=step;saveField()"
                   style="background: none; border:none; color: black; padding:0; height:100%;min-width: fit-content">
             <div style="height:100%; display: flex; flex-direction: column;">
-              <div class="config-box-header">{{ configurations?.get(step)?.label }}</div>
+              <div class="config-box-header">{{ configurations?.get(step)?.project?.label }}</div>
               <div class="config-box-body">
                 <div v-if="configurations" style="display: flex;flex-direction: column">
                   <div style="margin-bottom:2%;text-align:left;min-height:200px">
-                    {{ configurations?.get(step)?.description }}
+                    {{ configurations?.get(step)?.project?.description }}
                   </div>
-                  <div v-if="!configurations?.get(step)?.isCustomConfig" style="text-align: right;margin-bottom:2%">
+                  <div v-if="!configurations?.get(step)?.project?.isCustomConfig" style="text-align: right;margin-bottom:2%">
                     <button @click.stop="showDetails[index]=!showDetails[index]"
                             style="background: none; border:none; color: #007bff;">
                       <span v-if="!showDetails[index]">show details</span>

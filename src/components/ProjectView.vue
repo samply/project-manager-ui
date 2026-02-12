@@ -562,9 +562,9 @@ export default defineComponent({
     },
     currentProjectConfiguration(newValue, oldValue) {
       if (newValue !== CUSTOM_PROJECT_CONFIGURATION) {
-        this.draftDialogStepper.filterStep(FixedDialogStep.OUTPUT);
+        this.draftDialogStepper.filterStep(FixedDialogStep.CUSTOM);
       } else {
-        this.draftDialogStepper.removeFilteredStep(FixedDialogStep.OUTPUT);
+        this.draftDialogStepper.removeFilteredStep(FixedDialogStep.CUSTOM);
       }
     }
   },
@@ -940,6 +940,7 @@ export default defineComponent({
         transformForSending: (input: string) => formTitle.title,
         visibilityCondition:
             !this.existsDraftDialog ||
+            this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
             this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
       }));
     },
@@ -1029,7 +1030,7 @@ export default defineComponent({
             message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."
           });
           count++;
-        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT && (!this.project?.outputFormat || !this.project?.templateId)) { // Output
+        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM && (!this.project?.outputFormat || !this.project?.templateId)) { // Output
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."
@@ -1134,7 +1135,7 @@ export default defineComponent({
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
           possibleValues: this.projectTypes,
           mandatory: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Query",
@@ -1162,7 +1163,7 @@ export default defineComponent({
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('outputFormat'),
           possibleValues: this.outputFormats,
           mandatory: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Template ID",
@@ -1171,14 +1172,14 @@ export default defineComponent({
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('templateId'),
           possibleValues: this.exporterTemplateIds,
           mandatory: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Environment Variables",
           fieldValue: this.project?.queryContext ? [this.project.queryContext] : [],
           editProjectParam: [EditProjectParam.QUERY_CONTEXT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('queryContext'),
-          visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION && this.draftDialogStepper.currentStep?.id === FixedDialogStep.OUTPUT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION && this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Votum",

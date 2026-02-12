@@ -4,7 +4,7 @@ export enum FixedDialogStep {
     SERVICES = "Services",
     PROJECT = "Project",
     QUERY = "Query",
-    OUTPUT = "Output",
+    CUSTOM = "Custom",
     SUMMARY = "Summary",
 }
 
@@ -31,8 +31,8 @@ export const FixedDialogSteps: readonly DialogStep[] = [
         description: "Specify the query logic and selection criteria.",
     },
     {
-        id: FixedDialogStep.OUTPUT,
-        displayName: "Output",
+        id: FixedDialogStep.CUSTOM,
+        displayName: "Custom",
         description: "Configure how and where the results will be delivered.",
     },
     {

@@ -145,3 +145,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Notification only if the project manager admin
+- Forms in custom or implicit

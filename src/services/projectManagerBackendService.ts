@@ -353,7 +353,8 @@ function jsonToActionMetadata(json: any): ActionMetadata | undefined {
     const methodMapping: Record<string, HttpMethod> = {
         'GET': HttpMethod.GET,
         'POST': HttpMethod.POST,
-        // Add more mappings if necessary
+        'PUT': HttpMethod.PUT,
+        'DELETE': HttpMethod.DELETE
     };
     const method: HttpMethod | undefined = methodMapping[json.method];
     if (method === undefined) {

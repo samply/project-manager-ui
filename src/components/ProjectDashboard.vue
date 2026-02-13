@@ -252,10 +252,6 @@ export default defineComponent({
   margin-bottom: 15px;
 }
 
-.custom-width-notifications .card {
-  margin-bottom: 15px;
-}
-
 .pager {
   display: flex;
   justify-content: end;

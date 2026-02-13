@@ -1,6 +1,5 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   Module,
@@ -8,12 +7,17 @@ import {
   ProjectManagerContext,
   User
 } from "@/services/projectManagerBackendService";
+import {watch} from "vue";
 
 @Options({
-  name: "MailingBlackList"
+  name: "MailingBlackList",
+  props: {
+    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true}
+  }
 })
 export default class MailingBlackList extends Vue {
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
+
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
 
   isActive = false;
   mailingBlackList: User[] = [];
@@ -21,9 +25,14 @@ export default class MailingBlackList extends Vue {
   showSuggestions = false;
   inputEmail = '';
 
-  @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange() {
-    this.updateIsActive();
+  mounted() {
+    watch(
+        () => this.projectManagerBackendService,
+        () => {
+          this.updateIsActive();
+        },
+        {immediate: true, deep: true}
+    );
   }
 
   updateIsActive() {

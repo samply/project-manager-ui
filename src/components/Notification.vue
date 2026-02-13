@@ -1,6 +1,5 @@
 <script lang="ts">
 
-import {Prop, Watch} from 'vue-property-decorator';
 import {
   Action,
   Module,
@@ -10,28 +9,49 @@ import {
 } from "@/services/projectManagerBackendService";
 import {Options, Vue} from "vue-class-component";
 import {format} from "date-fns";
+import {watch} from "vue";
 
 @Options({
-  name: "NotificationBox"
+  name: "NotificationBox",
+  props: {
+    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
+    notifications: {type: Array as () => Notification[], required: true},
+    context: {type: Object as () => ProjectManagerContext, required: true},
+    showNotification: {type: Boolean, required: true},
+    showInPanel: {type: Boolean, required: true},
+    callUpdateNotifications: {type: Function as unknown as () => () => void, required: true},
+    callToggleNotification: {type: Function as unknown as () => () => void, required: true}
+  }
 })
 export default class NotificationBox extends Vue {
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly notifications!: Notification[];
+  readonly context!: ProjectManagerContext;
+  // For the templates:
+  // noinspection JSUnusedGlobalSymbols
+  readonly showNotification!: boolean;
+  // noinspection JSUnusedGlobalSymbols
+  readonly showInPanel!: boolean;
+  // noinspection JSUnusedGlobalSymbols
+  readonly callToggleNotification!: () => void;
+  readonly callUpdateNotifications!: () => void;
 
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly notifications!: Notification[];
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly showNotification!: boolean;
-  @Prop() readonly showInPanel!: boolean;
-  @Prop({type: Function, required: true}) readonly callUpdateNotifications!: () => void;
-  @Prop({type: Function, required: true}) readonly callToggleNotification!: () => void;
+
   currentPage = 1;
   totalPages = 1;
   notificationsPerPage = 8;
-  pagedNotifications: Notification[] = []
+  pagedNotifications: Notification[] = [];
 
-  @Watch("notifications", {immediate: true, deep: true})
-  onNotificationsChange(newValue: string[]) {
-    this.totalPages = Math.round(newValue.length / this.notificationsPerPage);
-    this.pagingNotifications();
+  mounted() {
+    // Replace the old @Watch
+    watch(
+        () => this.notifications,
+        (newValue) => {
+          this.totalPages = Math.ceil(newValue.length / this.notificationsPerPage);
+          this.pagingNotifications();
+        },
+        {immediate: true, deep: true}
+    );
   }
 
   convertDate(date: Date) {

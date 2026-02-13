@@ -1,6 +1,5 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   MessageSubject,
@@ -10,6 +9,7 @@ import {
   ProjectRole
 } from "@/services/projectManagerBackendService";
 import {EmailRole} from "@/services/emailRole";
+import {watch} from "vue";
 
 interface options {
   label: string,
@@ -21,12 +21,27 @@ interface options {
 
 @Options({
   name: "CredentialsSharingTool",
+  props: {
+    projectManagerBackendService: {type: Object, required: true},
+    recipientsEmails: {type: Array, required: true},
+    context: {type: Object, required: true},
+    projectRoles: {type: Array, required: true}
+  }
 })
 export default class CredentialsSharingTool extends Vue {
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly recipientsEmails!: EmailRole[];
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectRoles!: ProjectRole[];
+
+  projectManagerBackendService!: ProjectManagerBackendService;
+  recipientsEmails!: EmailRole[];
+  context!: ProjectManagerContext;
+  projectRoles!: ProjectRole[];
+
+  mounted() {
+    watch(
+        () => this.projectManagerBackendService,
+        () => this.updateRecipientMessagesSubjects(),
+        {immediate: true}
+    );
+  }
 
   recipientsCopied = false;
   passwordVisible = false;
@@ -81,12 +96,6 @@ export default class CredentialsSharingTool extends Vue {
       useCases: "Best for users who want a flexible format to customize or integrate the email content into other tools or platforms."
     }
   ] as options[];
-
-
-  @Watch('projectManagerBackendService', {immediate: true})
-  onProjectManagerBackendService() {
-    this.updateRecipientMessagesSubjects()
-  }
 
   updateRecipientMessagesSubjects(): void {
     this.recipientsMessageSubjects = [];

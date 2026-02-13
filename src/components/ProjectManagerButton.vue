@@ -1,6 +1,5 @@
 <script lang="ts">
 
-import {Prop, Watch} from 'vue-property-decorator';
 import {
   Action,
   Module,
@@ -8,37 +7,67 @@ import {
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
 import {Options, Vue} from "vue-class-component";
+import {watch} from "vue";
 
 @Options({
-  name: "ProjectManagerButton"
+  name: "ProjectManagerButton",
+  props: {
+    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
+    module: {type: Object as () => Module, required: true},
+    action: {type: Object as () => Action, required: true},
+    text: {type: String, required: true},
+    action2: {type: Object as () => Action, required: false},
+    text2: {type: String, required: false},
+    buttonClass: {type: String, required: true},
+    withMessage: {type: Boolean, required: true},
+    visibility: {type: Boolean, required: false},
+    isDisabled: {type: Boolean, default: false},
+    context: {type: Object as () => ProjectManagerContext, required: true},
+    params: {type: Object as () => Map<string, string>, default: () => new Map()},
+    callRefreshContext: {type: Function as unknown as () => () => void, required: true},
+    tooltipText: {type: String, default: ''},
+    doActionOnClick: {type: Function as unknown as () => void, required: false}
+  }
 })
 export default class ProjectManagerButton extends Vue {
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly module!: Module;
-  @Prop() readonly action!: Action;
-  @Prop() readonly text!: string;
-  @Prop() readonly action2?: Action;
-  @Prop() readonly text2?: string;
-  @Prop() readonly buttonClass!: string;
-  @Prop() readonly withMessage!: boolean;
-  @Prop() readonly visibility?: boolean;
-  @Prop({type: Boolean, default: false}) readonly isDisabled!: boolean;
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly params: Map<string, string> = new Map();
-  @Prop({type: Function, required: true}) readonly callRefreshContext!: () => void;
-  @Prop({type: String, default: ''}) readonly tooltipText!: string;
-  @Prop({type: Function}) readonly doActionOnClick?: () => void;
+
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly module!: Module;
+  readonly action!: Action;
+  readonly text!: string;
+  readonly action2?: Action;
+  // For the templates:
+  // noinspection JSUnusedGlobalSymbols
+  readonly text2?: string;
+  // noinspection JSUnusedGlobalSymbols
+  readonly buttonClass!: string;
+  // noinspection JSUnusedGlobalSymbols
+  readonly withMessage!: boolean;
+  // noinspection JSUnusedGlobalSymbols
+  readonly isDisabled!: boolean;
+  // noinspection JSUnusedGlobalSymbols
+  readonly tooltipText!: string;
+  readonly visibility?: boolean;
+  readonly context!: ProjectManagerContext;
+  readonly params!: Map<string, string>;
+  readonly callRefreshContext!: () => void;
+  readonly doActionOnClick?: () => void;
+
 
   isActive = false;
   inputText = '';
   hideInput = true;
   checkboxChecked = !!this.action2;
 
-
-  @Watch('visibility', {immediate: true, deep: true})
-  @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange() {
-    this.updateIsActive()
+  mounted() {
+    // Replace @Watch for 'visibility' and 'projectManagerBackendService'
+    watch(
+        () => [this.visibility, this.projectManagerBackendService],
+        () => {
+          this.updateIsActive();
+        },
+        {immediate: true, deep: true}
+    );
   }
 
   async created() {

@@ -26,8 +26,8 @@
               <div class="card"
                    v-if="project?.state !== 'DRAFT' && visibleBridgeheads && visibleBridgeheads.length === 1"
                    style="padding: 3px 20px;height: fit-content">
-                <div class="card-body" style="padding: 0px 0px;">
-                  <span style="padding: 0px 0px;">{{ context.bridgehead?.humanReadable }}</span>
+                <div class="card-body" style="padding: 0 0;">
+                  <span style="padding: 0 0;">{{ context.bridgehead?.humanReadable }}</span>
                 </div>
               </div>
             </div>
@@ -335,7 +335,7 @@
         <i style="font-size: 20px" class="bi bi-chevron-double-left"></i> <!-- Close symbol for Progress -->
       </button>
       <div v-if="showRightPanel">
-        <div class="box-header" style="display:flex; flex-flow:row; justify-content:space-between;padding-bottom:0px; ">
+        <div class="box-header" style="display:flex; flex-flow:row; justify-content:space-between;padding-bottom:0; ">
           <div style="display:flex; flex-flow:row;">
             <div class="notification-tab" :class="{ 'active': !showNotification }" @click="toggleNotification">TODO
             </div>
@@ -530,37 +530,37 @@ export default defineComponent({
     };
   },
   watch: {
-    activeBridgehead(newValue, oldValue) {
+    activeBridgehead(newValue, _oldValue) {
       this.activeBridgeheadIndex = this.visibleBridgeheads.findIndex(bridgehead => bridgehead === newValue);
       this.context = new ProjectManagerContext(this.projectCode, newValue);
       this.creatorAcceptance = (this.project?.creatorState) ? this.project.creatorState : (this.activeBridgehead?.creatorState) ? this.activeBridgehead.creatorState : 'CREATED';
     },
-    context(newValue, oldValue) {
+    context(newValue, _oldValue) {
       this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
       this.fetchProject();
     },
-    async project(newValue, oldValue) {
+    async project() {
       await this.initializeProjectRelatedData();
     },
-    'draftDialogStepper.currentStep': function (newValue, oldValue) {
+    'draftDialogStepper.currentStep': function () {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    existsScript(newValue, oldValue) {
+    existsScript() {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    existsAuthenticationScript(newValue, oldValue) {
+    existsAuthenticationScript() {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    existsVotum(newValue, oldValue) {
+    existsVotum() {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    existInvitedUsers(newValue, oldValue) {
+    existInvitedUsers() {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    currentUser(newValue, oldValue) {
+    currentUser() {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    currentProjectConfiguration(newValue, oldValue) {
+    currentProjectConfiguration(newValue, _oldValue) {
       if (newValue !== CUSTOM_PROJECT_CONFIGURATION) {
         this.draftDialogStepper.filterStep(FixedDialogStep.CUSTOM);
       } else {
@@ -580,16 +580,9 @@ export default defineComponent({
       this.showExplanations = !this.showNotification;
     },
 
-    toggleExplanations() {
-      this.showExplanations = !this.showExplanations;
-      if (this.showNotification) {
-        this.showNotification = false;
-      }
-    },
-
     refreshBridgeheadsAndContext() {
       const activeBridgehead = this.activeBridgehead;
-      this.fetchVisibleBridgeheads().then(result => {
+      this.fetchVisibleBridgeheads().then(() => {
         if (this.activeBridgehead === activeBridgehead) {
           this.refreshContext();
         }
@@ -824,39 +817,40 @@ export default defineComponent({
       return this.initializeData(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(), 'notifications');
     },
 
-    initializeCurrentProjectConfiguration() {
-      this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION, new Map(),
-          async (result: Record<string, ProjectAndForms>) => {
+    initializeCurrentProjectConfiguration(): Promise<void> {
+      return new Promise((resolve, reject) => {
+        try {
+          this.initializeDataInCallback(
+              Module.PROJECT_EDITION_MODULE,
+              Action.FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION,
+              new Map(),
+              async (result: Record<string, ProjectAndForms>) => {
 
-            if (result) {
-
-              const currentProjectConfigKeys = Object.keys(result);
-
-              if (currentProjectConfigKeys.length > 0) {
-                this.currentProjectConfiguration = currentProjectConfigKeys[0];
-                const currentProjectConfig = result[this.currentProjectConfiguration];
-                if (currentProjectConfig?.project) {
-                  // Extract non-null project fields
-                  this.currentProjectConfigurationFields =
-                      Object.keys(currentProjectConfig.project)
-                          .filter(key => (currentProjectConfig.project as any)[key] !== null);
-
+                if (result) {
+                  const keys = Object.keys(result);
+                  if (keys.length > 0) {
+                    this.currentProjectConfiguration = keys[0];
+                    const currentProjectConfig = result[this.currentProjectConfiguration];
+                    this.currentProjectConfigurationFields = currentProjectConfig?.project
+                        ? Object.keys(currentProjectConfig.project).filter(
+                            key => (currentProjectConfig.project as any)[key] !== null
+                        )
+                        : [];
+                    this.formFields = currentProjectConfig?.formFields ?? [];
+                  } else {
+                    this.resetCurrentProjectConfiguration();
+                  }
                 } else {
-                  this.currentProjectConfigurationFields = [];
+                  this.resetCurrentProjectConfiguration();
                 }
 
-                // Set form fields from configuration
-                this.formFields = currentProjectConfig?.formFields ?? [];
-
-              } else {
-                this.resetCurrentProjectConfiguration();
+                resolve(); // <-- important: resolve the promise after callback finishes
               }
-
-            } else {
-              this.resetCurrentProjectConfiguration();
-            }
-          }
-      );
+          );
+        } catch (err) {
+          reject(err);
+        }
+      });
     },
 
     resetCurrentProjectConfiguration() {
@@ -937,7 +931,7 @@ export default defineComponent({
             return Action.ADD_SELECTED_PROJECT_FORM_ACTION;
           }
         }),
-        transformForSending: (input: string) => formTitle.title,
+        transformForSending: () => formTitle.title,
         visibilityCondition:
             !this.existsDraftDialog ||
             this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
@@ -1069,7 +1063,7 @@ export default defineComponent({
       if (explanation) {
         const explanationNumber = explanation.number;
         explanations.delete(action);
-        explanations.forEach((value, key) => {
+        explanations.forEach((value, _key) => {
           if (value.number > explanationNumber) {
             value.number--;
           }
@@ -1464,7 +1458,10 @@ export default defineComponent({
   flex-direction: column;
   background-color: white;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+
   margin-bottom: 1.5%;
 }
 
@@ -1473,7 +1470,10 @@ export default defineComponent({
   flex-direction: column;
   background-color: white;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+
   height: 100%;
   margin-bottom: 1.5%;
 }
@@ -1481,14 +1481,20 @@ export default defineComponent({
 .project-actions {
   background-color: white;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+
   margin-bottom: 1.5%;
 }
 
 .documents {
   background-color: white;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+
   margin-bottom: 1.5%;
 }
 
@@ -1508,7 +1514,10 @@ export default defineComponent({
   margin-bottom: 5%;
   background-color: white;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+
 }
 
 .right-container {
@@ -1533,18 +1542,6 @@ export default defineComponent({
   padding: 2%;
 }
 
-.custom-table td.bold-text {
-  font-weight: bold;
-}
-
-.thinner-column {
-  width: 30%; /* Adjust the width as needed */
-}
-
-.wider-column {
-  width: 70%; /* Adjust the width as needed */
-}
-
 .vertical-stepper {
   margin: 20% 0 0 28%;
   display: flex;
@@ -1563,11 +1560,10 @@ export default defineComponent({
 
 .stepper-step {
   display: flex;
-  align-items: center;
   margin-bottom: 10px;
   flex-flow: column;
   align-content: flex-start;
-  align-items: flex-start;
+  align-items: flex-start; /* keep only this one */
 }
 
 .step-circle {
@@ -1601,7 +1597,7 @@ export default defineComponent({
 
 .notification-box {
   padding: 2%;
-  font-family: "Calibri Light";
+  font-family: "Calibri Light", Arial, sans-serif;
 }
 
 .todo-circle {
@@ -1644,7 +1640,10 @@ export default defineComponent({
   overflow-y: auto;
   transition: transform 0.3s ease-in-out;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+
   margin-top: 1.5%;
   margin-bottom: 5%;
   margin-right: 0.5%;
@@ -1679,20 +1678,6 @@ export default defineComponent({
   vertical-align: middle;
 }
 
-.explanation-box {
-  border: 1px solid red;
-  padding: 10px;
-  border-radius: 5px;
-  background-color: #ffe6e6; /* Light red background */
-  max-width: 100%; /* Adjust width as needed */
-}
-
-.explanation-line {
-  color: red;
-  font-weight: bold;
-  margin: 5px 0;
-}
-
 .button-group-box {
   border: 1px solid lightgrey;
   border-radius: 5px;
@@ -1716,42 +1701,14 @@ export default defineComponent({
   display: flex;
 }
 
-.explanation-button {
-  background-color: #007bff;
-  color: white;
-  width: auto;
-  font-size: x-large;
-  padding: 0 1px;
-  height: 22px;
-}
 
 .explanation-button i {
   position: relative;
   top: -9px;
 }
 
-.explanation-button:hover {
-  background-color: black;
-  color: white;
-}
-
-.notification-button {
-  background: none;
-  border: none;
-  color: #007bff;
-  width: auto;
-  font-size: x-large;
-  padding: 0 0 0 15px;
-}
-
 .table-overview td {
   vertical-align: middle;
-}
-
-.copy-button {
-  background: none;
-  border: none;
-  color: black;
 }
 
 .state_circle {

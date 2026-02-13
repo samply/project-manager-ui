@@ -1,39 +1,45 @@
 <script lang="ts">
 
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
+import type {Explanations, Project} from "@/services/projectManagerBackendService";
 import {
   Action,
   Bridgehead,
-  Explanations,
   Module,
-  Project,
   ProjectManagerBackendService,
   ProjectManagerContext,
   User
 } from "@/services/projectManagerBackendService";
 import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
+import {watch} from "vue";
 
 @Options({
   name: "UserInput",
   components: {UserAndEmail},
-  computed: {
-    Action() {
-      return Action
-    }
+  props: {
+    callRefreshContext: {type: Function as unknown as () => () => void, required: true},
+    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
+    context: {type: Object as () => ProjectManagerContext, required: true},
+    project: {type: Object as () => Project, required: true},
+    bridgeheads: {type: Array as () => Bridgehead[], required: true},
+    currentUsers: {type: Array as () => User[], required: true},
+    todos: {type: Object as () => Explanations, required: false}
   }
 })
 export default class UserInput extends Vue {
-  @Prop({type: Function, required: true}) readonly callRefreshContext!: () => void;
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly project!: Project;
-  @Prop() readonly bridgeheads!: Bridgehead[];
-  @Prop() readonly currentUsers!: User[];
-  @Prop() readonly todos?: Explanations;
 
-  Action = Action; // <-- this tells TS the property exists
+  readonly callRefreshContext!: () => void;
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly context!: ProjectManagerContext;
+  readonly project!: Project;
+  readonly bridgeheads!: Bridgehead[];
+  readonly currentUsers!: User[];
+  // For the template:
+  // noinspection JSUnusedGlobalSymbols
+  readonly todos?: Explanations;
+
+  Action = Action;
   partialEmail = '';
   selectedBridgehead: Bridgehead | undefined = undefined;
   suggestions: User[] = [];
@@ -42,11 +48,15 @@ export default class UserInput extends Vue {
   showSuggestions = false;
   isValidEmail = false;
 
-
-  @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange() {
-    this.selectedBridgehead = this.bridgeheads[0];
-    this.updateIsActive()
+  mounted() {
+    watch(
+        () => this.projectManagerBackendService,
+        () => {
+          this.selectedBridgehead = this.bridgeheads[0];
+          this.updateIsActive();
+        },
+        {immediate: true, deep: true}
+    );
   }
 
   created() {
@@ -151,7 +161,8 @@ export default class UserInput extends Vue {
           </li>
         </ul>&nbsp;
         <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite && isValidEmail">Invite</button>
-        <p v-if="partialEmail.length > 0 && canInvite && !isValidEmail" class="error-message">Please enter a valid email address.</p>
+        <p v-if="partialEmail.length > 0 && canInvite && !isValidEmail" class="error-message">Please enter a valid email
+          address.</p>
       </div>
     </div>
   </div>

@@ -114,19 +114,19 @@
 
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
+import type {Project} from "@/services/projectManagerBackendService";
 import {
   Action,
   Bridgehead,
   DataShieldProjectStatus,
   Module,
-  Project,
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectType
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import '@/assets/styles/state-circle.css'
+import {watch} from "vue";
 
 @Options({
   name: "BridgeheadOverview",
@@ -135,17 +135,42 @@ import '@/assets/styles/state-circle.css'
     activeBridgehead: {
       type: Object,
       required: true
+    },
+    context: {
+      type: Object as () => ProjectManagerContext,
+      required: true
+    },
+    projectManagerBackendService: {
+      type: Object as () => ProjectManagerBackendService,
+      required: true
+    },
+    bridgeheads: {
+      type: Array as () => Bridgehead[],
+      required: true
+    },
+    project: {
+      type: Object as () => Project,
+      required: true
+    },
+    existsVotumForAllBridgeheads: {
+      type: Boolean,
+      required: true
+    },
+    callUpdateActiveBridgehead: {
+      type: Function as unknown as () => (param: Bridgehead) => void,
+      required: true
     }
+
   }
 })
 export default class BridgeheadOverview extends Vue {
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly bridgeheads!: Bridgehead[];
-  @Prop() readonly project!: Project;
-  @Prop() readonly existsVotumForAllBridgeheads!: boolean;
-  @Prop({type: Function, required: true}) readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
 
+  readonly context!: ProjectManagerContext;
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly bridgeheads!: Bridgehead[];
+  readonly project!: Project;
+  readonly existsVotumForAllBridgeheads!: boolean;
+  readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
 
   Module = Module;
   Action = Action;
@@ -159,10 +184,14 @@ export default class BridgeheadOverview extends Vue {
   scrollIndex = 0;
   numberBridgeheadShown = 4;
 
-
-  @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange() {
-    this.updateBridgeheadExtraInfo();
+  mounted() {
+    // Replace the old @Watch
+    watch(() => this.projectManagerBackendService,
+        () => {
+          this.updateBridgeheadExtraInfo();
+        },
+        {immediate: true, deep: true}
+    );
   }
 
   async created() {

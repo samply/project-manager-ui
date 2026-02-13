@@ -1,12 +1,11 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
+import type {Project} from "@/services/projectManagerBackendService";
 import {
   Action,
   ActionButton,
   Bridgehead,
   Module,
-  Project,
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,
@@ -18,19 +17,31 @@ import "@/assets/styles/state-circle.css"
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import {EmailRole} from "@/services/emailRole";
+import {watch} from "vue";
 
 
 @Options({
   name: "ResultsBox",
-  components: {ProjectManagerButton, UserAndEmail, CredentialsSharingTool}
+  components: {ProjectManagerButton, UserAndEmail, CredentialsSharingTool},
+  props: {
+    callRefreshContext: {type: Function as unknown as () => () => void, required: true},
+    context: {type: Object as () => ProjectManagerContext, required: true},
+    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
+    project: {type: Object as () => Project, required: true},
+    currentUsers: {type: Array as () => User[], required: true},
+    projectRoles: {type: Array as () => ProjectRole[], required: true},
+  }
 })
 export default class ResultsBox extends Vue {
-  @Prop({type: Function, required: true}) readonly callRefreshContext!: () => void;
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly project!: Project;
-  @Prop() readonly currentUsers!: User[];
-  @Prop() readonly projectRoles!: ProjectRole[];
+
+  // For templates:
+  // noinspection JSUnusedGlobalSymbols
+  readonly callRefreshContext!: () => void;
+  readonly context!: ProjectManagerContext;
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly project!: Project;
+  readonly currentUsers!: User[];
+  readonly projectRoles!: ProjectRole[];
 
   readonly RESULTS_ALREADY_SENT = 'Results already sent';
 
@@ -45,9 +56,20 @@ export default class ResultsBox extends Vue {
   isPopupVisible = false;
   actionButtons: ActionButton[] = [];
   emailRecipients: EmailRole[] = [];
-  // Reactive property to control the visibility of the long message
   isExpanded = false;
 
+  mounted() {
+    watch(
+        () => this.projectManagerBackendService,
+        () => {
+          this.resetEmailRecipients();
+          this.resetCanAccept();
+          this.resetCanSend();
+          this.resetResults();
+        },
+        {immediate: true}
+    );
+  }
 
   // Method to toggle the visibility
   toggleReadMore() {
@@ -98,14 +120,6 @@ export default class ResultsBox extends Vue {
 
   closePopup(): void {
     this.isPopupVisible = false;
-  }
-
-  @Watch('projectManagerBackendService', {immediate: true})
-  onProjectManagerBackendServiceChange() {
-    this.resetEmailRecipients();
-    this.resetCanAccept();
-    this.resetCanSend();
-    this.resetResults();
   }
 
   resetCanSend() {

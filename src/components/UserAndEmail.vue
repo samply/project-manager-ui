@@ -1,14 +1,19 @@
 <script lang="ts">
-import { Options, Vue } from "vue-class-component";
-import { Prop } from "vue-property-decorator";
+import {Options, Vue} from "vue-class-component";
 
 @Options({
   name: "UserAndEmail",
+  props: {
+    firstName: {type: String, required: false},
+    lastName: {type: String, required: false},
+    email: {type: String, required: true}
+  }
 })
 export default class UserAndEmail extends Vue {
-  @Prop() readonly firstName?: string; // Optional property
-  @Prop() readonly lastName?: string;  // Optional property
-  @Prop() readonly email!: string;
+
+  readonly firstName?: string;
+  readonly lastName?: string;
+  readonly email!: string;
 
   copiedToClipboard = false;
 
@@ -33,7 +38,7 @@ export default class UserAndEmail extends Vue {
 
 <template>
   <!-- Check if firstName or lastName is available -->
-  <div v-if="firstName || lastName" :title="email" >
+  <div v-if="firstName || lastName" :title="email">
     {{ completeName }}
     <button
         class="btn btn-link p-0 ms-2"

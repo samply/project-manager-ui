@@ -1,6 +1,5 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   Bridgehead,
@@ -10,28 +9,48 @@ import {
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
+import {watch} from "vue";
 
 @Options({
   name: "DocumentsTable",
-  components: {DownloadButton}
+  components: {DownloadButton},
+  props: {
+    context: {type: Object as () => ProjectManagerContext, required: true},
+    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
+    downloadAction: {type: Object as () => Action, required: true},
+    fetchListAction: {type: Object as () => Action, required: true},
+    iconClass: {type: String, required: false},
+    text: {type: String, required: true},
+    bridgeheads: {type: Array as () => Bridgehead[], required: true}
+  }
 })
 export default class DocumentsTable extends Vue {
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly downloadAction!: Action;
-  @Prop() readonly fetchListAction!: Action;
-  @Prop() readonly iconClass: string | undefined = undefined;
-  @Prop() readonly text!: string;
-  @Prop() readonly bridgeheads!: Bridgehead[];
+
+  readonly context!: ProjectManagerContext;
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly downloadAction!: Action;
+  readonly fetchListAction!: Action;
+  // Used in template:
+  // noinspection JSUnusedGlobalSymbols
+  readonly iconClass!: string | undefined;
+  readonly text!: string;
+  readonly bridgeheads!: Bridgehead[];
 
   canDownload = false;
   Module = Module;
   projectDocuments: ProjectDocument[] = [];
   projectDocumentIds = new Set<string>();
 
-  @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange() {
+  mounted() {
     this.updateCanDownload();
+
+    watch(
+        () => this.projectManagerBackendService,
+        () => {
+          this.updateCanDownload();
+        },
+        {immediate: true, deep: true}
+    );
   }
 
   async created() {

@@ -1,6 +1,5 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   Bridgehead,
@@ -10,21 +9,34 @@ import {
   UPLOAD_DOCUMENT_PARAM,
   UPLOAD_DOCUMENT_URL_PARAM
 } from "@/services/projectManagerBackendService";
+import {watch} from "vue";
 
 @Options({
-  name: "UploadButton"
+  name: "UploadButton",
+  props: {
+    callRefreshContext: {type: Function as unknown as () => () => void, required: true},
+    context: {type: Object as () => ProjectManagerContext, required: true},
+    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
+    module: {type: Object as () => Module, required: true},
+    action: {type: Object as () => Action, required: true},
+    text: {type: String, required: true},
+    isFile: {type: Boolean, required: true},
+    useBridgeheadChooser: {type: Boolean, required: true},
+    visibleBridgeheads: {type: Array as () => Bridgehead[], required: true},
+  }
 })
-
 export default class UploadButton extends Vue {
-  @Prop({type: Function, required: true}) readonly callRefreshContext!: () => void;
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly module!: Module;
-  @Prop() readonly action!: Action;
-  @Prop() readonly text!: string;
-  @Prop() readonly isFile!: boolean;
-  @Prop() readonly useBridgeheadChooser!: boolean;
-  @Prop() readonly visibleBridgeheads!: Bridgehead[];
+
+  readonly callRefreshContext!: () => void;
+  readonly context!: ProjectManagerContext;
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly module!: Module;
+  readonly action!: Action;
+  readonly text!: string;
+  readonly isFile!: boolean;
+  readonly useBridgeheadChooser!: boolean;
+  readonly visibleBridgeheads!: Bridgehead[];
+
   file: File | undefined = undefined;
   label = '';
   url = '';
@@ -32,9 +44,14 @@ export default class UploadButton extends Vue {
   fileSelected = false;
   selectedBridgehead: string | undefined = undefined;
 
-  @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange() {
-    this.updateIsActive()
+  mounted() {
+    watch(
+        () => this.projectManagerBackendService,
+        () => {
+          this.updateIsActive();
+        },
+        {immediate: true, deep: true}
+    );
   }
 
   async created() {

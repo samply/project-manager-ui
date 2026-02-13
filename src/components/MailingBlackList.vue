@@ -21,8 +21,8 @@ export default class MailingBlackList extends Vue {
   showSuggestions = false;
   inputEmail = '';
 
-  @Watch('projectManagerBackendService', { immediate: true, deep: true })
-  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
+  @Watch('projectManagerBackendService', {immediate: true, deep: true})
+  onContextChange() {
     this.updateIsActive();
   }
 
@@ -100,7 +100,8 @@ export default class MailingBlackList extends Vue {
     <ul v-if="mailingBlackList.length">
       <li v-for="user in mailingBlackList" :key="user.email">
         - {{ user.firstName || 'N/A' }} {{ user.lastName || 'N/A' }} ( {{ user.email }} )
-        <button class="btn btn-danger btn-secondary mr-2" @click="removeUserFromMailingBlackList(user.email)">Remove</button>
+        <button class="btn btn-danger btn-secondary mr-2" @click="removeUserFromMailingBlackList(user.email)">Remove
+        </button>
       </li>
     </ul>
     <p v-else>No users in the mailing blacklist.</p>

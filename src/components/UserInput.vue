@@ -33,7 +33,7 @@ export default class UserInput extends Vue {
   @Prop() readonly currentUsers!: User[];
   @Prop() readonly todos?: Explanations;
 
-
+  Action = Action; // <-- this tells TS the property exists
   partialEmail = '';
   selectedBridgehead: Bridgehead | undefined = undefined;
   suggestions: User[] = [];
@@ -44,7 +44,7 @@ export default class UserInput extends Vue {
 
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
+  onContextChange() {
     this.selectedBridgehead = this.bridgeheads[0];
     this.updateIsActive()
   }
@@ -86,7 +86,7 @@ export default class UserInput extends Vue {
     const params = new Map<string, string>();
     params.set('email', this.partialEmail);
     const context = (this.selectedBridgehead) ? this.createContext(this.selectedBridgehead) : this.context;
-    this.projectManagerBackendService.fetchData(Module.USER_MODULE, this.fetchAction(), context, params).then(result => {
+    this.projectManagerBackendService.fetchData(Module.USER_MODULE, this.fetchAction(), context, params).then(() => {
       this.partialEmail = '';
       this.callRefreshContext();
     });
@@ -219,7 +219,7 @@ export default class UserInput extends Vue {
   border: 1px solid #ccc; /* Add border for the rectangle appearance */
   background-color: #fff; /* Add background color */
   border-radius: 5px; /* Optional: Add border-radius for rounded corners */
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* Optional: Add box shadow for a raised effect */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Optional: Add box shadow for a raised effect */
 }
 
 .user-table {

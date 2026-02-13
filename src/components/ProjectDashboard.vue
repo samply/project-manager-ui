@@ -108,12 +108,12 @@ export default defineComponent({
     };
   },
   watch: {
-    context(newValue, oldValue) {
+    context(newValue, _oldValue) {
       this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
       this.fetchProjects();
       this.fetchIfIsProjectManagerAdmin();
     },
-    projects(newValue, oldValue) {
+    projects() {
       if (this.isProjectManagerAdmin) {
         this.fetchNotifications();
       }
@@ -124,14 +124,8 @@ export default defineComponent({
     this.fetchProjectStates();
   },
   methods: {
-    toggleExpand(item: { isExpanded: boolean }) {
-      item.isExpanded = !item.isExpanded;
-    },
     toggleNotification() {
       this.showNotification = !this.showNotification;
-    },
-    removeNotification(index: number): void {
-      this.notifications.splice(index, 1);
     },
     changeState() {
       this.fetchProjects()
@@ -167,7 +161,7 @@ export default defineComponent({
     },
     async fetchIfIsProjectManagerAdmin() {
       try {
-        const response = await this.projectManagerBackendService.fetchData(
+        await this.projectManagerBackendService.fetchData(
             Module.USER_MODULE,
             Action.IS_PROJECT_MANAGER_ADMIN_ACTION,
             this.context,
@@ -183,7 +177,7 @@ export default defineComponent({
 
     async fetchNotifications() {
       try {
-        const response = await this.projectManagerBackendService.fetchData(
+        await this.projectManagerBackendService.fetchData(
             Module.NOTIFICATIONS_MODULE,
             Action.FETCH_NOTIFICATIONS_ACTION,
             this.context,
@@ -196,7 +190,7 @@ export default defineComponent({
     },
     async fetchProjectStates() {
       try {
-        const response = await this.projectManagerBackendService.fetchData(
+        await this.projectManagerBackendService.fetchData(
             Module.PROJECT_BRIDGEHEAD_MODULE,
             Action.FETCH_PROJECT_STATES_ACTION,
             this.context,
@@ -236,7 +230,10 @@ export default defineComponent({
   flex: 1;
   margin-top: 2%;
   border-radius: 10px !important;
-  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+
   background-color: white;
   height: 100%;
 }
@@ -251,58 +248,12 @@ export default defineComponent({
   border-radius: 10px 10px 0 0;
 }
 
-.custom-width-notifications {
-  width: 22%;
-  background-color: white;
-  color: black;
-  order: 2;
-  position: relative;
-  z-index: 1;
-  overflow-y: auto;
-  transition: transform 0.3s ease-in-out;
-  border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
-  margin-top: 1.5%;
-  margin-bottom: 4%;
-  margin-right: 0.5%;
-}
-
-.sidebar-closed {
-  transform: translateX(100%);
-}
-
-.card {
-  border: none;
-  border-radius: 10px;
-}
-
-.notification-header {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-}
-
 .custom-width-notifications h2 {
   margin-bottom: 15px;
 }
 
 .custom-width-notifications .card {
   margin-bottom: 15px;
-}
-
-.card-body.expanded {
-  height: 300px;
-}
-
-.expand-icon {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.expand-icon i.rotate {
-  transform: rotate(180deg);
 }
 
 .pager {
@@ -339,12 +290,6 @@ export default defineComponent({
 th {
   background-color: #95c8dc !important;
   vertical-align: middle;
-}
-
-.copy-button {
-  background: none;
-  border: none;
-  color: black;
 }
 
 .form-select {

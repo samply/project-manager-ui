@@ -25,7 +25,7 @@ export default class DownloadButton extends Vue {
   isActive = false;
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
+  onContextChange() {
     this.updateIsActive();
   }
 
@@ -57,7 +57,7 @@ export default class DownloadButton extends Vue {
 
     this.projectManagerBackendService
         .downloadFile(this.module, this.action, this.context, params)
-        .then(httpResponse => {
+        .then(() => {
           this.updateIsActive();
         });
   }

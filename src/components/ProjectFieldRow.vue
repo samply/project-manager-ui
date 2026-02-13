@@ -9,7 +9,7 @@ import {
   Explanations,
   FormDataType,
   Module,
-  Project, ProjectAndForms,
+  ProjectAndForms,
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
@@ -72,15 +72,12 @@ export default class ProjectFieldRow extends Vue {
   editingBridgeheads: Bridgehead[] = [];
 
   @Watch("projectManagerBackendService", {immediate: true, deep: true})
-  onProjectManagerBackendServiceChange(
-      newValue: ProjectManagerBackendService,
-      oldValue: ProjectManagerBackendService
-  ) {
+  onProjectManagerBackendServiceChange() {
     this.resetIsActionEnabled();
   }
 
   @Watch("fieldValue", {immediate: true, deep: true})
-  onFieldValueChange(newValue: string[], oldValue: string[]) {
+  onFieldValueChange(newValue: string[], _oldValue: string[]) {
     this.tempFieldValue = newValue;
   }
 
@@ -88,6 +85,8 @@ export default class ProjectFieldRow extends Vue {
     return FixedDialogStep;
   }
 
+  // configLabel used in {{ configLabel[key] }}
+  // noinspection JSUnusedGlobalSymbols
   get configLabel(): Record<string, string> {
     return configLabel;
   }
@@ -372,7 +371,8 @@ export default class ProjectFieldRow extends Vue {
                   <div style="margin-bottom:2%;text-align:left;min-height:200px">
                     {{ configurations?.get(step)?.project?.description }}
                   </div>
-                  <div v-if="!configurations?.get(step)?.project?.isCustomConfig" style="text-align: right;margin-bottom:2%">
+                  <div v-if="!configurations?.get(step)?.project?.isCustomConfig"
+                       style="text-align: right;margin-bottom:2%">
                     <button @click.stop="showDetails[index]=!showDetails[index]"
                             style="background: none; border:none; color: #007bff;">
                       <span v-if="!showDetails[index]">show details</span>
@@ -725,7 +725,9 @@ export default class ProjectFieldRow extends Vue {
 }
 
 .config-box.active, .config-box:hover {
-  box-shadow: 0px 2px 1px -1px rgba(149, 200, 220, 0.8), 0px 1px 1px 0px rgba(149, 200, 220, 0.5), 0px 1px 3px 0px rgba(149, 200, 220, 0.3);
+  box-shadow: 0 2px 1px -1px rgba(149, 200, 220, 0.8),
+  0 1px 1px 0 rgba(149, 200, 220, 0.5),
+  0 1px 3px 0 rgba(149, 200, 220, 0.3);
 }
 
 .config-box-header {
@@ -809,7 +811,7 @@ export default class ProjectFieldRow extends Vue {
 
 .section-row.empty-row td {
   background-color: transparent; /* no color */
-  height: 0px; /* smaller vertical space */
+  height: 0; /* smaller vertical space */
   border-left: none;
   border-right: none;
   padding: 0; /* remove padding */

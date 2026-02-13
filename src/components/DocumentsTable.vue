@@ -6,8 +6,8 @@ import {
   Bridgehead,
   Module,
   ProjectDocument,
-  ProjectManagerContext,
-  ProjectManagerBackendService
+  ProjectManagerBackendService,
+  ProjectManagerContext
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 
@@ -30,7 +30,7 @@ export default class DocumentsTable extends Vue {
   projectDocumentIds = new Set<string>();
 
   @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
+  onContextChange() {
     this.updateCanDownload();
   }
 
@@ -45,7 +45,7 @@ export default class DocumentsTable extends Vue {
         .fetchData(Module.PROJECT_DOCUMENTS_MODULE, this.fetchListAction, this.createContext(bridgehead), new Map())
         .then(results => (results as ProjectDocument[]).forEach(result => {
           let key = JSON.stringify(result);
-          if (!this.projectDocumentIds.has(key)){
+          if (!this.projectDocumentIds.has(key)) {
             this.projectDocuments.push(result);
             this.projectDocumentIds.add(key);
           }

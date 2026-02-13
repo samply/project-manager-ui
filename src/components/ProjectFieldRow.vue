@@ -1,61 +1,104 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
+import type {Explanations} from "@/services/projectManagerBackendService";
 import {
   Action,
   Bridgehead,
   configLabel,
   EditProjectParam,
-  Explanations,
   FormDataType,
   Module,
-  Project, ProjectAndForms,
+  ProjectAndForms,
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
-import {DialogStep, FixedDialogStep} from "@/services/fixedDialogStep";
-import {ActionFunction, BridgeheadsProjectField, Section} from "@/services/utils";
+import type {DialogStep} from "@/services/fixedDialogStep";
+import {FixedDialogStep} from "@/services/fixedDialogStep";
+import type {BridgeheadsProjectField} from "@/services/utils";
+import {ActionFunction, Section} from "@/services/utils";
+import {watch} from "vue";
 
 @Options({
   name: "ProjectFieldRow",
   computed: {
     configLabel() {
-      return configLabel
+      return configLabel;
     }
   },
-  components: {DownloadButton, UploadButton}
+  components: {DownloadButton, UploadButton},
+  props: {
+    fieldKey: {type: String, required: true},
+    editProjectParam: {type: Array as () => EditProjectParam[], required: true},
+    fieldValue: {type: Array as () => string[], required: true},
+    fieldDescription: {type: Array as () => string[], required: true},
+    bridgeheads: {type: Object as () => BridgeheadsProjectField, required: false},
+    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
+    context: {type: Object as () => ProjectManagerContext, required: true},
+    redirectUrl: {type: String, required: false},
+    module: {type: String as () => Module, default: Module.PROJECT_EDITION_MODULE},
+    action: {type: [String, Object] as unknown as () => Action | ActionFunction, default: Action.EDIT_PROJECT_ACTION},
+    possibleValues: {type: Array as () => string[], required: true},
+    configurations: {type: Object as () => Map<string, ProjectAndForms>, required: false},
+    isEditable: {type: Boolean, required: true},
+    callRefreshContext: {type: Function as unknown as () => () => void, required: true},
+    uploadAction: {type: String as () => Action, required: true},
+    downloadAction: {type: String as () => Action, required: true},
+    downloadModule: {type: String as () => Module, required: true},
+    todos: {type: Object as () => Explanations, required: false},
+    existsFile: {type: Boolean, required: true},
+    mandatory: {type: Boolean, required: true},
+    type: {type: String as () => FormDataType, required: true},
+    draftDialogCurrentStep: {type: Object as () => DialogStep, required: true},
+    visibleBridgeheads: {type: Array as () => Bridgehead[], required: true},
+    section: {type: Object as () => Section, required: true},
+    transformForSending: {
+      type: Function as unknown as () => (input: string) => string,
+      default: (input: string) => input
+    }
+  }
 })
 export default class ProjectFieldRow extends Vue {
-  @Prop() readonly fieldKey!: string;
-  @Prop() readonly editProjectParam!: EditProjectParam[];
-  @Prop() readonly fieldValue!: string[];
-  @Prop() readonly fieldDescription!: string[];
-  @Prop() readonly bridgeheads?: BridgeheadsProjectField; // Use this for bridgeheads
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly redirectUrl?: string;
-  @Prop({type: String, default: Module.PROJECT_EDITION_MODULE}) readonly module!: Module;
-  @Prop({type: [String, Object], default: Action.EDIT_PROJECT_ACTION}) readonly action!: Action | ActionFunction;
-  @Prop() readonly possibleValues!: string[];
-  @Prop() readonly configurations?: Map<string, ProjectAndForms>;
-  @Prop() readonly isEditable!: boolean;
-  @Prop({type: Function, required: true}) readonly callRefreshContext!: () => void;
-  @Prop() readonly uploadAction!: Action;
-  @Prop() readonly downloadAction!: Action;
-  @Prop() readonly downloadModule!: Module;
-  @Prop() readonly todos?: Explanations;
-  @Prop() readonly existsFile!: boolean;
-  @Prop() readonly mandatory!: boolean;
-  @Prop() readonly type!: FormDataType;
-  @Prop() readonly draftDialogCurrentStep!: DialogStep;
-  @Prop() readonly visibleBridgeheads!: Bridgehead[];
-  @Prop() readonly section!: Section;
-  @Prop({
-    type: Function,
-    default: (input: string): string => input
-  }) readonly transformForSending!: (input: string) => string;
+  // Props
+  readonly fieldKey!: string;
+  readonly editProjectParam!: EditProjectParam[];
+  readonly fieldValue!: string[];
+
+  readonly bridgeheads?: BridgeheadsProjectField;
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly context!: ProjectManagerContext;
+  readonly redirectUrl?: string;
+  readonly module!: Module;
+  readonly action!: Action | ActionFunction;
+  readonly possibleValues!: string[];
+  readonly isEditable!: boolean;
+  readonly callRefreshContext!: () => void;
+
+  // For template:
+  // noinspection JSUnusedGlobalSymbols
+  readonly fieldDescription!: string[];
+  // noinspection JSUnusedGlobalSymbols
+  readonly configurations?: Map<string, ProjectAndForms>;
+  // noinspection JSUnusedGlobalSymbols
+  readonly downloadAction!: Action;
+  // noinspection JSUnusedGlobalSymbols
+  readonly downloadModule!: Module;
+  // noinspection JSUnusedGlobalSymbols
+  readonly todos?: Explanations;
+  // noinspection JSUnusedGlobalSymbols
+  readonly existsFile!: boolean;
+  // noinspection JSUnusedGlobalSymbols
+  readonly mandatory!: boolean;
+  // noinspection JSUnusedGlobalSymbols
+  readonly draftDialogCurrentStep!: DialogStep;
+  // noinspection JSUnusedGlobalSymbols
+  readonly visibleBridgeheads!: Bridgehead[];
+  // noinspection JSUnusedGlobalSymbols
+  readonly section!: Section;
+  readonly uploadAction!: Action;
+  readonly type!: FormDataType;
+  readonly transformForSending!: (input: string) => string;
 
   editing = false;
   editedValue: string[] = [];
@@ -71,23 +114,29 @@ export default class ProjectFieldRow extends Vue {
   copiedToClipboard = false;
   editingBridgeheads: Bridgehead[] = [];
 
-  @Watch("projectManagerBackendService", {immediate: true, deep: true})
-  onProjectManagerBackendServiceChange(
-      newValue: ProjectManagerBackendService,
-      oldValue: ProjectManagerBackendService
-  ) {
-    this.resetIsActionEnabled();
-  }
-
-  @Watch("fieldValue", {immediate: true, deep: true})
-  onFieldValueChange(newValue: string[], oldValue: string[]) {
-    this.tempFieldValue = newValue;
+  mounted() {
+    watch(
+        () => this.projectManagerBackendService,
+        () => {
+          this.resetIsActionEnabled();
+        },
+        {immediate: true, deep: true}
+    );
+    watch(
+        () => this.fieldValue,
+        (newValue: string[]) => {
+          this.tempFieldValue = newValue;
+        },
+        {immediate: true, deep: true}
+    );
   }
 
   get dialogStep() {
     return FixedDialogStep;
   }
 
+  // configLabel used in {{ configLabel[key] }}
+  // noinspection JSUnusedGlobalSymbols
   get configLabel(): Record<string, string> {
     return configLabel;
   }
@@ -365,20 +414,21 @@ export default class ProjectFieldRow extends Vue {
           <button class="config-button"
                   @click="editedValue[0]=step;saveField()"
                   style="background: none; border:none; color: black; padding:0; height:100%;min-width: fit-content">
-            <div style="height:100%; display: flex; flex-direction: column;">
-              <div class="config-box-header">{{ configurations?.get(step)?.project?.label }}</div>
-              <div class="config-box-body">
-                <div v-if="configurations" style="display: flex;flex-direction: column">
-                  <div style="margin-bottom:2%;text-align:left;min-height:200px">
+            <span style="height:100%; display: flex; flex-direction: column;">
+              <span class="config-box-header">{{ configurations?.get(step)?.project?.label }}</span>
+              <span class="config-box-body">
+                <span v-if="configurations" style="display: flex;flex-direction: column">
+                  <span style="margin-bottom:2%;text-align:left;min-height:200px">
                     {{ configurations?.get(step)?.project?.description }}
-                  </div>
-                  <div v-if="!configurations?.get(step)?.project?.isCustomConfig" style="text-align: right;margin-bottom:2%">
+                  </span>
+                  <span v-if="!configurations?.get(step)?.project?.isCustomConfig"
+                        style="text-align: right;margin-bottom:2%">
                     <button @click.stop="showDetails[index]=!showDetails[index]"
                             style="background: none; border:none; color: #007bff;">
                       <span v-if="!showDetails[index]">show details</span>
                       <span v-if="showDetails[index]">hide details</span>
                     </button>
-                  </div>
+                  </span>
                   <table v-if="showDetails[index]" style="text-align: left">
                     <tr v-for="(param, key) in configurations?.get(step)" :key="key">
                       <template v-if="!['customConfig', 'label', 'description'].includes(key.toString())">
@@ -389,9 +439,9 @@ export default class ProjectFieldRow extends Vue {
                       </template>
                     </tr>
                   </table>
-                </div>
-              </div>
-            </div>
+                </span>
+              </span>
+            </span>
           </button>
         </div>
       </div>
@@ -448,14 +498,15 @@ export default class ProjectFieldRow extends Vue {
                     <span v-for="(bridgehead, index) in editingBridgeheads" :key="index" class="btn btn-primary"
                           style="margin-right: 2%; margin-bottom: 0.5%">
                          <span>{{ bridgehead.humanReadable ?? bridgehead.bridgehead }}</span>
-                      <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i
+                      <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0"><i
                           style="color: white; font-size: 18px" class="bi bi-x"></i></button>
                     </span>
                   </span>
                   <span v-if="areThereMoreBridgeheadsAvailableToAdd()">
                     <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
-                    <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
-                      <select class="form-select" v-model="newValue" placeholder="Bridgehead">
+                    <span v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
+                      <select class="form-select" v-model="newValue">
+                        <option disabled value="">Bridgehead</option>
                         <option v-for="b in fetchOtherAvailableBridgeheadsToAdd()"
                                 :key="b.bridgehead"
                                 :value="b.bridgehead">
@@ -465,7 +516,7 @@ export default class ProjectFieldRow extends Vue {
                       <button class="btn btn-primary" @click="addBridgehead(newValue)">
                         <i style="font-size: 18px" class="bi bi-check"></i>
                       </button>
-                    </div>
+                    </span>
                   </span>
                 </div>
                 <div v-else-if="isEnvironmentVariables()" style="width:75%;">
@@ -473,7 +524,7 @@ export default class ProjectFieldRow extends Vue {
                     <span v-for="(pair, index) in editedValue[0].split(';')" :key="index"
                           style="margin-right: 2%;  display: inline;" class="btn btn-primary">
                       <span style="display: inline; margin-bottom: 2%">{{ pair }}</span>
-                      <button @click="removeEnvVariable(index)" class="btn btn-sm" style="padding: 0px"><i
+                      <button @click="removeEnvVariable(index)" class="btn btn-sm" style="padding: 0"><i
                           style="color: white; font-size: 18px" class="bi bi-x"></i></button>
                     </span>
                   </span>
@@ -547,7 +598,7 @@ export default class ProjectFieldRow extends Vue {
     <!-- THIRD COLUMN: ACTIONS -->
     <td style="min-width: 50px;vertical-align: middle">
       <span style="display:flex; flex-flow:row; align-items: baseline">
-        <div style="display:inline-flex; flex-flow:row; align-items: baseline">
+        <span style="display:inline-flex; flex-flow:row; align-items: baseline">
           <button
               v-if="isFieldValueEditable() && (redirectUrl === null || redirectUrl === undefined || isBridgeheads() || isQuery())"
               class="btn btn-primary"
@@ -558,7 +609,7 @@ export default class ProjectFieldRow extends Vue {
           <DownloadButton v-if="existsFile && downloadAction" :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
                           :module="downloadModule" :action="downloadAction"/>
-        </div>
+        </span>
         <button v-if="isFieldValueEditable() && redirectUrl !== null && redirectUrl !== undefined"
                 class="btn btn-primary"
                 data-toggle="tooltip"
@@ -725,7 +776,9 @@ export default class ProjectFieldRow extends Vue {
 }
 
 .config-box.active, .config-box:hover {
-  box-shadow: 0px 2px 1px -1px rgba(149, 200, 220, 0.8), 0px 1px 1px 0px rgba(149, 200, 220, 0.5), 0px 1px 3px 0px rgba(149, 200, 220, 0.3);
+  box-shadow: 0 2px 1px -1px rgba(149, 200, 220, 0.8),
+  0 1px 1px 0 rgba(149, 200, 220, 0.5),
+  0 1px 3px 0 rgba(149, 200, 220, 0.3);
 }
 
 .config-box-header {
@@ -809,7 +862,7 @@ export default class ProjectFieldRow extends Vue {
 
 .section-row.empty-row td {
   background-color: transparent; /* no color */
-  height: 0px; /* smaller vertical space */
+  height: 0; /* smaller vertical space */
   border-left: none;
   border-right: none;
   padding: 0; /* remove padding */

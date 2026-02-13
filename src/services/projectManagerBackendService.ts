@@ -14,6 +14,8 @@ const actionsPath = '/actions'
 export const CUSTOM_PROJECT_CONFIGURATION = 'CUSTOM';
 
 export enum ProjectRole {
+    // These values are defined in the backend and come from the backend. Therefore, we suppress the warning:
+    // noinspection JSUnusedGlobalSymbols
     CREATOR = "CREATOR",
     DEVELOPER = "DEVELOPER",
     PILOT = "PILOT",
@@ -162,6 +164,8 @@ export enum EditProjectParam {
 }
 
 export enum ProjectType {
+    // These values are defined in the backend and come from the backend. Therefore, we suppress the warning:
+    // noinspection JSUnusedGlobalSymbols
     EXPORT = "EXPORT",
     SAMPLES = "SAMPLES", // Interacts with Negotiator
     DATASHIELD = "DATASHIELD",
@@ -286,6 +290,8 @@ export interface FormFieldGroup {
 }
 
 export enum FormDataType {
+    // These values are defined in the backend and come from the backend. Therefore, we suppress the warning:
+    // noinspection JSUnusedGlobalSymbols
     INTEGER = "INTEGER",
     DOUBLE = "DOUBLE",
     BOOLEAN = "BOOLEAN",
@@ -353,7 +359,8 @@ function jsonToActionMetadata(json: any): ActionMetadata | undefined {
     const methodMapping: Record<string, HttpMethod> = {
         'GET': HttpMethod.GET,
         'POST': HttpMethod.POST,
-        // Add more mappings if necessary
+        'PUT': HttpMethod.PUT,
+        'DELETE': HttpMethod.DELETE
     };
     const method: HttpMethod | undefined = methodMapping[json.method];
     if (method === undefined) {
@@ -569,7 +576,7 @@ export class ProjectManagerBackendService {
         action: Action,
         context: ProjectManagerContext,
         params: Map<string, unknown>
-    ): Promise<AxiosResponse<any, any>> {
+    ): Promise<AxiosResponse> {
         await this.initializedPromise;
         const actionMetadata = this.getActionMetadata(module, action);
         if (!actionMetadata) {
@@ -596,7 +603,7 @@ export class ProjectManagerBackendService {
         httpMethod: HttpMethod,
         endpoint: string,
         params: Map<string, unknown>
-    ): Promise<AxiosResponse<any, any>> {
+    ): Promise<AxiosResponse> {
         if (!this.axiosInstance) throw new Error("Axios instance not initialized");
 
         const token = await AuthService.getToken();
@@ -664,15 +671,6 @@ export class ProjectManagerBackendService {
             default:
                 throw new Error(`Unsupported HTTP method: ${httpMethod}`);
         }
-    }
-
-
-    private convertToUrlSearchParams(map: Map<string, unknown>): URLSearchParams {
-        const result = new URLSearchParams();
-        for (const [key, value] of map) {
-            result.append(key, String(value));
-        }
-        return result;
     }
 
 }

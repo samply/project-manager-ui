@@ -3,8 +3,7 @@ import ProjectView from '../components/ProjectView.vue';
 import ProjectDashboard from "@/components/ProjectDashboard.vue";
 import AdminConfig from "@/components/AdminConfig.vue";
 
-import { createStore } from 'vuex';
-import OidcCallback from "@/components/OidcCallback.vue";
+import {createStore} from 'vuex';
 
 createStore({
     state: {
@@ -20,10 +19,10 @@ createStore({
         }
     },
     actions: {
-        // Actions zum Setzen von Benutzername und Rolle
+        /* Actions to set username and role */
     },
     getters: {
-        // Getters zum Abrufen von Benutzername und Rolle
+        /* Getters for retrieving username and role */
     }
 });
 
@@ -55,7 +54,7 @@ const router = createRouter({
     history: createWebHistory(),
     routes,
 });
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
     document.title = to.meta.title as string;
     next();
 });

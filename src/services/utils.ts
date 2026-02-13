@@ -7,7 +7,7 @@ import {
     FormField,
     FormFieldGroup,
     Module,
-    Project, ProjectAndForms
+    ProjectAndForms
 } from "@/services/projectManagerBackendService";
 
 export interface BridgeheadsProjectField {

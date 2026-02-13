@@ -1,6 +1,5 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop} from "vue-property-decorator";
 import DownloadButton from "./DownloadButton.vue";
 import {
   Action,
@@ -17,22 +16,23 @@ export interface FormTemplate {
 
 @Options({
   name: "DownloadFormTemplatePdfButtons",
+  components: {DownloadButton},
   computed: {
     EditProjectParam() {
-      return EditProjectParam
+      return EditProjectParam;
     }
   },
-  components: {DownloadButton}
+  props: {
+    formTemplates: {type: Array as () => FormTemplate[], required: true},
+    context: {type: Object as () => ProjectManagerContext, required: true},
+    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true}
+  }
 })
 export default class DownloadFormTemplatePdfButtons extends Vue {
-  // Array of templates
-  @Prop({required: true}) readonly formTemplates!: FormTemplate[];
 
-  // Common props for all buttons
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-
-  // Constants for module and action
+  readonly formTemplates!: FormTemplate[];
+  readonly context!: ProjectManagerContext;
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
   readonly module: Module = Module.PROJECT_EDITION_MODULE;
   readonly action: Action = Action.DOWNLOAD_FORM_AS_PDF_ACTION;
 

@@ -1,32 +1,53 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   Module,
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
+import {watch} from "vue";
 
 @Options({
-  name: "DownloadButton"
+  name: "DownloadButton",
+  props: {
+    context: {type: Object as () => ProjectManagerContext, required: true},
+    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
+    module: {type: Object as () => Module, required: true},
+    action: {type: Object as () => Action, required: true},
+    filename: {type: String, required: false},
+    iconClass: {type: String, required: false},
+    buttonClass: {type: String, required: false},
+    text: {type: String, required: false},
+    params: {type: Object as () => Map<string, unknown>, required: false, default: () => new Map<string, unknown>()}
+  }
 })
 export default class DownloadButton extends Vue {
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly module!: Module;
-  @Prop() readonly action!: Action;
-  @Prop() readonly filename: string | undefined = undefined;
-  @Prop() readonly iconClass: string | undefined = undefined;
-  @Prop() readonly buttonClass: string | undefined = undefined;
-  @Prop() readonly text: string | undefined = undefined;
-  @Prop({default: () => new Map<string, unknown>()}) readonly params!: Map<string, unknown>;
+  readonly context!: ProjectManagerContext;
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly module!: Module;
+  readonly action!: Action;
+  readonly filename!: string | undefined;
+  // Used in template:
+  // noinspection JSUnusedGlobalSymbols
+  readonly iconClass!: string | undefined;
+  // noinspection JSUnusedGlobalSymbols
+  readonly buttonClass!: string | undefined;
+  readonly text!: string | undefined;
+  readonly params!: Map<string, unknown>;
 
   isActive = false;
 
-  @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
+  mounted() {
     this.updateIsActive();
+
+    watch(
+        () => this.projectManagerBackendService,
+        () => {
+          this.updateIsActive();
+        },
+        {immediate: true, deep: true}
+    );
   }
 
   async created() {
@@ -57,7 +78,7 @@ export default class DownloadButton extends Vue {
 
     this.projectManagerBackendService
         .downloadFile(this.module, this.action, this.context, params)
-        .then(httpResponse => {
+        .then(() => {
           this.updateIsActive();
         });
   }

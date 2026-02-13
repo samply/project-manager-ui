@@ -1,6 +1,5 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   MessageSubject,
@@ -10,6 +9,8 @@ import {
   ProjectRole
 } from "@/services/projectManagerBackendService";
 import {EmailRole} from "@/services/emailRole";
+import {watch} from "vue";
+
 interface options {
   label: string,
   shortDescription: string,
@@ -17,14 +18,30 @@ interface options {
   advantages: string,
   useCases: string
 }
+
 @Options({
   name: "CredentialsSharingTool",
+  props: {
+    projectManagerBackendService: {type: Object, required: true},
+    recipientsEmails: {type: Array, required: true},
+    context: {type: Object, required: true},
+    projectRoles: {type: Array, required: true}
+  }
 })
 export default class CredentialsSharingTool extends Vue {
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly recipientsEmails!: EmailRole[];
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectRoles!: ProjectRole[];
+
+  projectManagerBackendService!: ProjectManagerBackendService;
+  recipientsEmails!: EmailRole[];
+  context!: ProjectManagerContext;
+  projectRoles!: ProjectRole[];
+
+  mounted() {
+    watch(
+        () => this.projectManagerBackendService,
+        () => this.updateRecipientMessagesSubjects(),
+        {immediate: true}
+    );
+  }
 
   recipientsCopied = false;
   passwordVisible = false;
@@ -80,21 +97,15 @@ export default class CredentialsSharingTool extends Vue {
     }
   ] as options[];
 
-
-  @Watch('projectManagerBackendService', {immediate: true})
-  onProjectManagerBackendService(newValue: EmailRole[], oldValue: EmailRole[]) {
-    this.updateRecipientMessagesSubjects()
-  }
-
   updateRecipientMessagesSubjects(): void {
     this.recipientsMessageSubjects = [];
-    if (this.recipientsEmails){
+    if (this.recipientsEmails) {
       this.recipientsEmails.forEach(emailRole => {
         this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_EMAIL_MESSAGE_AND_SUBJECT_ACTION).then(condition => {
-          if (condition){
+          if (condition) {
             this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.FETCH_EMAIL_MESSAGE_AND_SUBJECT_ACTION, this.context,
                 new Map([['email', emailRole.email], ['project-role', emailRole.projectRole], ['email-template-type', this.fetchEmailTemplateType()]])).then(messageSubject => {
-              if (messageSubject){
+              if (messageSubject) {
                 messageSubject.emailTo = emailRole.email;
                 this.addMessageSubject(messageSubject);
               }
@@ -105,11 +116,11 @@ export default class CredentialsSharingTool extends Vue {
     }
   }
 
-  addMessageSubject(messageSubject: MessageSubject){
+  addMessageSubject(messageSubject: MessageSubject) {
     this.recipientsMessageSubjects.push(messageSubject);
   }
 
-    // Computed to determine if the password input is required
+  // Computed to determine if the password input is required
   get passwordRequired(): boolean {
     return true; // Always show the password field for options 2 and 3
   }
@@ -134,7 +145,7 @@ export default class CredentialsSharingTool extends Vue {
 
   copyEmailTemplate(): void {
     const concatenatedMessages = this.recipientsMessageSubjects
-        .map((recipient) => this.generateEmailInEmlFormat(recipient))  // Generate email for each recipient
+        .map((recipient) => this.generateEmailInEmlFormat(recipient))  // Generate an email for each recipient
         .join("\n\n********************************\n\n");  // Add line breaks between emails
 
     navigator.clipboard.writeText(concatenatedMessages).then(() => {
@@ -165,7 +176,7 @@ export default class CredentialsSharingTool extends Vue {
     this.emailLinkGenerated = true;
   }
 
-  // Copy the link to clipboard and display the success icon
+  // Copy the link to the clipboard and display the success icon
   copyToClipboard(index: number): void {
     const link = this.generatedLinks[index];
 
@@ -203,16 +214,16 @@ export default class CredentialsSharingTool extends Vue {
   }
 
   createDownloadLink(content: string, mimeType: string): string {
-    const blob = new Blob([content], { type: mimeType });
+    const blob = new Blob([content], {type: mimeType});
     return URL.createObjectURL(blob);
   }
 
   generatePassword(): void {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*";
-    this.password = Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    this.password = Array.from({length: 12}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
   }
 
-  fetchEmailTemplateType(): string{
+  fetchEmailTemplateType(): string {
     return (this.projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) ? 'SEND_CREDENTIALS_FROM_BRIDGEHEAD' : 'SEND_CREDENTIALS';
   }
 
@@ -222,18 +233,19 @@ export default class CredentialsSharingTool extends Vue {
 <template>
   <div class="password-sharing-tool">
     <h3>Credentials Sharing Tool</h3>
-    <p>Please choose an option below to share the credentials securely. No credentials will be sent automatically to any external server, and the tool runs exclusively in your browser.</p>
+    <p>Please choose an option below to share the credentials securely. No credentials will be sent automatically to any
+      external server, and the tool runs exclusively in your browser.</p>
 
     <div class="options">
       <div style="margin-right: 10%;">
         <button class="option-button" @click="optionDropdownToggle = !optionDropdownToggle">
-          <div class="dropdown-display">
-            <div class="dropdown-label">{{credentialOptions[selectedOption].label}}</div>
-            <div class="dropdown-short">{{credentialOptions[selectedOption].shortDescription}}</div>
-          </div>
-          <div class="dropdown-icon">
+          <span class="dropdown-display">
+            <span class="dropdown-label">{{ credentialOptions[selectedOption].label }}</span>
+            <span class="dropdown-short">{{ credentialOptions[selectedOption].shortDescription }}</span>
+          </span>
+          <span class="dropdown-icon">
             <i class="bi bi-chevron-down"></i>
-          </div>
+          </span>
         </button>
 
         <div style="display:flex">
@@ -242,8 +254,8 @@ export default class CredentialsSharingTool extends Vue {
                  class="dropdown-display dropdown-display-hover"
                  @click="selectedOption=index;optionDropdownToggle=false"
             >
-              <div class="dropdown-label">{{option2.label}}</div>
-              <div class="dropdown-short">{{option2.shortDescription}}</div>
+              <div class="dropdown-label">{{ option2.label }}</div>
+              <div class="dropdown-short">{{ option2.shortDescription }}</div>
             </div>
           </div>
         </div>
@@ -293,7 +305,8 @@ export default class CredentialsSharingTool extends Vue {
           <div v-if="emailLinkGenerated">
             <p v-for="(link, index) in generatedLinks" :key="index">
               <a :href="link" target="_blank" class="btn btn-link" @click="copyToClipboard(index)">
-                Open Email App for {{recipientsEmails[index].email}} with role {{ recipientsEmails[index].projectRole}}
+                Open Email App for {{ recipientsEmails[index].email }} with role
+                {{ recipientsEmails[index].projectRole }}
               </a>
               <!-- Bootstrap icon to show when copied -->
               <i v-if="copiedLinks[index]" class="bi bi-check-circle text-success"></i>
@@ -310,7 +323,7 @@ export default class CredentialsSharingTool extends Vue {
           <div v-if="emlLinksGenerated">
             <p v-for="(link, index) in emlLinks" :key="index">
               <a :href="link" :download="`email_${recipientsEmails[index].email}.eml`" class="btn btn-link">
-                Download EML for {{ recipientsEmails[index].email }} with role {{ recipientsEmails[index].projectRole}}
+                Download EML for {{ recipientsEmails[index].email }} with role {{ recipientsEmails[index].projectRole }}
               </a>
               <i v-if="emlDownloaded[index]" class="bi bi-check-circle text-success"></i>
             </p>
@@ -326,13 +339,14 @@ export default class CredentialsSharingTool extends Vue {
           <div v-if="htmlLinksGenerated">
             <p v-for="(link, index) in htmlLinks" :key="index">
               <a :href="link" :download="`email_${recipientsEmails[index].email}.html`" class="btn btn-link">
-                Download HTML for {{ recipientsEmails[index].email }} with role {{ recipientsEmails[index].projectRole}}
+                Download HTML for {{ recipientsEmails[index].email }} with role
+                {{ recipientsEmails[index].projectRole }}
               </a>
               <i v-if="htmlDownloaded[index]" class="bi bi-check-circle text-success"></i>
             </p>
           </div>
         </div>
-        <p>{{credentialOptions[selectedOption].longDescription}}</p>
+        <p>{{ credentialOptions[selectedOption].longDescription }}</p>
         <p>
           <strong>Advantages:</strong> {{ credentialOptions[selectedOption].advantages }}
         </p>
@@ -345,7 +359,8 @@ export default class CredentialsSharingTool extends Vue {
     <!-- User recommendation -->
     <div class="recommendation">
       <p>
-        <strong>Recommendation:</strong> We strongly recommend that you encrypt and sign the email before sending it to ensure the privacy and integrity of the password and message.
+        <strong>Recommendation:</strong> We strongly recommend that you encrypt and sign the email before sending it to
+        ensure the privacy and integrity of the password and message.
       </p>
     </div>
   </div>
@@ -388,31 +403,37 @@ p {
 .recommendation a:hover {
   text-decoration: underline;
 }
+
 .option-button {
   display: flex;
   border-radius: 5px;
   border: 1px solid grey;
   background: none;
-  padding:0;
+  padding: 0;
   position: relative;
   width: 310px;
   max-height: 78px;
 }
+
 .dropdown-display {
   text-align: left;
   padding: 10px 15px;
 }
+
 .dropdown-icon {
   margin: auto;
   padding-right: 10px;
 }
+
 .dropdown-label {
   font-size: 16px;
   font-weight: bold
 }
+
 .dropdown-short {
   font-size: 11px;
 }
+
 .dropdown-div {
   background: white;
   position: absolute;
@@ -422,19 +443,23 @@ p {
   border-right: 1px solid grey;
   width: 310px;
 }
+
 .dropdown-display-hover:hover {
   background-color: #007bff;
   color: white;
   cursor: pointer;
 }
+
 .options {
   display: flex;
   min-height: 200px;
 }
+
 .option-variants {
   max-width: 350px;
   min-height: 120px;
 }
+
 .option {
   margin-bottom: 20px;
 }

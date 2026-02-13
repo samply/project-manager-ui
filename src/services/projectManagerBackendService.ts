@@ -328,7 +328,9 @@ function getActionFromString(value: string): Action | undefined {
 
 export enum HttpMethod {
     GET,
-    POST
+    POST,
+    PUT,
+    DELETE
 }
 
 export type ActionMetadata = {
@@ -633,18 +635,31 @@ export class ProjectManagerBackendService {
         // Retry configuration for normal requests
         axiosRetry(this.axiosInstance, {retries: 2, retryDelay: axiosRetry.exponentialDelay});
 
+        // Convert Map params to a plain object
+        const plainParams: Record<string, unknown> = {};
+        for (const [key, value] of params) {
+            plainParams[key] = value;
+        }
+
         switch (httpMethod) {
             case HttpMethod.GET:
-                config.params = this.convertToUrlSearchParams(params);
-                return this.axiosInstance.get(endpoint, config);
+            case HttpMethod.DELETE:
+                // Variables as query parameters
+                config.params = plainParams;
+                if (httpMethod === HttpMethod.GET) {
+                    return this.axiosInstance.get(endpoint, config);
+                } else {
+                    return this.axiosInstance.delete(endpoint, config);
+                }
 
             case HttpMethod.POST:
-                // For POST (non-upload), send JSON body
-                const body: Record<string, unknown> = {};
-                for (const [key, value] of params) {
-                    body[key] = value;
+            case HttpMethod.PUT:
+                // Variables as JSON body
+                if (httpMethod === HttpMethod.POST) {
+                    return this.axiosInstance.post(endpoint, plainParams, config);
+                } else {
+                    return this.axiosInstance.put(endpoint, plainParams, config);
                 }
-                return this.axiosInstance.post(endpoint, body, config);
 
             default:
                 throw new Error(`Unsupported HTTP method: ${httpMethod}`);

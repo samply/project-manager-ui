@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-02-12]
+## [1.1.0 - 2026-02-13]
 ### Added
 - Dockerfile
 - Single Spa
@@ -111,6 +111,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Selected Forms as Project View Row
 - Frontend Name
 - Project and Forms Configuration
+- Use PUT and DELETE HTTP methods
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

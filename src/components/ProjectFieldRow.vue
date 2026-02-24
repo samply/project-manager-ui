@@ -411,24 +411,27 @@ export default class ProjectFieldRow extends Vue {
       <div style="display: flex;padding-left:0;margin:20px 0">
         <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
              :class="{ 'active': editedValue[0] === step }">
-          <button class="config-button"
-                  @click="editedValue[0]=step;saveField()"
-                  style="background: none; border:none; color: black; padding:0; height:100%;min-width: fit-content">
-            <span style="height:100%; display: flex; flex-direction: column;">
-              <span class="config-box-header">{{ configurations?.get(step)?.project?.label }}</span>
-              <span class="config-box-body">
-                <span v-if="configurations" style="display: flex;flex-direction: column">
-                  <span style="margin-bottom:2%;text-align:left;min-height:200px">
+          <div class="config-button"
+               role="button"
+               tabindex="0"
+               @click="editedValue[0]=step; saveField()"
+               @keydown.enter="editedValue[0]=step; saveField()"
+               style="cursor: pointer; height:100%; min-width: fit-content;">
+            <div style="height:100%; display: flex; flex-direction: column;">
+              <div class="config-box-header">{{ configurations?.get(step)?.project?.label }}</div>
+              <div class="config-box-body">
+                <div v-if="configurations" style="display: flex;flex-direction: column">
+                  <div style="margin-bottom:2%;text-align:left;min-height:200px">
                     {{ configurations?.get(step)?.project?.description }}
-                  </span>
-                  <span v-if="!configurations?.get(step)?.project?.isCustomConfig"
+                  </div>
+                  <div v-if="!configurations?.get(step)?.project?.isCustomConfig"
                         style="text-align: right;margin-bottom:2%">
                     <button @click.stop="showDetails[index]=!showDetails[index]"
                             style="background: none; border:none; color: #007bff;">
                       <span v-if="!showDetails[index]">show details</span>
                       <span v-if="showDetails[index]">hide details</span>
                     </button>
-                  </span>
+                  </div>
                   <table v-if="showDetails[index]" style="text-align: left">
                     <tr v-for="(param, key) in configurations?.get(step)" :key="key">
                       <template v-if="!['customConfig', 'label', 'description'].includes(key.toString())">
@@ -439,10 +442,10 @@ export default class ProjectFieldRow extends Vue {
                       </template>
                     </tr>
                   </table>
-                </span>
-              </span>
-            </span>
-          </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </td>

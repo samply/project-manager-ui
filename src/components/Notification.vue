@@ -185,21 +185,6 @@ export default class NotificationBox extends Vue {
   font-family: "Calibri Light", Calibri, sans-serif;
 }
 
-.expand-icon {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.expand-icon i.rotate {
-  transform: rotate(180deg);
-}
-
-.card-body.expanded {
-  height: 300px;
-}
-
 .card-body {
   padding: 1rem;
 }

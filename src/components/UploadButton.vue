@@ -21,8 +21,9 @@ import {watch} from "vue";
     action: {type: Object as () => Action, required: true},
     text: {type: String, required: true},
     isFile: {type: Boolean, required: true},
-    useBridgeheadChooser: {type: Boolean, required: true},
-    visibleBridgeheads: {type: Array as () => Bridgehead[], required: true},
+
+    useBridgeheadChooser: {type: Boolean, default: false},
+    visibleBridgeheads: {type: Array as () => Bridgehead[], default: () => []},
   }
 })
 export default class UploadButton extends Vue {

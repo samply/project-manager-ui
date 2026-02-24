@@ -425,7 +425,7 @@ export default class ProjectFieldRow extends Vue {
                     {{ configurations?.get(step)?.project?.description }}
                   </div>
                   <div v-if="!configurations?.get(step)?.project?.isCustomConfig"
-                        style="text-align: right;margin-bottom:2%">
+                       style="text-align: right;margin-bottom:2%">
                     <button @click.stop="showDetails[index]=!showDetails[index]"
                             style="background: none; border:none; color: #007bff;">
                       <span v-if="!showDetails[index]">show details</span>
@@ -655,18 +655,6 @@ export default class ProjectFieldRow extends Vue {
   text-align: center; /* Center the icon */
 }
 
-.progress-container {
-  width: 100%;
-  height: 5px;
-  background-color: #ddd;
-  margin-top: 5px;
-}
-
-.progress {
-  height: 100%;
-  background-color: #4caf50;
-}
-
 .truncate-15 {
   white-space: nowrap;
   overflow: hidden;
@@ -681,6 +669,7 @@ export default class ProjectFieldRow extends Vue {
   max-width: calc(60 * 1ch); /* 1ch is the width of one character */
 }
 
+/*noinspection CssUnusedSymbol*/
 .query-edit-field {
   display: flex;
   justify-content: space-between;
@@ -688,6 +677,7 @@ export default class ProjectFieldRow extends Vue {
   width: 100%;
 }
 
+/*noinspection CssUnusedSymbol*/
 .description-edit-field {
   display: flex;
   justify-content: space-between;
@@ -695,17 +685,20 @@ export default class ProjectFieldRow extends Vue {
   width: 100%;
 }
 
+/*noinspection CssUnusedSymbol*/
 .bridgeheads-edit-field {
   display: flex;
   flex-flow: row;
   width: 100%;
 }
 
+/*noinspection CssUnusedSymbol*/
 .environment-variables-edit-field {
   display: flex;
   width: 100%;
 }
 
+/*noinspection CssUnusedSymbol*/
 .selection-edit-fields {
   display: flex;
   justify-content: space-between;
@@ -713,12 +706,14 @@ export default class ProjectFieldRow extends Vue {
   width: 100%;
 }
 
+/*noinspection CssUnusedSymbol*/
 .upload-edit-field {
   display: flex;
   flex-flow: row;
   width: 100%;
 }
 
+/*noinspection CssUnusedSymbol*/
 .other-edit-fields {
   display: flex;
   justify-content: space-between;
@@ -726,6 +721,7 @@ export default class ProjectFieldRow extends Vue {
   width: 100%;
 }
 
+/*noinspection CssUnusedSymbol*/
 .other-button-container,
 .query-button-container,
 .selection-button-container,
@@ -735,15 +731,16 @@ export default class ProjectFieldRow extends Vue {
   gap: 5%;
 }
 
+/*noinspection CssUnusedSymbol*/
 .bridgeheads-button-container,
-.environment-variables-button-container,
-.application-form-button-container {
+.environment-variables-button-container {
   width: 25%;
   display: flex;
   height: 20%;
   gap: 3%;
 }
 
+/*noinspection CssUnusedSymbol*/
 .upload-button-container {
   width: 25%;
   gap: 3%;
@@ -843,6 +840,7 @@ export default class ProjectFieldRow extends Vue {
   color: white;
 }
 
+/*noinspection CssUnusedSymbol*/
 .section-row.level-1 {
   margin-top: 10px;
 }
@@ -885,47 +883,57 @@ export default class ProjectFieldRow extends Vue {
   opacity: 0.8;
 }
 
+/*noinspection CssUnusedSymbol*/
 .section-title.level-0::before {
   content: "";
 }
 
+/*noinspection CssUnusedSymbol*/
 .section-title.level-1::before {
   content: "";
 }
 
+/*noinspection CssUnusedSymbol*/
 .section-title.level-2::before {
   content: "❯";
 }
 
+/*noinspection CssUnusedSymbol*/
 .section-title.level-3::before {
   content: "❯❯";
 }
 
+/*noinspection CssUnusedSymbol*/
 .section-title.level-4::before {
   content: "❯❯❯";
 }
 
 /* Font sizes & weights per level */
+/*noinspection CssUnusedSymbol*/
 .section-title.level-0 {
   font-size: 1rem;
   font-weight: 500;
 }
 
+/*noinspection CssUnusedSymbol*/
 .section-title.level-1 {
   font-size: 1.15rem;
   font-weight: 600;
 }
 
+/*noinspection CssUnusedSymbol*/
 .section-title.level-2 {
   font-size: 1.05rem;
   font-weight: 600;
 }
 
+/*noinspection CssUnusedSymbol*/
 .section-title.level-3 {
   font-size: 0.95rem;
   font-weight: 500;
 }
 
+/*noinspection CssUnusedSymbol*/
 .section-title.level-4 {
   font-size: 0.9rem;
   font-weight: 500;

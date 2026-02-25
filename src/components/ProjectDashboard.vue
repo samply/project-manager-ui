@@ -240,8 +240,8 @@ export default defineComponent({
 
 .box-header {
   padding: 12px 0 0 2%;
-  background-color: #95c8dc;
-  color: black;
+  background-color: #00489c;
+  color: white;
   font-size: large;
   font-weight: bold;
   border: 1px solid #95c8dc;

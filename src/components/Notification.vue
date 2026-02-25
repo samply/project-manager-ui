@@ -196,7 +196,7 @@ export default class NotificationBox extends Vue {
 
 .box-header {
   padding: 12px 0 12px 2%;
-  background-color: #95c8dc;
+  background-color: #00489c;
   color: black;
   font-size: large;
   font-weight: bold;

@@ -18,9 +18,17 @@ export default defineComponent({
 
 <style>
 #app {
-  background-color: #DFE5E8;
+  background-color: #EEEEEE;
+  font-family: Open Sans, sans-serif;
 }
+@font-face {
+  font-family: Open Sans;
+  font-style: normal;
+  font-weight: 300;
+  src: url(assets/OpenSans-Light.woff2) format("woff2");
+}
+
 :root {
-  background-color: #DFE5E8;
+  background-color: #EEEEEE;
 }
 </style>

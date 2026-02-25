@@ -1,6 +1,6 @@
 <template>
   <div>
-    <nav class="navbar navbar-dark bg-dark custom-navbar">
+    <nav class="navbar navbar-dark custom-navbar" style="background-color: #00387c">
       <router-link class="navbar-brand" to="/">
         <i class="bi bi-boxes navbar-icon" v-html="'&nbsp' + frontendName"></i>
       </router-link>
@@ -125,5 +125,9 @@ export default defineComponent({
   color: white;
   font-size: large;
   padding: 0.3rem 0.68rem;
+}
+.btn-outline-danger {
+  color: #fa7b26!important;
+  border: none!important;
 }
 </style>

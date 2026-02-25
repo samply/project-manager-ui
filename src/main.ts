@@ -2,28 +2,14 @@ import {createApp, h} from 'vue';
 import singleSpaVue from 'single-spa-vue';
 import App from './App.vue';
 import router from './router';
-
+import store from './services/store';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap';
-import store from './services/store';
+
 import {AuthService, finishLoginFlow, tryLoadUserFromStorage} from "@/services/auth";
 
-
-const app = createApp(App);
-
-const vueLifecycles = singleSpaVue({
-    createApp: () => app,
-    appOptions: {
-        render() {
-            return h(App);
-        },
-    },
-});
-
-app.use(router);
-app.use(store);
 
 async function handleOidcRedirect() {
     const url = new URL(window.location.href);
@@ -31,7 +17,6 @@ async function handleOidcRedirect() {
     if (url.searchParams.has("code")) {
         await finishLoginFlow();
 
-        // Remove code & state via router, not window.history
         const cleanPath = url.pathname + url.search
             .replace(/([&?])(code|state)=[^&]+/g, '')
             .replace(/^&/, '?');
@@ -40,25 +25,51 @@ async function handleOidcRedirect() {
     }
 }
 
+// noinspection JSUnusedGlobalSymbols
+/**
+ * These lifecycle functions (bootstrap, mount, unmount) are intentionally
+ * not referenced within this project.
+ *
+ * They are required entry points for Single-SPA. The root-config application
+ * dynamically loads this micro frontend and invokes these exports at runtime.
+ *
+ * Because the usage happens externally, IntelliJ and TypeScript mark them
+ * as "unused". The `// noinspection JSUnusedGlobalSymbols` suppression is
+ * therefore intentional and should not be removed.
+ */
 
-export const bootstrap = async () => {
+// noinspection JSUnusedGlobalSymbols
+const vueLifecycles = singleSpaVue({
+    createApp,
+    appOptions: {
+        render() {
+            return h(App);
+        },
+    },
+    handleInstance(app) {
+        app.use(router);
+        app.use(store);
+    },
+});
 
-    // If coming from OIDC redirect, process login
-    await handleOidcRedirect();
-    // Try to load cached user first
-    await tryLoadUserFromStorage();
-    // Trigger login if no valid user exists
-    if (!AuthService.isLoggedIn()) {
-        try {
-            await AuthService.getToken(); // triggers silent renew first
-        } catch {
-            await AuthService.login();
+// noinspection JSUnusedGlobalSymbols
+export const bootstrap = [
+    async () => {
+        await handleOidcRedirect();
+        await tryLoadUserFromStorage();
+
+        if (!AuthService.isLoggedIn()) {
+            try {
+                await AuthService.getToken();
+            } catch {
+                await AuthService.login();
+            }
         }
-    }
+    },
+    vueLifecycles.bootstrap,
+];
 
-
-    return vueLifecycles.bootstrap;
-};
-
+// noinspection JSUnusedGlobalSymbols
 export const mount = vueLifecycles.mount;
+// noinspection JSUnusedGlobalSymbols
 export const unmount = vueLifecycles.unmount;

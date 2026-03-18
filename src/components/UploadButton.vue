@@ -9,21 +9,21 @@ import {
   UPLOAD_DOCUMENT_PARAM,
   UPLOAD_DOCUMENT_URL_PARAM
 } from "@/services/projectManagerBackendService";
-import {watch} from "vue";
+import {PropType, watch} from "vue";
 
 @Options({
   name: "UploadButton",
   props: {
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
-    context: {type: Object as () => ProjectManagerContext, required: true},
-    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
-    module: {type: Object as () => Module, required: true},
-    action: {type: Object as () => Action, required: true},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
+    module: {type: String as PropType<Module>, required: true},
+    action: {type: String as PropType<Action>, required: true},
     text: {type: String, required: true},
     isFile: {type: Boolean, required: true},
 
     useBridgeheadChooser: {type: Boolean, default: false},
-    visibleBridgeheads: {type: Array as () => Bridgehead[], default: () => []},
+    visibleBridgeheads: {type: Array as PropType<Bridgehead[]>, default: () => []},
   }
 })
 export default class UploadButton extends Vue {

@@ -7,12 +7,12 @@ import {
   ProjectManagerContext,
   User
 } from "@/services/projectManagerBackendService";
-import {watch} from "vue";
+import {PropType, watch} from "vue";
 
 @Options({
   name: "MailingBlackList",
   props: {
-    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true}
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true}
   }
 })
 export default class MailingBlackList extends Vue {

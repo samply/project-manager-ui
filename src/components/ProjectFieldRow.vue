@@ -18,7 +18,7 @@ import type {DialogStep} from "@/services/fixedDialogStep";
 import {FixedDialogStep} from "@/services/fixedDialogStep";
 import type {BridgeheadsProjectField} from "@/services/utils";
 import {ActionFunction, Section} from "@/services/utils";
-import {watch} from "vue";
+import {PropType, watch} from "vue";
 
 @Options({
   name: "ProjectFieldRow",
@@ -30,33 +30,39 @@ import {watch} from "vue";
   components: {DownloadButton, UploadButton},
   props: {
     fieldKey: {type: String, required: true},
-    editProjectParam: {type: Array as () => EditProjectParam[], required: true},
-    fieldValue: {type: Array as () => string[], required: true},
-    fieldDescription: {type: Array as () => string[], required: true},
-    bridgeheads: {type: Object as () => BridgeheadsProjectField, required: false},
-    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
-    context: {type: Object as () => ProjectManagerContext, required: true},
+    editProjectParam: {type: Array as PropType<EditProjectParam[]>, required: true},
+    fieldValue: {type: Array as PropType<string[]>, required: true},
+    fieldDescription: {type: String, required: false},
+    bridgeheads: {type: Object as PropType<BridgeheadsProjectField>, required: false},
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
     redirectUrl: {type: String, required: false},
-    module: {type: String as () => Module, default: Module.PROJECT_EDITION_MODULE},
-    action: {type: [String, Object] as unknown as () => Action | ActionFunction, default: Action.EDIT_PROJECT_ACTION},
-    possibleValues: {type: Array as () => string[], required: true},
-    configurations: {type: Object as () => Map<string, ProjectAndForms>, required: false},
+    module: {type: String as PropType<Module>, default: Module.PROJECT_EDITION_MODULE},
+    action: {
+      type: [String, Object] as unknown as PropType<Action | ActionFunction>,
+      default: Action.EDIT_PROJECT_ACTION
+    },
+    possibleValues: {type: Array as PropType<string[]>, required: false},
+    configurations: {type: Object as PropType<Map<string, ProjectAndForms>>, required: false},
     isEditable: {type: Boolean, required: true},
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
-    uploadAction: {type: String as () => Action, required: true},
-    downloadAction: {type: String as () => Action, required: true},
-    downloadModule: {type: String as () => Module, required: true},
-    todos: {type: Object as () => Explanations, required: false},
-    existsFile: {type: Boolean, required: true},
-    mandatory: {type: Boolean, required: true},
-    type: {type: String as () => FormDataType, required: true},
-    draftDialogCurrentStep: {type: Object as () => DialogStep, required: true},
-    visibleBridgeheads: {type: Array as () => Bridgehead[], required: true},
-    section: {type: Object as () => Section, required: true},
+    uploadAction: {type: String as PropType<Action>, required: false},
+    downloadAction: {type: String as PropType<Action>, required: false},
+    downloadModule: {type: String as PropType<Module>, required: false},
+    deleteAction: {type: String as PropType<Action>, required: false},
+    deleteModule: {type: String as PropType<Module>, required: false},
+    todos: {type: Object as PropType<Explanations>, required: false},
+    existsFile: {type: Boolean, required: false},
+    mandatory: {type: Boolean, required: true, default: false},
+    type: {type: String as PropType<FormDataType>, required: false},
+    draftDialogCurrentStep: {type: Object as PropType<DialogStep>, required: true},
+    visibleBridgeheads: {type: Array as PropType<Bridgehead[]>, required: true},
+    section: {type: Object as PropType<Section>, required: false},
     transformForSending: {
       type: Function as unknown as () => (input: string) => string,
       default: (input: string) => input
-    }
+    },
+    extraParams: {type: Object as PropType<Map<string, string>>, required: false},
   }
 })
 export default class ProjectFieldRow extends Vue {
@@ -71,23 +77,27 @@ export default class ProjectFieldRow extends Vue {
   readonly redirectUrl?: string;
   readonly module!: Module;
   readonly action!: Action | ActionFunction;
-  readonly possibleValues!: string[];
+  readonly possibleValues?: string[];
   readonly isEditable!: boolean;
   readonly callRefreshContext!: () => void;
 
   // For template:
   // noinspection JSUnusedGlobalSymbols
-  readonly fieldDescription!: string[];
+  readonly fieldDescription?: string;
   // noinspection JSUnusedGlobalSymbols
   readonly configurations?: Map<string, ProjectAndForms>;
   // noinspection JSUnusedGlobalSymbols
-  readonly downloadAction!: Action;
+  readonly downloadAction?: Action;
   // noinspection JSUnusedGlobalSymbols
-  readonly downloadModule!: Module;
+  readonly downloadModule?: Module;
+  // noinspection JSUnusedGlobalSymbols
+  readonly deleteAction?: Action;
+  // noinspection JSUnusedGlobalSymbols
+  readonly deleteModule?: Module;
   // noinspection JSUnusedGlobalSymbols
   readonly todos?: Explanations;
   // noinspection JSUnusedGlobalSymbols
-  readonly existsFile!: boolean;
+  readonly existsFile?: boolean;
   // noinspection JSUnusedGlobalSymbols
   readonly mandatory!: boolean;
   // noinspection JSUnusedGlobalSymbols
@@ -95,10 +105,11 @@ export default class ProjectFieldRow extends Vue {
   // noinspection JSUnusedGlobalSymbols
   readonly visibleBridgeheads!: Bridgehead[];
   // noinspection JSUnusedGlobalSymbols
-  readonly section!: Section;
-  readonly uploadAction!: Action;
+  readonly section?: Section;
+  readonly uploadAction?: Action;
   readonly type!: FormDataType;
   readonly transformForSending!: (input: string) => string;
+  readonly extraParams?: Map<string, string>;
 
   editing = false;
   editedValue: string[] = [];
@@ -186,6 +197,28 @@ export default class ProjectFieldRow extends Vue {
     return !this.editing && this.isEditable && this.isActionEnabled;
   }
 
+  deleteField() {
+    const params = new Map<string, string>();
+    if (this.editProjectParam && this.editProjectParam.length > 0 && this.deleteModule && this.deleteAction) {
+
+      for (let i = 0; i < this.editProjectParam.length; i++) {
+        if (i < this.editedValue.length) {
+          params.set(this.editProjectParam[i], this.applyTransformToSend(this.editedValue[i]));
+        }
+      }
+
+      if (this.extraParams) {
+        this.extraParams.forEach((value, key) => {
+          params.set(key, value);
+        })
+      }
+
+      this.projectManagerBackendService
+          .fetchData(this.deleteModule, this.deleteAction, this.context, params)
+          .then(() => this.callRefreshContext());
+    }
+  }
+
   saveField() {
     this.showInputs = false;
     this.editing = false;
@@ -208,6 +241,12 @@ export default class ProjectFieldRow extends Vue {
             params.set(this.editProjectParam[i], this.applyTransformToSend(this.editedValue[i]));
           }
         }
+      }
+
+      if (this.extraParams) {
+        this.extraParams.forEach((value, key) => {
+          params.set(key, value);
+        })
       }
 
       this.projectManagerBackendService
@@ -333,7 +372,7 @@ export default class ProjectFieldRow extends Vue {
   }
 
   isSelection(): boolean {
-    return this.possibleValues && this.possibleValues.length > 0;
+    return (this.possibleValues?.length ?? 0) > 0;
   }
 
   isTypeBoolean(): boolean {
@@ -457,9 +496,9 @@ export default class ProjectFieldRow extends Vue {
       <div style="display: flex;">
         <span>{{ fieldKey }}</span>
         <span v-if="this.mandatory">&nbsp*</span>
-        <span v-if="todos?.get(this.uploadAction)"
+        <span v-if="this.uploadAction && todos?.get(this.uploadAction)"
               class="todo-circle-small">#{{ todos?.get(this.uploadAction)?.number }}</span>
-        <span v-if="todos?.get(this.downloadAction) && this.existsFile"
+        <span v-if="this.downloadAction && todos?.get(this.downloadAction) && this.existsFile"
               class="todo-circle-small">#{{ todos?.get(this.downloadAction)?.number }}</span>
       </div>
       <div class="field-description" v-html="fieldDescription"></div>
@@ -609,6 +648,14 @@ export default class ProjectFieldRow extends Vue {
               data-placement="top" title="Edit"
               style="background:none; border:none; color:black"><i class="bi bi-pencil me-2" @click="editField"></i>
           </button>
+          <button
+              v-if="isFieldValueEditable() && this.deleteAction && this.deleteModule"
+              class="btn btn-primary"
+              data-toggle="tooltip"
+              data-placement="top" title="Delete"
+              style="background:none; border:none; color:black"><i class="bi bi-trash me-2" @click="deleteField"></i>
+          </button>
+
           <DownloadButton v-if="existsFile && downloadAction" :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
                           :module="downloadModule" :action="downloadAction"/>

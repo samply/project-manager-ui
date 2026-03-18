@@ -9,7 +9,7 @@
       <tr v-for="(header, index) in headers" :key="index">
         <!-- Header in the first column -->
         <td class="header-cell">{{ header }}</td>
-        <td v-if="header === 'Sites'" class="header-summary-cell" style="border-top: 1px solid #dddddd">
+        <td v-if="header === Header.SITES" class="header-summary-cell" style="border-top: 1px solid #dddddd">
           {{ bridgeheads.length }}
         </td>
         <td v-else-if="header === 'Votum'" class="header-summary-cell status-cell">{{ getVotumStatus()[0] }}
@@ -17,12 +17,14 @@
           / {{ getVotumStatus()[1] }}
           <div class="exist-small red"></div>
         </td>
-        <td v-else-if="header === 'Teiler'" class="header-summary-cell status-cell">{{ getQueryStatus()[0] }}
+        <td v-else-if="THeader.isHeaderOfHeaderType(header, Header.TEILER)" class="header-summary-cell status-cell">{{
+            fetchQueryStatus(THeader.extractProjectType(header))[0]
+          }}
           <div class="exist-small green"></div>
-          / {{ getQueryStatus()[1] }}
+          / {{ fetchQueryStatus(THeader.extractProjectType(header))[1] }}
           <div class="exist-small red"></div>
         </td>
-        <td v-if="header === 'DataSHIELD Status' " class="header-summary-cell status-cell">
+        <td v-if="header === DATASHIELD_STATUS_HEADER " class="header-summary-cell status-cell">
           {{ getDatashieldStatus()[0] }}
           <div class="exist-small green"></div>
           / {{ getDatashieldStatus()[1] }}
@@ -33,7 +35,7 @@
           / {{ getBridgeheadStatus()[1] }}
           <div class="exist-small red"></div>
         </td>
-        <td v-else-if="header === 'Applicant Results Acceptance'" class="header-summary-cell status-cell">
+        <td v-else-if="header === Header.APPLICANT_RESULTS_ACCEPTANCE" class="header-summary-cell status-cell">
           {{ getCreatorStatus()[0] }}
           <div class="exist-small green"></div>
           / {{ getCreatorStatus()[1] }}
@@ -46,11 +48,11 @@
             class="data-cell"
             :class="{ 'selected': selectedBridgehead === bridgeheadIndex }"
         >
-          <div v-if="header === 'Sites'" style="font-weight: bold; text-align: center"
+          <div v-if="header === Header.SITES" style="font-weight: bold; text-align: center"
                @click="selectBridgehead(bridgeheadIndex)">
             {{ bridgehead.humanReadable }}
           </div>
-          <div v-else-if="header === 'Votum'">
+          <div v-else-if="header === Header.VOTUM">
             <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]" class="states-circle-container">
               <div class="state_circle green"></div>
               <DownloadButton
@@ -77,15 +79,18 @@
               <div class="state_circle red"></div>
             </div>
           </div>
-          <div v-else-if="header === 'Teiler'" class="states-circle-container">
-            <div class="state_circle" :class="bridgehead?.queryState?.toLowerCase()" data-toggle="tooltip"
-                 data-placement="top" :title="bridgehead?.queryState ?? undefined"/>
+          <div v-else-if="THeader.isHeaderOfHeaderType(header, Header.TEILER)" class="states-circle-container">
+            <div class="state_circle"
+                 :class="fetchQueryState(bridgehead, THeader.extractProjectType(header))?.toLowerCase()"
+                 data-toggle="tooltip"
+                 data-placement="top"
+                 :title="fetchQueryState(bridgehead, THeader.extractProjectType(header)) ?? undefined"/>
           </div>
-          <div v-else-if="header === 'User Access'" class="states-circle-container">
+          <div v-else-if="header === Header.USER_ACCESS" class="states-circle-container">
             <div class="state_circle" :class="bridgehead?.state?.toLowerCase()" data-toggle="tooltip"
                  data-placement="top" :title="bridgehead?.state ?? undefined"/>
           </div>
-          <div v-else-if="header === 'Applicant Results Acceptance'" class="states-circle-container">
+          <div v-else-if="header === Header.APPLICANT_RESULTS_ACCEPTANCE" class="states-circle-container">
             <div class="state_circle" :class="getCreatorStatusForBridgehead(bridgehead)?.toLowerCase()"
                  data-toggle="tooltip" data-placement="top"
                  :title="getCreatorStatusForBridgehead(bridgehead) ?? undefined"/>
@@ -114,50 +119,58 @@
 
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import type {Project} from "@/services/projectManagerBackendService";
 import {
   Action,
   Bridgehead,
   DataShieldProjectStatus,
+  getAllProjectTypes,
+  getQueryState,
+  hasProjectType,
   Module,
+  Project,
+  ProjectBridgeheadState,
   ProjectManagerBackendService,
   ProjectManagerContext,
-  ProjectType
+  ProjectType,
+  UserProjectState
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import '@/assets/styles/state-circle.css'
-import {watch} from "vue";
+import {PropType, watch} from "vue";
+import {BridgeheadOverviewHeader, MultiHeader} from "@/services/BridgeheadOverviewHeaders";
 
 @Options({
   name: "BridgeheadOverview",
+  methods: {fetchQueryState: getQueryState},
+  computed: {
+    BridgeheadOverview() {
+      return BridgeheadOverview
+    }
+  },
   components: {DownloadButton},
   props: {
-    activeBridgehead: {
-      type: Object,
-      required: true
-    },
     context: {
-      type: Object as () => ProjectManagerContext,
+      type: Object as PropType<ProjectManagerContext>,
       required: true
     },
     projectManagerBackendService: {
-      type: Object as () => ProjectManagerBackendService,
+      type: Object as PropType<ProjectManagerBackendService>,
       required: true
     },
     bridgeheads: {
-      type: Array as () => Bridgehead[],
+      type: Array as PropType<Bridgehead[]>,
       required: true
     },
     project: {
-      type: Object as () => Project,
-      required: true
+      type: Object as PropType<Project>,
+      required: false
     },
     existsVotumForAllBridgeheads: {
       type: Boolean,
       required: true
     },
     callUpdateActiveBridgehead: {
-      type: Function as unknown as () => (param: Bridgehead) => void,
+      type: Function as PropType<(param: Bridgehead) => void>,
       required: true
     }
 
@@ -168,7 +181,7 @@ export default class BridgeheadOverview extends Vue {
   readonly context!: ProjectManagerContext;
   readonly projectManagerBackendService!: ProjectManagerBackendService;
   readonly bridgeheads!: Bridgehead[];
-  readonly project!: Project;
+  readonly project?: Project;
   readonly existsVotumForAllBridgeheads!: boolean;
   readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
 
@@ -176,7 +189,13 @@ export default class BridgeheadOverview extends Vue {
   Action = Action;
 
   DATASHIELD_STATUS_HEADER = 'DataSHIELD Status';
-  headers = ['Sites', 'Votum', 'Teiler', 'User Access', 'Applicant Results Acceptance'];
+
+  Header = BridgeheadOverviewHeader;
+  THeader = MultiHeader;
+  fetchQueryState = getQueryState;
+
+  headers: string[] = [];
+
   // noinspection SpellCheckingInspection
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
@@ -199,15 +218,29 @@ export default class BridgeheadOverview extends Vue {
     this.selectedBridgehead = 0;
   }
 
+  buildHeaders(): void {
+    this.headers = []; // reset headers
+    Object.values(this.Header).forEach(header => {
+      if (header === this.Header.TEILER) {
+        getAllProjectTypes(this.project).forEach(pt => {
+          this.headers.push(MultiHeader.build(pt, BridgeheadOverviewHeader.TEILER));
+        });
+      } else {
+        this.headers.push(header);
+      }
+    });
+  }
+
   async updateBridgeheadExtraInfo() {
     this.existsVotums = await this.fetchExistsVotums();
-    if (this.project && this.project.type === ProjectType.DATASHIELD) {
+    this.buildHeaders();
+    if (hasProjectType(this.project, ProjectType.DATASHIELD)) {
       if (!this.headers.includes(this.DATASHIELD_STATUS_HEADER)) {
-        const userAccessIndex = this.headers.indexOf('User Access');
+        const userAccessIndex = this.headers.indexOf(this.Header.USER_ACCESS);
         if (userAccessIndex !== -1) {
           this.headers.splice(userAccessIndex, 0, this.DATASHIELD_STATUS_HEADER);
         } else {
-          // If 'User Access' is not found, append the header as a fallback
+          // If Header.USER_ACCESS is not found, append the header as a fallback
           this.headers.push(this.DATASHIELD_STATUS_HEADER);
         }
       }
@@ -275,8 +308,8 @@ export default class BridgeheadOverview extends Vue {
   }
 
   getBridgeheadStatus(): number[] {
-    const isAccepted = this.bridgeheads.filter((bridgehead) => bridgehead.state === 'ACCEPTED');
-    const notAccepted = this.bridgeheads.filter((bridgehead) => bridgehead.state !== 'ACCEPTED');
+    const isAccepted = this.bridgeheads.filter((bridgehead) => bridgehead.state === ProjectBridgeheadState.ACCEPTED);
+    const notAccepted = this.bridgeheads.filter((bridgehead) => bridgehead.state !== ProjectBridgeheadState.ACCEPTED);
     return [isAccepted.length, notAccepted.length]
   }
 
@@ -286,17 +319,25 @@ export default class BridgeheadOverview extends Vue {
     return [withData.length, withoutData.length]
   }
 
-  getQueryStatus(): number[] {
-    const isFinished = this.bridgeheads.filter((bridgehead) => bridgehead.queryState === 'FINISHED');
-    const notFinished = this.bridgeheads.filter((bridgehead) => bridgehead.queryState !== 'FINISHED');
-    return [isFinished.length, notFinished.length]
+  fetchQueryStatus(projectType: ProjectType | undefined): number[] {
+    if (!this.bridgeheads || projectType === undefined) return [0, 0];
+
+    // Flatten all executions and filter by projectType
+    const executions = this.bridgeheads
+        .flatMap(b => b.executions ?? [])
+        .filter(e => e.projectType === projectType);
+
+    const isFinished = executions.filter(e => e.queryState === 'FINISHED');
+    const notFinished = executions.filter(e => e.queryState !== 'FINISHED');
+
+    return [isFinished.length, notFinished.length];
   }
 
   getCreatorStatus(): number[] {
-    if (this.project?.creatorState === 'ACCEPTED' && this.project?.resultsUrl) {
+    if (this.project?.creatorState === UserProjectState.ACCEPTED && this.project?.resultsUrl) {
       return [1, 0];
     }
-    if (this.project?.creatorState === 'REJECTED' && this.project?.resultsUrl) {
+    if (this.project?.creatorState === UserProjectState.REJECTED && this.project?.resultsUrl) {
       return [0, 1];
     }
     const isFinished = this.bridgeheads.filter((bridgehead) => this.isBridgeheadAcceptedByCreator(bridgehead));
@@ -309,10 +350,10 @@ export default class BridgeheadOverview extends Vue {
   }
 
   getCreatorStatusForBridgehead(bridgehead: Bridgehead): string | null | undefined {
-    if (this.project?.creatorState === 'ACCEPTED' || this.project?.creatorState === 'REJECTED') {
+    if (this.project?.creatorState === UserProjectState.ACCEPTED || this.project?.creatorState === UserProjectState.REJECTED) {
       return this.project?.creatorState;
     }
-    return (bridgehead?.state === 'ACCEPTED') ? bridgehead?.creatorState : 'CREATED';
+    return (bridgehead?.state === 'ACCEPTED') ? bridgehead?.creatorState : ProjectBridgeheadState.CREATED;
   }
 
 }

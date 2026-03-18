@@ -7,23 +7,23 @@ import {
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
 import {Options, Vue} from "vue-class-component";
-import {watch} from "vue";
+import {PropType, watch} from "vue";
 
 @Options({
   name: "ProjectManagerButton",
   props: {
-    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
-    module: {type: Object as () => Module, required: true},
-    action: {type: Object as () => Action, required: true},
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
+    module: {type: String as PropType<Module>, required: true},
+    action: {type: String as PropType<Action>, required: true},
     text: {type: String, required: true},
-    action2: {type: Object as () => Action, required: false},
+    action2: {type: Object as PropType<Action>, required: false},
     text2: {type: String, required: false},
     buttonClass: {type: String, required: true},
     withMessage: {type: Boolean, required: true},
     visibility: {type: Boolean, required: false},
     isDisabled: {type: Boolean, default: false},
-    context: {type: Object as () => ProjectManagerContext, required: true},
-    params: {type: Object as () => Map<string, string>, default: () => new Map()},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
+    params: {type: Object as PropType<Map<string, string>>, default: () => new Map()},
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
     tooltipText: {type: String, default: ''},
     doActionOnClick: {type: Function as unknown as () => void, required: false}
@@ -44,7 +44,7 @@ export default class ProjectManagerButton extends Vue {
   // noinspection JSUnusedGlobalSymbols
   readonly withMessage!: boolean;
   // noinspection JSUnusedGlobalSymbols
-  readonly isDisabled!: boolean;
+  readonly isDisabled?: boolean;
   // noinspection JSUnusedGlobalSymbols
   readonly tooltipText!: string;
   readonly visibility?: boolean;

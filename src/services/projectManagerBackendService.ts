@@ -144,7 +144,8 @@ export enum Action {
     DOWNLOAD_FORM_AS_PDF_ACTION = "DOWNLOAD_FORM_AS_PDF",
     FETCH_SELECTED_PROJECT_FORMS_ACTION = "FETCH_SELECTED_PROJECT_FORMS",
     ADD_SELECTED_PROJECT_FORM_ACTION = "ADD_SELECTED_PROJECT_FORM",
-    REMOVE_SELECTED_PROJECT_FORM_ACTION = "REMOVE_SELECTED_PROJECT_FORM"
+    REMOVE_SELECTED_PROJECT_FORM_ACTION = "REMOVE_SELECTED_PROJECT_FORM",
+    REMOVE_PROJECT_OUTPUT_ACTION = "REMOVE_PROJECT_OUTPUT"
 }
 
 export enum EditProjectParam {
@@ -172,6 +173,25 @@ export enum ProjectType {
     RESEARCH_ENVIRONMENT = "RESEARCH_ENVIRONMENT"
 }
 
+export enum ProjectState {
+    DRAFT = "DRAFT",
+    REVIEW = "REVIEW",
+    APPROVAL = "APPROVAL",
+    DEVELOP = "DEVELOP",
+    PILOT = "PILOT",
+    FINAL = "FINAL",
+    FINISHED = "FINISHED",
+    REJECTED = "REJECTED",
+    ARCHIVED = "ARCHIVED"
+}
+
+export enum UserProjectState {
+    CREATED = "CREATED",
+    REQUEST_CHANGES = "REQUEST_CHANGES",
+    ACCEPTED = "ACCEPTED",
+    REJECTED = "REJECTED"
+}
+
 export interface Project {
     code?: string;
     creatorEmail?: string;
@@ -180,20 +200,37 @@ export interface Project {
     expiresAt?: Date;
     archivedAt?: Date;
     modifiedAt?: Date;
-    state?: string;
-    type?: ProjectType;
+    state?: ProjectState;
     query?: string;
     humanReadable?: string;
     queryFormat?: string;
-    outputFormat?: string;
-    templateId?: string;
     label?: string;
     description?: string;
     explorerUrl?: string;
     queryContext?: string;
     isCustomConfig?: boolean;
-    creatorState?: string;
+    creatorState?: UserProjectState;
     resultsUrl?: string;
+    outputs?: ProjectOutput[];
+}
+
+export interface ProjectOutput {
+    projectType: ProjectType;
+    outputFormat?: string;
+    templateId?: string;
+}
+
+export function getAllProjectTypes(project?: Project): ProjectType[] {
+    return project?.outputs?.map(o => o.projectType) ?? [];
+}
+
+export function getAllProjectTypesFromBridgehead(bridgehead?: Bridgehead): ProjectType[] {
+    return bridgehead?.executions?.map(e => e.projectType) ?? [];
+}
+
+export function hasProjectType(project?: Project, type?: ProjectType): boolean {
+    if (!type) return false; // nothing to check
+    return project?.outputs?.some(o => o.projectType === type) ?? false;
 }
 
 export interface Notification {
@@ -226,15 +263,65 @@ export interface MessageSubject {
     emailTo: string; // This field is not included in the backend
 }
 
+export enum ProjectBridgeheadState {
+    CREATED = "CREATED",
+    ACCEPTED = "ACCEPTED",
+    REJECTED = "REJECTED"
+}
 
 export interface Bridgehead {
     bridgehead: string;
     humanReadable?: string;
     projectCode?: string;
-    state?: string;
     modifiedAt?: string;
-    queryState?: string;
-    creatorState?: string;
+    creatorState?: UserProjectState;
+    state?: ProjectBridgeheadState;
+    executions?: BridgeheadExecution[];
+}
+
+export enum QueryState {
+    CREATED = "CREATED",
+    TO_BE_SENT = "TO_BE_SENT",
+    TO_BE_SENT_AND_EXECUTED = "TO_BE_SENT_AND_EXECUTED",
+    SENDING = "SENDING",
+    SENDING_AND_EXECUTING = "SENDING_AND_EXECUTING",
+    EXPORT_RUNNING_1 = "EXPORT_RUNNING_1",
+    EXPORT_RUNNING_2 = "EXPORT_RUNNING_2",
+    ERROR = "ERROR",
+    FINISHED = "FINISHED"
+}
+
+export interface BridgeheadExecution {
+    projectType: ProjectType;
+    queryState: QueryState;
+}
+
+export function hasExecution(bridgehead?: Bridgehead, projectType?: ProjectType, queryState?: QueryState): boolean {
+    if (!bridgehead?.executions?.length) return false; // no executions at all
+
+    return bridgehead.executions.some(exec => {
+        // if projectType is defined, it must match
+        const typeMatches = projectType ? exec.projectType === projectType : true;
+        // if queryState is defined, it must match
+        const stateMatches = queryState ? exec.queryState === queryState : true;
+
+        return typeMatches && stateMatches;
+    });
+}
+
+export function getQueryState(bridgehead: Bridgehead, projectType?: ProjectType): string | undefined {
+    return projectType
+        ? bridgehead.executions?.find(e => e.projectType === projectType)?.queryState
+        : undefined;
+}
+
+export function hasValidOutputs(project?: Project): boolean {
+    return (
+        (project?.outputs?.length ?? 0) > 0 &&
+        project!.outputs!.every(
+            o => o.templateId !== undefined && o.outputFormat !== undefined && o.projectType !== undefined
+        )
+    );
 }
 
 export interface ProjectDocument {

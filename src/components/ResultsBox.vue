@@ -1,6 +1,6 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import type {Project} from "@/services/projectManagerBackendService";
+import {Project, UserProjectState} from "@/services/projectManagerBackendService";
 import {
   Action,
   ActionButton,
@@ -17,7 +17,7 @@ import "@/assets/styles/state-circle.css"
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import {EmailRole} from "@/services/emailRole";
-import {watch} from "vue";
+import {PropType, watch} from "vue";
 
 
 @Options({
@@ -25,11 +25,11 @@ import {watch} from "vue";
   components: {ProjectManagerButton, UserAndEmail, CredentialsSharingTool},
   props: {
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
-    context: {type: Object as () => ProjectManagerContext, required: true},
-    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
-    project: {type: Object as () => Project, required: true},
-    currentUsers: {type: Array as () => User[], required: true},
-    projectRoles: {type: Array as () => ProjectRole[], required: true},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
+    project: {type: Object as PropType<Project>, required: true},
+    currentUsers: {type: Array as PropType<User[]>, required: true},
+    projectRoles: {type: Array as PropType<ProjectRole[]>, required: true},
   }
 })
 export default class ResultsBox extends Vue {
@@ -253,10 +253,10 @@ export default class ResultsBox extends Vue {
     if (!this.isUrl(results?.url) && results?.url != this.RESULTS_ALREADY_SENT) {
       return false;
     }
-    if (results.creatorState === 'ACCEPTED' && actionButton.action.includes('ACCEPT')) {
+    if (results.creatorState === UserProjectState.ACCEPTED && actionButton.action.includes('ACCEPT')) {
       return false;
     }
-    return !(results.creatorState === 'REJECTED' && actionButton.action.includes('REJECT'));
+    return !(results.creatorState === UserProjectState.REJECTED && actionButton.action.includes('REJECT'));
 
   }
 
@@ -275,7 +275,7 @@ export default class ResultsBox extends Vue {
   }
 
   fetchCreatorState(results: Results) {
-    return (this.fetchUserAccess(results) === 'ACCEPTED') ? results.creatorState : 'CREATED';
+    return (this.fetchUserAccess(results) === 'ACCEPTED') ? results.creatorState : UserProjectState.CREATED;
   }
 
   isFinalUser(): boolean {

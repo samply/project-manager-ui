@@ -743,23 +743,6 @@ export default defineComponent({
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, new Map(), 'projectTypes'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, new Map(), 'queryFormats'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, new Map(), 'outputFormats'),
-          this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), async (result: Record<string, ProjectAndForms>) => {
-
-                if (result) {
-                  this.projectConfigurations = new Map<string, ProjectAndForms>(
-                      Object.entries(result)
-                  );
-
-                  this.projectConfigurationLabels = Array.from(
-                      this.projectConfigurations.keys()
-                  );
-
-                } else {
-                  this.projectConfigurations = new Map();
-                  this.projectConfigurationLabels = [];
-                }
-              }
-          ),
           this.initializeCurrentProjectConfiguration(),
           this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads'),
           this.initializeData(Module.USER_MODULE, Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION, new Map(), 'existsResearchEnvironmentWorkspace'),
@@ -802,6 +785,27 @@ export default defineComponent({
           }),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, new Map(), 'exporterTemplateIds')
         ]);
+        await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), async (result: Record<string, ProjectAndForms>) => {
+
+              // Only show custom configuration to project manager admin, or if the configuration is set as CUSTOM by the project manager admin
+              const shouldHideCustom = !this.projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) && !this.project?.isCustomConfig;
+              if (result) {
+                this.projectConfigurations = new Map<string, ProjectAndForms>(
+                    Object.entries(result).filter(
+                        ([key]) => !(shouldHideCustom && key === CUSTOM_PROJECT_CONFIGURATION)
+                    )
+                );
+
+                this.projectConfigurationLabels = Array.from(
+                    this.projectConfigurations.keys()
+                );
+
+              } else {
+                this.projectConfigurations = new Map();
+                this.projectConfigurationLabels = [];
+              }
+            }
+        )
         if (hasProjectType(this.project, ProjectType.DATASHIELD)) {
           await this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, new Map(), 'dataShieldStatus');
         }

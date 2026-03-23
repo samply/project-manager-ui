@@ -6,14 +6,14 @@ import {Options, Vue} from "vue-class-component";
   props: {
     firstName: {type: String, required: false},
     lastName: {type: String, required: false},
-    email: {type: String, required: true}
+    email: {type: String, required: false}
   }
 })
 export default class UserAndEmail extends Vue {
 
   readonly firstName?: string;
   readonly lastName?: string;
-  readonly email!: string;
+  readonly email?: string;
 
   copiedToClipboard = false;
 
@@ -25,10 +25,12 @@ export default class UserAndEmail extends Vue {
     );
   }
 
-  async copyToClipboard(email: string): Promise<void> {
+  async copyToClipboard(email?: string): Promise<void> {
     try {
-      await navigator.clipboard.writeText(email);
-      this.copiedToClipboard = true;
+      if (email){
+        await navigator.clipboard.writeText(email);
+        this.copiedToClipboard = true;
+      }
     } catch (error) {
       console.error("Failed to copy email:", error);
     }

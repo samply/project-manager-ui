@@ -9,14 +9,14 @@ import {
 } from "@/services/projectManagerBackendService";
 import {Options, Vue} from "vue-class-component";
 import {format} from "date-fns";
-import {watch} from "vue";
+import {PropType, watch} from "vue";
 
 @Options({
   name: "NotificationBox",
   props: {
-    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
-    notifications: {type: Array as () => Notification[], required: true},
-    context: {type: Object as () => ProjectManagerContext, required: true},
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
+    notifications: {type: Array as PropType<Notification[]>, required: true},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
     showNotification: {type: Boolean, required: true},
     showInPanel: {type: Boolean, required: true},
     callUpdateNotifications: {type: Function as unknown as () => () => void, required: true},

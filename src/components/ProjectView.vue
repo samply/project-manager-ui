@@ -18,13 +18,13 @@
 
     <div class="right-container">
       <div class="main-content">
-        <div v-if="project?.state !== 'DRAFT'" class="info-container">
+        <div v-if="project?.state !== ProjectState.DRAFT" class="info-container">
           <div class="box-header">Status</div>
 
           <div style="padding: 2%">
             <div style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
               <div class="card"
-                   v-if="project?.state !== 'DRAFT' && visibleBridgeheads && visibleBridgeheads.length === 1"
+                   v-if="visibleBridgeheads && visibleBridgeheads.length === 1"
                    style="padding: 3px 20px;height: fit-content">
                 <div class="card-body" style="padding: 0 0;">
                   <span style="padding: 0 0;">{{ context.bridgehead?.humanReadable }}</span>
@@ -40,25 +40,33 @@
                                 :bridgeheads="visibleBridgeheads"
                                 :activeBridgehead="activeBridgehead"/>
             <br/>
-            <table class="table table-bordered table-overview" v-if="project?.state !== 'DRAFT' ">
+            <table class="table table-bordered table-overview">
               <thead>
               <tr>
                 <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
-                <th v-if="visibleBridgeheads?.length == 1 && project?.state !== 'DRAFT'" class="status-table-header"
-                    scope="col">Votum
+                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Votum</th>
+                <th
+                    v-if="visibleBridgeheads?.length === 1"
+                    v-for="type in getAllProjectTypes(project)"
+                    :key="type"
+                    class="status-table-header"
+                    scope="col"
+                >
+                  Teiler ({{ type }})
                 </th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Teiler</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access</th>
                 <th class="status-table-header" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">
                   DataSHIELD Status
                 </th>
                 <th class="status-table-header"
-                    v-if="visibleBridgeheads?.length == 1 && (project?.type === ProjectType.RESEARCH_ENVIRONMENT)"
+                    v-if="visibleBridgeheads?.length == 1 && hasProjectType(project, ProjectType.RESEARCH_ENVIRONMENT)"
                     scope="col">
                   Files in Research Environment
                 </th>
                 <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">
-                  {{ (project?.type == ProjectType.DATASHIELD && project.state != 'FINAL') ? 'Script' : 'Results' }}
+                  {{
+                    (hasProjectType(project, ProjectType.DATASHIELD) && project?.state != ProjectState.FINAL) ? 'Script' : 'Results'
+                  }}
                   Acceptance
                 </th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Applicant Results
@@ -73,7 +81,7 @@
               <tbody>
               <tr>
                 <td>{{ project ? project.code : '' }}</td>
-                <td v-if="visibleBridgeheads?.length == 1 && project?.state !== 'DRAFT'">
+                <td v-if="visibleBridgeheads?.length == 1">
                   <div>
                     <div v-if="existsVotum" class="states-circle-container">
                       <div class="state_circle green"></div>
@@ -102,9 +110,18 @@
                     </div>
                   </div>
                 </td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
-                  <div class="state_circle" :class="activeBridgehead?.queryState?.toLowerCase()" data-toggle="tooltip"
-                       data-placement="top" :title="activeBridgehead?.queryState ?? undefined"></div>
+                <td
+                    v-if="visibleBridgeheads?.length === 1 && activeBridgehead"
+                    v-for="type in getAllProjectTypes(project)"
+                    :key="type"
+                >
+                  <div
+                      class="state_circle"
+                      :class="getQueryState(activeBridgehead, type)?.toLowerCase()"
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      :title="getQueryState(activeBridgehead, type)"
+                  ></div>
                 </td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
                   <div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()" data-toggle="tooltip"
@@ -114,7 +131,7 @@
                   <div class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()"
                        data-toggle="tooltip" data-placement="top" :title="dataShieldStatus?.project_status"></div>
                 </td>
-                <td v-if="visibleBridgeheads?.length == 1 && (project?.type == ProjectType.RESEARCH_ENVIRONMENT)">
+                <td v-if="visibleBridgeheads?.length == 1 && hasProjectType(project, ProjectType.RESEARCH_ENVIRONMENT)">
                   {{ areExportFilesTransferredToResearchEnvironment }}
                 </td>
                 <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser">
@@ -140,8 +157,9 @@
 
           </div>
         </div>
-        <div v-if="!(project?.state === 'DRAFT' && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible"
-             class="project-actions">
+        <div
+            v-if="!(project?.state === ProjectState.DRAFT && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible"
+            class="project-actions">
           <div class="box-header">Actions</div>
           <div style="padding:2%">
             <!-- Project State Module: Creator View -->
@@ -180,7 +198,7 @@
           </div>
         </div>
         <div class="documents"
-             v-if="project?.state === 'FINAL' && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN))">
+             v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN))">
           <div class="box-header">Results</div>
           <div style="padding: 2%">
             <ResultsBox :call-refresh-context="refreshContext"
@@ -231,7 +249,7 @@
                                             :is-disabled="!hasProjectAllMandatoryFields"
                                             :tooltip-text="tooltipTextForCreateButton"
                                             :project-manager-backend-service="projectManagerBackendService"/>
-                      <ProjectManagerButton v-if="project?.state === 'DRAFT' "
+                      <ProjectManagerButton v-if="project?.state === ProjectState.DRAFT"
                                             :module="Module.PROJECT_STATE_MODULE"
                                             :action="Action.REJECT_PROJECT_ACTION"
                                             :context="context" :call-refresh-context="refreshContext" text="Discard"
@@ -274,6 +292,9 @@
                       :type="projectField.type"
                       :section="projectField.section"
                       :call-refresh-context="refreshContext"
+                      :extra-params="projectField.extraParams"
+                      :delete-action="projectField.deleteAction"
+                      :delete-module="projectField.deleteModule"
                       :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : NaN"
                       :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 </template>
@@ -282,7 +303,7 @@
             </div>
           </div>
         </div>
-        <div class="documents" v-if="project?.state === 'FINISHED'">
+        <div class="documents" v-if="project?.state === ProjectState.FINISHED">
           <div class="box-header">Publications</div>
           <div style="padding: 2%">
             <DocumentsTable :context="context"
@@ -369,8 +390,9 @@
               </div>
             </div>
           </div>
-          <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED'"
-               class="notification-box">
+          <div
+              v-else-if="project?.state !== ProjectState.FINISHED && project?.state !== ProjectState.REJECTED && project?.state !== ProjectState.ARCHIVED"
+              class="notification-box">
             <div class="card mb-3">
               <div class="card-body">
                 <h5 class="card-title">No action is required at the moment. Please wait for the next notification, which
@@ -401,6 +423,10 @@ import {
   FormField,
   FormTemplate,
   FormTitle,
+  getAllProjectTypes,
+  getQueryState,
+  hasProjectType,
+  hasValidOutputs,
   Module,
   Notification,
   Project,
@@ -408,10 +434,14 @@ import {
   ProjectDocument,
   ProjectManagerBackendService,
   ProjectManagerContext,
+  ProjectOutput,
   ProjectRole,
+  ProjectState,
   ProjectType,
+  QueryState,
   Site,
-  User
+  User,
+  UserProjectState
 } from "@/services/projectManagerBackendService";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import {format} from "date-fns";
@@ -433,6 +463,9 @@ import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdf
 
 export default defineComponent({
   computed: {
+    ProjectState() {
+      return ProjectState
+    },
     DialogStep() {
       return FixedDialogStep
     },
@@ -482,11 +515,11 @@ export default defineComponent({
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
       project: undefined as Project | undefined,
       projectTypes: [] as string[],
-      outputFormats: [] as string[],
+      outputFormats: {} as Record<ProjectType, string[]>,
       queryFormats: [] as string[],
-      exporterTemplateIds: [] as string[],
+      exporterTemplateIds: {} as Record<ProjectType, string[]>,
       allBridgeheads: [] as Bridgehead[],
-      projectStates: [] as string[],
+      projectStates: [] as ProjectState[],
       dataShieldStatus: undefined as DataShieldProjectStatus | undefined,
       site: Site.PROJECT_VIEW_SITE,
       notifications: [] as Notification[],
@@ -519,7 +552,7 @@ export default defineComponent({
       tooltipTextForCreateButton: '',
       canShowBridgeheadAdminButtons: false,
       currentUsers: [] as User[],
-      creatorAcceptance: 'CREATED',
+      creatorAcceptance: UserProjectState.CREATED,
       existsResearchEnvironmentWorkspace: false,
       researchEnvironmentUrl: undefined as string | undefined,
       formTemplates: [] as FormTemplate[],
@@ -533,7 +566,7 @@ export default defineComponent({
     activeBridgehead(newValue, _oldValue) {
       this.activeBridgeheadIndex = this.visibleBridgeheads.findIndex(bridgehead => bridgehead === newValue);
       this.context = new ProjectManagerContext(this.projectCode, newValue);
-      this.creatorAcceptance = (this.project?.creatorState) ? this.project.creatorState : (this.activeBridgehead?.creatorState) ? this.activeBridgehead.creatorState : 'CREATED';
+      this.creatorAcceptance = (this.project?.creatorState) ? this.project.creatorState : UserProjectState.CREATED;
     },
     context(newValue, _oldValue) {
       this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
@@ -574,6 +607,9 @@ export default defineComponent({
 
 
   methods: {
+    hasProjectType,
+    getQueryState,
+    getAllProjectTypes,
 
     toggleNotification() {
       this.showNotification = !this.showNotification;
@@ -618,19 +654,13 @@ export default defineComponent({
     },
 
     fetchIfProjectHasAllMandatoryFields(): boolean {
-      const isSamples = this.project?.type === ProjectType.SAMPLES;
-
       const baseFieldsValid = Boolean(
           this.project &&
           this.project.label &&
           this.project.query &&
           this.bridgeheads &&
-          this.project.type &&
           this.project.queryFormat &&
-          (
-              !isSamples ||
-              (this.project.outputFormat && this.project.templateId)
-          )
+          hasValidOutputs(this.project)
       );
 
       // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
@@ -649,12 +679,21 @@ export default defineComponent({
         result = this.addMissingField(result, 'title', this.project.label);
         result = this.addMissingField(result, 'query', this.project.query);
         result = this.addMissingField(result, 'bridgeheads', this.bridgeheads);
-        result = this.addMissingField(result, 'type', this.project.type);
         result = this.addMissingField(result, 'query format', this.project.queryFormat);
-        if (this.project.type !== ProjectType.SAMPLES) {
-          result = this.addMissingField(result, 'output format', this.project.outputFormat);
-          result = this.addMissingField(result, 'template id', this.project.templateId);
-        }
+
+        this.project?.outputs?.forEach(o => {
+          result = this.addMissingField(
+              result,
+              `output format (${o.projectType})`,
+              o.outputFormat
+          );
+
+          result = this.addMissingField(
+              result,
+              `template id (${o.projectType})`,
+              o.templateId
+          );
+        });
 
         // 👇 group missing mandatory form fields
         // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
@@ -694,7 +733,7 @@ export default defineComponent({
 
     async initializeProjectRelatedData() {
       if (this.project) {
-        this.existsDraftDialog = (this.project.state === 'DRAFT' && AuthService.getEmail() === this.project.creatorEmail);
+        this.existsDraftDialog = (this.project.state === ProjectState.DRAFT && AuthService.getEmail() === this.project.creatorEmail);
         await Promise.all([
           this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), async (result: Bridgehead[]) => {
             this.bridgeheads = result;
@@ -760,15 +799,11 @@ export default defineComponent({
             await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async result => {
               this.addFormFields(result);
             })
-          })
+          }),
+          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, new Map(), 'exporterTemplateIds')
         ]);
-        if (this.project.type) {
-          const params = new Map<string, string>;
-          params.set('project-type', this.project.type)
-          await this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, params, 'exporterTemplateIds');
-          if (this.project.type == 'DATASHIELD') {
-            await this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, new Map(), 'dataShieldStatus');
-          }
+        if (hasProjectType(this.project, ProjectType.DATASHIELD)) {
+          await this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, new Map(), 'dataShieldStatus');
         }
         this.updateProjectFields()
         this.fetchButtons()
@@ -831,10 +866,25 @@ export default defineComponent({
                   if (keys.length > 0) {
                     this.currentProjectConfiguration = keys[0];
                     const currentProjectConfig = result[this.currentProjectConfiguration];
-                    this.currentProjectConfigurationFields = currentProjectConfig?.project
-                        ? Object.keys(currentProjectConfig.project).filter(
-                            key => (currentProjectConfig.project as any)[key] !== null
-                        )
+                    const project = currentProjectConfig?.project;
+                    this.currentProjectConfigurationFields = project
+                        ? [
+                          // 1. normal project fields
+                          ...Object.keys(project).filter(
+                              key => key !== 'outputs' && (project as any)[key] !== null
+                          ),
+
+                          // 2. flattened outputs
+                          ...(project.outputs ?? []).flatMap(output => {
+                            const prefix = output.projectType;
+
+                            return [
+                              `${prefix}.projectType`,
+                              ...(output.outputFormat ? [`${prefix}.outputFormat`] : []),
+                              ...(output.templateId ? [`${prefix}.templateId`] : [])
+                            ];
+                          })
+                        ]
                         : [];
                     this.formFields = currentProjectConfig?.formFields ?? [];
                   } else {
@@ -892,7 +942,7 @@ export default defineComponent({
     },
 
     fetchIfCanShowBridgeheadAdminButtons(): boolean {
-      return (this.project && (this.project.state == 'DEVELOP' || this.project.state == 'PILOT')) ? this.existInvitedUsers : true;
+      return (this.project && (this.project.state == ProjectState.DEVELOP || this.project.state == ProjectState.PILOT)) ? this.existInvitedUsers : true;
     },
     buildDynamicProjectFieldsFromFormFields(formFields: FormField[]): ProjectField[] {
       return formFields.map((formField, index) => ({
@@ -949,16 +999,16 @@ export default defineComponent({
       };
     },
 
-    getProjectStates(): string[] {
-      let visibleProjectStates: string[] = this.projectStates.slice();
+    getProjectStates(): ProjectState[] {
+      let visibleProjectStates: ProjectState[] = this.projectStates.slice();
       if (this.projectStates.length > 0) {
         if (this.project?.state === 'REJECTED') {
-          visibleProjectStates = visibleProjectStates.filter(item => !['FINISHED', 'ARCHIVED'].includes(item));
+          visibleProjectStates = visibleProjectStates.filter(item => ![ProjectState.FINISHED, ProjectState.ARCHIVED].includes(item));
         } else {
           if (this.project?.state === 'ARCHIVED') {
-            visibleProjectStates = visibleProjectStates.filter(item => !['FINISHED', 'REJECTED'].includes(item));
+            visibleProjectStates = visibleProjectStates.filter(item => ![ProjectState.FINISHED, ProjectState.REJECTED].includes(item));
           } else {
-            visibleProjectStates = visibleProjectStates.filter(item => !['ARCHIVED', 'REJECTED'].includes(item));
+            visibleProjectStates = visibleProjectStates.filter(item => ![ProjectState.ARCHIVED, ProjectState.REJECTED].includes(item));
           }
         }
       }
@@ -1024,7 +1074,7 @@ export default defineComponent({
             message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."
           });
           count++;
-        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM && (!this.project?.outputFormat || !this.project?.templateId)) { // Output
+        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM && !hasValidOutputs(this.project)) { // Output
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."
@@ -1045,15 +1095,18 @@ export default defineComponent({
           }
         }
       }
-      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) &&
-          this.activeBridgehead?.queryState != 'CREATED' &&
-          this.activeBridgehead?.queryState != 'FINISHED' &&
-          this.activeBridgehead?.queryState != 'ERROR') {
-        extendedExplanations.set(count.toString(), {
-          number: count,
-          message: "Please access the Teiler, review the query, and execute it. Note that the query may take some time to arrive at the Teiler. You can find the query in the Exporter app of the Teiler. Once the execution is complete, return here for further instructions."
-        });
-        count++;
+      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) && this.activeBridgehead?.executions) {
+        const pendingTypes = this.activeBridgehead.executions
+            .filter(exec => ![QueryState.CREATED, QueryState.FINISHED, QueryState.ERROR].includes(exec.queryState))
+            .map(exec => exec.projectType);
+
+        if (pendingTypes.length) {
+          extendedExplanations.set(count.toString(), {
+            number: count,
+            message: `Please access the Teiler for project types "${pendingTypes.join(", ")}", review the queries, and execute them. Note that the queries may take some time to arrive at the Teiler. Once execution is complete, return here for further instructions.`
+          });
+          count++;
+        }
       }
       return extendedExplanations
     },
@@ -1081,7 +1134,78 @@ export default defineComponent({
       }
     },
 
+    fetchExtraParamsForProjectOutput(currentEditProjectParam: EditProjectParam, output: ProjectOutput) {
+      let result = new Map<string, string>();
+      if (currentEditProjectParam === EditProjectParam.PROJECT_TYPE) {
+        if (output.outputFormat) {
+          result.set(EditProjectParam.OUTPUT_FORMAT, output.outputFormat);
+        }
+        if (output.templateId) {
+          result.set(EditProjectParam.TEMPLATE_ID, output.templateId);
+        }
+      } else if (currentEditProjectParam === EditProjectParam.OUTPUT_FORMAT) {
+        if (output.projectType) {
+          result.set(EditProjectParam.PROJECT_TYPE, output.projectType);
+        }
+        if (output.templateId) {
+          result.set(EditProjectParam.TEMPLATE_ID, output.templateId);
+        }
+      } else if (currentEditProjectParam === EditProjectParam.TEMPLATE_ID) {
+        if (output.projectType) {
+          result.set(EditProjectParam.PROJECT_TYPE, output.projectType);
+        }
+        if (output.outputFormat) {
+          result.set(EditProjectParam.OUTPUT_FORMAT, output.outputFormat);
+        }
+      }
+      return result;
+    },
+
     fetchProjectFields(): ProjectField[] {
+      let outputFields: ProjectField[] = [];
+      if (this.project?.outputs?.length) {
+        outputFields = this.project.outputs.flatMap(exec => [
+          {
+            fieldKey: "Type",
+            fieldValue: exec.projectType ? [exec.projectType] : [],
+            editProjectParam: [EditProjectParam.PROJECT_TYPE],
+            isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.projectType'),
+            possibleValues: this.projectTypes,
+            mandatory: true,
+            visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+            extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.PROJECT_TYPE, exec),
+            deleteAction: Action.REMOVE_PROJECT_OUTPUT_ACTION,
+            deleteModule: Module.PROJECT_EDITION_MODULE
+          },
+          {
+            fieldKey: `Output Format (${exec.projectType})`,
+            fieldValue: exec.outputFormat ? [exec.outputFormat] : [],
+            editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
+            isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.outputFormat'),
+            possibleValues: this.outputFormats[exec.projectType] ?? [],
+            mandatory: true,
+            visibilityCondition:
+                !this.existsDraftDialog ||
+                this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
+                this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+            extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.OUTPUT_FORMAT, exec)
+          },
+          {
+            fieldKey: `Template ID (${exec.projectType})`,
+            fieldValue: exec.templateId ? [exec.templateId] : [],
+            editProjectParam: [EditProjectParam.TEMPLATE_ID],
+            isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.templateId'),
+            possibleValues: this.exporterTemplateIds[exec.projectType] ?? [],
+            mandatory: true,
+            visibilityCondition:
+                !this.existsDraftDialog ||
+                this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
+                this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+            extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.TEMPLATE_ID, exec)
+          }
+        ]);
+      }
+
       const fixedFields: ProjectField[] = [
         {
           fieldKey: "Title",
@@ -1123,15 +1247,6 @@ export default defineComponent({
           action: Action.SET_PROJECT_CONFIGURATION_ACTION
         },
         {
-          fieldKey: "Type",
-          fieldValue: this.project?.type ? [this.project.type] : [],
-          editProjectParam: [EditProjectParam.PROJECT_TYPE],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
-          possibleValues: this.projectTypes,
-          mandatory: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
-        },
-        {
           fieldKey: "Query",
           fieldValue: (this.project?.humanReadable && this.project?.query) ? [this.project.humanReadable, this.project.query] : [],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
@@ -1150,24 +1265,7 @@ export default defineComponent({
           mandatory: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
-        {
-          fieldKey: "Output Format",
-          fieldValue: this.project?.outputFormat ? [this.project.outputFormat] : [],
-          editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration('outputFormat'),
-          possibleValues: this.outputFormats,
-          mandatory: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Template ID",
-          fieldValue: this.project?.templateId ? [this.project.templateId] : [],
-          editProjectParam: [EditProjectParam.TEMPLATE_ID],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration('templateId'),
-          possibleValues: this.exporterTemplateIds,
-          mandatory: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
-        },
+        ...outputFields,
         {
           fieldKey: "Environment Variables",
           fieldValue: this.project?.queryContext ? [this.project.queryContext] : [],
@@ -1183,7 +1281,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.project?.state !== 'DRAFT' && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+          visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Votum for all bridgeheads",
@@ -1193,7 +1291,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.project?.state !== 'DRAFT' && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+          visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Script",
@@ -1221,6 +1319,30 @@ export default defineComponent({
     },
 
     fetchButtons(): void {
+
+      const teilerButtonGroups = this.activeBridgehead?.executions?.map(exec => ({
+        label: `Teiler (${exec.projectType})`,
+        button: [
+          {
+            module: Module.EXPORT_MODULE,
+            action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
+            refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+            text: exec.queryState === 'FINISHED' ? "Resend Query" : "Send Query",
+            withMessage: false,
+            cssClass: "btn btn-primary mr-2",
+            visibilityCondition: this.canShowBridgeheadAdminButtons
+          },
+          {
+            module: Module.EXPORT_MODULE,
+            action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,
+            refreshContextCallFunction: this.refreshContext as () => void,
+            text: "Resend Export Files to Research Environment",
+            withMessage: false,
+            cssClass: "btn btn-primary mr-2"
+          }
+        ] as ActionButton[]
+      })) ?? [];
+
       this.actionButtons = [
         {
           label: "Project",
@@ -1234,7 +1356,7 @@ export default defineComponent({
               module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
               text: "Reject", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
-              visibilityCondition: this.project?.state !== 'DRAFT'
+              visibilityCondition: this.project?.state !== ProjectState.DRAFT
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.FINISH_PROJECT_ACTION,
@@ -1363,25 +1485,7 @@ export default defineComponent({
             }
           ] as ActionButton[]
         },
-        {
-          label: "Teiler",
-          button: [
-            {
-              module: Module.EXPORT_MODULE,
-              action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
-              refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: (this.activeBridgehead?.queryState === 'FINISHED') ? "Resend Query" : "Send Query",
-              withMessage: false,
-              cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.canShowBridgeheadAdminButtons
-            },
-            {
-              module: Module.EXPORT_MODULE, action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Resend Export Files to Research Environment", withMessage: false, cssClass: "btn btn-primary mr-2"
-            }
-          ] as ActionButton[]
-        },
+        ...teilerButtonGroups,
       ] as ActionButtonGroup[]
     },
 

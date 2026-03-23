@@ -34,10 +34,13 @@ export interface ProjectField {
     draftDialogCurrentStep?: number
     visibilityCondition: boolean
     action?: Action | ActionFunction
-    module?: Module,
-    section?: Section,
+    module?: Module
+    section?: Section
     mandatory?: boolean
     type?: FormDataType
+    extraParams?: Map<string, unknown>,
+    deleteAction?: Action,
+    deleteModule?: Module
 }
 
 

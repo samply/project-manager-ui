@@ -6,20 +6,20 @@ import {
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
-import {watch} from "vue";
+import {PropType, watch} from "vue";
 
 @Options({
   name: "DownloadButton",
   props: {
-    context: {type: Object as () => ProjectManagerContext, required: true},
-    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
-    module: {type: Object as () => Module, required: true},
-    action: {type: Object as () => Action, required: true},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
+    module: {type: String as PropType<Module>, required: true},
+    action: {type: String as PropType<Action>, required: true},
     filename: {type: String, required: false},
     iconClass: {type: String, required: false},
     buttonClass: {type: String, required: false},
     text: {type: String, required: false},
-    params: {type: Object as () => Map<string, unknown>, required: false, default: () => new Map<string, unknown>()}
+    params: {type: Object as PropType<Map<string, unknown>>, required: false, default: () => new Map<string, unknown>()}
   }
 })
 export default class DownloadButton extends Vue {
@@ -27,14 +27,14 @@ export default class DownloadButton extends Vue {
   readonly projectManagerBackendService!: ProjectManagerBackendService;
   readonly module!: Module;
   readonly action!: Action;
-  readonly filename!: string | undefined;
+  readonly filename?: string;
   // Used in template:
   // noinspection JSUnusedGlobalSymbols
-  readonly iconClass!: string | undefined;
+  readonly iconClass?: string;
   // noinspection JSUnusedGlobalSymbols
-  readonly buttonClass!: string | undefined;
-  readonly text!: string | undefined;
-  readonly params!: Map<string, unknown>;
+  readonly buttonClass?: string;
+  readonly text?: string;
+  readonly params?: Map<string, unknown>;
 
   isActive = false;
 

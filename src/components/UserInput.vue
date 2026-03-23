@@ -1,7 +1,7 @@
 <script lang="ts">
 
 import {Options, Vue} from "vue-class-component";
-import type {Explanations, Project} from "@/services/projectManagerBackendService";
+import {Explanations, Project, ProjectState} from "@/services/projectManagerBackendService";
 import {
   Action,
   Bridgehead,
@@ -12,19 +12,19 @@ import {
 } from "@/services/projectManagerBackendService";
 import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
-import {watch} from "vue";
+import {PropType, watch} from "vue";
 
 @Options({
   name: "UserInput",
   components: {UserAndEmail},
   props: {
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
-    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
-    context: {type: Object as () => ProjectManagerContext, required: true},
-    project: {type: Object as () => Project, required: true},
-    bridgeheads: {type: Array as () => Bridgehead[], required: true},
-    currentUsers: {type: Array as () => User[], required: true},
-    todos: {type: Object as () => Explanations, required: false}
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
+    project: {type: Object as PropType<Project>, required: true},
+    bridgeheads: {type: Array as PropType<Bridgehead[]>, required: true},
+    currentUsers: {type: Array as PropType<User[]>, required: true},
+    todos: {type: Object as PropType<Explanations>, required: false}
   }
 })
 export default class UserInput extends Vue {
@@ -84,9 +84,9 @@ export default class UserInput extends Vue {
 
   fetchAction(): Action {
     let action: Action = Action.SET_DEVELOPER_USER_ACTION;
-    if (this.project.state === 'PILOT') {
+    if (this.project.state === ProjectState.PILOT) {
       action = Action.SET_PILOT_USER_ACTION;
-    } else if (this.project.state === 'FINAL') {
+    } else if (this.project.state === ProjectState.FINAL) {
       action = Action.SET_FINAL_USER_ACTION;
     }
     return action;

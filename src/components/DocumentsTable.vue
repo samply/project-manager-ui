@@ -9,19 +9,19 @@ import {
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
-import {watch} from "vue";
+import {PropType, watch} from "vue";
 
 @Options({
   name: "DocumentsTable",
   components: {DownloadButton},
   props: {
-    context: {type: Object as () => ProjectManagerContext, required: true},
-    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true},
-    downloadAction: {type: Object as () => Action, required: true},
-    fetchListAction: {type: Object as () => Action, required: true},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
+    downloadAction: {type: String as PropType<Action>, required: true},
+    fetchListAction: {type: String as PropType<Action>, required: true},
     iconClass: {type: String, required: false},
     text: {type: String, required: true},
-    bridgeheads: {type: Array as () => Bridgehead[], required: true}
+    bridgeheads: {type: Array as PropType<Bridgehead[]>, required: true}
   }
 })
 export default class DocumentsTable extends Vue {
@@ -32,7 +32,7 @@ export default class DocumentsTable extends Vue {
   readonly fetchListAction!: Action;
   // Used in template:
   // noinspection JSUnusedGlobalSymbols
-  readonly iconClass!: string | undefined;
+  readonly iconClass?: string;
   readonly text!: string;
   readonly bridgeheads!: Bridgehead[];
 

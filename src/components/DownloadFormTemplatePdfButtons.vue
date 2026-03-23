@@ -8,6 +8,7 @@ import {
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
+import {PropType} from "vue";
 
 export interface FormTemplate {
   template: string;
@@ -23,9 +24,9 @@ export interface FormTemplate {
     }
   },
   props: {
-    formTemplates: {type: Array as () => FormTemplate[], required: true},
-    context: {type: Object as () => ProjectManagerContext, required: true},
-    projectManagerBackendService: {type: Object as () => ProjectManagerBackendService, required: true}
+    formTemplates: {type: Array as PropType<FormTemplate[]>, required: true},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true}
   }
 })
 export default class DownloadFormTemplatePdfButtons extends Vue {

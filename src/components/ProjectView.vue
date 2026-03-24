@@ -1165,51 +1165,58 @@ export default defineComponent({
       return result;
     },
 
-    fetchProjectFields(): ProjectField[] {
-      let outputFields: ProjectField[] = [];
-      if (this.project?.outputs?.length) {
-        outputFields = this.project.outputs.flatMap(exec => [
-          {
-            fieldKey: "Type",
-            fieldValue: exec.projectType ? [exec.projectType] : [],
-            editProjectParam: [EditProjectParam.PROJECT_TYPE],
-            isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.projectType'),
-            possibleValues: this.projectTypes,
-            mandatory: true,
-            visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
-            extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.PROJECT_TYPE, exec),
-            deleteAction: Action.REMOVE_PROJECT_OUTPUT_ACTION,
-            deleteModule: Module.PROJECT_EDITION_MODULE
-          },
-          {
-            fieldKey: `Output Format (${exec.projectType})`,
-            fieldValue: exec.outputFormat ? [exec.outputFormat] : [],
-            editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
-            isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.outputFormat'),
-            possibleValues: this.outputFormats[exec.projectType] ?? [],
-            mandatory: true,
-            visibilityCondition:
-                !this.existsDraftDialog ||
-                this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
-                this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
-            extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.OUTPUT_FORMAT, exec)
-          },
-          {
-            fieldKey: `Template ID (${exec.projectType})`,
-            fieldValue: exec.templateId ? [exec.templateId] : [],
-            editProjectParam: [EditProjectParam.TEMPLATE_ID],
-            isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.templateId'),
-            possibleValues: this.exporterTemplateIds[exec.projectType] ?? [],
-            mandatory: true,
-            visibilityCondition:
-                !this.existsDraftDialog ||
-                this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
-                this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
-            extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.TEMPLATE_ID, exec)
-          }
-        ]);
-      }
+    fetchProjectOutputFields(): ProjectField[] {
+      const outputs: ProjectOutput[] =
+          this.project?.outputs?.length
+              ? this.project.outputs
+              : [{projectType: ProjectType.EXPORT} as ProjectOutput];
 
+      return outputs.flatMap(exec => [
+        {
+          fieldKey: "Type",
+          fieldValue: exec.projectType ? [exec.projectType] : [],
+          editProjectParam: [EditProjectParam.PROJECT_TYPE],
+          isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.projectType'),
+          possibleValues: this.projectTypes,
+          mandatory: true,
+          visibilityCondition:
+              !this.existsDraftDialog ||
+              this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
+              this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+          extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.PROJECT_TYPE, exec),
+          deleteAction: Action.REMOVE_PROJECT_OUTPUT_ACTION,
+          deleteModule: Module.PROJECT_EDITION_MODULE
+        },
+        {
+          fieldKey: `Output Format (${exec.projectType})`,
+          fieldValue: exec.outputFormat ? [exec.outputFormat] : [],
+          editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
+          isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.outputFormat'),
+          possibleValues: this.outputFormats[exec.projectType] ?? [],
+          mandatory: true,
+          visibilityCondition:
+              !this.existsDraftDialog ||
+              this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
+              this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+          extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.OUTPUT_FORMAT, exec)
+        },
+        {
+          fieldKey: `Template ID (${exec.projectType})`,
+          fieldValue: exec.templateId ? [exec.templateId] : [],
+          editProjectParam: [EditProjectParam.TEMPLATE_ID],
+          isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.templateId'),
+          possibleValues: this.exporterTemplateIds[exec.projectType] ?? [],
+          mandatory: true,
+          visibilityCondition:
+              !this.existsDraftDialog ||
+              this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
+              this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+          extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.TEMPLATE_ID, exec)
+        }
+      ]);
+    },
+
+    fetchProjectFields(): ProjectField[] {
       const fixedFields: ProjectField[] = [
         {
           fieldKey: "Title",
@@ -1269,7 +1276,7 @@ export default defineComponent({
           mandatory: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
-        ...outputFields,
+        ...this.fetchProjectOutputFields(),
         {
           fieldKey: "Environment Variables",
           fieldValue: this.project?.queryContext ? [this.project.queryContext] : [],

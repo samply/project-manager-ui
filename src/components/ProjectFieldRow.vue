@@ -30,7 +30,7 @@ import {PropType, watch} from "vue";
   components: {DownloadButton, UploadButton},
   props: {
     fieldKey: {type: String, required: true},
-    editProjectParam: {type: Array as PropType<EditProjectParam[]>, required: true},
+    editProjectParam: {type: Array as PropType<EditProjectParam[]>, required: false, default: []},
     fieldValue: {type: Array as PropType<string[]>, required: true},
     fieldDescription: {type: String, required: false},
     bridgeheads: {type: Object as PropType<BridgeheadsProjectField>, required: false},

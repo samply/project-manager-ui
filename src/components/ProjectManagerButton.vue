@@ -20,8 +20,8 @@ import {PropType, watch} from "vue";
     text2: {type: String, required: false},
     buttonClass: {type: String, required: true},
     withMessage: {type: Boolean, required: true},
-    visibility: {type: Boolean, required: false},
-    isDisabled: {type: Boolean, default: false},
+    visibility: {type: Boolean, required: false, default: true},
+    isDisabled: {type: Boolean, required: false, default: false},
     context: {type: Object as PropType<ProjectManagerContext>, required: true},
     params: {type: Object as PropType<Map<string, string>>, default: () => new Map()},
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
@@ -44,10 +44,14 @@ export default class ProjectManagerButton extends Vue {
   // noinspection JSUnusedGlobalSymbols
   readonly withMessage!: boolean;
   // noinspection JSUnusedGlobalSymbols
-  readonly isDisabled?: boolean;
+
+  // Button cannot be clicked (it could be visible, but the user cannot click on it)
+  readonly isDisabled!: boolean;
+  // Button cannot be displayed
+  readonly visibility!: boolean;
+
   // noinspection JSUnusedGlobalSymbols
   readonly tooltipText!: string;
-  readonly visibility?: boolean;
   readonly context!: ProjectManagerContext;
   readonly params!: Map<string, string>;
   readonly callRefreshContext!: () => void;
@@ -76,8 +80,7 @@ export default class ProjectManagerButton extends Vue {
 
   updateIsActive() {
     this.inputText = '';
-    const visibility = this.visibility !== undefined ? this.visibility : true
-    this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result && visibility)
+    this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result && this.visibility)
   }
 
   async handleButtonClick() {

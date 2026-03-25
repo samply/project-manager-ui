@@ -295,7 +295,7 @@
                       :extra-params="projectField.extraParams"
                       :delete-action="projectField.deleteAction"
                       :delete-module="projectField.deleteModule"
-                      :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : NaN"
+                      :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
                       :context="context" :project-manager-backend-service="projectManagerBackendService"/>
                 </template>
                 </tbody>

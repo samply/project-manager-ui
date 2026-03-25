@@ -55,7 +55,7 @@ import {PropType, watch} from "vue";
     existsFile: {type: Boolean, required: false},
     mandatory: {type: Boolean, required: true, default: false},
     type: {type: String as PropType<FormDataType>, required: false},
-    draftDialogCurrentStep: {type: Object as PropType<DialogStep>, required: true},
+    draftDialogCurrentStep: {type: Object as PropType<DialogStep>, required: false},
     visibleBridgeheads: {type: Array as PropType<Bridgehead[]>, required: true},
     section: {type: Object as PropType<Section>, required: false},
     transformForSending: {
@@ -101,7 +101,7 @@ export default class ProjectFieldRow extends Vue {
   // noinspection JSUnusedGlobalSymbols
   readonly mandatory!: boolean;
   // noinspection JSUnusedGlobalSymbols
-  readonly draftDialogCurrentStep!: DialogStep;
+  readonly draftDialogCurrentStep?: DialogStep;
   // noinspection JSUnusedGlobalSymbols
   readonly visibleBridgeheads!: Bridgehead[];
   // noinspection JSUnusedGlobalSymbols
@@ -444,7 +444,7 @@ export default class ProjectFieldRow extends Vue {
   </template>
 
 
-  <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep.id === dialogStep.SERVICES"
+  <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep && draftDialogCurrentStep.id === dialogStep.SERVICES"
       class="config-box-row">
     <td colspan="3">
       <div style="display: flex;padding-left:0;margin:20px 0">

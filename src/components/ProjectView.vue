@@ -787,8 +787,7 @@ export default defineComponent({
         ]);
         await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), async (result: Record<string, ProjectAndForms>) => {
 
-              // Only show custom configuration to project manager admin, or if the configuration is set as CUSTOM by the project manager admin
-              const shouldHideCustom = !this.projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) && (this.currentProjectConfiguration !== CUSTOM_PROJECT_CONFIGURATION) && (this.project?.isCustomConfigSelected !== undefined);
+              const shouldHideCustom = this.shouldHideCustomService();
               if (result) {
                 this.projectConfigurations = new Map<string, ProjectAndForms>(
                     Object.entries(result).filter(
@@ -815,6 +814,37 @@ export default defineComponent({
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
       }
+    },
+
+    /**
+     * Determines whether the "custom service" option should be hidden.
+     *
+     * Business rules:
+     *
+     * - Admin users can always see and select the custom service.
+     *
+     * - For non-admin users:
+     *   - If `isCustomConfigSelected` is `undefined`, the custom option must be hidden.
+     *     → This means no explicit decision has been made yet, so custom is not allowed.
+     *
+     *   - If `isCustomConfigSelected === true`, the custom option is visible.
+     *     → An admin has explicitly enabled or selected a custom configuration before.
+     *
+     *   - If `isCustomConfigSelected === false`, the custom option is only visible
+     *     if the current configuration no longer matches any predefined service
+     *     (i.e., it has effectively become "custom" due to user modifications).
+     *
+     * In short:
+     * - `undefined` → never show (for non-admins)
+     * - `false` → show only if config became custom
+     * - `true` → always show
+     */
+    shouldHideCustomService() {
+      const isAdmin = this.projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN);
+      const customFlag = this.project?.isCustomConfigSelected;
+
+      return !isAdmin &&
+          (customFlag === undefined || (!customFlag && this.currentProjectConfiguration !== CUSTOM_PROJECT_CONFIGURATION));
     },
 
     updateProjectFields() {

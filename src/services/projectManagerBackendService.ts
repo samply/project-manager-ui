@@ -208,7 +208,7 @@ export interface Project {
     description?: string;
     explorerUrl?: string;
     queryContext?: string;
-    isCustomConfig?: boolean;
+    isCustomConfigSelected?: boolean;
     creatorState?: UserProjectState;
     resultsUrl?: string;
     outputs?: ProjectOutput[];

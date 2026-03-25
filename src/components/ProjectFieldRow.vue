@@ -463,7 +463,7 @@ export default class ProjectFieldRow extends Vue {
                   <div style="margin-bottom:2%;text-align:left;min-height:200px">
                     {{ configurations?.get(step)?.project?.description }}
                   </div>
-                  <div v-if="!configurations?.get(step)?.project?.isCustomConfig"
+                  <div v-if="!configurations?.get(step)?.project?.isCustomConfigSelected"
                        style="text-align: right;margin-bottom:2%">
                     <button @click.stop="showDetails[index]=!showDetails[index]"
                             style="background: none; border:none; color: #007bff;">

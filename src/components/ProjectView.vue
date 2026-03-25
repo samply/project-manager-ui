@@ -788,7 +788,7 @@ export default defineComponent({
         await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), async (result: Record<string, ProjectAndForms>) => {
 
               // Only show custom configuration to project manager admin, or if the configuration is set as CUSTOM by the project manager admin
-              const shouldHideCustom = !this.projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) && (this.currentProjectConfiguration !== CUSTOM_PROJECT_CONFIGURATION);
+              const shouldHideCustom = !this.projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) && (this.currentProjectConfiguration !== CUSTOM_PROJECT_CONFIGURATION) && (this.project?.isCustomConfigSelected !== undefined);
               if (result) {
                 this.projectConfigurations = new Map<string, ProjectAndForms>(
                     Object.entries(result).filter(

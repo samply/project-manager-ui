@@ -886,54 +886,53 @@ export default defineComponent({
       return this.initializeData(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(), 'notifications');
     },
 
-    initializeCurrentProjectConfiguration(): Promise<void> {
+    async initializeCurrentProjectConfiguration(): Promise<void> {
       return new Promise((resolve, reject) => {
-        try {
-          this.initializeDataInCallback(
-              Module.PROJECT_EDITION_MODULE,
-              Action.FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION,
-              new Map(),
-              async (result: Record<string, ProjectAndForms>) => {
+        this.initializeDataInCallback(
+            Module.PROJECT_EDITION_MODULE,
+            Action.FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION,
+            new Map(),
+            async (result: Record<string, ProjectAndForms>) => {
 
-                if (result) {
-                  const keys = Object.keys(result);
-                  if (keys.length > 0) {
-                    this.currentProjectConfiguration = keys[0];
-                    const currentProjectConfig = result[this.currentProjectConfiguration];
-                    const project = currentProjectConfig?.project;
-                    this.currentProjectConfigurationFields = project
-                        ? [
-                          // 1. normal project fields
-                          ...Object.keys(project).filter(
-                              key => key !== 'outputs' && (project as any)[key] !== null
-                          ),
+              if (result) {
+                const keys = Object.keys(result);
+                if (keys.length > 0) {
+                  this.currentProjectConfiguration = keys[0];
+                  const currentProjectConfig = result[this.currentProjectConfiguration];
+                  const project = currentProjectConfig?.project;
 
-                          // 2. flattened outputs
-                          ...(project.outputs ?? []).flatMap(output => {
-                            const prefix = output.projectType;
+                  this.currentProjectConfigurationFields = project
+                      ? [
+                        ...Object.keys(project).filter(
+                            key => key !== 'outputs' && (project as any)[key] !== null
+                        ),
+                        ...(project.outputs ?? []).flatMap(output => {
+                          const prefix = output.projectType;
+                          return [
+                            `${prefix}.projectType`,
+                            ...(output.outputFormat ? [`${prefix}.outputFormat`] : []),
+                            ...(output.templateId ? [`${prefix}.templateId`] : [])
+                          ];
+                        })
+                      ]
+                      : [];
 
-                            return [
-                              `${prefix}.projectType`,
-                              ...(output.outputFormat ? [`${prefix}.outputFormat`] : []),
-                              ...(output.templateId ? [`${prefix}.templateId`] : [])
-                            ];
-                          })
-                        ]
-                        : [];
-                    this.formFields = currentProjectConfig?.formFields ?? [];
-                  } else {
-                    this.resetCurrentProjectConfiguration();
-                  }
+                  this.formFields = currentProjectConfig?.formFields ?? [];
                 } else {
                   this.resetCurrentProjectConfiguration();
                 }
-
-                resolve(); // <-- important: resolve the promise after callback finishes
+              } else {
+                this.resetCurrentProjectConfiguration();
               }
-          );
-        } catch (err) {
-          reject(err);
-        }
+
+              resolve();
+            }
+        )
+            .then(() => {
+              // IMPORTANT: this runs even if condition === false
+              resolve();
+            })
+            .catch(reject);
       });
     },
 

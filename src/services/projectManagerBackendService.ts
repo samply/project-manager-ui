@@ -366,6 +366,7 @@ export interface ActionButton {
     text: string
     withMessage: boolean
     cssClass: string
+    params?: Map<string, string>
     visibilityCondition?: boolean
     doActionOnClick?: () => void
 }

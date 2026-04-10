@@ -181,6 +181,7 @@
                                         :button-class="button.cssClass" :with-message="button.withMessage"
                                         :visibility="button.visibilityCondition"
                                         :do-action-on-click="button.doActionOnClick"
+                                        :params="button.params"
                                         :project-manager-backend-service="projectManagerBackendService"/>
                 </div>
               </div>
@@ -1370,6 +1371,7 @@ export default defineComponent({
             text: exec.queryState === 'FINISHED' ? "Resend Query" : "Send Query",
             withMessage: false,
             cssClass: "btn btn-primary mr-2",
+            params: new Map<string, string>([[EditProjectParam.PROJECT_TYPE, exec.projectType]]),
             visibilityCondition: this.canShowBridgeheadAdminButtons
           },
           {
@@ -1378,6 +1380,7 @@ export default defineComponent({
             refreshContextCallFunction: this.refreshContext as () => void,
             text: "Resend Export Files to Research Environment",
             withMessage: false,
+            params: new Map<string, string>([[EditProjectParam.PROJECT_TYPE, exec.projectType]]),
             cssClass: "btn btn-primary mr-2"
           }
         ] as ActionButton[]

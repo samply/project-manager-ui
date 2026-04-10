@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-03-24]
+## [1.1.0 - 2026-04-10]
 ### Added
 - Dockerfile
 - Single Spa
@@ -146,6 +146,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Update the dialog stepper only if necessary
 - consider only selected forms for mandatory fields in the project view
 - Render project fields on time
+- Add a project type as a parameter to the button for save query in bridgehead
 
 ### Changed
 - Notification only if the project manager admin

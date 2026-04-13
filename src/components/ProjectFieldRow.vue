@@ -43,6 +43,10 @@ import {PropType, watch} from "vue";
       default: Action.EDIT_PROJECT_ACTION
     },
     possibleValues: {type: Array as PropType<string[]>, required: false},
+    displayPossibleValue: {
+      type: Function as unknown as () => (input: string) => string,
+      default: (input: string) => input
+    },
     configurations: {type: Object as PropType<Map<string, ProjectAndForms>>, required: false},
     isEditable: {type: Boolean, required: true},
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
@@ -78,6 +82,7 @@ export default class ProjectFieldRow extends Vue {
   readonly module!: Module;
   readonly action!: Action | ActionFunction;
   readonly possibleValues?: string[];
+  readonly displayPossibleValue!: (input: string) => string;
   readonly isEditable!: boolean;
   readonly callRefreshContext!: () => void;
 
@@ -581,7 +586,9 @@ export default class ProjectFieldRow extends Vue {
                 </div>
                 <div v-else-if="isSelection()" style="width: 70%;">
                   <select v-model="editedValue[0]" class="form-select" style="width: 100%;">
-                    <option v-for="value in possibleValues" :key="value" :value="value">{{ value }}</option>
+                    <option v-for="value in possibleValues" :key="value" :value="value">{{
+                        displayPossibleValue(value)
+                      }}</option>
                   </select>
                 </div>
                 <div v-else style="width: 70%;">
@@ -630,7 +637,7 @@ export default class ProjectFieldRow extends Vue {
                     class="truncate-60">{{ tempFieldValue[1] }}</span>
             </template>
             <template v-else>
-              <div class="field-value truncate-60">{{ tempFieldValue[0] }}</div>
+              <div class="field-value truncate-60">{{ displayPossibleValue(tempFieldValue[0]) }}</div>
             </template>
           </div>
         </div>

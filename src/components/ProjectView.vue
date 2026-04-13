@@ -282,6 +282,7 @@
                       :redirect-url="projectField.redirectUrl"
                       :transform-for-sending="projectField.transformForSending"
                       :possible-values="projectField.possibleValues"
+                      :display-possible-value="projectField.displayPossibleValue"
                       :configurations="projectField.configurations"
                       :exists-file="projectField.existFile"
                       :upload-action="projectField.uploadAction"
@@ -987,6 +988,11 @@ export default defineComponent({
         fieldDescription: formField.labelDescription,
         type: formField.type,
         isEditable: true,
+        possibleValues: formField.allowedValues?.map(value => value.label),
+        displayPossibleValue: formField.allowedValues?.length
+            ? (label: string) =>
+                formField.allowedValues!.find(v => v.label === label)?.displayName ?? label
+            : undefined,
         action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
         transformForSending: this.buildTransformForSendingFormField(formField),
         visibilityCondition:
@@ -1355,7 +1361,10 @@ export default defineComponent({
         }
       ];
       const dynamicFields = this.buildDynamicProjectFieldsFromFormFields(this.formFields);
-      const dynamicSelectedForms = this.buildDynamicProjectFieldsFromFormTitles(this.formTitles);
+      const dynamicSelectedForms = this.buildDynamicProjectFieldsFromFormTitles(
+          this.formTitles.filter(formTitle => {
+            this.draftDialogStepper.hasCurrentStep(formTitle.title)
+          }));
       return [...fixedFields, ...dynamicSelectedForms, ...dynamicFields];
     },
 

@@ -377,6 +377,12 @@ export interface FormFieldGroup {
     description: string
 }
 
+export interface FormFieldValue {
+    label: string
+    displayName: string
+    description?: string
+}
+
 export enum FormDataType {
     // These values are defined in the backend and come from the backend. Therefore, we suppress the warning:
     // noinspection JSUnusedGlobalSymbols
@@ -386,6 +392,7 @@ export enum FormDataType {
     STRING = "STRING",
     DATE = "DATE",
     TIMESTAMP = "TIMESTAMP",
+    ENUM = "ENUM"
 }
 
 export interface FormTitle {
@@ -400,6 +407,7 @@ export interface FormField extends FormTitle {
     labelDescription?: string;
     groups?: FormFieldGroup[];
     type?: FormDataType;
+    allowedValues?: FormFieldValue[];
     mandatory?: boolean;
     order?: number;
     value?: string;

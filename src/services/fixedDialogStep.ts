@@ -1,11 +1,11 @@
 import {FormTitle} from "@/services/projectManagerBackendService";
 
 export enum FixedDialogStep {
-    SERVICES = "Services",
-    PROJECT = "Project",
-    QUERY = "Query",
-    CUSTOM = "Custom",
-    SUMMARY = "Summary",
+    SERVICES = "services",
+    PROJECT = "project",
+    QUERY = "query",
+    CUSTOM = "custom",
+    SUMMARY = "summary",
 }
 
 export interface DialogStep {
@@ -302,4 +302,9 @@ export class DialogStepper {
             this.onCurrentStepChanged(this.currentStep);
         }
     }
+
+    public hasCurrentStep(stepId: string): boolean {
+        return this.currentSteps.some(step => step.id === stepId);
+    }
+
 }

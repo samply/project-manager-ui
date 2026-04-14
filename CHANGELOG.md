@@ -24,14 +24,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - DataSHIELD status
 - Filter draft projects to project manager admin
 - If the type is DataSHIELD, use template opal-ccp and output format Opal
-- Creator in main dashboard
+- Creator in the main dashboard
 - Invite users to a project
 - Downloads
 - Upload Button
 - Download Button
 - Download authentication script
 - Exists Votum and Application Form
-- Exists Script
+- There exists Script
 - Fetch publications and other documents
 - Documents Table
 - project-code as a parameter in project-view
@@ -78,19 +78,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Resend query to bridgehead button
 - Explanation priority
 - Cancel the Reject button
-- Archive button requires message too
+- Archive button requires a message too
 - Current User in Project View
 - Press the creation button only if mandatory fields are not empty
 - Missing fields list as todo
-- Logo in navbar
+- Logo in the navbar
 - Mailing Blacklist
 - Email while hovering on a user
 - Results
 - Password Sharing Tool for different templates
 - Fetch email message and subject
 - Generate eml and HTML files for Password Sharing Tool
-- Results URL in a project
-- Results already sent button
+- Result URL in a project
+- Result already sent button
 - Votum in project view overview with only one bridgehead
 - Votum for all
 - Show email while hovering on a user
@@ -113,7 +113,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Project and Forms Configuration
 - Use PUT and DELETE HTTP methods
 - Filter custom configuration for no project manager admin users
-- Default output for query if no project type is specified
+- Default output for a query if no project type is specified
 - Allowed values in project form
 
 ### Changed
@@ -121,14 +121,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Rename reject project bridgehead user state as a block
 - Copy query to clipboard is always active, as long as it has a value
 - Alignment of user in navbar
-- Result acceptance in user input as circle
+- Result acceptance in user input as a circle
 - Separate Publication and other documents in a new section
 - Rename bridgeheads to sites for being displayed
 - Rename Password Sharing Tool to Credentials Sharing Tool
-- Improvements in the results box
+- Improvements in the result box
 - Rename creator to applicant
 - Rename profiles to services
-- Don't show votum during draft phase
+- Don't show votum during the draft phase
 - Get Votum status in Bridgehead Overview
 - Show actions as soon as possible
 - In initializeDataInCallback: Just log in the console if 404, but not throw an error

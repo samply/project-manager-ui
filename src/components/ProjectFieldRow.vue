@@ -430,6 +430,28 @@ export default class ProjectFieldRow extends Vue {
     }
     return []
   }
+
+  getCriteriaDetails(criteria: any): string {
+    let label = ""
+    if (criteria?.children[0]?.type !== undefined) {
+      label = criteria?.children[0]?.key + " = ";
+      criteria?.children?.forEach((child: any, index: number) => {
+        if (child?.type === "EQUALS") {
+          label += child?.value
+          if(index < criteria?.children?.length - 1) {
+            label += ", "
+          }
+        }
+        if (child?.type === "BETWEEN") {
+          label += child?.value?.min + " - " + child?.value?.max
+        }
+      })
+    }
+    else {
+      label = criteria?.children[0]?.key
+    }
+    return label
+  }
 }
 
 </script>
@@ -573,7 +595,7 @@ export default class ProjectFieldRow extends Vue {
               <span v-for="box in getFirstLevelCriteria(editedValue[1])"
                     class="btn btn-primary dktk-darkblue"
                     style="margin-right: 2%; margin-bottom: 0.5%;">
-                {{box.key}}
+                {{getCriteriaDetails(box)}}
             </span>
             </div>
             <div v-else-if="isDescription()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">

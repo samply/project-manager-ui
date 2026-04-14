@@ -1,4 +1,9 @@
 <template>
+  <div class="main-menu">
+    <div v-for="step in menuSteps" class="menu-item" @click="currentMenuStep=step" :class="{ 'active': currentMenuStep===step }">
+      {{step}}
+    </div>
+  </div>
   <div class="main-container">
     <div class="left-container" v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)">
       <div class="box-header" style="padding-left:7%">Phase</div>
@@ -18,8 +23,8 @@
 
     <div class="right-container">
       <div class="main-content">
-        <div v-if="project?.state !== ProjectState.DRAFT" class="info-container">
-          <div class="box-header">Status</div>
+        <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'" class="info-container">
+          <div class="box-header"><span>Status</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
 
           <div style="padding: 2%">
             <div style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
@@ -158,9 +163,9 @@
           </div>
         </div>
         <div
-            v-if="!(project?.state === ProjectState.DRAFT && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible"
+            v-if="!(project?.state === ProjectState.DRAFT && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep==='Status'"
             class="project-actions">
-          <div class="box-header">Actions</div>
+          <div class="box-header"><span>Actions</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
           <div style="padding:2%">
             <!-- Project State Module: Creator View -->
             <!-- Project State Module: PM-ADMIN View -->
@@ -211,9 +216,9 @@
             />
           </div>
         </div>
-        <div class="data-container mt-12" :class="{ 'non-draft': !existsDraftDialog }">
+        <div v-if="currentMenuStep==='Request'" class="data-container mt-12" :class="{ 'non-draft': !existsDraftDialog }">
           <div v-if="project">
-            <div v-if="!existsDraftDialog" class="box-header">Request</div>
+            <div v-if="!existsDraftDialog" class="box-header"><span>Request</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
             <div class="table-responsive" style="display: flex; flex-flow: row;height: 84vh">
 
               <div v-if="existsDraftDialog" class="container vertical-stepper-box">
@@ -326,7 +331,7 @@
             </div>
           </div>
         </div>
-        <div class="documents" v-if="project?.state === ProjectState.FINISHED">
+        <div class="documents" v-if="project?.state === ProjectState.FINISHED && currentMenuStep==='Documents'">
           <div class="box-header">Publications</div>
           <div style="padding: 2%">
             <DocumentsTable :context="context"
@@ -346,8 +351,8 @@
                           text="Upload publication URL" :call-refresh-context="refreshContext" :is-file="false"/>
           </div>
         </div>
-        <div class="documents" v-if="!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY">
-          <div class="box-header">Documents</div>
+        <div class="documents" v-if="(!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY) && currentMenuStep==='Documents'">
+          <div class="box-header"><span>Documents</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
           <div style="padding: 2%">
             <DownloadFormTemplatePdfButtons :form-templates="formTemplates" :context="context"
                                             :project-manager-backend-service="projectManagerBackendService"/>
@@ -585,7 +590,9 @@ export default defineComponent({
       formFields: [] as FormField[],
       selectedForms: [] as FormTitle[],
       projectFields: [] as ProjectField[],
-      groupedMissingFields: {} as Record<string, string[]>
+      groupedMissingFields: {} as Record<string, string[]>,
+      menuSteps: ["Status", "Request", "Documents"],
+      currentMenuStep: "Status"
     };
   },
   watch: {
@@ -1639,26 +1646,32 @@ export default defineComponent({
 <style scoped>
 
 .box-header {
-  padding: 12px 0 12px 2%;
-  background-color: #00489c;
-  color: white;
+  padding: 10px 30px 10px 2%;
+  /*background-color: #00489c;*/
+  color: rgb(0, 56, 124);;
   font-size: large;
   font-weight: bold;
-  border-top: 1px solid #95c8dc;
+  /*border-top: 1px solid #95c8dc;
   border-left: 1px solid #95c8dc;
-  border-right: 1px solid #95c8dc;
-  border-radius: 10px 10px 0 0;
+  border-right: 1px solid #95c8dc;*/
+  background-image: linear-gradient(to right, #e1edf5, #bed7e9);
+  /*border-radius: 10px 10px 0 0;*/
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-
+.box-header span {
+  font-size: 16pt;
+}
 .info-container {
   display: flex;
   flex-direction: column;
   background-color: white;
-  border-radius: 10px;
+  /*border-radius: 10px;
   box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
   0 1px 1px 0 rgba(0, 0, 0, 0.14),
   0 1px 3px 0 rgba(0, 0, 0, 0.12);
-
+*/
   margin-bottom: 1.5%;
 }
 
@@ -1671,7 +1684,7 @@ export default defineComponent({
 }
 .data-container.non-draft {
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  /*box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);*/
   margin: 0 0 1.5% 0;
 }
 .vertical-stepper-box {
@@ -1683,24 +1696,39 @@ export default defineComponent({
 
 .project-actions {
   background-color: white;
-  border-radius: 10px;
+  /*border-radius: 10px;
   box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
   0 1px 1px 0 rgba(0, 0, 0, 0.14),
-  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);*/
 
   margin-bottom: 1.5%;
 }
 
 .documents {
   background-color: white;
-  border-radius: 10px;
+  /*border-radius: 10px;
   box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
   0 1px 1px 0 rgba(0, 0, 0, 0.14),
-  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);*/
 
   margin-bottom: 1.5%;
 }
 
+.main-menu {
+  width: 100%;
+  background-color: #00489cf2;
+  display: flex;
+  padding-left: 60%;
+}
+.menu-item {
+  padding: 1rem 2rem;
+  color: white;
+  cursor: pointer;
+}
+.menu-item.active {
+  font-weight: bold;
+  background-color: rgb(0, 56, 124);
+}
 .main-container {
   display: flex;
   flex-flow: row;
@@ -2005,5 +2033,20 @@ export default defineComponent({
 }
 .missing-fields .step-circle {
   background-color: red!important;
+}
+.dk-logo {
+  align-items: center;
+  color: #00489c;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: Open Sans, serif;
+  font-weight: 200;
+  height: auto;
+}
+.dk-logo__sign {
+  display: inline-block;
+  margin-right: 15px;
+  vertical-align: top;
+  width: 40px;
 }
 </style>

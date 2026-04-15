@@ -1370,30 +1370,60 @@ export default defineComponent({
 
     fetchButtons(): void {
 
-      const teilerButtonGroups = this.activeBridgehead?.executions?.map(exec => ({
-        label: `Teiler (${exec.projectType})`,
-        button: [
-          {
-            module: Module.EXPORT_MODULE,
-            action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
-            refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-            text: exec.queryState === 'FINISHED' ? "Resend Query" : "Send Query",
-            withMessage: false,
-            cssClass: "btn btn-primary mr-2",
-            params: new Map<string, string>([[EditProjectParam.PROJECT_TYPE, exec.projectType]]),
-            visibilityCondition: this.canShowBridgeheadAdminButtons
-          },
-          {
-            module: Module.EXPORT_MODULE,
-            action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,
-            refreshContextCallFunction: this.refreshContext as () => void,
-            text: "Resend Export Files to Research Environment",
-            withMessage: false,
-            params: new Map<string, string>([[EditProjectParam.PROJECT_TYPE, exec.projectType]]),
-            cssClass: "btn btn-primary mr-2"
-          }
-        ] as ActionButton[]
-      })) ?? [];
+      const executions = this.activeBridgehead?.executions ?? [];
+
+      // Collect unique project types
+      const projectTypes = [...new Set(executions.map(exec => exec.projectType))];
+      const projectTypesParam = projectTypes.join(",");
+
+      // Determine button text
+      const hasFinishedExecution = executions.some(exec => exec.queryState === "FINISHED");
+
+      // Check if RESEARCH_ENVIRONMENT exists
+      const hasResearchEnvironment = projectTypes.includes(ProjectType.RESEARCH_ENVIRONMENT);
+
+      const teilerButtonGroups = [
+        // --- TEILER GROUP (always if executions exist) ---
+        ...(executions.length > 0
+            ? [{
+              label: "Teiler",
+              button: [
+                {
+                  module: Module.EXPORT_MODULE,
+                  action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
+                  refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+                  text: hasFinishedExecution ? "Resend Query" : "Send Query",
+                  withMessage: false,
+                  cssClass: "btn btn-primary mr-2",
+                  params: new Map<string, string>([
+                    [EditProjectParam.PROJECT_TYPE, projectTypesParam]
+                  ]),
+                  visibilityCondition: this.canShowBridgeheadAdminButtons
+                }
+              ] as ActionButton[]
+            }]
+            : []),
+
+        // --- RESEARCH ENVIRONMENT GROUP (only if present) ---
+        ...(hasResearchEnvironment
+            ? [{
+              label: "Research Environment",
+              button: [
+                {
+                  module: Module.EXPORT_MODULE,
+                  action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,
+                  refreshContextCallFunction: this.refreshContext as () => void,
+                  text: "Resend Export Files to Research Environment",
+                  withMessage: false,
+                  params: new Map<string, string>([
+                    [EditProjectParam.PROJECT_TYPE, ProjectType.RESEARCH_ENVIRONMENT]
+                  ]),
+                  cssClass: "btn btn-primary mr-2"
+                }
+              ] as ActionButton[]
+            }]
+            : [])
+      ];
 
       this.actionButtons = [
         {

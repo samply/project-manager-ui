@@ -149,38 +149,24 @@ export class DialogStepper {
     }
 
     public hasSameFormTitles(formTitles: FormTitle[]): boolean {
-        // Build the set of current dynamic steps (exclude fixed ones)
+        console.log("=== hasSameFormTitles (existence check) ===");
+
         const fixedIds = new Set(FixedDialogSteps.map(s => s.id));
-
-        const currentDynamicSteps = this.allSteps.filter(
-            step => !fixedIds.has(step.id)
-        );
-
-        if (currentDynamicSteps.length !== formTitles.length) {
-            return false;
-        }
-
-        // Map current steps by id for fast lookup
-        const currentById = new Map(
-            currentDynamicSteps.map(step => [step.id, step])
-        );
+        const allStepIds = new Set(this.allSteps.map(s => s.id));
 
         for (const formTitle of formTitles) {
-            const step = formTitleToDialogStep(formTitle);
-            const existing = currentById.get(step.id);
+            const id = formTitle.title;
 
-            if (!existing) {
-                return false;
-            }
+            const inFixed = fixedIds.has(id);
+            const inDynamic = allStepIds.has(id);
 
-            if (
-                existing.displayName !== step.displayName ||
-                existing.description !== step.description
-            ) {
+            if (!inFixed && !inDynamic) {
+                console.log("❌ missing step:", id);
                 return false;
             }
         }
 
+        console.log("✅ all selected forms exist in stepper");
         return true;
     }
 

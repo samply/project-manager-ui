@@ -1,4 +1,5 @@
 <template>
+  <div class="main-menu"></div>
   <div style="display: flex; min-height: 100vh;">
     <div class="container custom-width-projects">
       <div class="row box-header">
@@ -251,7 +252,13 @@ export default defineComponent({
 .custom-width-notifications h2 {
   margin-bottom: 15px;
 }
-
+.main-menu {
+  width: 100%;
+  height: 62.4px;
+  background-color: rgba(0,72,156,.95);
+  display: flex;
+  padding-left: 60%;
+}
 .pager {
   display: flex;
   justify-content: end;

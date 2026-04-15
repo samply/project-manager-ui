@@ -1,6 +1,6 @@
 <template>
   <div class="main-menu">
-    <div v-for="step in menuSteps" class="menu-item" @click="currentMenuStep=step" :class="{ 'active': currentMenuStep===step }">
+    <div v-for="step in getMenuSteps()" class="menu-item" @click="currentMenuStep=step" :class="{ 'active': currentMenuStep===step }">
       {{step}}
     </div>
   </div>
@@ -219,7 +219,7 @@
         <div v-if="currentMenuStep==='Request'" class="data-container mt-12" :class="{ 'non-draft': !existsDraftDialog }">
           <div v-if="project">
             <div v-if="!existsDraftDialog" class="box-header"><span>Request</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
-            <div class="table-responsive" style="display: flex; flex-flow: row;height: 84vh">
+            <div class="table-responsive" style="display: flex; flex-flow: row;height: 78vh">
 
               <div v-if="existsDraftDialog" class="container vertical-stepper-box">
                 <div class="row justify-content-center">
@@ -299,7 +299,7 @@
 
               </div>
             </div>
-            <div class="button-container mt-3">
+            <div v-if="project?.state === ProjectState.DRAFT" class="button-container mt-3">
               <button class="btn btn-primary me-2" @click="draftDialogStepper.previousStep()"
                       :disabled="!draftDialogStepper.hasPreviousStep">
                 <!--<i class="bi bi-arrow-left"></i>-->
@@ -320,7 +320,7 @@
                                       :is-disabled="!hasProjectAllMandatoryFields"
                                       :tooltip-text="tooltipTextForCreateButton"
                                       :project-manager-backend-service="projectManagerBackendService"/>
-                <ProjectManagerButton v-if="project?.state === ProjectState.DRAFT "
+                <ProjectManagerButton v-if="project?.state === ProjectState.DRAFT"
                                       :module="Module.PROJECT_STATE_MODULE"
                                       :action="Action.REJECT_PROJECT_ACTION"
                                       :context="context" :call-refresh-context="refreshContext" text="Discard"
@@ -351,7 +351,7 @@
                           text="Upload publication URL" :call-refresh-context="refreshContext" :is-file="false"/>
           </div>
         </div>
-        <div class="documents" v-if="(!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY) && currentMenuStep==='Documents'">
+        <div class="documents" v-if="currentMenuStep==='Documents'">
           <div class="box-header"><span>Documents</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
           <div style="padding: 2%">
             <DownloadFormTemplatePdfButtons :form-templates="formTemplates" :context="context"
@@ -591,7 +591,6 @@ export default defineComponent({
       selectedForms: [] as FormTitle[],
       projectFields: [] as ProjectField[],
       groupedMissingFields: {} as Record<string, string[]>,
-      menuSteps: ["Status", "Request", "Documents"],
       currentMenuStep: "Status"
     };
   },
@@ -852,6 +851,7 @@ export default defineComponent({
         await this.checkButtonVisibility()
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
+        this.project?.state !== ProjectState.DRAFT ? this.currentMenuStep="Status" : this.currentMenuStep="Request"
       }
     },
 
@@ -1027,8 +1027,10 @@ export default defineComponent({
         isEditable: true,
         possibleValues: formField.allowedValues?.map(value => value.label),
         displayPossibleValue: formField.allowedValues?.length
-            ? (label: string) =>
-                formField.allowedValues!.find(v => v.label === label)?.displayName ?? label
+            ? (label: string) => {
+              const field = formField.allowedValues!.find(v => v.label === label)
+              return {name: field?.displayName ?? label, description: field?.description ?? ""}
+            }
             : undefined,
         action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
         transformForSending: this.buildTransformForSendingFormField(formField),
@@ -1633,6 +1635,14 @@ export default defineComponent({
       if (flagChanged) {
         // You can put any additional logic to notify the watcher if necessary here
       }
+    },
+
+    getMenuSteps(): string[] {
+      if(this.project?.state !== ProjectState.DRAFT) {
+        return ["Status", "Request", "Documents"]
+      } else {
+        return ["Request", "Documents"]
+      }
     }
 
 
@@ -1680,12 +1690,12 @@ export default defineComponent({
   flex-direction: column;
   background-color: white;
   height: 100%;
-  margin: 0 1% 1.5% 1%;
+  margin: 0 1% 0 1%;
 }
 .data-container.non-draft {
   border-radius: 10px;
   /*box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);*/
-  margin: 0 0 1.5% 0;
+  margin: 0;
 }
 .vertical-stepper-box {
   display:flex;
@@ -1716,17 +1726,17 @@ export default defineComponent({
 
 .main-menu {
   width: 100%;
-  background-color: #00489cf2;
+  background-color: rgba(0,72,156,.95);
   display: flex;
   padding-left: 60%;
 }
 .menu-item {
-  padding: 1rem 2rem;
+  padding: 1.2rem 2rem;
   color: white;
   cursor: pointer;
+  font-weight: bold;
 }
 .menu-item.active {
-  font-weight: bold;
   background-color: rgb(0, 56, 124);
 }
 .main-container {
@@ -1755,7 +1765,7 @@ export default defineComponent({
   flex: 3;
   display: flex;
   flex-flow: row;
-  margin: 1.5% 10% 4% 10%;
+  margin: 1.5% 10% 0 10%;
 }
 
 .main-content {
@@ -2033,20 +2043,5 @@ export default defineComponent({
 }
 .missing-fields .step-circle {
   background-color: red!important;
-}
-.dk-logo {
-  align-items: center;
-  color: #00489c;
-  display: flex;
-  flex-wrap: wrap;
-  font-family: Open Sans, serif;
-  font-weight: 200;
-  height: auto;
-}
-.dk-logo__sign {
-  display: inline-block;
-  margin-right: 15px;
-  vertical-align: top;
-  width: 40px;
 }
 </style>

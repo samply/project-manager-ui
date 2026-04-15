@@ -44,7 +44,7 @@ import {PropType, watch} from "vue";
     },
     possibleValues: {type: Array as PropType<string[]>, required: false},
     displayPossibleValue: {
-      type: Function as unknown as () => (input: string) => string,
+      type: Function as unknown as () => (input: string) => {name: string, description: string},
       default: (input: string) => input
     },
     configurations: {type: Object as PropType<Map<string, ProjectAndForms>>, required: false},
@@ -82,7 +82,7 @@ export default class ProjectFieldRow extends Vue {
   readonly module!: Module;
   readonly action!: Action | ActionFunction;
   readonly possibleValues?: string[];
-  readonly displayPossibleValue!: (input: string) => string;
+  readonly displayPossibleValue!: (input: string) => {name: string, description: string};
   readonly isEditable!: boolean;
   readonly callRefreshContext!: () => void;
 
@@ -657,7 +657,10 @@ export default class ProjectFieldRow extends Vue {
             </div>
             <div v-else-if="isSelection()" style="width: 70%;">
               <select v-if="isDraft() && !isSummaryStep()" v-model="editedValue[0]" @change="onInputChange" class="form-select" style="width: 100%;">
-                <option v-for="value in possibleValues" :key="value" :value="value">{{ displayPossibleValue(value) }}</option>
+                <option v-for="value in possibleValues" :key="value" :value="value">
+                  {{ displayPossibleValue(value).name }}
+                  <!--<span style="font-size: smaller"> {{displayPossibleValue(value).description}}</span>-->
+                </option>
               </select>
               <div v-if="!isDraft() || isSummaryStep()">{{displayPossibleValue(editedValue[0])}}</div>
             </div>

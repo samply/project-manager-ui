@@ -6,7 +6,7 @@
   </div>
   <div class="main-container">
     <div class="left-container" v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)">
-      <div class="box-header" style="padding-left:7%">Phase</div>
+      <div class="box-header" style="padding-left:7%"><span>Phase</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
       <div class="vertical-stepper">
         <div v-for="(projectState, index) in getProjectStates()" :key="index" class="stepper-step">
           <div style="display: flex; flex-flow: row" :class="{ 'active-step': project?.state === projectState }">
@@ -21,7 +21,7 @@
       <!--</div>-->
     </div>
 
-    <div class="right-container">
+    <div class="right-container" :class="{ 'less-margin': projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) }">
       <div class="main-content">
         <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'" class="info-container">
           <div class="box-header"><span>Status</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
@@ -1749,15 +1749,15 @@ export default defineComponent({
   display: flex;
   flex-flow: column;
   width: 14%;
-  min-height: 800px;
+  /*min-height: 800px;*/
   margin-top: 1.5%;
   margin-left: 1.5%;
-  margin-bottom: 5%;
+  margin-bottom: 1.5%;
   background-color: white;
-  border-radius: 10px;
+  /*border-radius: 10px;
   box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
   0 1px 1px 0 rgba(0, 0, 0, 0.14),
-  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);*/
 
 }
 
@@ -1768,7 +1768,9 @@ export default defineComponent({
   margin: 1.5% 10% 0 10%;
   width: 56%;
 }
-
+.right-container.less-margin {
+  margin-left:4%;
+}
 .main-content {
   display: flex;
   flex-flow: column;
@@ -1857,6 +1859,7 @@ export default defineComponent({
 .step-title {
   font-size: 16px;
   padding-top: 2px;
+  color: #00489c;
 }
 
 .active-step {
@@ -1864,7 +1867,7 @@ export default defineComponent({
 }
 
 .active-step .step-circle {
-  background-color: #007bff;
+  background-color: #fa7b26;
 }
 
 .notification-box {

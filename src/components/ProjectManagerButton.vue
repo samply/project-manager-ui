@@ -161,5 +161,9 @@ export default class ProjectManagerButton extends Vue {
 .pm-button button:last-of-type {
   margin-right: 0; /* Keeps layout clean */
 }
+.btn:disabled {
+  background-color: #777777;
+  border-color: #777777;
+}
 
 </style>

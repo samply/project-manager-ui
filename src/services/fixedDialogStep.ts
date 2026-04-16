@@ -72,6 +72,7 @@ export class DialogStepper {
     public currentSteps: DialogStep[] = [];
     public hasNextStep = false;
     public hasPreviousStep = false;
+    public visitedSteps = new Set<string>();
 
     /* ---------- External callback ---------- */
 
@@ -266,6 +267,10 @@ export class DialogStepper {
 
     private updateFields(): void {
         const previousStep = this.currentStep;
+
+        if(previousStep) {
+            this.visitedSteps.add(previousStep.displayName)
+        }
 
         this.currentSteps = this.fetchActiveSteps();
 

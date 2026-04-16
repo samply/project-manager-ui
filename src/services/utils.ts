@@ -24,7 +24,7 @@ export interface ProjectField {
     redirectUrl?: string
     isEditable: boolean
     possibleValues?: string[]
-    displayPossibleValue?: (input: string) => string
+    displayPossibleValue?: (input: string) => {name: string, description: string}
     configurations?: Map<string, ProjectAndForms>
     uploadAction?: Action
     downloadAction?: Action

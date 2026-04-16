@@ -1,9 +1,18 @@
 <template>
   <div>
-    <nav class="navbar navbar-dark bg-dark custom-navbar">
+    <nav class="navbar navbar-dark custom-navbar">
       <router-link class="navbar-brand" to="/">
         <i class="bi bi-boxes navbar-icon" v-html="'&nbsp' + frontendName"></i>
       </router-link>
+      <div class="navbar__logo">
+        <a href="https://dktk.dkfz.de/" class="navbar-brand dk-logo">
+          <span class="dk-logo__sign"><img src="../assets/logo-dktk-sign.svg" alt="dktk"></span>
+          <span class="dk-logo__brand">
+            <span class="dk-logo__brand-part1">D</span><span class="dk-logo__brand-part2">K</span><span class="dk-logo__brand-part3">TK</span>
+          </span>
+          <span class="dk-logo__slogan">Deutsches Konsortium für <br> Translationale Krebsforschung</span>
+        </a>
+      </div>
       <div class="user-logout-container">
         <!-- User information -->
         <span class="user-info" :title="auth.getEmail()">
@@ -96,7 +105,7 @@ export default defineComponent({
 
 .navbar-icon {
   margin-right: 5px;
-  color: white;
+  color: #00489c;
 }
 
 .user-logout-container {
@@ -109,7 +118,8 @@ export default defineComponent({
   display: flex;
   align-items: center;
   margin-right: 10px;
-  color: white;
+  color: #00489c;
+  font-weight: bold;
 }
 
 .user-icon {
@@ -117,7 +127,7 @@ export default defineComponent({
 }
 
 .admin-button {
-  color: white;
+  color: #00489c;
   margin-right: 10px;
 }
 
@@ -125,5 +135,47 @@ export default defineComponent({
   color: white;
   font-size: large;
   padding: 0.3rem 0.68rem;
+}
+.btn-outline-danger {
+  color: #fa7b26!important;
+  border: none!important;
+  font-weight: bold;
+}
+.dk-logo {
+  align-items: center;
+  color: #00489c;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: Open Sans, serif;
+  font-weight: 200;
+  height: auto;
+}
+.dk-logo__sign {
+  display: inline-block;
+  margin-right: 15px;
+  vertical-align: top;
+  width: 40px;
+}
+.dk-logo__sign img {
+  vertical-align: middle;
+}
+.dk-logo__brand {
+  color: #00489c;
+  display: inline-block;
+  font-size: 48px;
+  margin-right: 15px;
+}
+div.ccm-page .dk-logo__brand-part1 {
+  letter-spacing: -2px;
+}
+.dk-logo__brand-part2 {
+  letter-spacing: 2px;
+}
+.dk-logo__slogan {
+  color: #00489c;
+  display: inline-block;
+  font-size: 17px;
+  font-weight: 200;
+  line-height: 1.4;
 }
 </style>

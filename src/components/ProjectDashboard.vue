@@ -1,15 +1,15 @@
 <template>
+  <div class="main-menu"></div>
   <div style="display: flex; min-height: 100vh;">
     <div class="container custom-width-projects">
-      <div class="row box-header">
-        <div class="col-md-8">
-          <div>Requests</div>
-        </div>
-        <div class="col-md-4 text-end" v-if="isProjectManagerAdmin">
+      <div class="row">
+        <div class="box-header"><span>Requests</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
+        <!--<div class="col-md-4 text-end" v-if="isProjectManagerAdmin">
           <button @click="toggleNotification" class="btn btn-dark notification-button"
                   style="padding-right:2%; background:none; border:none; color:#007bff"><i style="font-size: x-large" class="bi bi-chat-right-text-fill"></i>
           </button>
-        </div>
+        </div>-->
+
       </div>
 
       <div class="table-box">
@@ -229,29 +229,39 @@ export default defineComponent({
 .custom-width-projects {
   flex: 1;
   margin-top: 2%;
-  border-radius: 10px !important;
+  /*border-radius: 10px !important;
   box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
   0 1px 1px 0 rgba(0, 0, 0, 0.14),
-  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);*/
 
   background-color: white;
   height: 100%;
 }
 
 .box-header {
-  padding: 12px 0 0 2%;
-  background-color: #95c8dc;
-  color: black;
+  padding: 10px 30px 10px 2%;
+  color: rgb(0, 56, 124);;
   font-size: large;
   font-weight: bold;
-  border: 1px solid #95c8dc;
-  border-radius: 10px 10px 0 0;
+  background-image: linear-gradient(to right, #e1edf5, #bed7e9);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.box-header span {
+  font-size: 16pt;
 }
 
 .custom-width-notifications h2 {
   margin-bottom: 15px;
 }
-
+.main-menu {
+  width: 100%;
+  height: 62.4px;
+  background-color: rgba(0,72,156,.95);
+  display: flex;
+  padding-left: 60%;
+}
 .pager {
   display: flex;
   justify-content: end;

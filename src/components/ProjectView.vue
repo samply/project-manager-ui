@@ -778,7 +778,7 @@ export default defineComponent({
           }),
           this.initializeData(Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, new Map(), 'currentUser'),
           this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment'),
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_TEMPLATES_ACTION, new Map(), 'formTemplates'),
+          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_BEST_PROJECT_FORM_TEMPLATES_ACTION, new Map(), 'formTemplates'),
           this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_SELECTED_PROJECT_FORMS_ACTION, new Map(), async result => {
             this.selectedForms = result;
             await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async result => {

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-04-15]
+## [1.1.0 - 2026-04-16]
 ### Added
 - Dockerfile
 - Single Spa
@@ -116,6 +116,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Default output for a query if no project type is specified
 - Allowed values in project form
 - Send queries of all project types to bridgehead with only one button
+- Fetch best form templates
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

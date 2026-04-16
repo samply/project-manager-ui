@@ -205,7 +205,7 @@
         </div>
         <div class="documents"
              v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN))">
-          <div class="box-header">Results</div>
+          <div class="box-header"><span>Results</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
           <div style="padding: 2%">
             <ResultsBox :call-refresh-context="refreshContext"
                         :project-manager-backend-service="projectManagerBackendService"
@@ -1766,6 +1766,7 @@ export default defineComponent({
   display: flex;
   flex-flow: row;
   margin: 1.5% 10% 0 10%;
+  width: 56%;
 }
 
 .main-content {

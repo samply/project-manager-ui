@@ -404,8 +404,8 @@ export default class ProjectFieldRow extends Vue {
   }
 
   onBooleanValueChange(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.editedValue[0] = input.checked ? 'true' : 'false';
+    //const input = event.target as HTMLInputElement;
+    //this.editedValue[0] = input.checked ? 'true' : 'false';
     this.saveField()
   }
 
@@ -560,12 +560,13 @@ export default class ProjectFieldRow extends Vue {
         <div v-else style="width:75%">
           <div>
             <div v-if="isTypeBoolean()" style="width: 70%;">
-              <input
-                  type="checkbox"
-                  :checked="editedValue[0] === 'true'"
-                  @change="onBooleanValueChange"
-                  :disabled="!isDraft() || isSummaryStep()"
-              />
+              <select v-if="isDraft() && !isSummaryStep()" v-model="editedValue[0]" @change="onBooleanValueChange" class="form-select" style="width: fit-content;">
+                <option value=true>Yes</option>
+                <option value=false>No</option>
+              </select>
+              <div v-if="!isDraft() || isSummaryStep()">
+                <div>{{editedValue[0] ? "Yes" : "No"}}</div>
+              </div>
             </div>
             <div v-else-if="isQuery()">
               <div style="float:right">
@@ -656,13 +657,16 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else-if="isSelection()" style="width: 70%;">
-              <select v-if="isDraft() && !isSummaryStep()" v-model="editedValue[0]" @change="onInputChange" class="form-select" style="width: 100%;">
+              <select v-if="isDraft() && !isSummaryStep()" v-model="editedValue[0]" @change="onInputChange" class="form-select" style="width: fit-content;">
                 <option v-for="value in possibleValues" :key="value" :value="value">
                   {{ displayPossibleValue(value).name }}
                   <!--<span style="font-size: smaller"> {{displayPossibleValue(value).description}}</span>-->
                 </option>
               </select>
-              <div v-if="!isDraft() || isSummaryStep()">{{displayPossibleValue(editedValue[0])}}</div>
+              <div v-if="!isDraft() || isSummaryStep()">
+                <div>{{displayPossibleValue(editedValue[0]).name}}</div>
+                <div style="font-size: small">{{displayPossibleValue(editedValue[0]).description}}</div>
+              </div>
             </div>
             <div v-else :style="{ width: !isDraft() || isSummaryStep() ? '100%' : '75%' }">
               <input

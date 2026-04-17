@@ -585,19 +585,31 @@ export default class ProjectFieldRow extends Vue {
                     @click="copyToClipboard(editedValue[1])"></i>
                 </button>
               </div>
-              <span><strong>Human readable</strong></span>
-              <input type="text" v-model="editedValue[0]" @change="onInputChange" disabled class="form-control" style="width: 100%;"><br/>
-              <!--<span><strong>Query</strong></span>
-              <input type="text" v-model="editedValue[1]" @change="onInputChange" class="form-control" style="width: 100%;">-->
-              <!--<lens-query-explain-button
-                  noQueryMessage="Leere Suchanfrage: Sucht nach allen Ergebnissen."
-                  queryItem={}
-              ></lens-query-explain-button>-->
+              <!--<span><strong>Query</strong></span><br/>-->
               <span v-for="box in getFirstLevelCriteria(editedValue[1])"
                     class="btn btn-primary dktk-darkblue"
                     style="margin-right: 2%; margin-bottom: 0.5%;">
                 {{getCriteriaDetails(box)}}
-            </span>
+              </span>
+              <br/>
+              <br/>
+              <span><strong>Human readable</strong></span>
+              <!--<input type="text" v-model="editedValue[0]" @change="onInputChange" disabled class="form-control" style="width: 100%;">-->
+              <textarea
+                  type="text"
+                  v-model="editedValue[0]"
+                  @change="onInputChange"
+                  class="form-control"
+                  :class="!isDraft() || isSummaryStep() ? 'white' : 'grey'"
+                  :disabled="!isDraft() || isSummaryStep()"
+              ></textarea>
+
+              <!--<input type="text" v-model="editedValue[1]" @change="onInputChange" class="form-control" style="width: 100%;">-->
+              <!--<lens-query-explain-button
+                  noQueryMessage="Leere Suchanfrage: Sucht nach allen Ergebnissen."
+                  queryItem={}
+              ></lens-query-explain-button>-->
+
             </div>
             <div v-else-if="isDescription()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
               <textarea
@@ -1037,8 +1049,10 @@ export default class ProjectFieldRow extends Vue {
 }
 .form-check {
   display: flex;
-  align-items: center;
-  margin: 0 10px;
+  margin: 10px;
+}
+.form-check-input {
+  border-color: #9e9e9e;
 }
  .input-field.sidewise {
   display: flex;

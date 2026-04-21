@@ -150,17 +150,26 @@ export class DialogStepper {
     }
 
     public hasSameFormTitles(formTitles: FormTitle[]): boolean {
-
         const fixedIds = new Set(FixedDialogSteps.map(s => s.id));
-        const allStepIds = new Set(this.allSteps.map(s => s.id));
 
-        for (const formTitle of formTitles) {
-            const id = formTitle.title;
+        const incomingIds = new Set(formTitles.map(t => t.title));
 
-            const inFixed = fixedIds.has(id);
-            const inDynamic = allStepIds.has(id);
+        const dynamicIds = new Set(
+            this.allSteps
+                .map(s => s.id)
+                .filter(id => !fixedIds.has(id))
+        );
 
-            if (!inFixed && !inDynamic) {
+        // Rule 1: I ⊆ (F ∪ D)
+        for (const id of incomingIds) {
+            if (!fixedIds.has(id) && !dynamicIds.has(id)) {
+                return false;
+            }
+        }
+
+        // Rule 2: D ⊆ I
+        for (const id of dynamicIds) {
+            if (!incomingIds.has(id)) {
                 return false;
             }
         }
@@ -268,7 +277,7 @@ export class DialogStepper {
     private updateFields(): void {
         const previousStep = this.currentStep;
 
-        if(previousStep) {
+        if (previousStep) {
             this.visitedSteps.add(previousStep.displayName)
         }
 

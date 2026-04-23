@@ -260,7 +260,7 @@
                   <div class="project-field-title">{{ draftDialogStepper.currentStep?.displayName }}</div>
                   <div class="project-field-notification">{{ extendedExplanations.get("2")?.message }}</div>
                 </div>
-                <div class="first-seperator"></div>
+                <div class="first-separator"></div>
                 <template v-for="(projectField, index) in projectFields" :key="index">
                   <ProjectFieldRow
                       v-if="projectField.visibilityCondition &&
@@ -1308,6 +1308,7 @@ export default defineComponent({
           fieldValue: this.project?.description ? [this.project.description] : [],
           editProjectParam: [EditProjectParam.DESCRIPTION],
           isEditable: true,
+          mandatory: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
@@ -1352,6 +1353,13 @@ export default defineComponent({
           possibleValues: this.queryFormats,
           mandatory: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+        },
+        {
+          fieldKey: "Cohort Definition",
+          fieldValue: this.project?.cohortDefinition ? [this.project.cohortDefinition] : [],
+          editProjectParam: [EditProjectParam.COHORT_DEFINITION],
+          isEditable: true,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         ...this.fetchProjectOutputFields(),
         {
@@ -2012,18 +2020,7 @@ export default defineComponent({
   justify-content: center;
 }
 
-.stepper-button {
-  color: #00489c;
-  border: none;
-  background-color: white;
-  font-size: large;
-  cursor: pointer;
-}
-
-.stepper-button:hover {
-  text-decoration: underline;
-}
-.first-seperator {
+.first-separator {
   width: 100%;
   height: 10px;
   background: white;

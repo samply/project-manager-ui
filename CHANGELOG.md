@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-04-21]
+## [1.1.0 - 2026-04-23]
 ### Added
 - Dockerfile
 - Single Spa
@@ -141,6 +141,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Services in the first place
 - Project Type
 - Filter boolean form fields for creation rules
+- Cohort definition in a query
 
 ### Removed
 - Application Form

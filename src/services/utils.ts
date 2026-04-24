@@ -26,6 +26,7 @@ export interface ProjectField {
     possibleValues?: string[]
     displayPossibleValue?: (input: string) => {name: string, description: string}
     configurations?: Map<string, ProjectAndForms>
+    hasUploadAction?: boolean
     uploadAction?: Action
     downloadAction?: Action
     downloadModule?: Module

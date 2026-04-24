@@ -788,7 +788,7 @@ export default defineComponent({
           this.initializeData(Module.USER_MODULE, Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION, new Map(), 'existsResearchEnvironmentWorkspace'),
           this.initializeData(Module.USER_MODULE, Action.FETCH_RESEARCH_ENVIRONMENT_URL_ACTION, new Map(), 'researchEnvironmentUrl'),
           this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, new Map(), 'currentUsers'),
-          this.initializeData(Module.USER_MODULE, Action.EXISTS_DESCRIPTION_ACTION, new Map(), 'existsProjectDescription'),
+          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.EXISTS_DESCRIPTION_ACTION, new Map(), 'existsProjectDescription'),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, new Map(), async (result: boolean) => {
             this.existsVotum = result;
             if (this.existsVotum) {

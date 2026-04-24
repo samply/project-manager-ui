@@ -1357,13 +1357,6 @@ export default defineComponent({
           mandatory: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
-        {
-          fieldKey: "Cohort Definition",
-          fieldValue: this.project?.cohortDefinition ? [this.project.cohortDefinition] : [],
-          editProjectParam: [EditProjectParam.COHORT_DEFINITION],
-          isEditable: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
-        },
         ...this.fetchProjectOutputFields(),
         {
           fieldKey: "Environment Variables",
@@ -2023,7 +2016,18 @@ export default defineComponent({
   justify-content: center;
 }
 
-.first-separator {
+.stepper-button {
+  color: #00489c;
+  border: none;
+  background-color: white;
+  font-size: large;
+  cursor: pointer;
+}
+
+.stepper-button:hover {
+  text-decoration: underline;
+}
+.first-seperator {
   width: 100%;
   height: 10px;
   background: white;

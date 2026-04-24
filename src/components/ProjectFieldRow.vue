@@ -50,6 +50,7 @@ import {PropType, watch} from "vue";
     configurations: {type: Object as PropType<Map<string, ProjectAndForms>>, required: false},
     isEditable: {type: Boolean, required: true},
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
+    hasUploadAction: {type: Boolean, required: false},
     uploadAction: {type: String as PropType<Action>, required: false},
     downloadAction: {type: String as PropType<Action>, required: false},
     downloadModule: {type: String as PropType<Module>, required: false},
@@ -105,6 +106,8 @@ export default class ProjectFieldRow extends Vue {
   readonly existsFile?: boolean;
   // noinspection JSUnusedGlobalSymbols
   readonly mandatory!: boolean;
+  // noinspection JSUnusedGlobalSymbols
+  readonly hasUploadAction?: boolean;
   // noinspection JSUnusedGlobalSymbols
   readonly draftDialogCurrentStep?: DialogStep;
   // noinspection JSUnusedGlobalSymbols
@@ -179,6 +182,7 @@ export default class ProjectFieldRow extends Vue {
     this.possibleValues?.forEach(() => {
       this.showDetails.push(false);
     });
+    console.log(this.fieldKey, ' ', this.hasUploadAction)
   }
 
 
@@ -550,7 +554,7 @@ export default class ProjectFieldRow extends Vue {
         <div class="field-description" v-html="fieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() }"></div>
       </div>
       <div :class="getEditFieldCssClass()">
-        <div v-if="uploadAction" style="width:75%">
+        <div v-if="uploadAction && !isDescription()" style="width:75%">
           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
                         :visible-bridgeheads="visibleBridgeheads" :use-bridgehead-chooser="fieldKey === 'Votum'"
@@ -569,23 +573,7 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else-if="isQuery()">
-              <div style="float:right">
-                <button v-if="redirectUrl !== null && redirectUrl !== undefined"
-                        class="btn btn-primary"
-                        data-toggle="tooltip"
-                        data-placement="top" title="CCP Explorer"
-                        style="background:none; border:none; color:black"><i class="bi bi-arrow-right-circle"
-                        @click="redirectToURL"></i>
-                </button>
-                <button v-if="isQuery() && fieldValue[0]" class="btn btn-primary"
-                        data-toggle="tooltip"
-                        data-placement="top" title="Copy Query to Clipboard"
-                        style="background:none; border:none; color:black"><i
-                    :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"
-                    @click="copyToClipboard(editedValue[1])"></i>
-                </button>
-              </div>
-              <!--<span><strong>Query</strong></span><br/>-->
+
               <span v-for="box in getFirstLevelCriteria(editedValue[1])"
                     class="btn btn-primary dktk-darkblue"
                     style="margin-right: 2%; margin-bottom: 0.5%;">
@@ -593,16 +581,37 @@ export default class ProjectFieldRow extends Vue {
               </span>
               <br/>
               <br/>
-              <span><strong>Human readable</strong></span>
-              <!--<input type="text" v-model="editedValue[0]" @change="onInputChange" disabled class="form-control" style="width: 100%;">-->
-              <textarea
-                  type="text"
-                  v-model="editedValue[0]"
-                  @change="onInputChange"
-                  class="form-control"
-                  :class="!isDraft() || isSummaryStep() ? 'white' : 'grey'"
-                  :disabled="!isDraft() || isSummaryStep()"
-              ></textarea>
+              <div style="display: flex; justify-content: space-between">
+                <span><strong>Human readable</strong></span>
+                <div>
+                  <button v-if="isQuery() && fieldValue[0]" class="btn btn-primary query-link-button"
+                          data-toggle="tooltip"
+                          data-placement="top" title="Copy Query to Clipboard"
+                          ><i
+                      :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"
+                      @click="copyToClipboard(editedValue[0])"></i>
+                  </button>
+                  <button v-if="redirectUrl !== null && redirectUrl !== undefined"
+                          class="btn btn-primary query-link-button"
+                          data-toggle="tooltip"
+                          data-placement="top" title="Return to the DKTK Explorer to edit the request."
+                          @click="redirectToURL">
+                    <i class="bi bi-arrow-right-circle"></i>
+                    <span style="font-size: small; padding: 2px 0 0 5px">Edit in Explorer</span>
+                  </button>
+                </div>
+              </div>
+
+
+                <textarea
+                    type="text"
+                    v-model="editedValue[0]"
+                    @change="onInputChange"
+                    class="form-control"
+                    :class="!isDraft() || isSummaryStep() ? 'white' : 'grey'"
+                    :disabled="!isDraft() || isSummaryStep()"
+                ></textarea>
+
 
               <!--<input type="text" v-model="editedValue[1]" @change="onInputChange" class="form-control" style="width: 100%;">-->
               <!--<lens-query-explain-button
@@ -620,6 +629,11 @@ export default class ProjectFieldRow extends Vue {
                   :class="!isDraft() || isSummaryStep() ? 'white' : 'grey'"
                   :disabled="!isDraft() || isSummaryStep()"
               ></textarea>
+              <div style="margin:1rem 0 0 1rem">
+                <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                              :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
+                              text="Upload document" :call-refresh-context="exitAndCallRefreshContext" :is-file="true"/>
+              </div>
             </div>
             <div v-else-if="isBridgeheads()" style="width: 75%">
                     <span v-if="editingBridgeheads && editingBridgeheads.length > 0">
@@ -1080,5 +1094,17 @@ export default class ProjectFieldRow extends Vue {
   white-space: nowrap;
   width: 90%;
   height: 1.5rem;
+}
+.query-link-button {
+  background:none;
+  border:none;
+  color:black
+}
+.query-link-button:hover {
+  color: #00489c;
+  background: none;
+}
+.query-link-button:hover span {
+  text-decoration: underline;
 }
 </style>

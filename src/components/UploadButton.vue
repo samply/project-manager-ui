@@ -21,6 +21,7 @@ import {PropType, watch} from "vue";
     action: {type: String as PropType<Action>, required: true},
     text: {type: String, required: true},
     isFile: {type: Boolean, required: true},
+    toggleInput: {type: Boolean, required: false},
 
     useBridgeheadChooser: {type: Boolean, default: false},
     visibleBridgeheads: {type: Array as PropType<Bridgehead[]>, default: () => []},
@@ -37,6 +38,7 @@ export default class UploadButton extends Vue {
   readonly isFile!: boolean;
   readonly useBridgeheadChooser!: boolean;
   readonly visibleBridgeheads!: Bridgehead[];
+  readonly toggleInput?: boolean;
 
   file: File | undefined = undefined;
   label = '';
@@ -44,6 +46,7 @@ export default class UploadButton extends Vue {
   isActive = false;
   fileSelected = false;
   selectedBridgehead: string | undefined = undefined;
+  visible: boolean = false
 
   mounted() {
     watch(
@@ -60,6 +63,8 @@ export default class UploadButton extends Vue {
   }
 
   updateIsActive() {
+    console.log(this.module)
+    console.log(this.action)
     this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result)
     this.selectedBridgehead = this.context.bridgehead?.bridgehead
   }
@@ -112,15 +117,16 @@ export default class UploadButton extends Vue {
   <div v-if="isActive" style="width: auto; margin-right: 2%">
     <div class="row align-items-center" style="display: flex;width: 100%">
       <div style="display: flex; width: 100%;">
-        <div class="form-group" style="width: 100%; flex-flow: column;">
+        <div class="form-group" style="display:flex; width: 100%; flex-flow: column;">
+          <div>
           <label for="labelInput" class="form-label font-weight-bold"><strong>{{ text }}: </strong></label>
           <template v-if="!text.toLowerCase().endsWith('url')">
-            <span v-if="!fileSelected" class="filename">no file selected</span>
+            <span v-if="!fileSelected" class="filename blue" @click="visible = !visible">no file selected</span>
             <span v-if="fileSelected" data-toggle="tooltip" data-placement="top" :title="file?.name"
-                  class="filename green">{{ file?.name }}</span>
+                  class="filename green" @click="visible = !visible">{{ file?.name }}</span>
           </template>
-
-          <div style="display: flex; width: 100%; flex-flow: row;">
+          </div>
+          <div style="display: none; width: 100%; flex-flow: row;" :class="{ 'visible': visible }">
             <template v-if="useBridgeheadChooser && visibleBridgeheads.length > 1">
               <select v-model="selectedBridgehead" class="form-select">
                 <option v-for="value in visibleBridgeheads" :key="value.bridgehead" :value="value.bridgehead">
@@ -183,7 +189,9 @@ export default class UploadButton extends Vue {
   color: #009a00;
   background-color: transparent;
 }
-
+.blue {
+  color: #00489c;
+}
 .fileChooser {
   font-size: 10pt;
   white-space: nowrap;
@@ -203,5 +211,8 @@ export default class UploadButton extends Vue {
   height: fit-content;
   width: fit-content;
   margin-right: 3%;
+}
+.visible {
+  display: flex!important;
 }
 </style>

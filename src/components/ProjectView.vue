@@ -281,6 +281,7 @@
                       :display-possible-value="projectField.displayPossibleValue"
                       :configurations="projectField.configurations"
                       :exists-file="projectField.existFile"
+                      :has-upload-action="projectField.hasUploadAction"
                       :upload-action="projectField.uploadAction"
                       :download-action="projectField.downloadAction"
                       :download-module="projectField.downloadModule"
@@ -1308,6 +1309,8 @@ export default defineComponent({
           fieldValue: this.project?.description ? [this.project.description] : [],
           editProjectParam: [EditProjectParam.DESCRIPTION],
           isEditable: true,
+          hasUploadAction: this.existsProjectDescription,
+          uploadAction: this.Action.UPLOAD_DESCRIPTION_ACTION,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {

@@ -265,7 +265,7 @@
                   <div class="project-field-title">{{ draftDialogStepper.currentStep?.displayName }}</div>
                   <div class="project-field-notification">{{ extendedExplanations.get("2")?.message }}</div>
                 </div>
-                <div v-if="!existsDraftDialog" style="display: flex;justify-content: end; margin: 1rem 1rem 0 1rem;">
+                <div v-if="!existsDraftDialog" class="form-switch-box">
                   <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault"
                            v-model="editMode">
@@ -1301,6 +1301,7 @@ export default defineComponent({
           isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.projectType'),
           editMode: this.editMode,
           possibleValues: this.projectTypes,
+          displayPossibleValue: (label: string) => {return {name: label, description: ""}},
           mandatory: true,
           visibilityCondition:
               !this.existsDraftDialog ||
@@ -1317,6 +1318,7 @@ export default defineComponent({
           isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.outputFormat'),
           editMode: this.editMode,
           possibleValues: this.outputFormats[exec.projectType] ?? [],
+          displayPossibleValue: (label: string) => {return {name: label, description: ""}},
           mandatory: true,
           visibilityCondition:
               !this.existsDraftDialog ||
@@ -1331,6 +1333,7 @@ export default defineComponent({
           isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.templateId'),
           editMode: this.editMode,
           possibleValues: this.exporterTemplateIds[exec.projectType] ?? [],
+          displayPossibleValue: (label: string) => {return {name: label, description: ""}},
           mandatory: true,
           visibilityCondition:
               !this.existsDraftDialog ||
@@ -1417,6 +1420,7 @@ export default defineComponent({
           editMode: this.editMode,
           redirectUrl: this.project?.explorerUrl ?? undefined,
           possibleValues: this.queryFormats,
+          displayPossibleValue: (label: string) => {return {name: label, description: ""}},
           mandatory: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
@@ -2151,5 +2155,11 @@ export default defineComponent({
   cursor: pointer;
   color: #00489c;
 }
-
+.form-switch-box {
+  display: flex;
+  justify-content: end;
+  margin: 1rem 1rem 0 1rem;
+  position: sticky;
+  top: 1rem;
+}
 </style>

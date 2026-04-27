@@ -690,7 +690,7 @@ export default class ProjectFieldRow extends Vue {
                 </button>
               </div>
             </div>
-            <div v-else-if="isSelection()" style="width: 70%;">
+            <div v-else-if="isSelection() && !isConfiguration()" style="width: 70%;">
               <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onInputChange" class="form-select" style="width: fit-content;">
                 <option v-for="value in possibleValues" :key="value" :value="value">
                   {{ displayPossibleValue(value).name }}
@@ -708,9 +708,9 @@ export default class ProjectFieldRow extends Vue {
                   v-model="editedValue[0]"
                   @change="onInputChange"
                   class="form-control"
-                  :class="(!isDraft() || isSummaryStep()) && !editMode ? 'white' : 'grey'"
+                  :class="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration() ? 'white' : 'grey'"
                   style="width: 100%;"
-                  :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+                  :disabled="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration()"
               >
             </div>
           </div>

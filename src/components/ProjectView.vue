@@ -267,7 +267,8 @@
                 </div>
                 <div v-if="!existsDraftDialog" style="display: flex;justify-content: end; margin: 1rem 1rem 0 1rem;">
                   <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault" v-model="editMode">
+                    <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault"
+                           v-model="editMode">
                     <label class="form-check-label" for="flexSwitchCheckDefault">Edit Fields</label>
                   </div>
                 </div>
@@ -673,7 +674,7 @@ export default defineComponent({
       this.showExplanations = !this.showNotification;
     },
 
-    initializePollingService(){
+    initializePollingService() {
       this.pollingService = new PollingService(
           () => this.fetchVisibleBridgeheads(),
           () => this.visibleBridgeheads.some(b =>
@@ -2108,11 +2109,6 @@ export default defineComponent({
   cursor: pointer;
 }
 
-.stepper-button:hover {
-  text-decoration: underline;
-}
-.first-separator {
-
 .first-separator {
   width: 100%;
   height: 10px;
@@ -2145,12 +2141,15 @@ export default defineComponent({
 .missing-fields .step-circle {
   background-color: red !important;
 }
+
 .form-switch input {
   cursor: pointer;
 }
+
 .form-switch label {
   padding: 0 0.3rem;
   cursor: pointer;
   color: #00489c;
 }
+
 </style>

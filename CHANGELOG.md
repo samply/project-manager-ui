@@ -118,6 +118,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Send queries of all project types to bridgehead with only one button
 - Fetch best form templates
 - Project description services
+- Polling Service for visible bridgeheads
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

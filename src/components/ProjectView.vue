@@ -1,12 +1,14 @@
 <template>
   <div class="main-menu">
-    <div v-for="step in getMenuSteps()" class="menu-item" @click="currentMenuStep=step" :class="{ 'active': currentMenuStep===step }">
-      {{step}}
+    <div v-for="step in getMenuSteps()" class="menu-item" @click="currentMenuStep=step"
+         :class="{ 'active': currentMenuStep===step }">
+      {{ step }}
     </div>
   </div>
   <div class="main-container">
     <div class="left-container" v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)">
-      <div class="box-header" style="padding-left:7%"><span>Phase</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
+      <div class="box-header" style="padding-left:7%"><span>Phase</span><img src="../assets/newsletter.png" width="40"
+                                                                             height="40"></div>
       <div class="vertical-stepper">
         <div v-for="(projectState, index) in getProjectStates()" :key="index" class="stepper-step">
           <div style="display: flex; flex-flow: row" :class="{ 'active-step': project?.state === projectState }">
@@ -21,10 +23,11 @@
       <!--</div>-->
     </div>
 
-    <div class="right-container" :class="{ 'less-margin': projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) }">
+    <div class="right-container"
+         :class="{ 'less-margin': projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) }">
       <div class="main-content">
         <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'" class="info-container">
-          <div class="box-header"><span>Status</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
+          <div class="box-header"><span>Status</span><img src="../assets/newsletter.png" width="40" height="40"></div>
 
           <div style="padding: 2%">
             <div style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
@@ -165,7 +168,7 @@
         <div
             v-if="!(project?.state === ProjectState.DRAFT && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep==='Status'"
             class="project-actions">
-          <div class="box-header"><span>Actions</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
+          <div class="box-header"><span>Actions</span><img src="../assets/newsletter.png" width="40" height="40"></div>
           <div style="padding:2%">
             <!-- Project State Module: Creator View -->
             <!-- Project State Module: PM-ADMIN View -->
@@ -205,7 +208,7 @@
         </div>
         <div class="documents"
              v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN))">
-          <div class="box-header"><span>Results</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
+          <div class="box-header"><span>Results</span><img src="../assets/newsletter.png" width="40" height="40"></div>
           <div style="padding: 2%">
             <ResultsBox :call-refresh-context="refreshContext"
                         :project-manager-backend-service="projectManagerBackendService"
@@ -216,9 +219,11 @@
             />
           </div>
         </div>
-        <div v-if="currentMenuStep==='Request'" class="data-container mt-12" :class="{ 'non-draft': !existsDraftDialog }">
+        <div v-if="currentMenuStep==='Request'" class="data-container mt-12"
+             :class="{ 'non-draft': !existsDraftDialog }">
           <div v-if="project">
-            <div v-if="!existsDraftDialog" class="box-header"><span>Request</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
+            <div v-if="!existsDraftDialog" class="box-header"><span>Request</span><img src="../assets/newsletter.png"
+                                                                                       width="40" height="40"></div>
             <div class="table-responsive" style="display: flex; flex-flow: row;height: 78vh">
 
               <div v-if="existsDraftDialog" class="container vertical-stepper-box">
@@ -231,7 +236,7 @@
                       >
                         <div>
                           <div class="step-circle" style="background-color: #fa7b26"
-                            @click="draftDialogStepper.setCurrentStep(step.id)">
+                               @click="draftDialogStepper.setCurrentStep(step.id)">
                             <span>{{ index + 1 }}</span>
                           </div>
                           <div v-if="index < draftDialogStepper.currentSteps.length - 1" class="stepper-line2"></div>
@@ -353,7 +358,8 @@
           </div>
         </div>
         <div class="documents" v-if="currentMenuStep==='Documents'">
-          <div class="box-header"><span>Documents</span><img src="../assets/newsletter.png" width="40" height="40"> </div>
+          <div class="box-header"><span>Documents</span><img src="../assets/newsletter.png" width="40" height="40">
+          </div>
           <div style="padding: 2%">
             <DownloadFormTemplatePdfButtons :form-templates="formTemplates" :context="context"
                                             :project-manager-backend-service="projectManagerBackendService"/>
@@ -458,6 +464,7 @@ import {
   getQueryState,
   hasProjectType,
   hasValidOutputs,
+  isQueryOnTheWay,
   Module,
   Notification,
   Project,
@@ -490,6 +497,7 @@ import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
 import {ActionFunction, ProjectField, Section} from "@/services/utils";
 import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
+import {PollingService} from "@/services/PollingService";
 
 
 export default defineComponent({
@@ -542,6 +550,7 @@ export default defineComponent({
       activeBridgeheadIndex: 0,
       bridgeheads: [] as Bridgehead[],
       visibleBridgeheads: [] as Bridgehead[],
+      pollingService: null as PollingService | null,
       context: new ProjectManagerContext(this.projectCode, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
       project: undefined as Project | undefined,
@@ -636,10 +645,15 @@ export default defineComponent({
       }
     }
   },
+
   mounted() {
-    this.fetchVisibleBridgeheads();
+    this.initializePollingService();
+    this.pollingService?.execute();
   },
 
+  beforeUnmount() {
+    this.pollingService?.stop();
+  },
 
   methods: {
     hasProjectType,
@@ -651,12 +665,23 @@ export default defineComponent({
       this.showExplanations = !this.showNotification;
     },
 
+    initializePollingService(){
+      this.pollingService = new PollingService(
+          () => this.fetchVisibleBridgeheads(),
+          () => this.visibleBridgeheads.some(b =>
+              b.executions?.some(e => isQueryOnTheWay(e.queryState))
+          ),
+          5000
+      );
+    },
+
     refreshBridgeheadsAndContext() {
       const activeBridgehead = this.activeBridgehead;
       this.fetchVisibleBridgeheads().then(() => {
         if (this.activeBridgehead === activeBridgehead) {
           this.refreshContext();
         }
+        this.pollingService?.execute();
       })
     },
 
@@ -758,7 +783,7 @@ export default defineComponent({
     },
 
     hasMissingFieldsInStep(step: string): boolean {
-      if(this.draftDialogStepper.visitedSteps.has(step)) {
+      if (this.draftDialogStepper.visitedSteps.has(step)) {
         return this.groupedMissingFields[step]?.length > 0;
       }
       return false
@@ -863,7 +888,7 @@ export default defineComponent({
         await this.checkButtonVisibility()
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
-        this.project?.state !== ProjectState.DRAFT ? this.currentMenuStep="Status" : this.currentMenuStep="Request"
+        this.project?.state !== ProjectState.DRAFT ? this.currentMenuStep = "Status" : this.currentMenuStep = "Request"
       }
     },
 
@@ -1660,7 +1685,7 @@ export default defineComponent({
     },
 
     getMenuSteps(): string[] {
-      if(this.project?.state !== ProjectState.DRAFT) {
+      if (this.project?.state !== ProjectState.DRAFT) {
         return ["Status", "Request", "Documents"]
       } else {
         return ["Request", "Documents"]
@@ -1692,9 +1717,11 @@ export default defineComponent({
   justify-content: space-between;
   align-items: center;
 }
+
 .box-header span {
   font-size: 16pt;
 }
+
 .info-container {
   display: flex;
   flex-direction: column;
@@ -1714,15 +1741,17 @@ export default defineComponent({
   height: 100%;
   margin: 0 1% 0 1%;
 }
+
 .data-container.non-draft {
   border-radius: 10px;
   /*box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);*/
   margin: 0;
 }
+
 .vertical-stepper-box {
-  display:flex;
+  display: flex;
   flex-direction: column;
-  width:30%;
+  width: 30%;
   margin-right: 3%;
 }
 
@@ -1748,19 +1777,22 @@ export default defineComponent({
 
 .main-menu {
   width: 100%;
-  background-color: rgba(0,72,156,.95);
+  background-color: rgba(0, 72, 156, .95);
   display: flex;
   padding-left: 60%;
 }
+
 .menu-item {
   padding: 1.2rem 2rem;
   color: white;
   cursor: pointer;
   font-weight: bold;
 }
+
 .menu-item.active {
   background-color: rgb(0, 56, 124);
 }
+
 .main-container {
   display: flex;
   flex-flow: row;
@@ -1790,9 +1822,11 @@ export default defineComponent({
   margin: 1.5% 10% 0 10%;
   width: 56%;
 }
+
 .right-container.less-margin {
-  margin-left:4%;
+  margin-left: 4%;
 }
+
 .main-content {
   display: flex;
   flex-flow: column;
@@ -2043,31 +2077,37 @@ export default defineComponent({
 .stepper-button:hover {
   text-decoration: underline;
 }
-.first-seperator {
+
+.first-separator {
   width: 100%;
   height: 10px;
   background: white;
   margin-bottom: -20px;
   position: relative;
 }
+
 .project-field-header {
   margin: 2rem 1rem 0 1rem;
   padding: 1rem 3rem;
   background-image: linear-gradient(to right, #eeddcb, #aed0e6);
 }
+
 .project-field-title {
-   font-size: larger;
-   font-weight: bold;
-   color: rgb(0, 72, 156);
- }
+  font-size: larger;
+  font-weight: bold;
+  color: rgb(0, 72, 156);
+}
+
 .project-field-notification {
   font-size: small;
   color: dimgrey;
 }
+
 .missing-fields, .missing-fields .stepper-step-header {
   color: red;
 }
+
 .missing-fields .step-circle {
-  background-color: red!important;
+  background-color: red !important;
 }
 </style>

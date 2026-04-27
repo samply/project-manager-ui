@@ -297,6 +297,10 @@ export enum QueryState {
     FINISHED = "FINISHED"
 }
 
+export function isQueryOnTheWay(queryState: QueryState) {
+    return [QueryState.TO_BE_SENT, QueryState.TO_BE_SENT_AND_EXECUTED, QueryState.SENDING, QueryState.SENDING_AND_EXECUTING].includes(queryState);
+}
+
 export interface BridgeheadExecution {
     projectType: ProjectType;
     queryState: QueryState;

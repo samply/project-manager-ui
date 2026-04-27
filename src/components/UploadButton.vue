@@ -25,6 +25,9 @@ import {PropType, watch} from "vue";
 
     useBridgeheadChooser: {type: Boolean, default: false},
     visibleBridgeheads: {type: Array as PropType<Bridgehead[]>, default: () => []},
+    existsFile: {type: Boolean, required: false},
+    fileName: {type: String, required: false},
+
   }
 })
 export default class UploadButton extends Vue {
@@ -39,6 +42,8 @@ export default class UploadButton extends Vue {
   readonly useBridgeheadChooser!: boolean;
   readonly visibleBridgeheads!: Bridgehead[];
   readonly toggleInput?: boolean;
+  readonly existsFile?: boolean;
+  readonly fileName?: string;
 
   file: File | undefined = undefined;
   label = '';
@@ -46,7 +51,7 @@ export default class UploadButton extends Vue {
   isActive = false;
   fileSelected = false;
   selectedBridgehead: string | undefined = undefined;
-  visible: boolean = false
+  visible: boolean = true
 
   mounted() {
     watch(
@@ -60,11 +65,10 @@ export default class UploadButton extends Vue {
 
   async created() {
     this.updateIsActive()
+    this.visible = !this.toggleInput
   }
 
   updateIsActive() {
-    console.log(this.module)
-    console.log(this.action)
     this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result)
     this.selectedBridgehead = this.context.bridgehead?.bridgehead
   }
@@ -121,9 +125,9 @@ export default class UploadButton extends Vue {
           <div>
           <label for="labelInput" class="form-label font-weight-bold"><strong>{{ text }}: </strong></label>
           <template v-if="!text.toLowerCase().endsWith('url')">
-            <span v-if="!fileSelected" class="filename blue" @click="visible = !visible">no file selected</span>
-            <span v-if="fileSelected" data-toggle="tooltip" data-placement="top" :title="file?.name"
-                  class="filename green" @click="visible = !visible">{{ file?.name }}</span>
+            <span v-if="!fileSelected && !existsFile" class="filename blue" @click="visible = !visible">no file selected</span>
+            <span v-if="fileSelected || existsFile" data-toggle="tooltip" data-placement="top" :title="existsFile && !fileSelected ? fileName : file?.name"
+                  class="filename green" @click="visible = !visible">{{ existsFile && !fileSelected ? fileName : file?.name }}</span>
           </template>
           </div>
           <div style="display: none; width: 100%; flex-flow: row;" :class="{ 'visible': visible }">
@@ -175,13 +179,13 @@ export default class UploadButton extends Vue {
 
 <style scoped>
 .filename {
-  display: inline-block;
+  display: inline;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: calc(30 * 1ch);
   font-size: small;
-  cursor: default;
+  cursor: pointer;
   padding-left: 5px;
 }
 

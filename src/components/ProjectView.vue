@@ -1031,13 +1031,10 @@ export default defineComponent({
     },
 
     async initializeData(module: Module, action: Action, params: Map<string, unknown>, dataVariable: string): Promise<any> {
-      const bla = this.initializeDataInCallback(module, action, params, async (result) => {
+      return this.initializeDataInCallback(module, action, params, async (result) => {
         (this.$data as any)[dataVariable] = result;
       });
-      console.log(dataVariable, ' ', bla)
-      return bla
     },
-
 
     async initializeDataInCallback(module: Module, action: Action, params: Map<string, unknown>, callback: (result: any) => Promise<any>) {
       try {
@@ -1290,7 +1287,6 @@ export default defineComponent({
     },
 
     fetchProjectOutputFields(): ProjectField[] {
-      console.log('exist ', this.existsProjectDescription)
       const outputs: ProjectOutput[] =
           this.project?.outputs?.length
               ? this.project.outputs

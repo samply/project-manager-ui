@@ -1,11 +1,11 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import type {Explanations} from "@/services/projectManagerBackendService";
 import {
   Action,
   Bridgehead,
   configLabel,
   EditProjectParam,
+  Explanations,
   FormDataType,
   Module,
   ProjectAndForms,
@@ -49,8 +49,8 @@ import {PropType, watch} from "vue";
     },
     configurations: {type: Object as PropType<Map<string, ProjectAndForms>>, required: false},
     isEditable: {type: Boolean, required: true},
+    editMode: {type: Boolean, required: true},
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
-    hasUploadAction: {type: Boolean, required: false},
     uploadAction: {type: String as PropType<Action>, required: false},
     downloadAction: {type: String as PropType<Action>, required: false},
     downloadModule: {type: String as PropType<Module>, required: false},
@@ -58,6 +58,7 @@ import {PropType, watch} from "vue";
     deleteModule: {type: String as PropType<Module>, required: false},
     todos: {type: Object as PropType<Explanations>, required: false},
     existsFile: {type: Boolean, required: false},
+    fileName: {type: String, required: false},
     mandatory: {type: Boolean, required: true, default: false},
     type: {type: String as PropType<FormDataType>, required: false},
     draftDialogCurrentStep: {type: Object as PropType<DialogStep>, required: false},
@@ -88,6 +89,9 @@ export default class ProjectFieldRow extends Vue {
   readonly callRefreshContext!: () => void;
 
   // For template:
+
+  // noinspection JSUnusedGlobalSymbols
+  readonly editMode!: boolean;
   // noinspection JSUnusedGlobalSymbols
   readonly fieldDescription?: string;
   // noinspection JSUnusedGlobalSymbols
@@ -105,16 +109,16 @@ export default class ProjectFieldRow extends Vue {
   // noinspection JSUnusedGlobalSymbols
   readonly existsFile?: boolean;
   // noinspection JSUnusedGlobalSymbols
-  readonly mandatory!: boolean;
+  readonly fileName?: string;
   // noinspection JSUnusedGlobalSymbols
-  readonly hasUploadAction?: boolean;
+  readonly mandatory!: boolean;
   // noinspection JSUnusedGlobalSymbols
   readonly draftDialogCurrentStep?: DialogStep;
   // noinspection JSUnusedGlobalSymbols
   readonly visibleBridgeheads!: Bridgehead[];
   // noinspection JSUnusedGlobalSymbols
   readonly section?: Section;
-  readonly uploadAction?: Action;
+  uploadAction?: Action;
   readonly type!: FormDataType;
   readonly transformForSending!: (input: string) => string;
   readonly extraParams?: Map<string, string>;
@@ -182,7 +186,6 @@ export default class ProjectFieldRow extends Vue {
     this.possibleValues?.forEach(() => {
       this.showDetails.push(false);
     });
-    console.log(this.fieldKey, ' ', this.hasUploadAction)
   }
 
 
@@ -359,11 +362,15 @@ export default class ProjectFieldRow extends Vue {
   isQuery(): boolean {
     return this.includesEditProjectParam(EditProjectParam.HUMAN_READABLE);
   }
-
+  isCohortDefinition(): boolean {
+    return this.includesEditProjectParam(EditProjectParam.COHORT_DEFINITION)
+  }
   isDescription(): boolean {
     return this.includesEditProjectParam(EditProjectParam.DESCRIPTION);
   }
-
+  isDescriptionUpload(): boolean {
+    return this.fieldKey === "DescriptionUpload";
+  }
   isBridgeheads(): boolean {
     return this.includesEditProjectParam(EditProjectParam.BRIDGEHEADS);
   }
@@ -461,7 +468,7 @@ export default class ProjectFieldRow extends Vue {
 </script>
 
 <template>
-  <div class="input-field-separator"></div>
+  <div v-if="!isDescriptionUpload()" class="input-field-separator"></div>
   <!-- Section -->
   <template v-if="section">
     <template v-for="newSection in section.fetchNewSections()"
@@ -541,9 +548,9 @@ export default class ProjectFieldRow extends Vue {
 
   <div v-else>
 
-    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep() }">
+    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
       <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() }">
-        <div style="display: flex;">
+        <div v-if="!isDescriptionUpload()" style="display: flex;">
           <span class="input-field-title">{{ fieldKey }}<span v-if="this.mandatory">&nbsp*</span></span>
 
           <span v-if="this.uploadAction && todos?.get(this.uploadAction)"
@@ -554,26 +561,25 @@ export default class ProjectFieldRow extends Vue {
         <div class="field-description" v-html="fieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() }"></div>
       </div>
       <div :class="getEditFieldCssClass()">
-        <div v-if="uploadAction && !isDescription()" style="width:75%">
+        <div v-if="uploadAction && !isDescriptionUpload()" style="width:75%">
           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
                         :visible-bridgeheads="visibleBridgeheads" :use-bridgehead-chooser="fieldKey === 'Votum'"
                         :text="'Upload '+ fieldKey" :call-refresh-context="exitAndCallRefreshContext"
-                        :is-file="true"/>
+                        :is-file="true" :toggle-input="fieldKey.substring(0,5) === 'Votum'"/>
         </div>
         <div v-else style="width:75%">
           <div>
             <div v-if="isTypeBoolean()" style="width: 70%;">
-              <select v-if="isDraft() && !isSummaryStep()" v-model="editedValue[0]" @change="onBooleanValueChange" class="form-select" style="width: fit-content;">
+              <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onBooleanValueChange" class="form-select" style="width: fit-content;">
                 <option value=true>Yes</option>
                 <option value=false>No</option>
               </select>
-              <div v-if="!isDraft() || isSummaryStep()">
+              <div v-if="(!isDraft() || isSummaryStep()) && !editMode">
                 <div>{{editedValue[0] ? "Yes" : "No"}}</div>
               </div>
             </div>
-            <div v-else-if="isQuery()">
-
+            <div v-else-if="isQuery()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
               <span v-for="box in getFirstLevelCriteria(editedValue[1])"
                     class="btn btn-primary dktk-darkblue"
                     style="margin-right: 2%; margin-bottom: 0.5%;">
@@ -601,40 +607,42 @@ export default class ProjectFieldRow extends Vue {
                   </button>
                 </div>
               </div>
-
-
+              <div class="grow-wrap" :data-replicated-value="editedValue[0]">
                 <textarea
-                    type="text"
-                    v-model="editedValue[0]"
-                    @change="onInputChange"
-                    class="form-control"
-                    :class="!isDraft() || isSummaryStep() ? 'white' : 'grey'"
-                    :disabled="!isDraft() || isSummaryStep()"
-                ></textarea>
-
-
-              <!--<input type="text" v-model="editedValue[1]" @change="onInputChange" class="form-control" style="width: 100%;">-->
-              <!--<lens-query-explain-button
-                  noQueryMessage="Leere Suchanfrage: Sucht nach allen Ergebnissen."
-                  queryItem={}
-              ></lens-query-explain-button>-->
-
-            </div>
-            <div v-else-if="isDescription()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
-              <textarea
                   type="text"
                   v-model="editedValue[0]"
                   @change="onInputChange"
                   class="form-control"
-                  :class="!isDraft() || isSummaryStep() ? 'white' : 'grey'"
-                  :disabled="!isDraft() || isSummaryStep()"
-              ></textarea>
-              <div style="margin:1rem 0 0 1rem">
-                <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                              :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
-                              text="Upload document" :call-refresh-context="exitAndCallRefreshContext" :is-file="true"/>
+                  :class="(!isDraft() || isSummaryStep()) && !editMode ? 'white' : 'grey'"
+                  :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+                ></textarea>
+              </div>
+              <!--<lens-query-explain-button
+                  noQueryMessage="Leere Suchanfrage: Sucht nach allen Ergebnissen."
+                  queryItem={}
+              ></lens-query-explain-button>-->
+            </div>
+
+            <div v-else-if="isDescription() || isCohortDefinition()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
+              <div class="grow-wrap" :data-replicated-value="editedValue[0]">
+                <textarea
+                  type="text"
+                  v-model="editedValue[0]"
+                  @change="onInputChange"
+                  class="form-control auto-textarea"
+                  :class="(!isDraft() || isSummaryStep()) && !editMode ? 'white' : 'grey'"
+                  :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+                ></textarea>
               </div>
             </div>
+
+            <div v-else-if="isDescriptionUpload()" style="margin:1rem 0 0 1rem">
+              <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
+                            text="Upload document" :call-refresh-context="exitAndCallRefreshContext" :is-file="true" :exists-file="existsFile"
+                            :file-name="fileName" :toggle-input="true"/>
+            </div>
+
             <div v-else-if="isBridgeheads()" style="width: 75%">
                     <span v-if="editingBridgeheads && editingBridgeheads.length > 0">
                       <span v-for="(bridgehead, index) in editingBridgeheads" :key="index" class="btn btn-primary dktk-darkblue"
@@ -682,14 +690,14 @@ export default class ProjectFieldRow extends Vue {
                 </button>
               </div>
             </div>
-            <div v-else-if="isSelection()" style="width: 70%;">
-              <select v-if="isDraft() && !isSummaryStep()" v-model="editedValue[0]" @change="onInputChange" class="form-select" style="width: fit-content;">
+            <div v-else-if="isSelection() && !isConfiguration()" style="width: 70%;">
+              <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onInputChange" class="form-select" style="width: fit-content;">
                 <option v-for="value in possibleValues" :key="value" :value="value">
                   {{ displayPossibleValue(value).name }}
                   <!--<span style="font-size: smaller"> {{displayPossibleValue(value).description}}</span>-->
                 </option>
               </select>
-              <div v-if="!isDraft() || isSummaryStep()">
+              <div v-if="(!isDraft() || isSummaryStep()) && !editMode">
                 <div>{{displayPossibleValue(editedValue[0]).name}}</div>
                 <div style="font-size: small">{{displayPossibleValue(editedValue[0]).description}}</div>
               </div>
@@ -700,9 +708,9 @@ export default class ProjectFieldRow extends Vue {
                   v-model="editedValue[0]"
                   @change="onInputChange"
                   class="form-control"
-                  :class="!isDraft() || isSummaryStep() ? 'white' : 'grey'"
+                  :class="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration() ? 'white' : 'grey'"
                   style="width: 100%;"
-                  :disabled="!isDraft() || isSummaryStep()"
+                  :disabled="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration()"
               >
             </div>
           </div>
@@ -783,7 +791,7 @@ export default class ProjectFieldRow extends Vue {
 .upload-edit-field {
   display: flex;
   flex-flow: row;
-  width: 100%;
+  width: 70%;
 }
 
 /*noinspection CssUnusedSymbol*/
@@ -1071,14 +1079,16 @@ export default class ProjectFieldRow extends Vue {
  .input-field.sidewise {
   display: flex;
    margin-bottom: 1%;
+   padding: 1rem 4rem;
 }
  .input-field-header.sidewise {
    width: 30%;
    margin-right: 1%;
  }
  textarea.form-control {
-   resize: both;
-   height: 200px;
+   /*resize: both;*/
+   /*height: 200px;*/
+
  }
  .dktk-darkblue {
    background-color: #00529c!important;
@@ -1106,5 +1116,39 @@ export default class ProjectFieldRow extends Vue {
 }
 .query-link-button:hover span {
   text-decoration: underline;
+}
+
+.grow-wrap {
+  /* easy way to plop the elements on top of each other and have them both sized based on the tallest one's height */
+  display: grid;
+  min-height: 150px;
+  max-height: 300px;
+}
+.grow-wrap::after {
+  /* Note the weird space! Needed to preventy jumpy behavior */
+  content: attr(data-replicated-value) " ";
+
+  /* This is how textarea text behaves */
+  white-space: pre-wrap;
+
+  /* Hidden from view, clicks, and screen readers */
+  visibility: hidden;
+}
+.grow-wrap > textarea {
+  /* You could leave this, but after a user resizes, then it ruins the auto sizing */
+  resize: none;
+
+  /* Firefox shows scrollbar on growth, you can hide like this. */
+  overflow: hidden;
+}
+.grow-wrap > textarea,
+.grow-wrap::after {
+  /* Identical styling required!! */
+  border: 1px solid black;
+  padding: 0.5rem;
+  font: inherit;
+
+  /* Place on top of each other */
+  grid-area: 1 / 1 / 2 / 2;
 }
 </style>

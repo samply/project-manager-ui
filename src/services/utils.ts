@@ -23,10 +23,11 @@ export interface ProjectField {
     bridgeheads?: BridgeheadsProjectField
     redirectUrl?: string
     isEditable: boolean
+    editMode: boolean
     possibleValues?: string[]
     displayPossibleValue?: (input: string) => {name: string, description: string}
     configurations?: Map<string, ProjectAndForms>
-    hasUploadAction?: boolean
+    fileName?: string
     uploadAction?: Action
     downloadAction?: Action
     downloadModule?: Module

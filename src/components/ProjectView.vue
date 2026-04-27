@@ -265,6 +265,12 @@
                   <div class="project-field-title">{{ draftDialogStepper.currentStep?.displayName }}</div>
                   <div class="project-field-notification">{{ extendedExplanations.get("2")?.message }}</div>
                 </div>
+                <div v-if="!existsDraftDialog" style="display: flex;justify-content: end; margin: 1rem 1rem 0 1rem;">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault" v-model="editMode">
+                    <label class="form-check-label" for="flexSwitchCheckDefault">Edit Fields</label>
+                  </div>
+                </div>
                 <div class="first-separator"></div>
                 <template v-for="(projectField, index) in projectFields" :key="index">
                   <ProjectFieldRow
@@ -280,13 +286,14 @@
                       :module="projectField.module"
                       :edit-project-param="projectField.editProjectParam"
                       :is-editable="projectField.isEditable"
+                      :edit-mode="editMode"
                       :redirect-url="projectField.redirectUrl"
                       :transform-for-sending="projectField.transformForSending"
                       :possible-values="projectField.possibleValues"
                       :display-possible-value="projectField.displayPossibleValue"
                       :configurations="projectField.configurations"
                       :exists-file="projectField.existFile"
-                      :has-upload-action="projectField.hasUploadAction"
+                      :file-name="projectField.fileName"
                       :upload-action="projectField.uploadAction"
                       :download-action="projectField.downloadAction"
                       :download-module="projectField.downloadModule"
@@ -603,7 +610,8 @@ export default defineComponent({
       selectedForms: [] as FormTitle[],
       projectFields: [] as ProjectField[],
       groupedMissingFields: {} as Record<string, string[]>,
-      currentMenuStep: "Status"
+      currentMenuStep: "Status",
+      editMode: false
     };
   },
   watch: {
@@ -1028,7 +1036,6 @@ export default defineComponent({
       });
     },
 
-
     async initializeDataInCallback(module: Module, action: Action, params: Map<string, unknown>, callback: (result: any) => Promise<any>) {
       try {
         const condition = await this.projectManagerBackendService.isModuleActionActive(module, action);
@@ -1062,6 +1069,7 @@ export default defineComponent({
         fieldDescription: formField.labelDescription,
         type: formField.type,
         isEditable: true,
+        editMode: this.editMode,
         possibleValues: formField.allowedValues?.map(value => value.label),
         displayPossibleValue: formField.allowedValues?.length
             ? (label: string) => {
@@ -1090,6 +1098,7 @@ export default defineComponent({
         fieldDescription: formTitle.titleDescription,
         type: FormDataType.BOOLEAN,
         isEditable: true,
+        editMode: this.editMode,
         action: new ActionFunction((input: string[]) => {
           if (input && input.length > 0 && input[0] === "false") {
             return Action.REMOVE_SELECTED_PROJECT_FORM_ACTION;
@@ -1289,6 +1298,7 @@ export default defineComponent({
           fieldValue: exec.projectType ? [exec.projectType] : [],
           editProjectParam: [EditProjectParam.PROJECT_TYPE],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.projectType'),
+          editMode: this.editMode,
           possibleValues: this.projectTypes,
           mandatory: true,
           visibilityCondition:
@@ -1304,6 +1314,7 @@ export default defineComponent({
           fieldValue: exec.outputFormat ? [exec.outputFormat] : [],
           editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.outputFormat'),
+          editMode: this.editMode,
           possibleValues: this.outputFormats[exec.projectType] ?? [],
           mandatory: true,
           visibilityCondition:
@@ -1317,6 +1328,7 @@ export default defineComponent({
           fieldValue: exec.templateId ? [exec.templateId] : [],
           editProjectParam: [EditProjectParam.TEMPLATE_ID],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.templateId'),
+          editMode: this.editMode,
           possibleValues: this.exporterTemplateIds[exec.projectType] ?? [],
           mandatory: true,
           visibilityCondition:
@@ -1335,6 +1347,7 @@ export default defineComponent({
           fieldValue: this.project?.label ? [this.project.label] : [],
           editProjectParam: [EditProjectParam.LABEL],
           isEditable: true,
+          editMode: this.editMode,
           mandatory: true,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
@@ -1343,9 +1356,20 @@ export default defineComponent({
           fieldValue: this.project?.description ? [this.project.description] : [],
           editProjectParam: [EditProjectParam.DESCRIPTION],
           isEditable: true,
-          hasUploadAction: this.existsProjectDescription,
-          uploadAction: this.Action.UPLOAD_DESCRIPTION_ACTION,
+          editMode: this.editMode,
           mandatory: true,
+          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+        },
+        {
+          fieldKey: "DescriptionUpload",
+          fieldValue: [this.projectDescription?.label, this.projectDescription?.originalFilename],
+          isEditable: true,
+          editMode: this.editMode,
+          existFile: this.existsProjectDescription,
+          fileName: this.projectDescription?.originalFilename,
+          uploadAction: this.Action.UPLOAD_DESCRIPTION_ACTION,
+          downloadAction: this.Action.DOWNLOAD_DESCRIPTION_ACTION,
+          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
@@ -1357,6 +1381,7 @@ export default defineComponent({
           },
           editProjectParam: [EditProjectParam.BRIDGEHEADS],
           isEditable: true,
+          editMode: this.editMode,
           mandatory: true,
           redirectUrl: this.project?.explorerUrl ?? undefined,
           transformForSending: (humanReadable: string) => this.allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
@@ -1367,6 +1392,7 @@ export default defineComponent({
           fieldValue: [this.currentProjectConfiguration],
           editProjectParam: [EditProjectParam.PROJECT_CONFIGURATION],
           isEditable: true,
+          editMode: this.editMode,
           possibleValues: this.projectConfigurationLabels,
           configurations: this.projectConfigurations,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
@@ -1377,6 +1403,7 @@ export default defineComponent({
           fieldValue: (this.project?.humanReadable && this.project?.query) ? [this.project.humanReadable, this.project.query] : [],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
           isEditable: true,
+          editMode: this.editMode,
           mandatory: true,
           redirectUrl: this.project?.explorerUrl ?? undefined,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
@@ -1386,6 +1413,7 @@ export default defineComponent({
           fieldValue: this.project?.queryFormat ? [this.project.queryFormat] : [],
           editProjectParam: [EditProjectParam.QUERY_FORMAT],
           isEditable: true,
+          editMode: this.editMode,
           redirectUrl: this.project?.explorerUrl ?? undefined,
           possibleValues: this.queryFormats,
           mandatory: true,
@@ -1396,6 +1424,7 @@ export default defineComponent({
           fieldValue: this.project?.cohortDefinition ? [this.project.cohortDefinition] : [],
           editProjectParam: [EditProjectParam.COHORT_DEFINITION],
           isEditable: true,
+          editMode: this.editMode,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         ...this.fetchProjectOutputFields(),
@@ -1404,12 +1433,14 @@ export default defineComponent({
           fieldValue: this.project?.queryContext ? [this.project.queryContext] : [],
           editProjectParam: [EditProjectParam.QUERY_CONTEXT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('queryContext'),
+          editMode: this.editMode,
           visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION && this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Votum",
           fieldValue: [this.votumDescription.label, this.votumDescription.originalFilename],
           isEditable: true,
+          editMode: this.editMode,
           existFile: this.existsVotum,
           uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
@@ -1420,6 +1451,7 @@ export default defineComponent({
           fieldKey: "Votum for all bridgeheads",
           fieldValue: [this.votumForAllBridgeheadsDescription.label, this.votumForAllBridgeheadsDescription.originalFilename],
           isEditable: true,
+          editMode: this.editMode,
           existFile: this.existsVotumForAllBridgeheads,
           uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
@@ -1430,6 +1462,7 @@ export default defineComponent({
           fieldKey: "Script",
           fieldValue: [this.scriptDescription.label, this.scriptDescription.originalFilename],
           isEditable: true,
+          editMode: this.editMode,
           existFile: this.existsScript,
           uploadAction: this.Action.UPLOAD_SCRIPT_ACTION,
           downloadAction: this.Action.DOWNLOAD_SCRIPT_ACTION,
@@ -1440,6 +1473,7 @@ export default defineComponent({
           fieldKey: "Authentication Script",
           fieldValue: [],
           isEditable: false,
+          editMode: this.editMode,
           existFile: this.existsAuthenticationScript,
           downloadAction: this.Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION,
           downloadModule: this.Module.TOKEN_MANAGER_MODULE,
@@ -2077,6 +2111,7 @@ export default defineComponent({
 .stepper-button:hover {
   text-decoration: underline;
 }
+.first-separator {
 
 .first-separator {
   width: 100%;
@@ -2109,5 +2144,13 @@ export default defineComponent({
 
 .missing-fields .step-circle {
   background-color: red !important;
+}
+.form-switch input {
+  cursor: pointer;
+}
+.form-switch label {
+  padding: 0 0.3rem;
+  cursor: pointer;
+  color: #00489c;
 }
 </style>

@@ -58,7 +58,6 @@ import {PropType, watch} from "vue";
     deleteModule: {type: String as PropType<Module>, required: false},
     todos: {type: Object as PropType<Explanations>, required: false},
     existsFile: {type: Boolean, required: false},
-    fileName: {type: String, required: false},
     mandatory: {type: Boolean, required: true, default: false},
     type: {type: String as PropType<FormDataType>, required: false},
     draftDialogCurrentStep: {type: Object as PropType<DialogStep>, required: false},
@@ -108,8 +107,6 @@ export default class ProjectFieldRow extends Vue {
   readonly todos?: Explanations;
   // noinspection JSUnusedGlobalSymbols
   readonly existsFile?: boolean;
-  // noinspection JSUnusedGlobalSymbols
-  readonly fileName?: string;
   // noinspection JSUnusedGlobalSymbols
   readonly mandatory!: boolean;
   // noinspection JSUnusedGlobalSymbols
@@ -566,7 +563,7 @@ export default class ProjectFieldRow extends Vue {
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
                         :visible-bridgeheads="visibleBridgeheads" :use-bridgehead-chooser="fieldKey === 'Votum'"
                         :text="'Upload '+ fieldKey" :call-refresh-context="exitAndCallRefreshContext"
-                        :is-file="true" :toggle-input="fieldKey.substring(0,5) === 'Votum'"/>
+                        :is-file="true" :toggle-input="fieldKey.substring(0,5) === 'Votum'" :file-name="fieldValue[1]" :exists-file="existsFile"/>
         </div>
         <div v-else style="width:75%">
           <div>
@@ -640,7 +637,7 @@ export default class ProjectFieldRow extends Vue {
               <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
                             text="Upload document" :call-refresh-context="exitAndCallRefreshContext" :is-file="true" :exists-file="existsFile"
-                            :file-name="fileName" :toggle-input="true"/>
+                            :file-name="fieldValue[1]" :toggle-input="true"/>
             </div>
 
             <div v-else-if="isBridgeheads()" style="width: 75%">

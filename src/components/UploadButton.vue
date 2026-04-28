@@ -52,6 +52,7 @@ export default class UploadButton extends Vue {
   fileSelected = false;
   selectedBridgehead: string | undefined = undefined;
   visible: boolean = true
+  uniqueId = Math.random().toString(36).slice(2)
 
   mounted() {
     watch(
@@ -140,13 +141,13 @@ export default class UploadButton extends Vue {
             </template>
             <div v-if="isFile">
               <div style="display: flex; flex-flow: row; align-items: center; width: 110%;">
-                <label for="fileInput" class="btn btn-primary fileChooser">
+                <label :for="'file-'+uniqueId" class="btn btn-primary fileChooser">
                   Choose File
-                  <input id="fileInput" type="file" ref="fileInput" @change="onFileSelected($event)"
+                  <input :id="'file-'+uniqueId" type="file" ref="fileInput" @change="onFileSelected($event)"
                          style="display: none;">
                 </label>
 
-                <input id="labelInput" type="text" v-model="label" placeholder="Enter label (optional)"
+                <input :id="'label-'+uniqueId" type="text" v-model="label" placeholder="Enter label (optional)"
                        class="form-control inputField" :disabled="!fileSelected">
                 <button style="display: flex; flex-flow: row;" @click="uploadFile"
                         class="btn btn-primary fileChooser" :disabled="!fileSelected">
@@ -157,11 +158,11 @@ export default class UploadButton extends Vue {
             </div>
 
             <div v-else style="display: flex; flex-flow: row; align-items: center; width: 100%;">
-              <input id="labelInput" type="text" v-model="label" placeholder="Enter label"
+              <input :id="'label-'+uniqueId" type="text" v-model="label" placeholder="Enter label"
                      class="form-control inputField"
                      style="border-radius: 5px 5px 5px 5px; margin-right: 2%; width: 50%;">
 
-              <input id="urlInput" type="text" v-model="url" placeholder="Enter URL" class="form-control inputField"
+              <input :id="'url-'+uniqueId" type="text" v-model="url" placeholder="Enter URL" class="form-control inputField"
                      style="border-radius: 5px 5px 5px 5px; width: 50%;">
 
               <button style="display: flex; flex-flow: row;" @click="uploadFile" class="btn btn-primary fileChooser"

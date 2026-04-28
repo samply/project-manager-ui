@@ -294,7 +294,6 @@
                       :display-possible-value="projectField.displayPossibleValue"
                       :configurations="projectField.configurations"
                       :exists-file="projectField.existFile"
-                      :file-name="projectField.fileName"
                       :upload-action="projectField.uploadAction"
                       :download-action="projectField.downloadAction"
                       :download-module="projectField.downloadModule"
@@ -1370,7 +1369,6 @@ export default defineComponent({
           isEditable: true,
           editMode: this.editMode,
           existFile: this.existsProjectDescription,
-          fileName: this.projectDescription?.originalFilename,
           uploadAction: this.Action.UPLOAD_DESCRIPTION_ACTION,
           downloadAction: this.Action.DOWNLOAD_DESCRIPTION_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,

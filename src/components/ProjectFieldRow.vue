@@ -467,7 +467,6 @@ export default class ProjectFieldRow extends Vue {
 </script>
 
 <template>
-  <div v-if="!isDescriptionUpload()" class="input-field-separator"></div>
   <!-- Section -->
   <template v-if="section">
     <template v-for="newSection in section.fetchNewSections()"
@@ -1061,12 +1060,6 @@ export default class ProjectFieldRow extends Vue {
   background-color: white;
   border-color: #fff;
   resize: none;
-}
-.input-field-separator {
-  height: 1px;
-  padding: 0;
-  margin: 1rem 4rem 1rem 0;
-  background-image: linear-gradient(to right, transparent, rgb(180, 180, 180), transparent);
 }
 .form-check {
   display: flex;

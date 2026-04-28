@@ -17,8 +17,9 @@ export async function getUserManager(): Promise<UserManager> {
             redirect_uri: `${window.location.origin}/`,
             post_logout_redirect_uri: window.location.origin,
             silent_redirect_uri: `${window.location.origin}/silent-renew.html`,
+            silentRequestTimeoutInSeconds: 10,
             response_type: "code",
-            scope: "openid profile email offline_access", // ← add offline_access for refresh tokens
+            scope: "openid profile email offline_access",
             userStore: new WebStorageStateStore({store: window.localStorage}),
             automaticSilentRenew: true,
             revokeTokensOnSignout: true,

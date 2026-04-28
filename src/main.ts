@@ -15,13 +15,9 @@ async function handleOidcRedirect() {
     const url = new URL(window.location.href);
 
     if (url.searchParams.has("code")) {
-        await finishLoginFlow();
-
-        const cleanPath = url.pathname + url.search
-            .replace(/([&?])(code|state)=[^&]+/g, '')
-            .replace(/^&/, '?');
-
-        await router.replace(cleanPath || "/");
+        // finishLoginFlow now returns the saved target URL
+        const targetUrl = await finishLoginFlow();
+        await router.replace(targetUrl);
     }
 }
 

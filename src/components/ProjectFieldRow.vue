@@ -431,10 +431,12 @@ export default class ProjectFieldRow extends Vue {
   }
 
   getFirstLevelCriteria(queryBase64: string): any[] {
-    const query = JSON.parse(atob(queryBase64))
-    if(query?.lang === "ast") {
-      const payload = JSON.parse(atob(query.payload))
-      return payload.ast?.children[0]?.children;
+    if(queryBase64?.length > 0) {
+      const query = JSON.parse(atob(queryBase64))
+      if (query?.lang === "ast") {
+        const payload = JSON.parse(atob(query.payload))
+        return payload.ast?.children[0]?.children;
+      }
     }
     return []
   }

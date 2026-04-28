@@ -260,7 +260,7 @@
               </div>
 
               <br/>
-              <div class="table table-bordered custom-table  table-hover" style="overflow-y: auto">
+              <div class="table table-bordered custom-table table-hover" style="overflow-y: auto">
                 <div v-if="existsDraftDialog" class="project-field-header">
                   <div class="project-field-title">{{ draftDialogStepper.currentStep?.displayName }}</div>
                   <div class="project-field-notification">{{ extendedExplanations.get("2")?.message }}</div>
@@ -1412,7 +1412,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Query",
-          fieldValue: (this.project?.humanReadable && this.project?.query) ? [this.project.humanReadable, this.project.query] : [],
+          fieldValue: [this.project?.humanReadable ? this.project?.humanReadable : "", this.project?.query ? this.project?.query : ""],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
           isEditable: true,
           editMode: this.editMode,

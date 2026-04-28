@@ -1079,6 +1079,7 @@ export default defineComponent({
             : undefined,
         action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
         transformForSending: this.buildTransformForSendingFormField(formField),
+        category: formField.title,
         visibilityCondition:
             this.selectedForms.some(f => f.title === formField.title) && // only if the field is already selected
             (!this.existsDraftDialog ||
@@ -1107,6 +1108,7 @@ export default defineComponent({
           }
         }),
         transformForSending: () => formTitle.title,
+        category: FixedDialogStep.CUSTOM,
         visibilityCondition:
             !this.existsDraftDialog ||
             this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
@@ -1302,6 +1304,7 @@ export default defineComponent({
           possibleValues: this.projectTypes,
           displayPossibleValue: (label: string) => {return {name: label, description: ""}},
           mandatory: true,
+          category: FixedDialogStep.CUSTOM,
           visibilityCondition:
               !this.existsDraftDialog ||
               this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
@@ -1319,6 +1322,7 @@ export default defineComponent({
           possibleValues: this.outputFormats[exec.projectType] ?? [],
           displayPossibleValue: (label: string) => {return {name: label, description: ""}},
           mandatory: true,
+          category: FixedDialogStep.CUSTOM,
           visibilityCondition:
               !this.existsDraftDialog ||
               this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
@@ -1334,6 +1338,7 @@ export default defineComponent({
           possibleValues: this.exporterTemplateIds[exec.projectType] ?? [],
           displayPossibleValue: (label: string) => {return {name: label, description: ""}},
           mandatory: true,
+          category: FixedDialogStep.CUSTOM,
           visibilityCondition:
               !this.existsDraftDialog ||
               this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
@@ -1352,6 +1357,7 @@ export default defineComponent({
           isEditable: true,
           editMode: this.editMode,
           mandatory: true,
+          category: FixedDialogStep.PROJECT,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
@@ -1361,6 +1367,7 @@ export default defineComponent({
           isEditable: true,
           editMode: this.editMode,
           mandatory: true,
+          category: FixedDialogStep.PROJECT,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
@@ -1372,6 +1379,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_DESCRIPTION_ACTION,
           downloadAction: this.Action.DOWNLOAD_DESCRIPTION_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          category: FixedDialogStep.PROJECT,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
@@ -1386,6 +1394,7 @@ export default defineComponent({
           editMode: this.editMode,
           mandatory: true,
           redirectUrl: this.project?.explorerUrl ?? undefined,
+          category: FixedDialogStep.PROJECT,
           transformForSending: (humanReadable: string) => this.allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
@@ -1397,6 +1406,7 @@ export default defineComponent({
           editMode: this.editMode,
           possibleValues: this.projectConfigurationLabels,
           configurations: this.projectConfigurations,
+          category: FixedDialogStep.SERVICES,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
           action: Action.SET_PROJECT_CONFIGURATION_ACTION
         },
@@ -1408,6 +1418,7 @@ export default defineComponent({
           editMode: this.editMode,
           mandatory: true,
           redirectUrl: this.project?.explorerUrl ?? undefined,
+          category: FixedDialogStep.QUERY,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
@@ -1420,6 +1431,7 @@ export default defineComponent({
           possibleValues: this.queryFormats,
           displayPossibleValue: (label: string) => {return {name: label, description: ""}},
           mandatory: true,
+          category: FixedDialogStep.QUERY,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
@@ -1428,6 +1440,7 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.COHORT_DEFINITION],
           isEditable: true,
           editMode: this.editMode,
+          category: FixedDialogStep.QUERY,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         ...this.fetchProjectOutputFields(),
@@ -1437,6 +1450,7 @@ export default defineComponent({
           editProjectParam: [EditProjectParam.QUERY_CONTEXT],
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('queryContext'),
           editMode: this.editMode,
+          category: FixedDialogStep.CUSTOM,
           visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION && this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
@@ -1448,6 +1462,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          category: "VOTUM",
           visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
@@ -1459,6 +1474,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          category: "VOTUM",
           visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
@@ -1470,6 +1486,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_SCRIPT_ACTION,
           downloadAction: this.Action.DOWNLOAD_SCRIPT_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          category: "Script",
           visibilityCondition: !!this.dataShieldStatus && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
@@ -1480,6 +1497,7 @@ export default defineComponent({
           existFile: this.existsAuthenticationScript,
           downloadAction: this.Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION,
           downloadModule: this.Module.TOKEN_MANAGER_MODULE,
+          category: "Script",
           visibilityCondition: !!this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && this.existsAuthenticationScript
         }
       ];

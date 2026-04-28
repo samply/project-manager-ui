@@ -38,6 +38,7 @@ export interface ProjectField {
     action?: Action | ActionFunction
     module?: Module
     section?: Section
+    category: string
     mandatory?: boolean
     type?: FormDataType
     extraParams?: Map<string, unknown>,

@@ -274,6 +274,13 @@
                 </div>
                 <div class="first-separator"></div>
                 <template v-for="(projectField, index) in projectFields" :key="index">
+                  <!-- Category header: show when not in draft dialog AND this is the first row of a new category -->
+                  <div
+                      v-if="!existsDraftDialog && (index === 0 || projectFields[index - 1].category !== projectField.category) && projectField.visibilityCondition"
+                      class="project-field-category-header"
+                  >
+                    {{ projectField.category }}
+                  </div>
                   <ProjectFieldRow
                       v-if="projectField.visibilityCondition &&
                       (!existsDraftDialog ||

@@ -268,12 +268,21 @@
                 <div v-if="!existsDraftDialog" class="form-switch-box">
                   <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault"
-                           v-model="editMode">
+                           v-model="editMode" :class="{ 'inactive': !editMode }">
                     <label class="form-check-label" for="flexSwitchCheckDefault">Edit Fields</label>
                   </div>
                 </div>
-                <div class="first-separator"></div>
+
                 <template v-for="(projectField, index) in projectFields" :key="index">
+                  <!-- Category header: show when not in draft dialog AND this is the first row of a new category -->
+                  <div
+                      v-if="!existsDraftDialog && (index === 0 || projectFields[index - 1]?.category !== projectField.category) && projectField.visibilityCondition && projectField.fieldKey !== 'DescriptionUpload'"
+                      class="project-field-header project-field-category-header"
+                  >
+                    <div class="project-field-title">{{ getDialogStep(projectField.category)?.displayName }}</div>
+                    <div class="project-field-notification">{{ getDialogStep(projectField.category)?.description }}</div>
+                  </div>
+                  <div v-else-if="projectField.visibilityCondition && !(index === 0 || projectFields[index - 1]?.category !== projectField.category) && projectField.fieldKey !== 'DescriptionUpload'" class="input-field-separator"></div>
                   <ProjectFieldRow
                       v-if="projectField.visibilityCondition &&
                       (!existsDraftDialog ||
@@ -496,7 +505,7 @@ import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
-import {DialogStepper, FixedDialogStep} from "@/services/fixedDialogStep";
+import {DialogStep, DialogStepper, FixedDialogStep, FixedDialogSteps} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
@@ -611,7 +620,8 @@ export default defineComponent({
       projectFields: [] as ProjectField[],
       groupedMissingFields: {} as Record<string, string[]>,
       currentMenuStep: "Status",
-      editMode: false
+      editMode: false,
+      categoryRank: {project:0, query:1, services:2} as Record<string, number>  // order the categories how they should appear in the Request tab (except in DRAFT). not listed categories will be shown after these
     };
   },
   watch: {
@@ -1462,7 +1472,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          category: "VOTUM",
+          category: "Votum",
           visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
@@ -1474,7 +1484,7 @@ export default defineComponent({
           uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          category: "VOTUM",
+          category: "Votum",
           visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
@@ -1506,7 +1516,8 @@ export default defineComponent({
           this.formTitles.filter(formTitle => {
             this.draftDialogStepper.hasCurrentStep(formTitle.title)
           }));
-      return [...fixedFields, ...dynamicSelectedForms, ...dynamicFields];
+      return [...fixedFields, ...dynamicSelectedForms, ...dynamicFields].sort((a,b) =>
+       (this.categoryRank[a.category.toLowerCase()] ?? 999) - (this.categoryRank[b.category.toLowerCase()] ?? 999));
     },
 
     fetchButtons(): void {
@@ -1745,9 +1756,12 @@ export default defineComponent({
       } else {
         return ["Request", "Documents"]
       }
+    },
+
+    getDialogStep(stepId: string): DialogStep | undefined {
+      const step = FixedDialogSteps.find(step => step.id === stepId)
+      return step ? step : {id: "", displayName: stepId.charAt(0).toUpperCase() + stepId.slice(1), description: ""}
     }
-
-
   }
 
 });
@@ -2129,16 +2143,9 @@ export default defineComponent({
   cursor: pointer;
 }
 
-.first-separator {
-  width: 100%;
-  height: 10px;
-  background: white;
-  margin-bottom: -20px;
-  position: relative;
-}
-
 .project-field-header {
-  margin: 2rem 1rem 0 1rem;
+  width: 90%;
+  margin: 2rem 1rem 1rem 1rem;
   padding: 1rem 3rem;
   background-image: linear-gradient(to right, #eeddcb, #aed0e6);
 }
@@ -2174,8 +2181,17 @@ export default defineComponent({
 .form-switch-box {
   display: flex;
   justify-content: end;
-  margin: 1rem 1rem 0 1rem;
+  margin: 1rem 2rem 0 1rem;
   position: sticky;
   top: 1rem;
+}
+.form-switch .form-check-input.inactive {
+  background-color: #EEEEEE;
+}
+.input-field-separator {
+  height: 1px;
+  padding: 0;
+  margin: 1rem 4rem 1rem 0;
+  background-image: linear-gradient(to right, transparent, rgb(180, 180, 180), transparent);
 }
 </style>

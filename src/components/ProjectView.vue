@@ -906,7 +906,7 @@ export default defineComponent({
         await this.checkButtonVisibility()
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
-        this.project?.state !== ProjectState.DRAFT ? this.currentMenuStep = "Status" : this.currentMenuStep = "Request"
+        this.project?.state === ProjectState.DRAFT && this.currentMenuStep === "Status" ? this.currentMenuStep = "Request" : {}
       }
     },
 

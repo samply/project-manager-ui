@@ -11,7 +11,7 @@
         </a>
       </div>
       <router-link class="navbar-brand" to="/">
-        <span class="navbar-title">{{frontendName}}</span>
+        <span class="navbar-title" v-html="frontendName"></span>
       </router-link>
       <div class="user-logout-container">
         <!-- User information -->
@@ -104,7 +104,6 @@ export default defineComponent({
 }
 .navbar-title {
   color: #00489c;
-  font-weight: bold;
   font-size: larger;
 }
 .navbar-icon {

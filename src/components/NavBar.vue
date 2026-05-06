@@ -1,9 +1,6 @@
 <template>
   <div>
     <nav class="navbar navbar-dark custom-navbar">
-      <router-link class="navbar-brand" to="/">
-        <i class="bi bi-boxes navbar-icon" v-html="'&nbsp' + frontendName"></i>
-      </router-link>
       <div class="navbar__logo">
         <a href="https://dktk.dkfz.de/" class="navbar-brand dk-logo">
           <span class="dk-logo__sign"><img src="../assets/logo-dktk-sign.svg" alt="dktk"></span>
@@ -13,6 +10,9 @@
           <span class="dk-logo__slogan">Deutsches Konsortium für <br> Translationale Krebsforschung</span>
         </a>
       </div>
+      <router-link class="navbar-brand" to="/">
+        <span class="navbar-title">{{frontendName}}</span>
+      </router-link>
       <div class="user-logout-container">
         <!-- User information -->
         <span class="user-info" :title="auth.getEmail()">
@@ -100,9 +100,13 @@ export default defineComponent({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-left: 5%;
+  padding-left: 2%;
 }
-
+.navbar-title {
+  color: #00489c;
+  font-weight: bold;
+  font-size: larger;
+}
 .navbar-icon {
   margin-right: 5px;
   color: #00489c;

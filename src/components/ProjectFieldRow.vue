@@ -517,11 +517,11 @@ export default class ProjectFieldRow extends Vue {
                     </div>
                     <div v-if="!configurations?.get(step)?.project?.isCustomConfigSelected"
                          style="text-align: right;margin-bottom:2%">
-                      <button @click.stop="showDetails[index]=!showDetails[index]"
+                      <!--<button @click.stop="showDetails[index]=!showDetails[index]"
                               style="background: none; border:none; color: #007bff;">
                         <span v-if="!showDetails[index]">show details</span>
                         <span v-if="showDetails[index]">hide details</span>
-                      </button>
+                      </button>-->
                     </div>
                     <table v-if="showDetails[index]" style="text-align: left">
                       <tr v-for="(param, key) in configurations?.get(step)?.project?.outputs?.[0]" :key="key">
@@ -637,7 +637,7 @@ export default class ProjectFieldRow extends Vue {
             <div v-else-if="isDescriptionUpload()" style="margin:1rem 0 0 1rem">
               <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
-                            text="Upload document" :call-refresh-context="exitAndCallRefreshContext" :is-file="true" :exists-file="existsFile"
+                            text="Upload project description" :call-refresh-context="exitAndCallRefreshContext" :is-file="true" :exists-file="existsFile"
                             :file-name="fieldValue[1]" :toggle-input="true"/>
             </div>
 

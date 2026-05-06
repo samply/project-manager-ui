@@ -166,7 +166,8 @@ export enum EditProjectParam {
     FORM_FIELDS = "form-fields",
     FORM_TEMPLATE = "form-template",
     FORM_TITLE = "form-title",
-    COHORT_DEFINITION = "cohort-definition"
+    COHORT_DEFINITION = "cohort-definition",
+    QUERY_DETAILS = "query-details"
 }
 
 export enum ProjectType {
@@ -209,6 +210,7 @@ export interface Project {
     query?: string;
     humanReadable?: string;
     queryFormat?: string;
+    queryDetails?: string;
     label?: string;
     description?: string;
     explorerUrl?: string;

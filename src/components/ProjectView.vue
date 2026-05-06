@@ -641,6 +641,7 @@ export default defineComponent({
       site: Site.PROJECT_VIEW_SITE,
       notifications: [] as Notification[],
       showNotification: false,
+      existsPublication: false,
       showExplanations: true,
       showRightPanel: false,
       existsVotum: false,
@@ -895,6 +896,7 @@ export default defineComponent({
           this.initializeCurrentProjectConfiguration(),
           this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads'),
           this.initializeData(Module.USER_MODULE, Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION, new Map(), 'existsResearchEnvironmentWorkspace'),
+          this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_PUBLICATION_ACTION, new Map(), 'existsPublication'),
           this.initializeData(Module.USER_MODULE, Action.FETCH_RESEARCH_ENVIRONMENT_URL_ACTION, new Map(), 'researchEnvironmentUrl'),
           this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, new Map(), 'currentUsers'),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_DESCRIPTION_ACTION, new Map(), async (result: boolean) => {

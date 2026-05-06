@@ -7,8 +7,7 @@
   </div>
   <div class="main-container">
     <div class="left-container" v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)">
-      <div class="box-header" style="padding-left:7%"><span>Phase</span><img src="../assets/newsletter.png" width="40"
-                                                                             height="40"></div>
+      <div class="box-header" style="padding-left:7%"><span>Phase</span></div>
       <div class="vertical-stepper">
         <div v-for="(projectState, index) in getProjectStates()" :key="index" class="stepper-step">
           <div style="display: flex; flex-flow: row" :class="{ 'active-step': project?.state === projectState }">
@@ -27,7 +26,7 @@
          :class="{ 'less-margin': projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) }">
       <div class="main-content">
         <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'" class="info-container">
-          <div class="box-header"><span>Status</span><img src="../assets/newsletter.png" width="40" height="40"></div>
+          <div class="box-header"><span>Status</span></div>
 
           <div style="padding: 2%">
             <div style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
@@ -39,19 +38,10 @@
                 </div>
               </div>
             </div>
-            <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
-                                :project-manager-backend-service="projectManagerBackendService"
-                                :call-update-active-bridgehead="updateActiveBridgehead"
-                                :context="context"
-                                :project="project"
-                                :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
-                                :bridgeheads="visibleBridgeheads"
-                                :activeBridgehead="activeBridgehead"/>
-            <br/>
             <table class="table table-bordered table-overview">
               <thead>
               <tr>
-                <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
+                <th class="status-table-header" scope="col">Request ID</th>
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Votum</th>
                 <th
                     v-if="visibleBridgeheads?.length === 1"
@@ -80,7 +70,7 @@
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Applicant Results
                   Acceptance
                 </th>
-                <th class="status-table-header" scope="col">Applicant</th>
+                <th class="status-table-header" scope="col">Author</th>
                 <th class="status-table-header" scope="col">Created at</th>
                 <th class="status-table-header" scope="col">Expires at</th>
                 <th class="status-table-header" scope="col">Last modified</th>
@@ -88,7 +78,7 @@
               </thead>
               <tbody>
               <tr>
-                <td>{{ project ? project.code : '' }}</td>
+                <td class="clickable" @click="currentMenuStep='Request'">{{ project ? project.code : '' }}</td>
                 <td v-if="visibleBridgeheads?.length == 1">
                   <div>
                     <div v-if="existsVotum" class="states-circle-container">
@@ -162,13 +152,21 @@
               </tr>
               </tbody>
             </table>
-
+            <br/>
+            <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
+                                :project-manager-backend-service="projectManagerBackendService"
+                                :call-update-active-bridgehead="updateActiveBridgehead"
+                                :context="context"
+                                :project="project"
+                                :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
+                                :bridgeheads="visibleBridgeheads"
+                                :activeBridgehead="activeBridgehead"/>
           </div>
         </div>
         <div
             v-if="!(project?.state === ProjectState.DRAFT && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep==='Status'"
             class="project-actions">
-          <div class="box-header"><span>Actions</span><img src="../assets/newsletter.png" width="40" height="40"></div>
+          <div class="box-header"><span>Actions</span></div>
           <div style="padding:2%">
             <!-- Project State Module: Creator View -->
             <!-- Project State Module: PM-ADMIN View -->
@@ -207,8 +205,8 @@
           </div>
         </div>
         <div class="documents"
-             v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN))">
-          <div class="box-header"><span>Results</span><img src="../assets/newsletter.png" width="40" height="40"></div>
+             v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) && currentMenuStep === 'Status'">
+          <div class="box-header"><span>Results</span></div>
           <div style="padding: 2%">
             <ResultsBox :call-refresh-context="refreshContext"
                         :project-manager-backend-service="projectManagerBackendService"
@@ -222,8 +220,7 @@
         <div v-if="currentMenuStep==='Request'" class="data-container mt-12"
              :class="{ 'non-draft': !existsDraftDialog }">
           <div v-if="project">
-            <div v-if="!existsDraftDialog" class="box-header"><span>Request</span><img src="../assets/newsletter.png"
-                                                                                       width="40" height="40"></div>
+            <div v-if="!existsDraftDialog" class="box-header"><span>Request</span></div>
             <div class="table-responsive" style="display: flex; flex-flow: row;height: 78vh">
 
               <div v-if="existsDraftDialog" class="container vertical-stepper-box">
@@ -322,34 +319,33 @@
               </div>
             </div>
             <div v-if="project?.state === ProjectState.DRAFT" class="button-container mt-3">
-              <button class="btn btn-primary me-2" @click="draftDialogStepper.previousStep()"
+              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
+                                    :action="Action.CREATE_PROJECT_ACTION"
+                                    :context="context" :call-refresh-context="refreshContext" text="Save Draft"
+                                    button-class="btn btn-success mr-2"
+                                    :with-message="false"
+                                    :is-disabled="!hasProjectAllMandatoryFields"
+                                    :tooltip-text="tooltipTextForCreateButton"
+                                    :project-manager-backend-service="projectManagerBackendService"/>
+              <div>
+                <button class="btn btn-primary me-2" @click="draftDialogStepper.previousStep()"
                       :disabled="!draftDialogStepper.hasPreviousStep">
-                <!--<i class="bi bi-arrow-left"></i>-->
-                Back
-              </button>
-              <div style="display: flex">
+                  <!--<i class="bi bi-arrow-left"></i>-->
+                  < Back
+                </button>
                 <button class="btn btn-primary me-2" @click="draftDialogStepper.nextStep()"
-                        v-if="draftDialogStepper.hasNextStep">
-                  Continue
+                        :disabled="!draftDialogStepper.hasNextStep">
+                  Next >
                   <!--<i class="bi bi-arrow-right"></i>-->
                 </button>
-                <ProjectManagerButton v-if="draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
-                                      :module="Module.PROJECT_STATE_MODULE"
-                                      :action="Action.CREATE_PROJECT_ACTION"
-                                      :context="context" :call-refresh-context="refreshContext" text="Create"
-                                      button-class="btn btn-success mr-2"
-                                      :with-message="false"
-                                      :is-disabled="!hasProjectAllMandatoryFields"
-                                      :tooltip-text="tooltipTextForCreateButton"
-                                      :project-manager-backend-service="projectManagerBackendService"/>
+              </div>
                 <ProjectManagerButton v-if="project?.state === ProjectState.DRAFT"
                                       :module="Module.PROJECT_STATE_MODULE"
                                       :action="Action.REJECT_PROJECT_ACTION"
-                                      :context="context" :call-refresh-context="refreshContext" text="Discard"
+                                      :context="context" :call-refresh-context="refreshContext" text="Delete Draft"
                                       button-class="btn btn-danger"
                                       :with-message="true"
                                       :project-manager-backend-service="projectManagerBackendService"/>
-              </div>
             </div>
           </div>
         </div>
@@ -374,8 +370,7 @@
           </div>
         </div>
         <div class="documents" v-if="currentMenuStep==='Documents'">
-          <div class="box-header"><span>Documents</span><img src="../assets/newsletter.png" width="40" height="40">
-          </div>
+          <div class="box-header"><span>Documents</span></div>
           <div style="padding: 2%">
             <DownloadFormTemplatePdfButtons :form-templates="formTemplates" :context="context"
                                             :project-manager-backend-service="projectManagerBackendService"/>
@@ -1196,13 +1191,13 @@ export default defineComponent({
         if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT) { // Project
           extendedExplanations.set(count.toString(), {
             number: count,
-            message: "Please provide the general project information to proceed."
+            message: "Please provide information about your project"
           });
           count++;
         } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES) { // Services
           extendedExplanations.set(count.toString(), {
             number: count,
-            message: "Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration."
+            message: "Please provide information on the resources you are requesting."
           });
           count++;
         } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY && !this.project?.query) { // Query
@@ -1364,6 +1359,7 @@ export default defineComponent({
           fieldKey: "Title",
           fieldValue: this.project?.label ? [this.project.label] : [],
           editProjectParam: [EditProjectParam.LABEL],
+          fieldDescription: "Please provide a title for your project.",
           isEditable: true,
           editMode: this.editMode,
           mandatory: true,
@@ -1374,6 +1370,7 @@ export default defineComponent({
           fieldKey: "Description",
           fieldValue: this.project?.description ? [this.project.description] : [],
           editProjectParam: [EditProjectParam.DESCRIPTION],
+          fieldDescription: "Briefly describe your project in a few words. What is the objective or aim of your project?",
           isEditable: true,
           editMode: this.editMode,
           mandatory: true,
@@ -1446,6 +1443,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Cohort Definition",
+          fieldDescription: "Please briefly list the parameters that determine your requested cohort",
           fieldValue: this.project?.cohortDefinition ? [this.project.cohortDefinition] : [],
           editProjectParam: [EditProjectParam.COHORT_DEFINITION],
           isEditable: true,
@@ -1937,7 +1935,7 @@ export default defineComponent({
 
 .stepper-line2 {
   width: 2px;
-  height: 60px;
+  height: 70px;
   background-color: #9e9e9e;
   align-items: flex-start;
   margin: 10px 0 10px 14px;
@@ -1962,7 +1960,7 @@ export default defineComponent({
 
 .stepper-step-header {
   color: #00489cf2;
-  font-size: large;
+  font-size: x-large;
 }
 
 .step-circle {
@@ -2147,11 +2145,11 @@ export default defineComponent({
   width: 90%;
   margin: 2rem 1rem 1rem 1rem;
   padding: 1rem 3rem;
-  background-image: linear-gradient(to right, #eeddcb, #aed0e6);
+  background-color: #f1f1f1;
 }
 
 .project-field-title {
-  font-size: larger;
+  font-size: x-large;
   font-weight: bold;
   color: rgb(0, 72, 156);
 }
@@ -2193,5 +2191,12 @@ export default defineComponent({
   padding: 0;
   margin: 1rem 4rem 1rem 0;
   background-image: linear-gradient(to right, transparent, rgb(180, 180, 180), transparent);
+}
+.clickable {
+  cursor: pointer;
+  color: rgb(51,142,195);
+}
+.clickable:hover {
+  text-decoration: underline;
 }
 </style>

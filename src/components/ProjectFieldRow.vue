@@ -392,6 +392,9 @@ export default class ProjectFieldRow extends Vue {
     return this.type === FormDataType.BOOLEAN
   }
 
+  isComments(): boolean {
+    return this.includesEditProjectParam(EditProjectParam.FORM_FIELDS) && this.fieldKey === 'Comments';
+  }
   isDraft(): boolean {
     return this.draftDialogCurrentStep  !== undefined
   }
@@ -517,11 +520,11 @@ export default class ProjectFieldRow extends Vue {
                     </div>
                     <div v-if="!configurations?.get(step)?.project?.isCustomConfigSelected"
                          style="text-align: right;margin-bottom:2%">
-                      <button @click.stop="showDetails[index]=!showDetails[index]"
+                      <!--<button @click.stop="showDetails[index]=!showDetails[index]"
                               style="background: none; border:none; color: #007bff;">
                         <span v-if="!showDetails[index]">show details</span>
                         <span v-if="showDetails[index]">hide details</span>
-                      </button>
+                      </button>-->
                     </div>
                     <table v-if="showDetails[index]" style="text-align: left">
                       <tr v-for="(param, key) in configurations?.get(step)?.project?.outputs?.[0]" :key="key">
@@ -593,7 +596,7 @@ export default class ProjectFieldRow extends Vue {
                           data-placement="top" title="Copy Query to Clipboard"
                           ><i
                       :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"
-                      @click="copyToClipboard(editedValue[0])"></i>
+                      @click="copyToClipboard(editedValue[1])"></i>
                   </button>
                   <button v-if="redirectUrl !== null && redirectUrl !== undefined"
                           class="btn btn-primary query-link-button"
@@ -621,7 +624,7 @@ export default class ProjectFieldRow extends Vue {
               ></lens-query-explain-button>-->
             </div>
 
-            <div v-else-if="isDescription() || isCohortDefinition()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
+            <div v-else-if="isDescription() || isCohortDefinition() || isComments()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
               <div class="grow-wrap" :data-replicated-value="editedValue[0]">
                 <textarea
                   type="text"
@@ -637,7 +640,7 @@ export default class ProjectFieldRow extends Vue {
             <div v-else-if="isDescriptionUpload()" style="margin:1rem 0 0 1rem">
               <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
-                            text="Upload document" :call-refresh-context="exitAndCallRefreshContext" :is-file="true" :exists-file="existsFile"
+                            text="Upload project description" :call-refresh-context="exitAndCallRefreshContext" :is-file="true" :exists-file="existsFile"
                             :file-name="fieldValue[1]" :toggle-input="true"/>
             </div>
 

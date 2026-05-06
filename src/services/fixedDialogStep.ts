@@ -16,29 +16,29 @@ export interface DialogStep {
 
 export const FixedDialogSteps: readonly DialogStep[] = [
     {
-        id: FixedDialogStep.SERVICES,
-        displayName: "Services",
-        description: "Choose which services will process the query.",
+        id: FixedDialogStep.QUERY,
+        displayName: "Query",
+        description: "Your selection criteria and query logic",
     },
     {
         id: FixedDialogStep.PROJECT,
         displayName: "Project",
-        description: "Define the project’s core metadata and context.",
+        description: "Please provide information about your project",
     },
     {
-        id: FixedDialogStep.QUERY,
-        displayName: "Query",
-        description: "Specify the query logic and selection criteria.",
+        id: FixedDialogStep.SERVICES,
+        displayName: "Services",
+        description: "Please provide information on the resources you are requesting",
     },
     {
         id: FixedDialogStep.CUSTOM,
         displayName: "Custom",
-        description: "Configure how and where the results will be delivered.",
+        description: "Configure how and where the results will be delivered",
     },
     {
         id: FixedDialogStep.SUMMARY,
         displayName: "Summary",
-        description: "Review all selections before final submission.",
+        description: "Review all selections before final submission",
     },
 ] as const;
 

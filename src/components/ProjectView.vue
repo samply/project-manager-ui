@@ -38,15 +38,6 @@
                 </div>
               </div>
             </div>
-            <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
-                                :project-manager-backend-service="projectManagerBackendService"
-                                :call-update-active-bridgehead="updateActiveBridgehead"
-                                :context="context"
-                                :project="project"
-                                :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
-                                :bridgeheads="visibleBridgeheads"
-                                :activeBridgehead="activeBridgehead"/>
-            <br/>
             <table class="table table-bordered table-overview">
               <thead>
               <tr>
@@ -79,7 +70,7 @@
                 <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Applicant Results
                   Acceptance
                 </th>
-                <th class="status-table-header" scope="col">Applicant</th>
+                <th class="status-table-header" scope="col">Author</th>
                 <th class="status-table-header" scope="col">Created at</th>
                 <th class="status-table-header" scope="col">Expires at</th>
                 <th class="status-table-header" scope="col">Last modified</th>
@@ -87,7 +78,7 @@
               </thead>
               <tbody>
               <tr>
-                <td>{{ project ? project.code : '' }}</td>
+                <td class="clickable" @click="currentMenuStep='Request'">{{ project ? project.code : '' }}</td>
                 <td v-if="visibleBridgeheads?.length == 1">
                   <div>
                     <div v-if="existsVotum" class="states-circle-container">
@@ -161,7 +152,15 @@
               </tr>
               </tbody>
             </table>
-
+            <br/>
+            <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
+                                :project-manager-backend-service="projectManagerBackendService"
+                                :call-update-active-bridgehead="updateActiveBridgehead"
+                                :context="context"
+                                :project="project"
+                                :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
+                                :bridgeheads="visibleBridgeheads"
+                                :activeBridgehead="activeBridgehead"/>
           </div>
         </div>
         <div
@@ -2192,5 +2191,12 @@ export default defineComponent({
   padding: 0;
   margin: 1rem 4rem 1rem 0;
   background-image: linear-gradient(to right, transparent, rgb(180, 180, 180), transparent);
+}
+.clickable {
+  cursor: pointer;
+  color: rgb(51,142,195);
+}
+.clickable:hover {
+  text-decoration: underline;
 }
 </style>

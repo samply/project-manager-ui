@@ -108,5 +108,8 @@ export default class DownloadButton extends Vue {
 </template>
 
 <style scoped>
-
+.no-y-padding {
+  padding-top: 0;
+  padding-bottom: 0;
+}
 </style>

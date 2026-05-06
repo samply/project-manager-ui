@@ -392,6 +392,9 @@ export default class ProjectFieldRow extends Vue {
     return this.type === FormDataType.BOOLEAN
   }
 
+  isComments(): boolean {
+    return this.includesEditProjectParam(EditProjectParam.FORM_FIELDS) && this.fieldKey === 'Comments';
+  }
   isDraft(): boolean {
     return this.draftDialogCurrentStep  !== undefined
   }
@@ -593,7 +596,7 @@ export default class ProjectFieldRow extends Vue {
                           data-placement="top" title="Copy Query to Clipboard"
                           ><i
                       :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"
-                      @click="copyToClipboard(editedValue[0])"></i>
+                      @click="copyToClipboard(editedValue[1])"></i>
                   </button>
                   <button v-if="redirectUrl !== null && redirectUrl !== undefined"
                           class="btn btn-primary query-link-button"
@@ -621,7 +624,7 @@ export default class ProjectFieldRow extends Vue {
               ></lens-query-explain-button>-->
             </div>
 
-            <div v-else-if="isDescription() || isCohortDefinition()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
+            <div v-else-if="isDescription() || isCohortDefinition() || isComments()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
               <div class="grow-wrap" :data-replicated-value="editedValue[0]">
                 <textarea
                   type="text"

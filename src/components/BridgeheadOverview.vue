@@ -59,7 +59,7 @@
                   :context="fetchContext(bridgehead)"
                   :project-manager-backend-service="projectManagerBackendService"
                   icon-class="bi bi-download"
-                  button-class="download-button"
+                  button-class="download-button no-y-padding"
                   :module="Module.PROJECT_DOCUMENTS_MODULE"
                   :action="Action.DOWNLOAD_VOTUM_ACTION"
               />
@@ -70,7 +70,7 @@
                   :context="fetchContext(bridgehead)"
                   :project-manager-backend-service="projectManagerBackendService"
                   icon-class="bi bi-download"
-                  button-class="download-button"
+                  button-class="download-button no-y-padding"
                   :module="Module.PROJECT_DOCUMENTS_MODULE"
                   :action="Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION"
               />

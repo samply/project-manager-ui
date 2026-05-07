@@ -327,6 +327,23 @@ export function getQueryState(bridgehead: Bridgehead, projectType?: ProjectType)
         : undefined;
 }
 
+export function getMergedQueryStates(
+    bridgehead: Bridgehead,
+    types: ProjectType[]
+): { state: string; types: ProjectType[] }[] {
+    const stateMap = new Map<string, ProjectType[]>();
+
+    for (const type of types) {
+        const state = getQueryState(bridgehead, type) ?? 'unknown';
+        if (!stateMap.has(state)) {
+            stateMap.set(state, []);
+        }
+        stateMap.get(state)!.push(type);
+    }
+
+    return Array.from(stateMap.entries()).map(([state, types]) => ({ state, types }));
+}
+
 export function hasValidOutputs(project?: Project): boolean {
     return (
         (project?.outputs?.length ?? 0) > 0 &&

@@ -18,7 +18,7 @@
           <tr>
             <th scope="col">Request ID</th>
             <th scope="col">Title</th>
-            <th scope="col">Author</th>
+            <th scope="col">Applicant</th>
             <th scope="col">Created on</th>
             <th scope="col" style="display: flex;justify-content: space-between;align-items: baseline">
               <span>Status</span><span class="filter">
@@ -263,7 +263,7 @@ thead > tr > th {
 }
 .main-menu {
   width: 100%;
-  height: 62.4px;
+  height: 62px;
   background-color: rgba(0,72,156,.95);
   display: flex;
   padding-left: 60%;
@@ -289,10 +289,6 @@ thead > tr > th {
 .pager button, .pager span {
   margin-left: 10px;
   align-items: center;
-}
-
-.notification-button:hover {
-  color: black !important;
 }
 
 .table-box {

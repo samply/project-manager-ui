@@ -6,230 +6,251 @@
     </div>
   </div>
   <div class="main-container">
-    <div class="left-container"
-         v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)">
-      <div class="box-header" style="padding-left:7%"><span>Phase</span></div>
-      <div class="vertical-stepper">
-        <div v-for="(projectState, index) in getProjectStates()" :key="index" class="stepper-step">
-          <div style="display: flex; flex-flow: row"
-               :class="{ 'active-step': project?.state === projectState }">
-            <div class="step-circle">
-              <span>{{ index + 1 }}</span>
-            </div>
-            <div class="step-title">{{ projectState }}</div>
-          </div>
-          <div v-if="index < getProjectStates().length - 1" class="stepper-line"></div>
-        </div>
-      </div>
-      <!--</div>-->
-    </div>
+
 
     <div class="right-container"
          :class="{ 'less-margin': projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) }">
       <div class="main-content">
-        <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'"
-             class="info-container">
-          <div class="box-header"><span>Status</span></div>
-
-          <div style="padding: 2%">
-            <div style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
-              <div class="card"
-                   v-if="visibleBridgeheads && visibleBridgeheads.length === 1"
-                   style="padding: 3px 20px;height: fit-content">
-                <div class="card-body" style="padding: 0 0;">
-                  <span style="padding: 0 0;">{{ context.bridgehead?.humanReadable }}</span>
+        <div class="admin-view">
+          <div class="left-container"
+               v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) && currentMenuStep==='Status'">
+            <!--<div class="box-header" style="padding-left:7%"><span>Phase</span></div>-->
+            <div class="vertical-stepper">
+              <div v-for="(projectState, index) in getProjectStates()" :key="index"
+                   class="stepper-step">
+                <div style="display: flex; flex-flow: row"
+                     :class="{ 'active-step': project?.state === projectState }">
+                  <div class="step-circle">
+                    <span>{{ index + 1 }}</span>
+                  </div>
+                  <div class="step-title">{{ projectState }}</div>
                 </div>
+                <div v-if="index < getProjectStates().length - 1" class="stepper-line"></div>
               </div>
             </div>
-            <table class="table table-bordered table-overview">
-              <thead>
-              <tr>
-                <th class="status-table-header" scope="col">Request ID</th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">
-                  {{BridgeheadOverviewHeader.VOTUM}}
-                </th>
-                <th
-                    v-if="visibleBridgeheads?.length === 1"
-                    class="status-table-header"
-                    scope="col"
-                >
-                  {{BridgeheadOverviewHeader.TEILER}}
-                </th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">
-                  {{BridgeheadOverviewHeader.USER_ACCESS}}
-                </th>
-                <th class="status-table-header"
-                    v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">
-                  DataSHIELD Status
-                </th>
-                <th class="status-table-header"
-                    v-if="visibleBridgeheads?.length == 1 && hasProjectType(project, ProjectType.RESEARCH_ENVIRONMENT)"
-                    scope="col">
-                  Files in Research Environment
-                </th>
-                <th v-if="visibleBridgeheads?.length == 1 && currentUser"
-                    class="status-table-header" scope="col">
-                  {{
-                    (hasProjectType(project, ProjectType.DATASHIELD) && project?.state != ProjectState.FINAL) ? 'Script' : 'Results'
-                  }}
-                  Acceptance
-                </th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">
-                  {{BridgeheadOverviewHeader.APPLICANT_RESULTS_ACCEPTANCE}}
-                </th>
-                <th class="status-table-header" scope="col">Applicant</th>
-                <th class="status-table-header" scope="col">Created at</th>
-                <th class="status-table-header" scope="col">Expires at</th>
-                <th class="status-table-header" scope="col">Last modified</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr>
-                <td class="clickable" @click="currentMenuStep='Request'">
-                  {{ project ? project.code : '' }}
-                </td>
-                <td v-if="visibleBridgeheads?.length == 1">
-                  <div>
-                    <div v-if="existsVotum" class="states-circle-container">
-                      <div class="state_circle green"></div>
-                      <DownloadButton
-                          :context="context"
-                          :project-manager-backend-service="projectManagerBackendService"
-                          icon-class="bi bi-download"
-                          button-class="download-button"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE"
-                          :action="Action.DOWNLOAD_VOTUM_ACTION"
-                      />
-                    </div>
-                    <div v-else-if="existsVotumForAllBridgeheads" class="states-circle-container">
-                      <div class="state_circle green"></div>
-                      <DownloadButton
-                          :context="context"
-                          :project-manager-backend-service="projectManagerBackendService"
-                          icon-class="bi bi-download"
-                          button-class="download-button"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE"
-                          :action="Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION"
-                      />
-                    </div>
-                    <div v-else class="states-circle-container">
-                      <div class="state_circle red"/>
+          </div>
+          <div class="data-container mt-12" style="width:100%;margin:3% 4% 0 5%;height:auto">
+            <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'"
+                 class="info-container">
+              <div class="box-header"><span>Status</span></div>
+
+              <div style="padding: 2%">
+                <div
+                    style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
+                  <div class="card"
+                       v-if="visibleBridgeheads && visibleBridgeheads.length === 1"
+                       style="padding: 3px 20px;height: fit-content">
+                    <div class="card-body" style="padding: 0 0;">
+                      <span style="padding: 0 0;">{{ context.bridgehead?.humanReadable }}</span>
                     </div>
                   </div>
-                </td>
-                <td v-if="visibleBridgeheads?.length === 1 && activeBridgehead">
-                  <div
-                      v-for="{ state, types } in mergedQueryStates "
-                      :key="state"
-                      class="state_circle"
-                      :class="state.toLowerCase()"
-                      data-toggle="tooltip"
-                      data-placement="top"
-                      :title="types.join(', ')"
-                  ></div>
-                </td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
-                  <div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()"
-                       data-toggle="tooltip"
-                       data-placement="top" :title="activeBridgehead?.state ?? undefined"></div>
-                </td>
-                <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus">
-                  <div class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()"
-                       data-toggle="tooltip" data-placement="top"
-                       :title="dataShieldStatus?.project_status"></div>
-                </td>
-                <td v-if="visibleBridgeheads?.length == 1 && hasProjectType(project, ProjectType.RESEARCH_ENVIRONMENT)">
-                  {{ areExportFilesTransferredToResearchEnvironment }}
-                </td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser">
-                  <div class="state_circle" :class="currentUser?.projectState.toLowerCase()"
-                       data-toggle="tooltip"
-                       data-placement="top" :title="currentUser.projectState"></div>
-                </td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
-                  <div class="state_circle" :class="creatorAcceptance.toLowerCase()"
-                       data-toggle="tooltip"
-                       data-placement="top" :title="creatorAcceptance ?? undefined"></div>
-                </td>
-                <td style="display:flex;">
-                  <UserAndEmail
-                      :first-name="project?.creatorName"
-                      :email="project?.creatorEmail"
-                  />
-                </td>
-                <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
-                <td>{{ project && project.expiresAt ? convertDate(project.expiresAt) : '' }}</td>
-                <td>{{ project && project.modifiedAt ? convertDate(project.modifiedAt) : '' }}</td>
-              </tr>
-              </tbody>
-            </table>
-            <br/>
-            <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
-                                :project-manager-backend-service="projectManagerBackendService"
-                                :call-update-active-bridgehead="updateActiveBridgehead"
-                                :context="context"
-                                :project="project"
-                                :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
-                                :bridgeheads="visibleBridgeheads"
-                                :activeBridgehead="activeBridgehead"/>
-          </div>
-        </div>
-        <div
-            v-if="!(project?.state === ProjectState.DRAFT && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep==='Status'"
-            class="project-actions">
-          <div class="box-header"><span>Actions</span></div>
-          <div style="padding:2%">
-            <!-- Project State Module: Creator View -->
-            <!-- Project State Module: PM-ADMIN View -->
-            <template v-for="(buttonGroup, index) in actionButtons" :key="index">
-              <div v-if="buttonGroups[index]" class="button-group-box">
-                <div class="button-group-label">
-                  {{ buttonGroup.label }}
-                  <span style="display: flex">
+                </div>
+                <table class="table table-bordered table-overview">
+                  <thead>
+                  <tr>
+                    <th class="status-table-header" scope="col">Request ID</th>
+                    <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
+                        scope="col">
+                      {{ BridgeheadOverviewHeader.VOTUM }}
+                    </th>
+                    <th
+                        v-if="visibleBridgeheads?.length === 1"
+                        class="status-table-header"
+                        scope="col"
+                    >
+                      {{ BridgeheadOverviewHeader.TEILER }}
+                    </th>
+                    <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
+                        scope="col">
+                      {{ BridgeheadOverviewHeader.USER_ACCESS }}
+                    </th>
+                    <th class="status-table-header"
+                        v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">
+                      DataSHIELD Status
+                    </th>
+                    <th class="status-table-header"
+                        v-if="visibleBridgeheads?.length == 1 && hasProjectType(project, ProjectType.RESEARCH_ENVIRONMENT)"
+                        scope="col">
+                      Files in Research Environment
+                    </th>
+                    <th v-if="visibleBridgeheads?.length == 1 && currentUser"
+                        class="status-table-header" scope="col">
+                      {{
+                        (hasProjectType(project, ProjectType.DATASHIELD) && project?.state != ProjectState.FINAL) ? 'Script' : 'Results'
+                      }}
+                      Acceptance
+                    </th>
+                    <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
+                        scope="col">
+                      {{ BridgeheadOverviewHeader.APPLICANT_RESULTS_ACCEPTANCE }}
+                    </th>
+                    <th class="status-table-header" scope="col">Applicant</th>
+                    <th class="status-table-header" scope="col">Created at</th>
+                    <th class="status-table-header" scope="col">Expires at</th>
+                    <th class="status-table-header" scope="col">Last modified</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                    <td class="clickable" @click="currentMenuStep='Request'">
+                      {{ project ? project.code : '' }}
+                    </td>
+                    <td v-if="visibleBridgeheads?.length == 1">
+                      <div>
+                        <div v-if="existsVotum" class="states-circle-container">
+                          <div class="state_circle green"></div>
+                          <DownloadButton
+                              :context="context"
+                              :project-manager-backend-service="projectManagerBackendService"
+                              icon-class="bi bi-download"
+                              button-class="download-button"
+                              :module="Module.PROJECT_DOCUMENTS_MODULE"
+                              :action="Action.DOWNLOAD_VOTUM_ACTION"
+                          />
+                        </div>
+                        <div v-else-if="existsVotumForAllBridgeheads"
+                             class="states-circle-container">
+                          <div class="state_circle green"></div>
+                          <DownloadButton
+                              :context="context"
+                              :project-manager-backend-service="projectManagerBackendService"
+                              icon-class="bi bi-download"
+                              button-class="download-button"
+                              :module="Module.PROJECT_DOCUMENTS_MODULE"
+                              :action="Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION"
+                          />
+                        </div>
+                        <div v-else class="states-circle-container">
+                          <div class="state_circle red"/>
+                        </div>
+                      </div>
+                    </td>
+                    <td v-if="visibleBridgeheads?.length === 1 && activeBridgehead">
+                      <div
+                          v-for="{ state, types } in mergedQueryStates "
+                          :key="state"
+                          class="state_circle"
+                          :class="state.toLowerCase()"
+                          data-toggle="tooltip"
+                          data-placement="top"
+                          :title="types.join(', ')"
+                      ></div>
+                    </td>
+                    <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
+                      <div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()"
+                           data-toggle="tooltip"
+                           data-placement="top" :title="activeBridgehead?.state ?? undefined"></div>
+                    </td>
+                    <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus">
+                      <div class="state_circle"
+                           :class="dataShieldStatus?.project_status.toLowerCase()"
+                           data-toggle="tooltip" data-placement="top"
+                           :title="dataShieldStatus?.project_status"></div>
+                    </td>
+                    <td v-if="visibleBridgeheads?.length == 1 && hasProjectType(project, ProjectType.RESEARCH_ENVIRONMENT)">
+                      {{ areExportFilesTransferredToResearchEnvironment }}
+                    </td>
+                    <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser">
+                      <div class="state_circle" :class="currentUser?.projectState.toLowerCase()"
+                           data-toggle="tooltip"
+                           data-placement="top" :title="currentUser.projectState"></div>
+                    </td>
+                    <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
+                      <div class="state_circle" :class="creatorAcceptance.toLowerCase()"
+                           data-toggle="tooltip"
+                           data-placement="top" :title="creatorAcceptance ?? undefined"></div>
+                    </td>
+                    <td style="display:flex;">
+                      <UserAndEmail
+                          :first-name="project?.creatorName"
+                          :email="project?.creatorEmail"
+                      />
+                    </td>
+                    <td>{{
+                        project && project.createdAt ? convertDate(project.createdAt) : ''
+                      }}
+                    </td>
+                    <td>{{
+                        project && project.expiresAt ? convertDate(project.expiresAt) : ''
+                      }}
+                    </td>
+                    <td>{{
+                        project && project.modifiedAt ? convertDate(project.modifiedAt) : ''
+                      }}
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
+                <br/>
+                <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
+                                    :project-manager-backend-service="projectManagerBackendService"
+                                    :call-update-active-bridgehead="updateActiveBridgehead"
+                                    :context="context"
+                                    :project="project"
+                                    :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
+                                    :bridgeheads="visibleBridgeheads"
+                                    :activeBridgehead="activeBridgehead"/>
+              </div>
+            </div>
+            <div
+                v-if="!(project?.state === ProjectState.DRAFT && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep==='Status'"
+                class="project-actions">
+              <div class="box-header"><span>Actions</span></div>
+              <div style="padding:2%">
+                <!-- Project State Module: Creator View -->
+                <!-- Project State Module: PM-ADMIN View -->
+                <template v-for="(buttonGroup, index) in actionButtons" :key="index">
+                  <div v-if="buttonGroups[index]" class="button-group-box">
+                    <div class="button-group-label">
+                      {{ buttonGroup.label }}
+                      <span style="display: flex">
                     <span
                         v-for="(explanationNumber, index3) in getExplanationsForButtonGroup(buttonGroup)"
                         :key="index3" class="todo-circle-small">#{{ explanationNumber }}</span>
                   </span>
-                </div>
-                <div style="display: flex">
-                  <ProjectManagerButton v-for="(button, index2) in buttonGroup.button" :key="index2"
-                                        :module="button.module" :action="button.action"
-                                        :context="context"
-                                        :call-refresh-context="button.refreshContextCallFunction"
-                                        :text="button.text"
-                                        :button-class="button.cssClass"
-                                        :with-message="button.withMessage"
-                                        :visibility="button.visibilityCondition"
-                                        :do-action-on-click="button.doActionOnClick"
-                                        :params="button.params"
-                                        :project-manager-backend-service="projectManagerBackendService"/>
-                </div>
+                    </div>
+                    <div style="display: flex">
+                      <ProjectManagerButton v-for="(button, index2) in buttonGroup.button"
+                                            :key="index2"
+                                            :module="button.module" :action="button.action"
+                                            :context="context"
+                                            :call-refresh-context="button.refreshContextCallFunction"
+                                            :text="button.text"
+                                            :button-class="button.cssClass"
+                                            :with-message="button.withMessage"
+                                            :visibility="button.visibilityCondition"
+                                            :do-action-on-click="button.doActionOnClick"
+                                            :params="button.params"
+                                            :project-manager-backend-service="projectManagerBackendService"/>
+                    </div>
+                  </div>
+                </template>
               </div>
-            </template>
-          </div>
-          <div
-              v-if="!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
-              class="inviteUser">
-            <UserInput :project="project" :context="context"
-                       :bridgeheads="visibleBridgeheads"
-                       :todos="extendedExplanations"
-                       :current-users="currentUsers"
-                       :project-manager-backend-service="projectManagerBackendService"
-                       :call-refresh-context="refreshContext"
-            />
-          </div>
-        </div>
-        <div class="documents"
-             v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) && currentMenuStep === 'Status'">
-          <div class="box-header"><span>Results</span></div>
-          <div style="padding: 2%">
-            <ResultsBox :call-refresh-context="refreshContext"
-                        :project-manager-backend-service="projectManagerBackendService"
-                        :current-users="currentUsers"
-                        :context="context"
-                        :project="project"
-                        :project-roles="projectRoles"
-            />
+              <div
+                  v-if="!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
+                  class="inviteUser">
+                <UserInput :project="project" :context="context"
+                           :bridgeheads="visibleBridgeheads"
+                           :todos="extendedExplanations"
+                           :current-users="currentUsers"
+                           :project-manager-backend-service="projectManagerBackendService"
+                           :call-refresh-context="refreshContext"
+                />
+              </div>
+            </div>
+            <div class="documents"
+                 v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) && currentMenuStep === 'Status'">
+              <div class="box-header"><span>Results</span></div>
+              <div style="padding: 2%">
+                <ResultsBox :call-refresh-context="refreshContext"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :current-users="currentUsers"
+                            :context="context"
+                            :project="project"
+                            :project-roles="projectRoles"
+                />
+              </div>
+            </div>
           </div>
         </div>
         <div v-if="currentMenuStep==='Request'" class="data-container mt-12"
@@ -641,6 +662,7 @@ export default defineComponent({
       site: Site.PROJECT_VIEW_SITE,
       notifications: [] as Notification[],
       showNotification: false,
+      existsPublication: false,
       showExplanations: true,
       showRightPanel: false,
       existsVotum: false,
@@ -695,7 +717,7 @@ export default defineComponent({
     context(newValue, _oldValue) {
       this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
       this.fetchProject().then(() => {
-        if (this.activeBridgehead){
+        if (this.activeBridgehead) {
           this.mergedQueryStates = this.getMergedQueryStates(this.activeBridgehead, getAllProjectTypes(this.project));
         }
       })
@@ -895,6 +917,7 @@ export default defineComponent({
           this.initializeCurrentProjectConfiguration(),
           this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads'),
           this.initializeData(Module.USER_MODULE, Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION, new Map(), 'existsResearchEnvironmentWorkspace'),
+          this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_PUBLICATION_ACTION, new Map(), 'existsPublication'),
           this.initializeData(Module.USER_MODULE, Action.FETCH_RESEARCH_ENVIRONMENT_URL_ACTION, new Map(), 'researchEnvironmentUrl'),
           this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, new Map(), 'currentUsers'),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_DESCRIPTION_ACTION, new Map(), async (result: boolean) => {
@@ -1994,6 +2017,12 @@ export default defineComponent({
 .table-responsive {
   overflow-x: auto;
   padding: 2%;
+}
+
+.admin-view {
+  display: flex;
+  flex-flow: row;
+  background-color: white;
 }
 
 .vertical-stepper {

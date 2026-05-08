@@ -12,212 +12,245 @@
          :class="{ 'less-margin': projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) }">
       <div class="main-content">
         <div class="admin-view">
-        <div class="left-container" v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) && currentMenuStep==='Status'">
-          <!--<div class="box-header" style="padding-left:7%"><span>Phase</span></div>-->
-          <div class="vertical-stepper">
-            <div v-for="(projectState, index) in getProjectStates()" :key="index" class="stepper-step">
-              <div style="display: flex; flex-flow: row" :class="{ 'active-step': project?.state === projectState }">
-                <div class="step-circle">
-                  <span>{{ index + 1 }}</span>
+          <div class="left-container"
+               v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) && currentMenuStep==='Status'">
+            <!--<div class="box-header" style="padding-left:7%"><span>Phase</span></div>-->
+            <div class="vertical-stepper">
+              <div v-for="(projectState, index) in getProjectStates()" :key="index"
+                   class="stepper-step">
+                <div style="display: flex; flex-flow: row"
+                     :class="{ 'active-step': project?.state === projectState }">
+                  <div class="step-circle">
+                    <span>{{ index + 1 }}</span>
+                  </div>
+                  <div class="step-title">{{ projectState }}</div>
                 </div>
-                <div class="step-title">{{ projectState }}</div>
+                <div v-if="index < getProjectStates().length - 1" class="stepper-line"></div>
               </div>
-              <div v-if="index < getProjectStates().length - 1" class="stepper-line"></div>
             </div>
           </div>
-        </div>
-        <div class="data-container mt-12" style="width:100%;margin:3% 4% 0 5%;height:auto">
-        <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'" class="info-container">
-          <div class="box-header"><span>Status</span></div>
+          <div class="data-container mt-12" style="width:100%;margin:3% 4% 0 5%;height:auto">
+            <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'"
+                 class="info-container">
+              <div class="box-header"><span>Status</span></div>
 
-          <div style="padding: 2%">
-            <div style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
-              <div class="card"
-                   v-if="visibleBridgeheads && visibleBridgeheads.length === 1"
-                   style="padding: 3px 20px;height: fit-content">
-                <div class="card-body" style="padding: 0 0;">
-                  <span style="padding: 0 0;">{{ context.bridgehead?.humanReadable }}</span>
-                </div>
-              </div>
-            </div>
-            <table class="table table-bordered table-overview">
-              <thead>
-              <tr>
-                <th class="status-table-header" scope="col">Request ID</th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">
-                  {{BridgeheadOverviewHeader.VOTUM}}
-                </th>
-                <th
-                    v-if="visibleBridgeheads?.length === 1"
-                    class="status-table-header"
-                    scope="col"
-                >
-                  {{BridgeheadOverviewHeader.TEILER}}
-                </th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">
-                  {{BridgeheadOverviewHeader.USER_ACCESS}}
-                </th>
-                <th class="status-table-header"
-                    v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">
-                  DataSHIELD Status
-                </th>
-                <th class="status-table-header"
-                    v-if="visibleBridgeheads?.length == 1 && hasProjectType(project, ProjectType.RESEARCH_ENVIRONMENT)"
-                    scope="col">
-                  Files in Research Environment
-                </th>
-                <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">
-                  {{
-                    (hasProjectType(project, ProjectType.DATASHIELD) && project?.state != ProjectState.FINAL) ? 'Script' : 'Results'
-                  }}
-                  Acceptance
-                </th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">
-                  {{BridgeheadOverviewHeader.APPLICANT_RESULTS_ACCEPTANCE}}
-                </th>
-                <th class="status-table-header" scope="col">Applicant</th>
-                <th class="status-table-header" scope="col">Created at</th>
-                <th class="status-table-header" scope="col">Expires at</th>
-                <th class="status-table-header" scope="col">Last modified</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr>
-                <td class="clickable" @click="currentMenuStep='Request'">{{ project ? project.code : '' }}</td>
-                <td v-if="visibleBridgeheads?.length == 1">
-                  <div>
-                    <div v-if="existsVotum" class="states-circle-container">
-                      <div class="state_circle green"></div>
-                      <DownloadButton
-                          :context="context"
-                          :project-manager-backend-service="projectManagerBackendService"
-                          icon-class="bi bi-download"
-                          button-class="download-button"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE"
-                          :action="Action.DOWNLOAD_VOTUM_ACTION"
-                      />
-                    </div>
-                    <div v-else-if="existsVotumForAllBridgeheads" class="states-circle-container">
-                      <div class="state_circle green"></div>
-                      <DownloadButton
-                          :context="context"
-                          :project-manager-backend-service="projectManagerBackendService"
-                          icon-class="bi bi-download"
-                          button-class="download-button"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE"
-                          :action="Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION"
-                      />
-                    </div>
-                    <div v-else class="states-circle-container">
-                      <div class="state_circle red"/>
+              <div style="padding: 2%">
+                <div
+                    style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
+                  <div class="card"
+                       v-if="visibleBridgeheads && visibleBridgeheads.length === 1"
+                       style="padding: 3px 20px;height: fit-content">
+                    <div class="card-body" style="padding: 0 0;">
+                      <span style="padding: 0 0;">{{ context.bridgehead?.humanReadable }}</span>
                     </div>
                   </div>
-                </td>
-                <td v-if="visibleBridgeheads?.length === 1 && activeBridgehead">
-                  <div
-                      v-for="{ state, types } in mergedQueryStates "
-                      :key="state"
-                      class="state_circle"
-                      :class="state.toLowerCase()"
-                      data-toggle="tooltip"
-                      data-placement="top"
-                      :title="types.join(', ')"
-                  ></div>
-                </td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
-                  <div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()" data-toggle="tooltip"
-                       data-placement="top" :title="activeBridgehead?.state ?? undefined"></div>
-                </td>
-                <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus">
-                  <div class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()"
-                       data-toggle="tooltip" data-placement="top" :title="dataShieldStatus?.project_status"></div>
-                </td>
-                <td v-if="visibleBridgeheads?.length == 1 && hasProjectType(project, ProjectType.RESEARCH_ENVIRONMENT)">
-                  {{ areExportFilesTransferredToResearchEnvironment }}
-                </td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser">
-                  <div class="state_circle" :class="currentUser?.projectState.toLowerCase()" data-toggle="tooltip"
-                       data-placement="top" :title="currentUser.projectState"></div>
-                </td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
-                  <div class="state_circle" :class="creatorAcceptance.toLowerCase()" data-toggle="tooltip"
-                       data-placement="top" :title="creatorAcceptance ?? undefined"></div>
-                </td>
-                <td style="display:flex;">
-                  <UserAndEmail
-                      :first-name="project?.creatorName"
-                      :email="project?.creatorEmail"
-                  />
-                </td>
-                <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
-                <td>{{ project && project.expiresAt ? convertDate(project.expiresAt) : '' }}</td>
-                <td>{{ project && project.modifiedAt ? convertDate(project.modifiedAt) : '' }}</td>
-              </tr>
-              </tbody>
-            </table>
-            <br/>
-            <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
-                                :project-manager-backend-service="projectManagerBackendService"
-                                :call-update-active-bridgehead="updateActiveBridgehead"
-                                :context="context"
-                                :project="project"
-                                :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
-                                :bridgeheads="visibleBridgeheads"
-                                :activeBridgehead="activeBridgehead"/>
-          </div>
-        </div>
-        <div
-            v-if="!(project?.state === ProjectState.DRAFT && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep==='Status'"
-            class="project-actions">
-          <div class="box-header"><span>Actions</span></div>
-          <div style="padding:2%">
-            <!-- Project State Module: Creator View -->
-            <!-- Project State Module: PM-ADMIN View -->
-            <template v-for="(buttonGroup, index) in actionButtons" :key="index">
-              <div v-if="buttonGroups[index]" class="button-group-box">
-                <div class="button-group-label">
-                  {{ buttonGroup.label }}
-                  <span style="display: flex">
-                    <span v-for="(explanationNumber, index3) in getExplanationsForButtonGroup(buttonGroup)"
-                          :key="index3" class="todo-circle-small">#{{ explanationNumber }}</span>
-                  </span>
                 </div>
-                <div style="display: flex">
-                  <ProjectManagerButton v-for="(button, index2) in buttonGroup.button" :key="index2"
-                                        :module="button.module" :action="button.action"
-                                        :context="context" :call-refresh-context="button.refreshContextCallFunction"
-                                        :text="button.text"
-                                        :button-class="button.cssClass" :with-message="button.withMessage"
-                                        :visibility="button.visibilityCondition"
-                                        :do-action-on-click="button.doActionOnClick"
-                                        :params="button.params"
-                                        :project-manager-backend-service="projectManagerBackendService"/>
-                </div>
+                <table class="table table-bordered table-overview">
+                  <thead>
+                  <tr>
+                    <th class="status-table-header" scope="col">Request ID</th>
+                    <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
+                        scope="col">
+                      {{ BridgeheadOverviewHeader.VOTUM }}
+                    </th>
+                    <th
+                        v-if="visibleBridgeheads?.length === 1"
+                        class="status-table-header"
+                        scope="col"
+                    >
+                      {{ BridgeheadOverviewHeader.TEILER }}
+                    </th>
+                    <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
+                        scope="col">
+                      {{ BridgeheadOverviewHeader.USER_ACCESS }}
+                    </th>
+                    <th class="status-table-header"
+                        v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">
+                      DataSHIELD Status
+                    </th>
+                    <th class="status-table-header"
+                        v-if="visibleBridgeheads?.length == 1 && hasProjectType(project, ProjectType.RESEARCH_ENVIRONMENT)"
+                        scope="col">
+                      Files in Research Environment
+                    </th>
+                    <th v-if="visibleBridgeheads?.length == 1 && currentUser"
+                        class="status-table-header" scope="col">
+                      {{
+                        (hasProjectType(project, ProjectType.DATASHIELD) && project?.state != ProjectState.FINAL) ? 'Script' : 'Results'
+                      }}
+                      Acceptance
+                    </th>
+                    <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
+                        scope="col">
+                      {{ BridgeheadOverviewHeader.APPLICANT_RESULTS_ACCEPTANCE }}
+                    </th>
+                    <th class="status-table-header" scope="col">Applicant</th>
+                    <th class="status-table-header" scope="col">Created at</th>
+                    <th class="status-table-header" scope="col">Expires at</th>
+                    <th class="status-table-header" scope="col">Last modified</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                    <td class="clickable" @click="currentMenuStep='Request'">
+                      {{ project ? project.code : '' }}
+                    </td>
+                    <td v-if="visibleBridgeheads?.length == 1">
+                      <div>
+                        <div v-if="existsVotum" class="states-circle-container">
+                          <div class="state_circle green"></div>
+                          <DownloadButton
+                              :context="context"
+                              :project-manager-backend-service="projectManagerBackendService"
+                              icon-class="bi bi-download"
+                              button-class="download-button"
+                              :module="Module.PROJECT_DOCUMENTS_MODULE"
+                              :action="Action.DOWNLOAD_VOTUM_ACTION"
+                          />
+                        </div>
+                        <div v-else-if="existsVotumForAllBridgeheads"
+                             class="states-circle-container">
+                          <div class="state_circle green"></div>
+                          <DownloadButton
+                              :context="context"
+                              :project-manager-backend-service="projectManagerBackendService"
+                              icon-class="bi bi-download"
+                              button-class="download-button"
+                              :module="Module.PROJECT_DOCUMENTS_MODULE"
+                              :action="Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION"
+                          />
+                        </div>
+                        <div v-else class="states-circle-container">
+                          <div class="state_circle red"/>
+                        </div>
+                      </div>
+                    </td>
+                    <td v-if="visibleBridgeheads?.length === 1 && activeBridgehead">
+                      <div
+                          v-for="{ state, types } in mergedQueryStates "
+                          :key="state"
+                          class="state_circle"
+                          :class="state.toLowerCase()"
+                          data-toggle="tooltip"
+                          data-placement="top"
+                          :title="types.join(', ')"
+                      ></div>
+                    </td>
+                    <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
+                      <div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()"
+                           data-toggle="tooltip"
+                           data-placement="top" :title="activeBridgehead?.state ?? undefined"></div>
+                    </td>
+                    <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus">
+                      <div class="state_circle"
+                           :class="dataShieldStatus?.project_status.toLowerCase()"
+                           data-toggle="tooltip" data-placement="top"
+                           :title="dataShieldStatus?.project_status"></div>
+                    </td>
+                    <td v-if="visibleBridgeheads?.length == 1 && hasProjectType(project, ProjectType.RESEARCH_ENVIRONMENT)">
+                      {{ areExportFilesTransferredToResearchEnvironment }}
+                    </td>
+                    <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser">
+                      <div class="state_circle" :class="currentUser?.projectState.toLowerCase()"
+                           data-toggle="tooltip"
+                           data-placement="top" :title="currentUser.projectState"></div>
+                    </td>
+                    <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
+                      <div class="state_circle" :class="creatorAcceptance.toLowerCase()"
+                           data-toggle="tooltip"
+                           data-placement="top" :title="creatorAcceptance ?? undefined"></div>
+                    </td>
+                    <td style="display:flex;">
+                      <UserAndEmail
+                          :first-name="project?.creatorName"
+                          :email="project?.creatorEmail"
+                      />
+                    </td>
+                    <td>{{
+                        project && project.createdAt ? convertDate(project.createdAt) : ''
+                      }}
+                    </td>
+                    <td>{{
+                        project && project.expiresAt ? convertDate(project.expiresAt) : ''
+                      }}
+                    </td>
+                    <td>{{
+                        project && project.modifiedAt ? convertDate(project.modifiedAt) : ''
+                      }}
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
+                <br/>
+                <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
+                                    :project-manager-backend-service="projectManagerBackendService"
+                                    :call-update-active-bridgehead="updateActiveBridgehead"
+                                    :context="context"
+                                    :project="project"
+                                    :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
+                                    :bridgeheads="visibleBridgeheads"
+                                    :activeBridgehead="activeBridgehead"/>
               </div>
-            </template>
-          </div>
-          <div v-if="!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
-               class="inviteUser">
-            <UserInput :project="project" :context="context"
-                       :bridgeheads="visibleBridgeheads"
-                       :todos="extendedExplanations"
-                       :current-users="currentUsers"
-                       :project-manager-backend-service="projectManagerBackendService"
-                       :call-refresh-context="refreshContext"
-            />
-          </div>
-        </div>
-        <div class="documents"
-             v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) && currentMenuStep === 'Status'">
-          <div class="box-header"><span>Results</span></div>
-          <div style="padding: 2%">
-            <ResultsBox :call-refresh-context="refreshContext"
-                        :project-manager-backend-service="projectManagerBackendService"
-                        :current-users="currentUsers"
-                        :context="context"
-                        :project="project"
-                        :project-roles="projectRoles"
-            />
+            </div>
+            <div
+                v-if="!(project?.state === ProjectState.DRAFT && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep==='Status'"
+                class="project-actions">
+              <div class="box-header"><span>Actions</span></div>
+              <div style="padding:2%">
+                <!-- Project State Module: Creator View -->
+                <!-- Project State Module: PM-ADMIN View -->
+                <template v-for="(buttonGroup, index) in actionButtons" :key="index">
+                  <div v-if="buttonGroups[index]" class="button-group-box">
+                    <div class="button-group-label">
+                      {{ buttonGroup.label }}
+                      <span style="display: flex">
+                    <span
+                        v-for="(explanationNumber, index3) in getExplanationsForButtonGroup(buttonGroup)"
+                        :key="index3" class="todo-circle-small">#{{ explanationNumber }}</span>
+                  </span>
+                    </div>
+                    <div style="display: flex">
+                      <ProjectManagerButton v-for="(button, index2) in buttonGroup.button"
+                                            :key="index2"
+                                            :module="button.module" :action="button.action"
+                                            :context="context"
+                                            :call-refresh-context="button.refreshContextCallFunction"
+                                            :text="button.text"
+                                            :button-class="button.cssClass"
+                                            :with-message="button.withMessage"
+                                            :visibility="button.visibilityCondition"
+                                            :do-action-on-click="button.doActionOnClick"
+                                            :params="button.params"
+                                            :project-manager-backend-service="projectManagerBackendService"/>
+                    </div>
+                  </div>
+                </template>
+              </div>
+              <div
+                  v-if="!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
+                  class="inviteUser">
+                <UserInput :project="project" :context="context"
+                           :bridgeheads="visibleBridgeheads"
+                           :todos="extendedExplanations"
+                           :current-users="currentUsers"
+                           :project-manager-backend-service="projectManagerBackendService"
+                           :call-refresh-context="refreshContext"
+                />
+              </div>
+            </div>
+            <div class="documents"
+                 v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) && currentMenuStep === 'Status'">
+              <div class="box-header"><span>Results</span></div>
+              <div style="padding: 2%">
+                <ResultsBox :call-refresh-context="refreshContext"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :current-users="currentUsers"
+                            :context="context"
+                            :project="project"
+                            :project-roles="projectRoles"
+                />
+              </div>
+            </div>
           </div>
         </div>
         <div v-if="currentMenuStep==='Request'" class="data-container mt-12"
@@ -231,7 +264,8 @@
                   <div class="col-auto" style="width:100%">
                     <!-- Bootstrap Stepper -->
                     <div class="vertical-stepper2">
-                      <div v-for="(step, index) in draftDialogStepper.currentSteps" :key="index" class="stepper-step2"
+                      <div v-for="(step, index) in draftDialogStepper.currentSteps" :key="index"
+                           class="stepper-step2"
                            :class="{ 'active': draftDialogStepper.currentStep === step, 'missing-fields': hasMissingFieldsInStep(step.displayName) }"
                       >
                         <div>
@@ -239,7 +273,8 @@
                                @click="draftDialogStepper.setCurrentStep(step.id)">
                             <span>{{ index + 1 }}</span>
                           </div>
-                          <div v-if="index < draftDialogStepper.currentSteps.length - 1" class="stepper-line2"></div>
+                          <div v-if="index < draftDialogStepper.currentSteps.length - 1"
+                               class="stepper-line2"></div>
                         </div>
                         <div class="stepper-step-textbox"
                              @click="draftDialogStepper.setCurrentStep(step.id)"
@@ -262,12 +297,19 @@
               <br/>
               <div class="table table-bordered custom-table table-hover" style="overflow-y: auto">
                 <div v-if="existsDraftDialog" class="project-field-header">
-                  <div class="project-field-title">{{ draftDialogStepper.currentStep?.displayName }}</div>
-                  <div class="project-field-notification">{{ extendedExplanations.get("2")?.message }}</div>
+                  <div class="project-field-title">{{
+                      draftDialogStepper.currentStep?.displayName
+                    }}
+                  </div>
+                  <div class="project-field-notification">{{
+                      extendedExplanations.get("2")?.message
+                    }}
+                  </div>
                 </div>
                 <div v-if="!existsDraftDialog" class="form-switch-box">
                   <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault"
+                    <input class="form-check-input" type="checkbox" role="switch"
+                           id="flexSwitchCheckDefault"
                            v-model="editMode" :class="{ 'inactive': !editMode }">
                     <label class="form-check-label" for="flexSwitchCheckDefault">Edit Fields</label>
                   </div>
@@ -279,10 +321,16 @@
                       v-if="!existsDraftDialog && (index === 0 || projectFields[index - 1]?.category !== projectField.category) && projectField.visibilityCondition && projectField.fieldKey !== 'DescriptionUpload'"
                       class="project-field-header project-field-category-header"
                   >
-                    <div class="project-field-title">{{ getDialogStep(projectField.category)?.displayName }}</div>
-                    <div class="project-field-notification">{{ getDialogStep(projectField.category)?.description }}</div>
+                    <div class="project-field-title">
+                      {{ getDialogStep(projectField.category)?.displayName }}
+                    </div>
+                    <div class="project-field-notification">
+                      {{ getDialogStep(projectField.category)?.description }}
+                    </div>
                   </div>
-                  <div v-else-if="projectField.visibilityCondition && !(index === 0 || projectFields[index - 1]?.category !== projectField.category) && projectField.fieldKey !== 'DescriptionUpload'" class="input-field-separator"></div>
+                  <div
+                      v-else-if="projectField.visibilityCondition && !(index === 0 || projectFields[index - 1]?.category !== projectField.category) && projectField.fieldKey !== 'DescriptionUpload'"
+                      class="input-field-separator"></div>
                   <ProjectFieldRow
                       v-if="projectField.visibilityCondition &&
                       (!existsDraftDialog ||
@@ -325,7 +373,8 @@
             <div v-if="project?.state === ProjectState.DRAFT" class="button-container mt-3">
               <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
                                     :action="Action.CREATE_PROJECT_ACTION"
-                                    :context="context" :call-refresh-context="refreshContext" text="Save Draft"
+                                    :context="context" :call-refresh-context="refreshContext"
+                                    text="Save Draft"
                                     button-class="btn btn-success mr-2"
                                     :with-message="false"
                                     :is-disabled="!hasProjectAllMandatoryFields"
@@ -333,7 +382,7 @@
                                     :project-manager-backend-service="projectManagerBackendService"/>
               <div>
                 <button class="btn btn-primary me-2" @click="draftDialogStepper.previousStep()"
-                      :disabled="!draftDialogStepper.hasPreviousStep">
+                        :disabled="!draftDialogStepper.hasPreviousStep">
                   <!--<i class="bi bi-arrow-left"></i>-->
                   < Back
                 </button>
@@ -343,34 +392,41 @@
                   <!--<i class="bi bi-arrow-right"></i>-->
                 </button>
               </div>
-                <ProjectManagerButton v-if="project?.state === ProjectState.DRAFT"
-                                      :module="Module.PROJECT_STATE_MODULE"
-                                      :action="Action.REJECT_PROJECT_ACTION"
-                                      :context="context" :call-refresh-context="refreshContext" text="Delete Draft"
-                                      button-class="btn btn-danger"
-                                      :with-message="true"
-                                      :project-manager-backend-service="projectManagerBackendService"/>
+              <ProjectManagerButton v-if="project?.state === ProjectState.DRAFT"
+                                    :module="Module.PROJECT_STATE_MODULE"
+                                    :action="Action.REJECT_PROJECT_ACTION"
+                                    :context="context" :call-refresh-context="refreshContext"
+                                    text="Delete Draft"
+                                    button-class="btn btn-danger"
+                                    :with-message="true"
+                                    :project-manager-backend-service="projectManagerBackendService"/>
             </div>
           </div>
         </div>
-        <div class="documents" v-if="project?.state === ProjectState.FINISHED && currentMenuStep==='Documents'">
+        <div class="documents"
+             v-if="project?.state === ProjectState.FINISHED && currentMenuStep==='Documents'">
           <div class="box-header">Publications</div>
           <div style="padding: 2%">
             <DocumentsTable :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
                             :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
-                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Publications: "/>
+                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download"
+                            text="Publications: "/>
             <br/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
-                          text="Upload publication" :call-refresh-context="refreshContext" :is-file="true"/>
+                          :module="Module.PROJECT_DOCUMENTS_MODULE"
+                          :action="Action.UPLOAD_PUBLICATION_ACTION"
+                          text="Upload publication" :call-refresh-context="refreshContext"
+                          :is-file="true"/>
             <br/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
-                          text="Upload publication URL" :call-refresh-context="refreshContext" :is-file="false"/>
+                          :module="Module.PROJECT_DOCUMENTS_MODULE"
+                          :action="Action.ADD_PUBLICATION_URL_ACTION"
+                          text="Upload publication URL" :call-refresh-context="refreshContext"
+                          :is-file="false"/>
           </div>
         </div>
         <div class="documents" v-if="currentMenuStep==='Documents'">
@@ -381,19 +437,27 @@
           </div>
           <div style="padding: 2%">
             <div style="display:flex; flex-flow:row;  width:100% ">
-              <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
-                            text="Upload document" :call-refresh-context="refreshContext" :is-file="true"/>
+              <UploadButton :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE"
+                            :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
+                            text="Upload document" :call-refresh-context="refreshContext"
+                            :is-file="true"/>
 
-              <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
-                            text="Upload document URL" :call-refresh-context="refreshContext" :is-file="false"/>
+              <UploadButton :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE"
+                            :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
+                            text="Upload document URL" :call-refresh-context="refreshContext"
+                            :is-file="false"/>
             </div>
             <br/>
-            <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
+            <DocumentsTable :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
                             :fetch-list-action="Action.FETCH_OTHER_DOCUMENTS_ACTION"
-                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Other documents: "/>
+                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download"
+                            text="Other documents: "/>
           </div>
         </div>
       </div>
@@ -401,38 +465,47 @@
 
 
     <div :class="showRightPanel ? 'custom-width-notifications' : 'open-right-panel'">
-      <button style="" @click="showRightPanel=true" class="btn" v-if="!showRightPanel" data-toggle="tooltip"
+      <button style="" @click="showRightPanel=true" class="btn" v-if="!showRightPanel"
+              data-toggle="tooltip"
               data-placement="top" title="Show ToDos & Notifications">
-        <i style="font-size: 20px" class="bi bi-chevron-double-left"></i> <!-- Close symbol for Progress -->
+        <i style="font-size: 20px" class="bi bi-chevron-double-left"></i>
+        <!-- Close symbol for Progress -->
       </button>
       <div v-if="showRightPanel">
         <div class="box-header"
              style="display:flex; flex-flow:row; justify-content:space-between;padding-bottom:0;color:black ">
           <div style="display:flex; flex-flow:row;">
-            <div class="notification-tab" :class="{ 'active': !showNotification }" @click="toggleNotification">TODO
+            <div class="notification-tab" :class="{ 'active': !showNotification }"
+                 @click="toggleNotification">TODO
             </div>
             <div v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)"
-                 class="notification-tab" :class="{ 'active': showNotification }" @click="toggleNotification">
+                 class="notification-tab" :class="{ 'active': showNotification }"
+                 @click="toggleNotification">
               Notifications
             </div>
           </div>
-          <button style="padding: 0 15px 0 0; margin-bottom: 5px" @click="showRightPanel=false" class="btn"
-                  v-if="showRightPanel" data-toggle="tooltip" data-placement="top" title="Hide Panel">
+          <button style="padding: 0 15px 0 0; margin-bottom: 5px" @click="showRightPanel=false"
+                  class="btn"
+                  v-if="showRightPanel" data-toggle="tooltip" data-placement="top"
+                  title="Hide Panel">
             <i style="font-size: 20px;color:white" class="bi bi-chevron-double-right"></i>
             <!-- Close symbol for Progress -->
           </button>
         </div>
 
-        <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
+        <NotificationBox :context="context"
+                         :project-manager-backend-service="projectManagerBackendService"
                          :show-notification="showNotification"
                          :call-toggle-notification="toggleNotification"
-                         :notifications="notifications" :call-update-notifications="fetchNotifications"
+                         :notifications="notifications"
+                         :call-update-notifications="fetchNotifications"
                          :show-in-panel="false"
         />
 
         <div v-if="!showNotification">
           <div v-if="extendedExplanations.size > 0" class="notification-box">
-            <div v-for="(explanation, index) in Array.from(extendedExplanations.values())" :key="index"
+            <div v-for="(explanation, index) in Array.from(extendedExplanations.values())"
+                 :key="index"
                  class="card mb-3">
               <div class="card-body">
                 <div style="display:flex; flex-flow: row;">
@@ -447,7 +520,8 @@
               class="notification-box">
             <div class="card mb-3">
               <div class="card-body">
-                <h5 class="card-title">No action is required at the moment. Please wait for the next notification, which
+                <h5 class="card-title">No action is required at the moment. Please wait for the next
+                  notification, which
                   will
                   also be sent to you via email.</h5>
               </div>
@@ -504,7 +578,12 @@ import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
-import {DialogStep, DialogStepper, FixedDialogStep, FixedDialogSteps} from "@/services/fixedDialogStep";
+import {
+  DialogStep,
+  DialogStepper,
+  FixedDialogStep,
+  FixedDialogSteps
+} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
@@ -626,7 +705,7 @@ export default defineComponent({
       groupedMissingFields: {} as Record<string, string[]>,
       currentMenuStep: "Status",
       editMode: false,
-      categoryRank: {project:0, query:1, services:2} as Record<string, number>  // order the categories how they should appear in the Request tab (except in DRAFT). not listed categories will be shown after these
+      categoryRank: {project: 0, query: 1, services: 2} as Record<string, number>  // order the categories how they should appear in the Request tab (except in DRAFT). not listed categories will be shown after these
     };
   },
   watch: {
@@ -638,7 +717,7 @@ export default defineComponent({
     context(newValue, _oldValue) {
       this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
       this.fetchProject().then(() => {
-        if (this.activeBridgehead){
+        if (this.activeBridgehead) {
           this.mergedQueryStates = this.getMergedQueryStates(this.activeBridgehead, getAllProjectTypes(this.project));
         }
       })
@@ -751,8 +830,8 @@ export default defineComponent({
 
       // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
       const mandatoryFormFieldsValid = this.formFields
-          ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && this.selectedForms.some(ft => ft.title === field.title))
-          .every(field => field.value != null && field.value !== '');
+      ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && this.selectedForms.some(ft => ft.title === field.title))
+      .every(field => field.value != null && field.value !== '');
 
       return baseFieldsValid && mandatoryFormFieldsValid;
     },
@@ -784,15 +863,15 @@ export default defineComponent({
         // 👇 group missing mandatory form fields
         // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
         this.groupedMissingFields = this.formFields
-            ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && !field.value && this.selectedForms.some(ft => ft.title === field.title))
-            .reduce((acc, field) => {
-              const title = field.titleDisplayName ?? field.title;
-              const label = field.labelDisplayName ?? field.label;
+        ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && !field.value && this.selectedForms.some(ft => ft.title === field.title))
+        .reduce((acc, field) => {
+          const title = field.titleDisplayName ?? field.title;
+          const label = field.labelDisplayName ?? field.label;
 
-              if (!acc[title]) acc[title] = [];
-              acc[title].push(label);
-              return acc;
-            }, {} as Record<string, string[]>);
+          if (!acc[title]) acc[title] = [];
+          acc[title].push(label);
+          return acc;
+        }, {} as Record<string, string[]>);
 
         // Create blocks for each title
         const blocks = Object.entries(this.groupedMissingFields ?? {}).map(
@@ -1030,11 +1109,11 @@ export default defineComponent({
               resolve();
             }
         )
-            .then(() => {
-              // IMPORTANT: this runs even if condition === false
-              resolve();
-            })
-            .catch(reject);
+        .then(() => {
+          // IMPORTANT: this runs even if condition === false
+          resolve();
+        })
+        .catch(reject);
       });
     },
 
@@ -1242,8 +1321,8 @@ export default defineComponent({
       }
       if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) && this.activeBridgehead?.executions) {
         const pendingTypes = this.activeBridgehead.executions
-            .filter(exec => ![QueryState.CREATED, QueryState.FINISHED, QueryState.ERROR].includes(exec.queryState))
-            .map(exec => exec.projectType);
+        .filter(exec => ![QueryState.CREATED, QueryState.FINISHED, QueryState.ERROR].includes(exec.queryState))
+        .map(exec => exec.projectType);
 
         if (pendingTypes.length) {
           extendedExplanations.set(count.toString(), {
@@ -1320,7 +1399,9 @@ export default defineComponent({
           isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.projectType'),
           editMode: this.editMode,
           possibleValues: this.projectTypes,
-          displayPossibleValue: (label: string) => {return {name: label, description: ""}},
+          displayPossibleValue: (label: string) => {
+            return {name: label, description: ""}
+          },
           mandatory: true,
           category: FixedDialogStep.CUSTOM,
           visibilityCondition:
@@ -1338,7 +1419,9 @@ export default defineComponent({
           isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.outputFormat'),
           editMode: this.editMode,
           possibleValues: this.outputFormats[exec.projectType] ?? [],
-          displayPossibleValue: (label: string) => {return {name: label, description: ""}},
+          displayPossibleValue: (label: string) => {
+            return {name: label, description: ""}
+          },
           mandatory: true,
           category: FixedDialogStep.CUSTOM,
           visibilityCondition:
@@ -1354,7 +1437,9 @@ export default defineComponent({
           isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.templateId'),
           editMode: this.editMode,
           possibleValues: this.exporterTemplateIds[exec.projectType] ?? [],
-          displayPossibleValue: (label: string) => {return {name: label, description: ""}},
+          displayPossibleValue: (label: string) => {
+            return {name: label, description: ""}
+          },
           mandatory: true,
           category: FixedDialogStep.CUSTOM,
           visibilityCondition:
@@ -1449,7 +1534,9 @@ export default defineComponent({
           editMode: this.editMode,
           redirectUrl: this.project?.explorerUrl ?? undefined,
           possibleValues: this.queryFormats,
-          displayPossibleValue: (label: string) => {return {name: label, description: ""}},
+          displayPossibleValue: (label: string) => {
+            return {name: label, description: ""}
+          },
           mandatory: true,
           category: FixedDialogStep.QUERY,
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
@@ -1527,8 +1614,8 @@ export default defineComponent({
           this.formTitles.filter(formTitle => {
             this.draftDialogStepper.hasCurrentStep(formTitle.title)
           }));
-      return [...fixedFields, ...dynamicSelectedForms, ...dynamicFields].sort((a,b) =>
-       (this.categoryRank[a.category.toLowerCase()] ?? 999) - (this.categoryRank[b.category.toLowerCase()] ?? 999));
+      return [...fixedFields, ...dynamicSelectedForms, ...dynamicFields].sort((a, b) =>
+          (this.categoryRank[a.category.toLowerCase()] ?? 999) - (this.categoryRank[b.category.toLowerCase()] ?? 999));
     },
 
     fetchButtons(): void {
@@ -1712,9 +1799,12 @@ export default defineComponent({
               visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
             },
             {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
+              module: Module.PROJECT_STATE_MODULE,
+              action: Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Request Changes", withMessage: true, cssClass: "btn btn-primary mr-2"
+              text: "Request Changes",
+              withMessage: true,
+              cssClass: "btn btn-primary mr-2"
             }
           ] as ActionButton[]
         },
@@ -1722,9 +1812,12 @@ export default defineComponent({
           label: "Research Environment",
           button: [
             {
-              module: Module.USER_MODULE, action: Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION,
+              module: Module.USER_MODULE,
+              action: Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Go", withMessage: false, cssClass: "btn btn-primary mr-2",
+              text: "Go",
+              withMessage: false,
+              cssClass: "btn btn-primary mr-2",
               visibilityCondition: this.researchEnvironmentUrl !== undefined && this.existsResearchEnvironmentWorkspace,
               doActionOnClick: this.goToResearchEnvironment as () => void
             }
@@ -1771,7 +1864,11 @@ export default defineComponent({
 
     getDialogStep(stepId: string): DialogStep | undefined {
       const step = FixedDialogSteps.find(step => step.id === stepId)
-      return step ? step : {id: "", displayName: stepId.charAt(0).toUpperCase() + stepId.slice(1), description: ""}
+      return step ? step : {
+        id: "",
+        displayName: stepId.charAt(0).toUpperCase() + stepId.slice(1),
+        description: ""
+      }
     }
   }
 
@@ -1921,11 +2018,13 @@ export default defineComponent({
   overflow-x: auto;
   padding: 2%;
 }
+
 .admin-view {
   display: flex;
   flex-flow: row;
   background-color: white;
 }
+
 .vertical-stepper {
   margin: 20% 0 0 28%;
   display: flex;
@@ -2207,7 +2306,7 @@ export default defineComponent({
 
 .clickable {
   cursor: pointer;
-  color: rgb(51,142,195);
+  color: rgb(51, 142, 195);
 }
 
 .clickable:hover {

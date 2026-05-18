@@ -11,29 +11,32 @@
         </div>-->
 
       </div>
-
+      <div class="filter-box">
+        <select v-model="selectedState" class="form-select" @change="changeState()">
+          <option v-for="value in projectStates" :key="value" :value="value">{{ projectStateLabel[value] }}</option>
+        </select>
+        <select v-model="selectedApplicant" class="form-select" @change="changeApplicant()">
+          <option v-for="value in applicants" :key="value" :value="value">{{ value }}</option>
+        </select>
+      </div>
       <div class="table-box">
         <table class="table table-bordered table-striped table-hover">
           <thead>
           <tr>
-            <th scope="col">Request ID</th>
             <th scope="col">Title</th>
+            <th scope="col">Request ID</th>
             <th scope="col">Applicant</th>
             <th scope="col">Created on</th>
             <th scope="col" style="display: flex;justify-content: space-between;align-items: baseline">
               <span>Status</span><span class="filter">
-                <select v-model="selectedState" class="form-select" @change="changeState()">
-                  <option v-for="value in projectStates" :key="value" :value="value">{{ value }}</option>
-                </select>
               </span>
             </th>
-            <th scope="col">Action</th>
           </tr>
           </thead>
           <tbody>
           <tr v-for="(project, index) in projects" :key="index">
-            <td>{{ project.code }}</td>
             <td><router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }" class="label-link">{{ project.label }}</router-link></td>
+            <td>{{ project.code }}</td>
             <td>
               <UserAndEmail
                   :first-name="project?.creatorName"
@@ -42,11 +45,6 @@
             </td>
             <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
             <td>{{ project.state }}</td>
-            <td>
-              <router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }">
-                <i class="bi bi-folder-fill action-icon"></i>
-              </router-link>
-            </td>
           </tr>
           </tbody>
         </table>
@@ -83,13 +81,35 @@ import {
   Project,
   ProjectManagerBackendService,
   ProjectManagerContext,
+  ProjectState,
   Site
 } from "@/services/projectManagerBackendService";
 import NotificationBox from "@/components/Notification.vue";
 import {format} from "date-fns";
 import UserAndEmail from "@/components/UserAndEmail.vue";
 
+const ProjectStateLabel: Record<ProjectState, string> = {
+  ALL:"All Projects",
+  APPROVAL: "Approval",
+  ARCHIVED: "Archived",
+  DEVELOP: "Develop",
+  DRAFT: "Draft",
+  FINAL: "Final",
+  FINISHED: "Finished",
+  PILOT: "Pilot",
+  REJECTED: "Rejected",
+  REVIEW: "Review"
+}
 export default defineComponent({
+  computed: {
+    projectStates(): ProjectState[] {
+      return Object.values(ProjectState)
+    },
+
+    projectStateLabel(): Record<ProjectState, string> {
+      return ProjectStateLabel
+    }
+  },
   components: {UserAndEmail, NotificationBox},
 
   data() {
@@ -102,9 +122,10 @@ export default defineComponent({
       showNotification: false,
       currentPage: 1,
       totalPages: 1,
-      projectStates: ["ALL"],
-      selectedState: "ALL",
-      isProjectManagerAdmin: false
+      selectedState: ProjectState.ALL,
+      isProjectManagerAdmin: false,
+      applicants: [] as (string | undefined)[],
+      selectedApplicant: "All Applicants"
     };
   },
   watch: {
@@ -130,6 +151,9 @@ export default defineComponent({
     changeState() {
       this.fetchProjects()
     },
+    changeApplicant() {
+      this.fetchProjects()
+    },
 
     convertDate(date: Date) {
       return format(date, 'yyyy-MM-dd HH:mm')
@@ -140,7 +164,7 @@ export default defineComponent({
     async fetchProjects() {
       try {
         const params = new Map<string, string>();
-        if (this.selectedState !== "ALL") {
+        if (this.selectedState !== ProjectState.ALL) {
           params.set('project-state', this.selectedState)
         }
         params.set('page', (this.currentPage - 1).toString());
@@ -154,6 +178,10 @@ export default defineComponent({
         ).then(projects => {
           this.projects = projects.content;
           this.totalPages = projects.totalPages;
+          this.getProjectApplicants()
+          if(this.selectedApplicant !== "All Applicants") {
+            this.projects = this.projects.filter((project) => project.creatorName === this.selectedApplicant)
+          }
         });
       } catch (error) {
         console.error('Error loading projects:', error);
@@ -195,11 +223,18 @@ export default defineComponent({
             Action.FETCH_PROJECT_STATES_ACTION,
             this.context,
             new Map()
-        ).then(projectStates => this.projectStates.push(...projectStates));
+        )
       } catch (error) {
         console.error('Error loading notifications:', error);
         throw error;
       }
+    },
+    getProjectApplicants() {
+      this.applicants = ["All Applicants",...new Set(
+          this.projects
+              .map(project => project.creatorName)
+              .filter(Boolean)
+      )];
     },
     firstPage() {
       this.currentPage = 1;
@@ -301,19 +336,15 @@ th {
 }
 
 .form-select {
-  background-color: transparent;
-  border: none;
-  height: 35px;
-  font-size: smaller;
-  text-align: left;
+  /*background-color: transparent;
+  border: none;*/
+  width:20%;
   cursor: pointer;
-  color: white;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath d='M5.5 7.5L10 12l4.5-4.5' stroke='%23ffffff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  /*color: white;*/
+  /*background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath d='M5.5 7.5L10 12l4.5-4.5' stroke='%23ffffff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");*/
 
 }
-.form-select option {
-  color: black;
-}
+
 .form-select option:hover {
   color: rgba(0,72,156,.95);
 }
@@ -324,7 +355,15 @@ th {
 .label-link:hover {
   text-decoration: underline;
 }
-.action-icon {
-  color: rgb(51,142,195);
+
+.filter-box {
+  background-color: #f1f1f1;
+  margin: 2%;
+  padding:2%;
+  display: flex;
+  flex-direction: row;
+}
+.filter-box select {
+  margin-right:2%
 }
 </style>

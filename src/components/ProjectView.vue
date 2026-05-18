@@ -29,7 +29,7 @@
               </div>
             </div>
           </div>
-          <div class="data-container mt-12" style="width:100%;margin:3% 4% 0 5%;height:auto">
+          <div class="data-container mt-12" style="width:100%;padding:3% 4% 0 5%;height:auto">
             <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'"
                  class="info-container">
               <div class="box-header"><span>Status</span></div>
@@ -374,7 +374,7 @@
               <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
                                     :action="Action.CREATE_PROJECT_ACTION"
                                     :context="context" :call-refresh-context="refreshContext"
-                                    text="Save Draft"
+                                    text="Submit"
                                     button-class="btn btn-success mr-2"
                                     :with-message="false"
                                     :is-disabled="!hasProjectAllMandatoryFields"
@@ -417,14 +417,14 @@
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE"
-                          :action="Action.UPLOAD_PUBLICATION_ACTION"
+                          :upload-action="Action.UPLOAD_PUBLICATION_ACTION"
                           text="Upload publication" :call-refresh-context="refreshContext"
                           :is-file="true"/>
             <br/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE"
-                          :action="Action.ADD_PUBLICATION_URL_ACTION"
+                          :upload-action="Action.ADD_PUBLICATION_URL_ACTION"
                           text="Upload publication URL" :call-refresh-context="refreshContext"
                           :is-file="false"/>
           </div>
@@ -440,14 +440,14 @@
               <UploadButton :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE"
-                            :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
+                            :upload-action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
                             text="Upload document" :call-refresh-context="refreshContext"
                             :is-file="true"/>
 
               <UploadButton :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE"
-                            :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
+                            :upload-action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
                             text="Upload document URL" :call-refresh-context="refreshContext"
                             :is-file="false"/>
             </div>
@@ -1916,13 +1916,14 @@ export default defineComponent({
   flex-direction: column;
   background-color: white;
   height: 100%;
-  margin: 0 1% 0 1%;
+  /*margin: 0 1% 0 1%;*/
 }
 
 .data-container.non-draft {
   border-radius: 10px;
   /*box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);*/
   margin: 0;
+  padding: 0 4% 0 5%;
 }
 
 .vertical-stepper-box {
@@ -2016,7 +2017,7 @@ export default defineComponent({
 
 .table-responsive {
   overflow-x: auto;
-  padding: 2%;
+  padding: 0 2% 2% 2%;
 }
 
 .admin-view {
@@ -2253,18 +2254,18 @@ export default defineComponent({
   width: 90%;
   margin: 2rem 1rem 1rem 1rem;
   padding: 1rem 3rem;
-  background-color: #f1f1f1;
+  background-color: #00489c;
 }
 
 .project-field-title {
   font-size: x-large;
   font-weight: bold;
-  color: rgb(0, 72, 156);
+  color: white
 }
 
 .project-field-notification {
   font-size: small;
-  color: dimgrey;
+  color: white;
 }
 
 .missing-fields, .missing-fields .stepper-step-header {

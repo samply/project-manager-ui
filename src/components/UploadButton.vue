@@ -10,15 +10,18 @@ import {
   UPLOAD_DOCUMENT_URL_PARAM
 } from "@/services/projectManagerBackendService";
 import {PropType, watch} from "vue";
+import DownloadButton from "@/components/DownloadButton.vue";
 
 @Options({
   name: "UploadButton",
+  components: {DownloadButton},
   props: {
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
     context: {type: Object as PropType<ProjectManagerContext>, required: true},
     projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
     module: {type: String as PropType<Module>, required: true},
-    action: {type: String as PropType<Action>, required: true},
+    uploadAction: {type: String as PropType<Action>, required: true},
+    downloadAction: {type: String as PropType<Action>, required: false},
     text: {type: String, required: true},
     isFile: {type: Boolean, required: true},
     toggleInput: {type: Boolean, required: false},
@@ -36,7 +39,8 @@ export default class UploadButton extends Vue {
   readonly context!: ProjectManagerContext;
   readonly projectManagerBackendService!: ProjectManagerBackendService;
   readonly module!: Module;
-  readonly action!: Action;
+  readonly uploadAction!: Action;
+  readonly downloadAction?: Action;
   readonly text!: string;
   readonly isFile!: boolean;
   readonly useBridgeheadChooser!: boolean;
@@ -70,7 +74,7 @@ export default class UploadButton extends Vue {
   }
 
   updateIsActive() {
-    this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result)
+    this.projectManagerBackendService.isModuleActionActive(this.module, this.uploadAction).then(result => this.isActive = result)
     this.selectedBridgehead = this.context.bridgehead?.bridgehead
   }
 
@@ -97,7 +101,7 @@ export default class UploadButton extends Vue {
     }
     params.set('label', this.label);
 
-    this.projectManagerBackendService.fetchHttpResponse(this.module, this.action, this.getContext(), params).then(() => {
+    this.projectManagerBackendService.fetchHttpResponse(this.module, this.uploadAction, this.getContext(), params).then(() => {
       this.file = undefined;
       this.label = '';
       this.url = '';
@@ -123,12 +127,16 @@ export default class UploadButton extends Vue {
     <div class="row align-items-center" style="display: flex;width: 100%">
       <div style="display: flex; width: 100%;">
         <div class="form-group" style="display:flex; width: 100%; flex-flow: column;">
-          <div>
+          <div style="display: flex;flex-direction: row;align-items: baseline">
           <label for="labelInput" class="form-label font-weight-bold"><strong>{{ text }}: </strong></label>
           <template v-if="!text.toLowerCase().endsWith('url')">
             <span v-if="!fileSelected && !existsFile" class="filename blue" @click="visible = !visible">no file selected</span>
             <span v-if="fileSelected || existsFile" data-toggle="tooltip" data-placement="top" :title="existsFile && !fileSelected ? fileName : file?.name"
                   class="filename green" @click="visible = !visible">{{ existsFile && !fileSelected ? fileName : file?.name }}</span>
+            <DownloadButton v-if="existsFile && downloadAction"
+                            :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="module" :action="downloadAction" icon-class="bi bi-download"
+                            :filename="fileName"/>
           </template>
           </div>
           <div style="display: none; width: 100%; flex-flow: row;" :class="{ 'visible': visible }">

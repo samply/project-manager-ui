@@ -96,8 +96,6 @@ export default class ProjectFieldRow extends Vue {
   // noinspection JSUnusedGlobalSymbols
   readonly configurations?: Map<string, ProjectAndForms>;
   // noinspection JSUnusedGlobalSymbols
-  readonly downloadAction?: Action;
-  // noinspection JSUnusedGlobalSymbols
   readonly downloadModule?: Module;
   // noinspection JSUnusedGlobalSymbols
   readonly deleteAction?: Action;
@@ -116,6 +114,7 @@ export default class ProjectFieldRow extends Vue {
   // noinspection JSUnusedGlobalSymbols
   readonly section?: Section;
   uploadAction?: Action;
+  downloadAction?: Action;
   readonly type!: FormDataType;
   readonly transformForSending!: (input: string) => string;
   readonly extraParams?: Map<string, string>;
@@ -401,7 +400,10 @@ export default class ProjectFieldRow extends Vue {
   isSummaryStep(): boolean {
     return this.draftDialogCurrentStep?.id === this.dialogStep.SUMMARY
   }
-
+  getInputType(): string {
+    if (this.type === FormDataType.INTEGER) return 'number'
+    return 'text'
+  }
   getEditFieldCssClass() {
     let sidewise = "";
     if(!this.isDraft() || this.isSummaryStep()) sidewise = " sidewise"
@@ -564,7 +566,8 @@ export default class ProjectFieldRow extends Vue {
       <div :class="getEditFieldCssClass()">
         <div v-if="uploadAction && !isDescriptionUpload()" style="width:75%">
           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                        :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
+                        :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
+                        :download-action="downloadAction"
                         :visible-bridgeheads="visibleBridgeheads" :use-bridgehead-chooser="fieldKey === 'Votum'"
                         :text="'Upload '+ fieldKey" :call-refresh-context="exitAndCallRefreshContext"
                         :is-file="true" :toggle-input="fieldKey.substring(0,5) === 'Votum'" :file-name="fieldValue[1]" :exists-file="existsFile"/>
@@ -639,7 +642,8 @@ export default class ProjectFieldRow extends Vue {
 
             <div v-else-if="isDescriptionUpload()" style="margin:1rem 0 0 1rem">
               <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
+                            :download-action="downloadAction"
                             text="Upload project description" :call-refresh-context="exitAndCallRefreshContext" :is-file="true" :exists-file="existsFile"
                             :file-name="fieldValue[1]" :toggle-input="true"/>
             </div>
@@ -705,12 +709,12 @@ export default class ProjectFieldRow extends Vue {
             </div>
             <div v-else :style="{ width: !isDraft() || isSummaryStep() ? '100%' : '75%' }">
               <input
-                  type="text"
+                  :type="getInputType()"
                   v-model="editedValue[0]"
                   @change="onInputChange"
                   class="form-control"
                   :class="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration() ? 'white' : 'grey'"
-                  style="width: 100%;"
+                  :style="{width: getInputType()==='number' ? '40%' : '100%'}"
                   :disabled="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration()"
               >
             </div>

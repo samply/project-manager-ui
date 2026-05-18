@@ -181,6 +181,7 @@ export enum ProjectType {
 }
 
 export enum ProjectState {
+    ALL = "ALL",
     DRAFT = "DRAFT",
     REVIEW = "REVIEW",
     APPROVAL = "APPROVAL",

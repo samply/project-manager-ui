@@ -19,6 +19,8 @@ import {FixedDialogStep} from "@/services/fixedDialogStep";
 import type {BridgeheadsProjectField} from "@/services/utils";
 import {ActionFunction, Section} from "@/services/utils";
 import {PropType, watch} from "vue";
+import "@samply/lens";
+import {QueryItem} from "@samply/lens";
 
 @Options({
   name: "ProjectFieldRow",
@@ -83,7 +85,9 @@ export default class ProjectFieldRow extends Vue {
   readonly module!: Module;
   readonly action!: Action | ActionFunction;
   readonly possibleValues?: string[];
+  // noinspection JSUnusedGlobalSymbols
   readonly displayPossibleValue!: (input: string) => {name: string, description: string};
+  // noinspection JSUnusedGlobalSymbols
   readonly isEditable!: boolean;
   readonly callRefreshContext!: () => void;
 
@@ -114,6 +118,7 @@ export default class ProjectFieldRow extends Vue {
   // noinspection JSUnusedGlobalSymbols
   readonly section?: Section;
   uploadAction?: Action;
+  // noinspection JSUnusedGlobalSymbols
   downloadAction?: Action;
   readonly type!: FormDataType;
   readonly transformForSending!: (input: string) => string;
@@ -182,6 +187,7 @@ export default class ProjectFieldRow extends Vue {
     this.possibleValues?.forEach(() => {
       this.showDetails.push(false);
     });
+    console.log(this.fieldKey,' ',this.getQueryDetails())
   }
 
 
@@ -416,7 +422,13 @@ export default class ProjectFieldRow extends Vue {
     return 'other-edit-fields' + sidewise;
   }
 
-  onBooleanValueChange(event: Event) {
+  getQueryDetails(): QueryItem {
+    if (this.editedValue[2]) {
+      return JSON.parse(atob(this.editedValue[2])) as QueryItem}
+    return {id: "", key: "", name: "", type: "", values: []}
+  }
+
+  onBooleanValueChange(_event: Event) {
     //const input = event.target as HTMLInputElement;
     //this.editedValue[0] = input.checked ? 'true' : 'false';
     this.saveField()
@@ -564,7 +576,7 @@ export default class ProjectFieldRow extends Vue {
         <div class="field-description" v-html="fieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() }"></div>
       </div>
       <div :class="getEditFieldCssClass()">
-        <div v-if="uploadAction && !isDescriptionUpload()" style="width:75%">
+        <div v-if="uploadAction && !isDescriptionUpload()" style="width:75%;padding: 0 0.75rem">
           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
                         :download-action="downloadAction"
@@ -580,10 +592,10 @@ export default class ProjectFieldRow extends Vue {
                 <option value=false>No</option>
               </select>
               <div v-if="(!isDraft() || isSummaryStep()) && !editMode">
-                <div>{{editedValue[0] ? "Yes" : "No"}}</div>
+                <div style="padding: 0 0.75rem">{{editedValue[0]==="true" ? "Yes" : "No"}}</div>
               </div>
             </div>
-            <div v-else-if="isQuery()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
+            <div v-else-if="isQuery()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'" style="padding: 0 0.75rem">
               <span v-for="box in getFirstLevelCriteria(editedValue[1])"
                     class="btn btn-primary dktk-darkblue"
                     style="margin-right: 2%; margin-bottom: 0.5%;">
@@ -621,10 +633,10 @@ export default class ProjectFieldRow extends Vue {
                   :disabled="(!isDraft() || isSummaryStep()) && !editMode"
                 ></textarea>
               </div>
-              <!--<lens-query-explain-button
-                  noQueryMessage="Leere Suchanfrage: Sucht nach allen Ergebnissen."
-                  queryItem={}
-              ></lens-query-explain-button>-->
+              <lens-query-explain-button
+                  noQueryMessage="Empty Search."
+                  :queryItem="getQueryDetails()"
+              ></lens-query-explain-button>
             </div>
 
             <div v-else-if="isDescription() || isCohortDefinition() || isComments()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
@@ -648,7 +660,7 @@ export default class ProjectFieldRow extends Vue {
                             :file-name="fieldValue[1]" :toggle-input="true"/>
             </div>
 
-            <div v-else-if="isBridgeheads()" style="width: 75%">
+            <div v-else-if="isBridgeheads()" style="width: 75%;padding: 0 0.75rem">
                     <span v-if="editingBridgeheads && editingBridgeheads.length > 0">
                       <span v-for="(bridgehead, index) in editingBridgeheads" :key="index" class="btn btn-primary dktk-darkblue"
                             style="margin-right: 2%; margin-bottom: 0.5%;">
@@ -702,7 +714,7 @@ export default class ProjectFieldRow extends Vue {
                   <!--<span style="font-size: smaller"> {{displayPossibleValue(value).description}}</span>-->
                 </option>
               </select>
-              <div v-if="(!isDraft() || isSummaryStep()) && !editMode">
+              <div v-if="(!isDraft() || isSummaryStep()) && !editMode" style="padding: 0 0.75rem">
                 <div>{{displayPossibleValue(editedValue[0]).name}}</div>
                 <div style="font-size: small">{{displayPossibleValue(editedValue[0]).description}}</div>
               </div>
@@ -736,7 +748,7 @@ export default class ProjectFieldRow extends Vue {
   text-overflow: ellipsis;
   max-width: calc(15 * 1ch); /* 1ch is the width of one character */
 }
-
+/*noinspection CssUnusedSymbol*/
 .truncate-60 {
   white-space: nowrap;
   overflow: hidden;
@@ -751,6 +763,7 @@ export default class ProjectFieldRow extends Vue {
   align-items: center;
   width: 100%;
 }
+/*noinspection CssUnusedSymbol*/
 .query-edit-field.sidewise {
   width: 70%;
 }
@@ -762,6 +775,7 @@ export default class ProjectFieldRow extends Vue {
   align-items: center;
   width: 100%;
 }
+/*noinspection CssUnusedSymbol*/
 .description-edit-field.sidewise {
   width: 70%;
 }
@@ -771,6 +785,7 @@ export default class ProjectFieldRow extends Vue {
   flex-flow: row;
   width: 100%;
 }
+/*noinspection CssUnusedSymbol*/
 .bridgeheads-edit-field.sidewise {
   width: 70%;
 }
@@ -779,6 +794,7 @@ export default class ProjectFieldRow extends Vue {
   display: flex;
   width: 100%;
 }
+/*noinspection CssUnusedSymbol*/
 .environment-variables-edit-field.sidewise {
   width: 70%;
 }
@@ -789,6 +805,7 @@ export default class ProjectFieldRow extends Vue {
   align-items: center;
   width: 100%;
 }
+/*noinspection CssUnusedSymbol*/
 .selection-edit-fields.sidewise {
   width: 70%;
 }
@@ -806,6 +823,7 @@ export default class ProjectFieldRow extends Vue {
   align-items: center;
   width: 100%;
 }
+/*noinspection CssUnusedSymbol*/
 .other-edit-fields.sidewise {
   width: 70%;
 }
@@ -849,10 +867,6 @@ export default class ProjectFieldRow extends Vue {
   font-size: 9pt;
 }
 
-.clickable {
-  cursor: pointer;
-}
-
 .config-box {
   /*width: fit-content;
   /*text-align: center;*/
@@ -865,8 +879,8 @@ export default class ProjectFieldRow extends Vue {
 
 .config-box.active, .config-box:hover {
   box-shadow: 0 2px 1px -1px rgba(149, 200, 220, 0.8),
-  0 0px 1px 0 rgba(149, 200, 220, 0.5),
-  0 0px 3px 0 rgba(149, 200, 220, 0.3);
+  0 0 1px 0 rgba(149, 200, 220, 0.5),
+  0 0 3px 0 rgba(149, 200, 220, 0.3);
 }
 
 .config-box-header {
@@ -916,10 +930,7 @@ export default class ProjectFieldRow extends Vue {
   color: black;
   width: 100%;
 }
-.config-header {
-  margin: 0 0 20px 10px;
 
-}
 .field-description {
   font-size: small;
   font-weight: normal;

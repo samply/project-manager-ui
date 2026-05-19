@@ -423,7 +423,7 @@
                           :is-file="false"/>
           </div>
         </div>
-        <div class="documents" v-if="currentMenuStep==='Documents'">
+        <div class="documents data-container mt-12" v-if="currentMenuStep==='Documents'">
           <div class="box-header"><span>Documents</span></div>
           <div style="padding: 2%">
             <DownloadFormTemplatePdfButtons :form-templates="formTemplates" :context="context"
@@ -1511,7 +1511,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Query",
-          fieldValue: [this.project?.humanReadable ? this.project?.humanReadable : "", this.project?.query ? this.project?.query : ""],
+          fieldValue: [this.project?.humanReadable ? this.project?.humanReadable : "", this.project?.query ? this.project?.query : "", this.project?.queryDetails ? this.project?.queryDetails : ""],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
           isEditable: true,
           editMode: this.editMode,
@@ -1914,7 +1914,6 @@ export default defineComponent({
 }
 
 .data-container.non-draft {
-  border-radius: 10px;
   /*box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);*/
   margin: 0;
   padding: 0 4% 0 5%;
@@ -1943,7 +1942,7 @@ export default defineComponent({
   box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
   0 1px 1px 0 rgba(0, 0, 0, 0.14),
   0 1px 3px 0 rgba(0, 0, 0, 0.12);*/
-
+  padding: 0 4% 0 5%;
   margin-bottom: 1.5%;
 }
 

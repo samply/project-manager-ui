@@ -48,6 +48,7 @@
                 <table class="table table-bordered table-overview">
                   <thead>
                   <tr>
+                    <th class="status-table-header" scope="col">Title</th>
                     <th class="status-table-header" scope="col">Request ID</th>
                     <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
                         scope="col">
@@ -86,13 +87,14 @@
                     </th>
                     <th class="status-table-header" scope="col">Applicant</th>
                     <th class="status-table-header" scope="col">Created at</th>
-                    <th class="status-table-header" scope="col">Expires at</th>
-                    <th class="status-table-header" scope="col">Last modified</th>
                   </tr>
                   </thead>
                   <tbody>
                   <tr>
                     <td class="clickable" @click="currentMenuStep='Request'">
+                      {{ project ? project.label : '' }}
+                    </td>
+                    <td>
                       {{ project ? project.code : '' }}
                     </td>
                     <td v-if="visibleBridgeheads?.length == 1">
@@ -168,14 +170,6 @@
                     </td>
                     <td>{{
                         project && project.createdAt ? convertDate(project.createdAt) : ''
-                      }}
-                    </td>
-                    <td>{{
-                        project && project.expiresAt ? convertDate(project.expiresAt) : ''
-                      }}
-                    </td>
-                    <td>{{
-                        project && project.modifiedAt ? convertDate(project.modifiedAt) : ''
                       }}
                     </td>
                   </tr>

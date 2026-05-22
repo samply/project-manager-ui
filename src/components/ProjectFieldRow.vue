@@ -20,7 +20,7 @@ import type {BridgeheadsProjectField} from "@/services/utils";
 import {ActionFunction, Section} from "@/services/utils";
 import {PropType, watch} from "vue";
 import "@samply/lens";
-import {QueryItem} from "@samply/lens";
+import {QueryItem,setQueryStore} from "@samply/lens";
 
 @Options({
   name: "ProjectFieldRow",
@@ -187,7 +187,10 @@ export default class ProjectFieldRow extends Vue {
     this.possibleValues?.forEach(() => {
       this.showDetails.push(false);
     });
-    console.log(this.fieldKey,' ',this.getQueryDetails())
+
+    if(this.isQuery()) {
+      setQueryStore(this.getQueryDetails())
+    }
   }
 
 
@@ -422,10 +425,10 @@ export default class ProjectFieldRow extends Vue {
     return 'other-edit-fields' + sidewise;
   }
 
-  getQueryDetails(): QueryItem {
+  getQueryDetails(): QueryItem[][] {
     if (this.editedValue[2]) {
-      return JSON.parse(atob(this.editedValue[2])) as QueryItem}
-    return {id: "", key: "", name: "", type: "", values: []}
+      return JSON.parse(atob(this.editedValue[2])) as QueryItem[][]}
+    return [[{id: "", key: "", name: "", type: "", values: []}]]
   }
 
   onBooleanValueChange(_event: Event) {
@@ -452,6 +455,8 @@ export default class ProjectFieldRow extends Vue {
       const query = JSON.parse(atob(queryBase64))
       if (query?.lang === "ast") {
         const payload = JSON.parse(atob(query.payload))
+        console.log(payload.ast?.children[0]?.children)
+        console.log(this.getQueryDetails())
         return payload.ast?.children[0]?.children;
       }
     }
@@ -478,6 +483,10 @@ export default class ProjectFieldRow extends Vue {
       label = criteria?.children[0]?.key
     }
     return label
+  }
+
+  getCriterium(crit: any): QueryItem | undefined {
+    return this.getQueryDetails()[0].find((element) => element.key === crit.key)
   }
 }
 
@@ -596,11 +605,26 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else-if="isQuery()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'" style="padding: 0 0.75rem">
-              <span v-for="box in getFirstLevelCriteria(editedValue[1])"
-                    class="btn btn-primary dktk-darkblue"
-                    style="margin-right: 2%; margin-bottom: 0.5%;">
-                {{getCriteriaDetails(box)}}
-              </span>
+              <div style="display: flex;flex-direction: row">
+                <div>
+                  <span v-for="box in getFirstLevelCriteria(editedValue[1])"
+                      class="btn btn-primary dktk-darkblue"
+                      style="margin-right: 2%; margin-bottom: 0.5%;width:max-content">
+                    {{getCriteriaDetails(box)}}
+                    <!--<lens-query-explain-button
+                        v-if="editedValue[2]"
+                        noQueryMessage="Empty Search."
+                        :queryItemKey="getCriterium(box)?.key"
+                        :queryItemName="getCriterium(box)?.name"
+                        :queryItemValue="getCriterium(box)?.values"
+                    ></lens-query-explain-button>-->
+                  </span>
+                </div>
+                <lens-query-explain-button
+                    v-if="editedValue[2]"
+                    noQueryMessage="Empty Search."
+                ></lens-query-explain-button>
+              </div>
               <br/>
               <br/>
               <div style="display: flex; justify-content: space-between">
@@ -633,10 +657,6 @@ export default class ProjectFieldRow extends Vue {
                   :disabled="(!isDraft() || isSummaryStep()) && !editMode"
                 ></textarea>
               </div>
-              <lens-query-explain-button
-                  noQueryMessage="Empty Search."
-                  :queryItem="getQueryDetails()"
-              ></lens-query-explain-button>
             </div>
 
             <div v-else-if="isDescription() || isCohortDefinition() || isComments()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
@@ -1160,5 +1180,13 @@ export default class ProjectFieldRow extends Vue {
 
   /* Place on top of each other */
   grid-area: 1 / 1 / 2 / 2;
+}
+lens-query-explain-button::part(lens-info-button-dialogue) {
+  border: 1px solid grey;
+  padding: 8px;
+  background-color: white;
+}
+lens-query-explain-button::part(lens-query-explain-button) {
+  padding: 8px;
 }
 </style>

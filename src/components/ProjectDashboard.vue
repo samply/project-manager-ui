@@ -35,7 +35,9 @@
           </thead>
           <tbody>
           <tr v-for="(project, index) in projects" :key="index">
-            <td><router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }" class="label-link">{{ project.label }}</router-link></td>
+            <td><router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }" class="label-link" :class="{ 'label-placeholder': project?.label?.length === 0 }">{{
+                project?.label?.length > 0 ? project.label : "open project"
+              }}</router-link></td>
             <td>{{ project.code }}</td>
             <td>
               <UserAndEmail
@@ -365,5 +367,8 @@ th {
 }
 .filter-box select {
   margin-right:2%
+}
+.label-placeholder {
+  font-style: italic;
 }
 </style>

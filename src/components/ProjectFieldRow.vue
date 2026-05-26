@@ -455,8 +455,6 @@ export default class ProjectFieldRow extends Vue {
       const query = JSON.parse(atob(queryBase64))
       if (query?.lang === "ast") {
         const payload = JSON.parse(atob(query.payload))
-        console.log(payload.ast?.children[0]?.children)
-        console.log(this.getQueryDetails())
         return payload.ast?.children[0]?.children;
       }
     }
@@ -480,7 +478,12 @@ export default class ProjectFieldRow extends Vue {
       })
     }
     else {
-      label = criteria?.children[0]?.key
+      criteria.children.forEach((child: any, index: number) => {
+        label += child?.key
+        if(index < criteria?.children?.length - 1) {
+          label += ", "
+        }
+      })
     }
     return label
   }
@@ -605,8 +608,7 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else-if="isQuery()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'" style="padding: 0 0.75rem">
-              <div style="display: flex;flex-direction: row">
-                <div>
+              <div style="display: flex;flex-wrap: wrap">
                   <span v-for="box in getFirstLevelCriteria(editedValue[1])"
                       class="btn btn-primary dktk-darkblue"
                       style="margin-right: 2%; margin-bottom: 0.5%;width:max-content">
@@ -619,11 +621,10 @@ export default class ProjectFieldRow extends Vue {
                         :queryItemValue="getCriterium(box)?.values"
                     ></lens-query-explain-button>-->
                   </span>
-                </div>
-                <lens-query-explain-button
-                    v-if="editedValue[2]"
-                    noQueryMessage="Empty Search."
-                ></lens-query-explain-button>
+                  <lens-query-explain-button
+                      v-if="editedValue[2]"
+                      noQueryMessage="Empty Search."
+                  ></lens-query-explain-button>
               </div>
               <br/>
               <br/>

@@ -289,7 +289,7 @@
               </div>
 
               <br/>
-              <div class="table table-bordered custom-table table-hover" style="overflow-y: auto">
+              <div id="draft-dialog-box" class="table table-bordered custom-table table-hover" style="overflow-y: auto">
                 <div v-if="existsDraftDialog" class="project-field-header">
                   <div class="project-field-title">{{
                       draftDialogStepper.currentStep?.displayName
@@ -721,6 +721,11 @@ export default defineComponent({
     },
     'draftDialogStepper.currentStep': function () {
       this.extendedExplanations = this.fetchExtendedExplanations();
+
+      const scrollBox=document.getElementById("draft-dialog-box")
+
+      if(!scrollBox) return
+      scrollBox.scrollTop = 0
     },
     existsScript() {
       this.extendedExplanations = this.fetchExtendedExplanations();

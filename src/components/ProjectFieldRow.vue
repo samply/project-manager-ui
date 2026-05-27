@@ -608,6 +608,10 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else-if="isQuery()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'" style="padding: 0 0.75rem">
+              <lens-search-bar
+                  placeholderText=""
+              />
+              <br/>
               <div style="display: flex;flex-wrap: wrap">
                   <span v-for="box in getFirstLevelCriteria(editedValue[1])"
                       class="btn btn-primary dktk-darkblue"
@@ -1182,12 +1186,43 @@ export default class ProjectFieldRow extends Vue {
   /* Place on top of each other */
   grid-area: 1 / 1 / 2 / 2;
 }
-lens-query-explain-button::part(lens-info-button-dialogue) {
+lens-query-explain-button::part(lens-info-button-dialogue),
+lens-search-bar::part(lens-info-button-dialogue)
+{
   border: 1px solid grey;
+  border-radius: 5px;
   padding: 8px;
   background-color: white;
+  color: black;
 }
 lens-query-explain-button::part(lens-query-explain-button) {
   padding: 8px;
+}
+
+lens-search-bar::part(lens-searchbar) {
+  border: solid 1px lightgray;
+  border-radius: 5px;
+  padding: 5px 10px;
+}
+lens-search-bar::part(lens-searchbar-input) {
+  padding: 10px;
+}
+lens-search-bar::part(lens-searchbar-chips) {
+  gap: 10px;
+  padding-right: 10px;
+}
+lens-search-bar::part(lens-searchbar-chip) {
+  background-color: #00529c;
+  color: white;
+  border-radius: 5px;
+  padding: 5px 20px 5px 10px;
+  gap: 10px;
+}
+lens-search-bar::part(lens-searchbar-chip-item) {
+  gap: 5px;
+}
+lens-search-bar::part(lens-info-button) {
+  color: white;
+  margin-left: 5px;
 }
 </style>

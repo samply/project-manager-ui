@@ -85,6 +85,10 @@
                         scope="col">
                       {{ BridgeheadOverviewHeader.APPLICANT_RESULTS_ACCEPTANCE }}
                     </th>
+                    <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
+                        scope="col">
+                      {{ BridgeheadOverviewHeader.REPORT_OR_PUBLICATION }}
+                    </th>
                     <th class="status-table-header" scope="col">Applicant</th>
                     <th class="status-table-header" scope="col">Created at</th>
                   </tr>
@@ -162,6 +166,24 @@
                            data-toggle="tooltip"
                            data-placement="top" :title="creatorAcceptance ?? undefined"></div>
                     </td>
+                    <td v-if="visibleBridgeheads?.length == 1">
+                      <div>
+                        <div v-if="existsFinalReport || existsPublication" class="states-circle-container">
+                          <div class="state_circle green"></div>
+                          <DownloadButton
+                              :context="context"
+                              :project-manager-backend-service="projectManagerBackendService"
+                              icon-class="bi bi-download"
+                              button-class="download-button"
+                              :module="Module.PROJECT_DOCUMENTS_MODULE"
+                              :action="(existsPublication) ? Action.DOWNLOAD_PUBLICATION_ACTION : Action.DOWNLOAD_FINAL_REPORT_ACTION"
+                          />
+                        </div>
+                        <div v-else class="states-circle-container">
+                          <div class="state_circle created"/>
+                        </div>
+                      </div>
+                    </td>
                     <td style="display:flex;">
                       <UserAndEmail
                           :first-name="project?.creatorName"
@@ -182,6 +204,8 @@
                                     :context="context"
                                     :project="project"
                                     :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
+                                    :exists-publication="existsPublication"
+                                    :existsFinalReport="existsFinalReport"
                                     :bridgeheads="visibleBridgeheads"
                                     :activeBridgehead="activeBridgehead"/>
               </div>
@@ -422,6 +446,29 @@
                           text="Upload publication URL" :call-refresh-context="refreshContext"
                           :is-file="false"/>
           </div>
+          <div class="box-header">Final Reports</div>
+          <div style="padding: 2%">
+            <DocumentsTable :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :download-action="Action.DOWNLOAD_FINAL_REPORT_ACTION"
+                            :fetch-list-action="Action.FETCH_FINAL_REPORTS_ACTION"
+                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download"
+                            text="Final Reports: "/>
+            <br/>
+            <UploadButton :context="context"
+                          :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE"
+                          :upload-action="Action.UPLOAD_FINAL_REPORT_ACTION"
+                          text="Upload final report" :call-refresh-context="refreshContext"
+                          :is-file="true"/>
+            <br/>
+            <UploadButton :context="context"
+                          :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE"
+                          :upload-action="Action.ADD_FINAL_REPORT_URL_ACTION"
+                          text="Upload final report URL" :call-refresh-context="refreshContext"
+                          :is-file="false"/>
+          </div>
         </div>
         <div class="documents data-container mt-12" v-if="currentMenuStep==='Documents'" style="padding: 0 4% 0 5%">
           <div class="box-header"><span>Documents</span></div>
@@ -572,12 +619,7 @@ import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
-import {
-  DialogStep,
-  DialogStepper,
-  FixedDialogStep,
-  FixedDialogSteps
-} from "@/services/fixedDialogStep";
+import {DialogStep, DialogStepper, FixedDialogStep, FixedDialogSteps} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
@@ -657,6 +699,7 @@ export default defineComponent({
       notifications: [] as Notification[],
       showNotification: false,
       existsPublication: false,
+      existsFinalReport: false,
       showExplanations: true,
       showRightPanel: false,
       existsVotum: false,
@@ -722,9 +765,9 @@ export default defineComponent({
     'draftDialogStepper.currentStep': function () {
       this.extendedExplanations = this.fetchExtendedExplanations();
 
-      const scrollBox=document.getElementById("draft-dialog-box")
+      const scrollBox = document.getElementById("draft-dialog-box")
 
-      if(!scrollBox) return
+      if (!scrollBox) return
       scrollBox.scrollTop = 0
     },
     existsScript() {
@@ -829,8 +872,8 @@ export default defineComponent({
 
       // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
       const mandatoryFormFieldsValid = this.formFields
-      ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && this.selectedForms.some(ft => ft.title === field.title))
-      .every(field => field.value != null && field.value !== '');
+          ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && this.selectedForms.some(ft => ft.title === field.title))
+          .every(field => field.value != null && field.value !== '');
 
       return baseFieldsValid && mandatoryFormFieldsValid;
     },
@@ -862,15 +905,15 @@ export default defineComponent({
         // 👇 group missing mandatory form fields
         // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
         this.groupedMissingFields = this.formFields
-        ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && !field.value && this.selectedForms.some(ft => ft.title === field.title))
-        .reduce((acc, field) => {
-          const title = field.titleDisplayName ?? field.title;
-          const label = field.labelDisplayName ?? field.label;
+            ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && !field.value && this.selectedForms.some(ft => ft.title === field.title))
+            .reduce((acc, field) => {
+              const title = field.titleDisplayName ?? field.title;
+              const label = field.labelDisplayName ?? field.label;
 
-          if (!acc[title]) acc[title] = [];
-          acc[title].push(label);
-          return acc;
-        }, {} as Record<string, string[]>);
+              if (!acc[title]) acc[title] = [];
+              acc[title].push(label);
+              return acc;
+            }, {} as Record<string, string[]>);
 
         // Create blocks for each title
         const blocks = Object.entries(this.groupedMissingFields ?? {}).map(
@@ -917,6 +960,7 @@ export default defineComponent({
           this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads'),
           this.initializeData(Module.USER_MODULE, Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION, new Map(), 'existsResearchEnvironmentWorkspace'),
           this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_PUBLICATION_ACTION, new Map(), 'existsPublication'),
+          this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_FINAL_REPORT_ACTION, new Map(), 'existsFinalReport'),
           this.initializeData(Module.USER_MODULE, Action.FETCH_RESEARCH_ENVIRONMENT_URL_ACTION, new Map(), 'researchEnvironmentUrl'),
           this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, new Map(), 'currentUsers'),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_DESCRIPTION_ACTION, new Map(), async (result: boolean) => {
@@ -1108,11 +1152,11 @@ export default defineComponent({
               resolve();
             }
         )
-        .then(() => {
-          // IMPORTANT: this runs even if condition === false
-          resolve();
-        })
-        .catch(reject);
+            .then(() => {
+              // IMPORTANT: this runs even if condition === false
+              resolve();
+            })
+            .catch(reject);
       });
     },
 
@@ -1320,8 +1364,8 @@ export default defineComponent({
       }
       if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) && this.activeBridgehead?.executions) {
         const pendingTypes = this.activeBridgehead.executions
-        .filter(exec => ![QueryState.CREATED, QueryState.FINISHED, QueryState.ERROR].includes(exec.queryState))
-        .map(exec => exec.projectType);
+            .filter(exec => ![QueryState.CREATED, QueryState.FINISHED, QueryState.ERROR].includes(exec.queryState))
+            .map(exec => exec.projectType);
 
         if (pendingTypes.length) {
           extendedExplanations.set(count.toString(), {

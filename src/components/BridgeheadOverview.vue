@@ -45,6 +45,13 @@
           / {{ getCreatorStatus()[1] }}
           <div class="exist-small red"></div>
         </td>
+        <td v-else-if="header === Header.REPORT_OR_PUBLICATION"
+            class="header-summary-cell status-cell">
+          {{ getCreatorStatus()[0] }}
+          <div class="exist-small green"></div>
+          / {{ getCreatorStatus()[1] }}
+          <div class="exist-small red"></div>
+        </td>
         <!-- Data for each bridgehead in subsequent columns -->
         <td
             v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(scrollIndex, scrollIndex + numberBridgeheadShown)"
@@ -119,8 +126,27 @@
             </div>
             <div v-else></div>
           </div>
+          <div v-else-if="header === Header.REPORT_OR_PUBLICATION">
+            <div v-if="existsFinalReport || existsPublication"
+                 class="states-circle-container">
+              <div class="state_circle green"></div>
+              <DownloadButton
+                  :context="fetchContext(bridgehead)"
+                  :project-manager-backend-service="projectManagerBackendService"
+                  icon-class="bi bi-download"
+                  button-class="download-button no-y-padding"
+                  :module="Module.PROJECT_DOCUMENTS_MODULE"
+                  :action="(existsPublication) ? Action.DOWNLOAD_PUBLICATION_ACTION : Action.DOWNLOAD_FINAL_REPORT_ACTION"
+              />
+            </div>
+            <div v-else class="states-circle-container">
+              <div class="state_circle created"></div>
+            </div>
+          </div>
+
 
         </td>
+
 
       </tr>
       </tbody>
@@ -184,6 +210,14 @@ import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
       type: Boolean,
       required: true
     },
+    existsPublication: {
+      type: Boolean,
+      required: true
+    },
+    existsFinalReport: {
+      type: Boolean,
+      required: true
+    },
     callUpdateActiveBridgehead: {
       type: Function as PropType<(param: Bridgehead) => void>,
       required: true
@@ -198,6 +232,8 @@ export default class BridgeheadOverview extends Vue {
   readonly bridgeheads!: Bridgehead[];
   readonly project?: Project;
   readonly existsVotumForAllBridgeheads!: boolean;
+  readonly existsFinalReport!: boolean;
+  readonly existsPublication!: boolean;
   readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
 
   Module = Module;

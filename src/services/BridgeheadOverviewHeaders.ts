@@ -5,7 +5,8 @@ export enum BridgeheadOverviewHeader {
   VOTUM = 'Ethic vote',
   TEILER = 'Data export authorised',
   USER_ACCESS = 'Data accessible',
-  APPLICANT_RESULTS_ACCEPTANCE = 'Data received and accepted'
+  APPLICANT_RESULTS_ACCEPTANCE = 'Data received and accepted',
+  REPORT_OR_PUBLICATION = 'Report or publication',
 }
 
 export class MultiHeader {

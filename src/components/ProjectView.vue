@@ -284,7 +284,7 @@
                     <div class="vertical-stepper2">
                       <div v-for="(step, index) in draftDialogStepper.currentSteps" :key="index"
                            class="stepper-step2"
-                           :class="{ 'active': draftDialogStepper.currentStep === step, 'missing-fields': hasMissingFieldsInStep(step.displayName) }"
+                           :class="{ 'active': draftDialogStepper.currentStep === step, 'missing-fields': hasMissingFieldsInStep(step.displayName) && (draftDialogStepper.currentStep !== step || draftDialogStepper.visitedSteps.size > 1) }"
                       >
                         <div>
                           <div class="step-circle" style="background-color: #fa7b26"

@@ -20,7 +20,7 @@ import type {BridgeheadsProjectField} from "@/services/utils";
 import {ActionFunction, Section} from "@/services/utils";
 import {PropType, watch} from "vue";
 import "@samply/lens";
-import {QueryItem,setQueryStore} from "@samply/lens";
+import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
 
 @Options({
   name: "ProjectFieldRow",
@@ -189,6 +189,7 @@ export default class ProjectFieldRow extends Vue {
     });
 
     if(this.isQuery()) {
+      setOptions({autoUpdateQueryInUrl:false})
       setQueryStore(this.getQueryDetails())
     }
   }
@@ -1215,8 +1216,9 @@ lens-search-bar::part(lens-searchbar-chip) {
   background-color: #00529c;
   color: white;
   border-radius: 5px;
-  padding: 5px 20px 5px 10px;
+  padding: 5px 10px;
   gap: 10px;
+  user-select: none;
 }
 lens-search-bar::part(lens-searchbar-chip-item) {
   gap: 5px;

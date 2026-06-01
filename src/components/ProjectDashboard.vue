@@ -11,25 +11,32 @@
         </div>-->
 
       </div>
-      <div class="filter-box">
-        <select v-model="selectedState" class="form-select" @change="changeState()">
+      <div v-if="projectStates.length > 2 || applicants.length > 1 || bridgeheads.length > 1" class="filter-box">
+        <select v-if="projectStates.length > 2" v-model="selectedState" class="form-select" @change="changeState()">
           <option v-for="value in projectStates" :key="value" :value="value">{{ projectStateLabel[value] }}</option>
         </select>
-        <select v-model="selectedApplicant" class="form-select" @change="changeApplicant()">
-          <option v-for="value in applicants" :key="value" :value="value">{{ value }}</option>
+        <select v-if="applicants.length > 1" v-model="selectedApplicant" class="form-select" @change="changeApplicant()">
+          <option value="">All Applicants</option>
+          <option v-for="applicant in applicants" :key="applicant.email" :value="applicant.email">
+            {{ applicantLabel(applicant) }}
+          </option>
+        </select>
+        <select v-if="bridgeheads.length > 1" v-model="selectedBridgehead" class="form-select" @change="changeBridgehead()">
+          <option value="">All Sites</option>
+          <option v-for="bridgehead in bridgeheads" :key="bridgehead.bridgehead" :value="bridgehead.bridgehead">
+            {{ bridgehead.humanReadable || bridgehead.bridgehead }}
+          </option>
         </select>
       </div>
       <div class="table-box">
         <table class="table table-bordered table-striped table-hover">
           <thead>
           <tr>
-            <th scope="col">Title</th>
-            <th scope="col">Request ID</th>
-            <th scope="col">Applicant</th>
-            <th scope="col">Created on</th>
-            <th scope="col" style="display: flex;justify-content: space-between;align-items: baseline">
-              <span>Status</span><span class="filter">
-              </span>
+            <th scope="col" @click="toggleSort(ProjectSortField.TITLE)">Title <span v-if="sortBy === ProjectSortField.TITLE">{{ sortIcon(ProjectSortField.TITLE) }}</span></th>
+            <th scope="col" @click="toggleSort(ProjectSortField.REQUEST_ID)">Request ID <span v-if="sortBy === ProjectSortField.REQUEST_ID">{{ sortIcon(ProjectSortField.REQUEST_ID) }}</span></th>
+            <th scope="col" @click="toggleSort(ProjectSortField.PROJECT_CREATOR)">Applicant <span v-if="sortBy === ProjectSortField.PROJECT_CREATOR">{{ sortIcon(ProjectSortField.PROJECT_CREATOR) }}</span></th>
+            <th scope="col" @click="toggleSort(ProjectSortField.CREATED)">Created on <span v-if="sortBy === ProjectSortField.CREATED">{{ sortIcon(ProjectSortField.CREATED) }}</span></th>
+            <th scope="col" @click="toggleSort(ProjectSortField.STATUS)">Phase <span v-if="sortBy === ProjectSortField.STATUS">{{ sortIcon(ProjectSortField.STATUS) }}</span>
             </th>
           </tr>
           </thead>
@@ -79,19 +86,22 @@
 import {defineComponent} from 'vue';
 import {
   Action,
+  Bridgehead,
   Module,
   Project,
   ProjectManagerBackendService,
   ProjectManagerContext,
+  ProjectSortField,
   ProjectState,
-  Site
+  Site,
+  User
 } from "@/services/projectManagerBackendService";
 import NotificationBox from "@/components/Notification.vue";
 import {format} from "date-fns";
 import UserAndEmail from "@/components/UserAndEmail.vue";
 
 const ProjectStateLabel: Record<ProjectState, string> = {
-  ALL:"All Projects",
+  ALL:"All Phases",
   APPROVAL: "Approval",
   ARCHIVED: "Archived",
   DEVELOP: "Develop",
@@ -105,7 +115,7 @@ const ProjectStateLabel: Record<ProjectState, string> = {
 export default defineComponent({
   computed: {
     projectStates(): ProjectState[] {
-      return Object.values(ProjectState)
+      return [ProjectState.ALL, ...this.availableProjectStates]
     },
 
     projectStateLabel(): Record<ProjectState, string> {
@@ -116,6 +126,7 @@ export default defineComponent({
 
   data() {
     return {
+      ProjectSortField,
       site: Site.PROJECT_DASHBOARD_SITE,
       context: new ProjectManagerContext(undefined, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.PROJECT_DASHBOARD_SITE),
@@ -125,14 +136,20 @@ export default defineComponent({
       currentPage: 1,
       totalPages: 1,
       selectedState: ProjectState.ALL,
+      availableProjectStates: [] as ProjectState[],
       isProjectManagerAdmin: false,
-      applicants: [] as (string | undefined)[],
-      selectedApplicant: "All Applicants"
+      applicants: [] as User[],
+      bridgeheads: [] as Bridgehead[],
+      selectedApplicant: "",
+      selectedBridgehead: "",
+      sortBy: ProjectSortField.CREATED,
+      sortDesc: true
     };
   },
   watch: {
     context(newValue, _oldValue) {
-      this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
+      this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_DASHBOARD_SITE);
+      this.fetchFilterOptions();
       this.fetchProjects();
       this.fetchIfIsProjectManagerAdmin();
     },
@@ -142,19 +159,41 @@ export default defineComponent({
       }
     }
   },
-  mounted() {
-    this.fetchProjects();
-    this.fetchProjectStates();
+  async mounted() {
+    await this.initializeCurrentData();
   },
   methods: {
     toggleNotification() {
       this.showNotification = !this.showNotification;
     },
     changeState() {
+      this.currentPage = 1;
       this.fetchProjects()
     },
     changeApplicant() {
+      this.currentPage = 1;
       this.fetchProjects()
+    },
+    changeBridgehead() {
+      this.currentPage = 1;
+      this.fetchProjects()
+    },
+    toggleSort(sortBy: ProjectSortField) {
+      if (this.sortBy === sortBy) this.sortDesc = !this.sortDesc;
+      else {
+        this.sortBy = sortBy;
+        this.sortDesc = false;
+      }
+      this.currentPage = 1;
+      this.fetchProjects();
+    },
+    sortIcon(sortBy: ProjectSortField) {
+      return this.sortBy === sortBy ? (this.sortDesc ? '▼' : '▲') : '';
+    },
+
+    applicantLabel(applicant: User) {
+      const name = [applicant.firstName, applicant.lastName].filter(Boolean).join(' ');
+      return name ? `${name} (${applicant.email})` : applicant.email;
     },
 
     convertDate(date: Date) {
@@ -169,8 +208,16 @@ export default defineComponent({
         if (this.selectedState !== ProjectState.ALL) {
           params.set('project-state', this.selectedState)
         }
+        if (this.selectedApplicant) {
+          params.set('project-creator', this.selectedApplicant)
+        }
+        if (this.selectedBridgehead) {
+          params.set('bridgehead', this.selectedBridgehead)
+        }
         params.set('page', (this.currentPage - 1).toString());
         params.set('page-size', '10');
+        params.set('sort-by', this.sortBy);
+        params.set('sort-desc', this.sortDesc.toString());
         params.set('site', Site.PROJECT_DASHBOARD_SITE);
         this.projectManagerBackendService.fetchData(
             Module.PROJECTS_MODULE,
@@ -180,10 +227,6 @@ export default defineComponent({
         ).then(projects => {
           this.projects = projects.content;
           this.totalPages = projects.totalPages === 0 ? 1 : projects.totalPages;
-          this.getProjectApplicants()
-          if(this.selectedApplicant !== "All Applicants") {
-            this.projects = this.projects.filter((project) => project.creatorName === this.selectedApplicant)
-          }
         });
       } catch (error) {
         console.error('Error loading projects:', error);
@@ -220,23 +263,50 @@ export default defineComponent({
     },
     async fetchProjectStates() {
       try {
-        await this.projectManagerBackendService.fetchData(
+        const states = await this.projectManagerBackendService.fetchData(
             Module.PROJECTS_MODULE,
-            Action.FETCH_PROJECT_STATES_ACTION,
+            Action.FETCH_VISIBLE_PROJECT_STATES_ACTION,
             this.context,
             new Map()
-        )
+        );
+        this.availableProjectStates = Array.isArray(states) ? states : [];
+        if (!this.availableProjectStates.includes(this.selectedState)) {
+          this.selectedState = ProjectState.ALL;
+        }
       } catch (error) {
         console.error('Error loading notifications:', error);
         throw error;
       }
     },
-    getProjectApplicants() {
-      this.applicants = ["All Applicants",...new Set(
-          this.projects
-              .map(project => project.creatorName)
-              .filter(Boolean)
-      )];
+    async initializeCurrentData() {
+      await Promise.all([this.fetchProjectStates(), this.fetchFilterOptions()]);
+      await this.fetchProjects();
+    },
+    async fetchFilterOptions() {
+      const [applicants, bridgeheads] = await Promise.all([
+        this.projectManagerBackendService.fetchData(
+            Module.PROJECTS_MODULE,
+            Action.FETCH_PROJECT_CREATORS_ACTION,
+            this.context,
+            new Map()
+        ).catch(error => {
+          console.error('Error loading project creators:', error);
+          return [];
+        }),
+        this.projectManagerBackendService.fetchData(
+            Module.PROJECTS_MODULE,
+              Action.FETCH_VISIBLE_BRIDGEHEADS_ACTION,
+            this.context,
+            new Map()
+        ).catch(error => {
+          console.error('Error loading project sites:', error);
+          return [];
+        })
+      ]);
+      this.applicants = Array.isArray(applicants) ? applicants : [];
+      this.bridgeheads = Array.isArray(bridgeheads) ? bridgeheads : [];
+      if (this.applicants.length <= 1) this.selectedApplicant = "";
+      if (this.bridgeheads.length <= 1) this.selectedBridgehead = "";
     },
     firstPage() {
       this.currentPage = 1;

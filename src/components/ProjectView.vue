@@ -1416,7 +1416,7 @@ export default defineComponent({
         const activeBridgeheadId = this.activeBridgehead?.bridgehead ?? this.context.bridgehead?.bridgehead;
         return await this.projectManagerBackendService.fetchData(
             Module.PROJECT_BRIDGEHEAD_MODULE,
-            Action.FETCH_VISIBLE_PROJECT_BRIDGEHEADS_ACTION,
+            Action.FETCH_VISIBLE_BRIDGEHEADS_ACTION,
             this.context,
             new Map()
         ).then((bridgeheads: Bridgehead[]) => {

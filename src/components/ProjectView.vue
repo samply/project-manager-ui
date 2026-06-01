@@ -29,9 +29,9 @@
               </div>
             </div>
           </div>
-          <div class="data-container mt-12" style="width:100%;padding:3% 4% 0 5%;height:auto">
+          <div class="data-container mt-12" style="width:100%;height:auto">
             <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'"
-                 class="info-container">
+                 class="info-container" style="margin:3% 4% 0 5%">
               <div class="box-header"><span>Status</span></div>
 
               <div style="padding: 2%">
@@ -188,7 +188,7 @@
             </div>
             <div
                 v-if="!(project?.state === ProjectState.DRAFT && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep==='Status'"
-                class="project-actions">
+                class="project-actions" style="margin:3% 4% 0 5%">
               <div class="box-header"><span>Actions</span></div>
               <div style="padding:2%">
                 <!-- Project State Module: Creator View -->
@@ -232,7 +232,7 @@
                 />
               </div>
             </div>
-            <div class="documents"
+            <div class="documents" style="margin:3% 4% 0 5%"
                  v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) && currentMenuStep === 'Status'">
               <div class="box-header"><span>Results</span></div>
               <div style="padding: 2%">
@@ -423,7 +423,7 @@
                           :is-file="false"/>
           </div>
         </div>
-        <div class="documents data-container mt-12" v-if="currentMenuStep==='Documents'" style="padding: 0 4% 0 5%">
+        <div class="documents data-container mt-12" v-if="currentMenuStep==='Documents'" style="padding: 3% 4% 0 5%">
           <div class="box-header"><span>Documents</span></div>
           <div style="padding: 2%">
             <DownloadFormTemplatePdfButtons :form-templates="formTemplates" :context="context"
@@ -1921,7 +1921,7 @@ export default defineComponent({
 .data-container.non-draft {
   /*box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);*/
   margin: 0;
-  padding: 0 4% 0 5%;
+  padding: 2% 4% 0 5%;
 }
 
 .vertical-stepper-box {
@@ -2014,7 +2014,8 @@ export default defineComponent({
 
 .table-responsive {
   overflow-x: auto;
-  padding: 0 2% 2% 2%;
+  overflow-y: hidden;
+  padding: 0 0 2% 2%;
 }
 
 .admin-view {

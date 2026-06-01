@@ -608,29 +608,24 @@ export default class ProjectFieldRow extends Vue {
                 <div style="padding: 0 0.75rem">{{editedValue[0]==="true" ? "Yes" : "No"}}</div>
               </div>
             </div>
-            <div v-else-if="isQuery()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'" style="padding: 0 0.75rem">
-              <lens-search-bar
-                  placeholderText=""
-              />
-              <br/>
+            <div v-else-if="isQuery()" style="width:100%;padding: 0 0.75rem">
+              <div  v-if="editedValue[2]" style="display: flex">
+                <lens-search-bar
+                    placeholderText=""
+                    readonly="true"
+                />
+                <lens-query-explain-button
+                    noQueryMessage="Empty Search."
+                ></lens-query-explain-button>
+              </div>
+              <!--<br/>
               <div style="display: flex;flex-wrap: wrap">
                   <span v-for="box in getFirstLevelCriteria(editedValue[1])"
                       class="btn btn-primary dktk-darkblue"
                       style="margin-right: 2%; margin-bottom: 0.5%;width:max-content">
                     {{getCriteriaDetails(box)}}
-                    <!--<lens-query-explain-button
-                        v-if="editedValue[2]"
-                        noQueryMessage="Empty Search."
-                        :queryItemKey="getCriterium(box)?.key"
-                        :queryItemName="getCriterium(box)?.name"
-                        :queryItemValue="getCriterium(box)?.values"
-                    ></lens-query-explain-button>-->
                   </span>
-                  <lens-query-explain-button
-                      v-if="editedValue[2]"
-                      noQueryMessage="Empty Search."
-                  ></lens-query-explain-button>
-              </div>
+              </div>-->
               <br/>
               <br/>
               <div style="display: flex; justify-content: space-between">
@@ -665,7 +660,7 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
 
-            <div v-else-if="isDescription() || isCohortDefinition() || isComments()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
+            <div v-else-if="isDescription() || isCohortDefinition() || isComments()" style="width:100%">
               <div class="grow-wrap" :data-replicated-value="editedValue[0]">
                 <textarea
                   type="text"
@@ -745,7 +740,7 @@ export default class ProjectFieldRow extends Vue {
                 <div style="font-size: small">{{displayPossibleValue(editedValue[0]).description}}</div>
               </div>
             </div>
-            <div v-else :style="{ width: !isDraft() || isSummaryStep() ? '100%' : '75%' }">
+            <div v-else style="width:100%">
               <input
                   :type="getInputType()"
                   v-model="editedValue[0]"

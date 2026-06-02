@@ -1119,7 +1119,7 @@ export default class ProjectFieldRow extends Vue {
  textarea.form-control {
    /*resize: both;*/
    /*height: 200px;*/
-
+  max-height: 300px;
  }
  .dktk-darkblue {
    background-color: #00529c!important;
@@ -1168,9 +1168,6 @@ export default class ProjectFieldRow extends Vue {
 .grow-wrap > textarea {
   /* You could leave this, but after a user resizes, then it ruins the auto sizing */
   resize: none;
-
-  /* Firefox shows scrollbar on growth, you can hide like this. */
-  overflow: hidden;
 }
 .grow-wrap > textarea,
 .grow-wrap::after {

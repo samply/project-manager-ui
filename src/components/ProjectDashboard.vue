@@ -36,7 +36,7 @@
           <tbody>
           <tr v-for="(project, index) in projects" :key="index">
             <td><router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }" class="label-link" :class="{ 'label-placeholder': project?.label?.length === 0 }">{{
-                project?.label?.length > 0 ? project.label : "open project"
+                (project?.label?.length ?? 0) > 0 ? project.label : "open project"
               }}</router-link></td>
             <td>{{ project.code }}</td>
             <td>
@@ -343,8 +343,6 @@ th {
   width:20%;
   cursor: pointer;
   /*color: white;*/
-  /*background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath d='M5.5 7.5L10 12l4.5-4.5' stroke='%23ffffff' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");*/
-
 }
 
 .form-select option:hover {

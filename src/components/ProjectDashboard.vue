@@ -36,7 +36,7 @@
           <tbody>
           <tr v-for="(project, index) in projects" :key="index">
             <td><router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }" class="label-link" :class="{ 'label-placeholder': project?.label?.length === 0 }">{{
-                (project?.label?.length ?? 0) > 0 ? project.label : "open project"
+                (project?.label?.length ?? 0) > 0 ? project.label : "New Request"
               }}</router-link></td>
             <td>{{ project.code }}</td>
             <td>

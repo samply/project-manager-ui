@@ -607,7 +607,7 @@ export default class ProjectFieldRow extends Vue {
                 <div style="padding: 0 0.75rem">{{editedValue[0]==="true" ? "Yes" : "No"}}</div>
               </div>
             </div>
-            <div v-else-if="isQuery()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'" style="padding: 0 0.75rem">
+            <div v-else-if="isQuery()">
               <div style="display: flex;flex-wrap: wrap">
                   <span v-for="box in getFirstLevelCriteria(editedValue[1])"
                       class="btn btn-primary dktk-darkblue"
@@ -660,7 +660,7 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
 
-            <div v-else-if="isDescription() || isCohortDefinition() || isComments()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
+            <div v-else-if="isDescription() || isCohortDefinition() || isComments()" style="width:100%">
               <div class="grow-wrap" :data-replicated-value="editedValue[0]">
                 <textarea
                   type="text"
@@ -740,7 +740,7 @@ export default class ProjectFieldRow extends Vue {
                 <div style="font-size: small">{{displayPossibleValue(editedValue[0]).description}}</div>
               </div>
             </div>
-            <div v-else :style="{ width: !isDraft() || isSummaryStep() ? '100%' : '75%' }">
+            <div v-else style="width:100%">
               <input
                   :type="getInputType()"
                   v-model="editedValue[0]"

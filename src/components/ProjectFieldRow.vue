@@ -628,38 +628,38 @@ export default class ProjectFieldRow extends Vue {
               </div>
               <br/>
               <br/>
-              <div style="display: flex; justify-content: space-between">
-                <span><strong>Human readable</strong></span>
-                <div>
-                  <button v-if="isQuery() && fieldValue[0]" class="btn btn-primary query-link-button"
-                          data-toggle="tooltip"
-                          data-placement="top" title="Copy Query to Clipboard"
-                          ><i
-                      :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"
-                      @click="copyToClipboard(editedValue[1])"></i>
-                  </button>
-                  <button v-if="redirectUrl !== null && redirectUrl !== undefined"
-                          class="btn btn-primary query-link-button"
-                          data-toggle="tooltip"
-                          data-placement="top" title="Return to the DKTK Explorer to edit the request."
-                          @click="redirectToURL">
-                    <i class="bi bi-arrow-right-circle"></i>
-                    <span style="font-size: small; padding: 2px 0 0 5px">Edit in Explorer</span>
-                  </button>
+              <div style="border: 1px solid #dee2e6; border-radius: 6px; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
+                  <span><strong>Human readable</strong></span>
+                  <div>
+                    <button v-if="isQuery() && fieldValue[0]" class="btn btn-primary query-link-button"
+                            data-toggle="tooltip"
+                            data-placement="top" title="Copy Query to Clipboard"
+                            ><i
+                        :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"
+                        @click="copyToClipboard(editedValue[1])"></i>
+                    </button>
+                    <button v-if="redirectUrl !== null && redirectUrl !== undefined"
+                            class="btn btn-primary query-link-button"
+                            data-toggle="tooltip"
+                            data-placement="top" title="Return to the DKTK Explorer to edit the request."
+                            @click="redirectToURL">
+                      <i class="bi bi-arrow-right-circle"></i>
+                      <span style="font-size: small; padding: 2px 0 0 5px">Edit in Explorer</span>
+                    </button>
+                  </div>
                 </div>
+                <div v-if="editedValue[0]" style="
+                  padding: 12px 14px;
+                  font-size: 12px;
+                  color: rgb(71, 85, 105);
+                  font-family: 'Courier New', monospace;
+                  line-height: 1.65;
+                  max-height: 110px;
+                  overflow-y: auto;
+                  background-color: #ffffff;
+                ">{{ editedValue[0] }}</div>
               </div>
-              <div v-if="editedValue[0]" style="
-                padding: 12px 14px;
-                font-size: 12px;
-                color: rgb(71, 85, 105);
-                font-family: 'Courier New', monospace;
-                line-height: 1.65;
-                max-height: 110px;
-                overflow-y: auto;
-                border: 1px solid #dee2e6;
-                border-radius: 4px;
-                background-color: #f8f9fa;
-              ">{{ editedValue[0] }}</div>
             </div>
 
             <div v-else-if="isDescription() || isCohortDefinition() || isComments()" style="width:100%">

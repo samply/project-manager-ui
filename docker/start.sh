@@ -1,8 +1,5 @@
 #!/bin/sh
 
-envsubst < /usr/share/nginx/html/keycloak.json > /usr/share/nginx/html/keycloak.temp.json
-mv /usr/share/nginx/html/keycloak.temp.json /usr/share/nginx/html/keycloak.json
-
 envsubst < /usr/share/nginx/html/config.json > /usr/share/nginx/html/config.temp.json
 mv /usr/share/nginx/html/config.temp.json /usr/share/nginx/html/config.json
 

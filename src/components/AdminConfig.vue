@@ -15,9 +15,8 @@ import {defineComponent} from 'vue';
 import {
   Action,
   Module,
-  Project,
-  ProjectManagerContext,
   ProjectManagerBackendService,
+  ProjectManagerContext,
   Site
 } from "@/services/projectManagerBackendService";
 import MailingBlackList from "@/components/MailingBlackList.vue";
@@ -32,9 +31,7 @@ export default defineComponent({
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.CONFIGURATION_SITE)
     };
   },
-  watch: {
-
-  },
+  watch: {},
   mounted() {
     this.fetchProjectRoles()
   },
@@ -65,10 +62,11 @@ export default defineComponent({
   margin-bottom: 1.5%;
   border-radius: 10px;
 }
+
 .box-header {
   padding: 12px 0 0 2%;
-  background-color: #95c8dc;
-  color: black;
+  background-color: #00489c;
+  color: white;
   font-size: large;
   font-weight: bold;
   border: 1px solid #95c8dc;

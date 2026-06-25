@@ -1,47 +1,80 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
+  Bridgehead,
   Module,
-  ProjectManagerContext,
   ProjectManagerBackendService,
-  UPLOAD_DOCUMENT_PARAM, UPLOAD_DOCUMENT_URL_PARAM,
-  Bridgehead
+  ProjectManagerContext,
+  UPLOAD_DOCUMENT_PARAM,
+  UPLOAD_DOCUMENT_URL_PARAM
 } from "@/services/projectManagerBackendService";
+import {PropType, watch} from "vue";
+import DownloadButton from "@/components/DownloadButton.vue";
 
 @Options({
-  name: "UploadButton"
-})
+  name: "UploadButton",
+  components: {DownloadButton},
+  props: {
+    callRefreshContext: {type: Function as unknown as () => () => void, required: true},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
+    module: {type: String as PropType<Module>, required: true},
+    uploadAction: {type: String as PropType<Action>, required: true},
+    downloadAction: {type: String as PropType<Action>, required: false},
+    text: {type: String, required: true},
+    isFile: {type: Boolean, required: true},
+    toggleInput: {type: Boolean, required: false},
 
+    useBridgeheadChooser: {type: Boolean, default: false},
+    visibleBridgeheads: {type: Array as PropType<Bridgehead[]>, default: () => []},
+    existsFile: {type: Boolean, required: false},
+    fileName: {type: String, required: false},
+
+  }
+})
 export default class UploadButton extends Vue {
-  @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly module!: Module;
-  @Prop() readonly action!: Action;
-  @Prop() readonly text!: string;
-  @Prop() readonly isFile!: boolean;
-  @Prop() readonly useBridgeheadChooser!: boolean;
-  @Prop() readonly visibleBridgeheads!: Bridgehead[];
+
+  readonly callRefreshContext!: () => void;
+  readonly context!: ProjectManagerContext;
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly module!: Module;
+  readonly uploadAction!: Action;
+  readonly downloadAction?: Action;
+  readonly text!: string;
+  readonly isFile!: boolean;
+  readonly useBridgeheadChooser!: boolean;
+  readonly visibleBridgeheads!: Bridgehead[];
+  readonly toggleInput?: boolean;
+  readonly existsFile?: boolean;
+  readonly fileName?: string;
+
   file: File | undefined = undefined;
   label = '';
   url = '';
   isActive = false;
   fileSelected = false;
   selectedBridgehead: string | undefined = undefined;
+  visible: boolean = true
+  uniqueId = Math.random().toString(36).slice(2)
 
-  @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
-    this.updateIsActive()
+  mounted() {
+    watch(
+        () => this.projectManagerBackendService,
+        () => {
+          this.updateIsActive();
+        },
+        {immediate: true, deep: true}
+    );
   }
 
   async created() {
     this.updateIsActive()
+    this.visible = !this.toggleInput
   }
 
   updateIsActive() {
-    this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result)
+    this.projectManagerBackendService.isModuleActionActive(this.module, this.uploadAction).then(result => this.isActive = result)
     this.selectedBridgehead = this.context.bridgehead?.bridgehead
   }
 
@@ -57,7 +90,7 @@ export default class UploadButton extends Vue {
 
   uploadFile(): void {
     const params = new Map<string, unknown>();
-    if (this.isFile){
+    if (this.isFile) {
       if (!this.file) {
         console.error('No file selected.');
         return;
@@ -68,11 +101,11 @@ export default class UploadButton extends Vue {
     }
     params.set('label', this.label);
 
-    this.projectManagerBackendService.fetchHttpResponse(this.module, this.action, this.getContext(), params).then(httpResponse => {
+    this.projectManagerBackendService.fetchHttpResponse(this.module, this.uploadAction, this.getContext(), params).then(() => {
       this.file = undefined;
       this.label = '';
       this.url = '';
-      this.callRefrehContext();
+      this.callRefreshContext();
       this.updateIsActive();
       this.fileSelected = false;
     });
@@ -81,7 +114,7 @@ export default class UploadButton extends Vue {
   getContext(): ProjectManagerContext {
     const bridgehead = this.visibleBridgeheads.find((bridgehead) => bridgehead.bridgehead === this.selectedBridgehead)
     if (this.useBridgeheadChooser) {
-      return new ProjectManagerContext(this.context.projectCode,bridgehead)
+      return new ProjectManagerContext(this.context.projectCode, bridgehead)
     } else {
       return this.context
     }
@@ -93,28 +126,36 @@ export default class UploadButton extends Vue {
   <div v-if="isActive" style="width: auto; margin-right: 2%">
     <div class="row align-items-center" style="display: flex;width: 100%">
       <div style="display: flex; width: 100%;">
-        <div class="form-group" style="width: 100%; flex-flow: column;">
+        <div class="form-group" style="display:flex; width: 100%; flex-flow: column;">
+          <div style="display: flex;flex-direction: row;align-items: baseline">
           <label for="labelInput" class="form-label font-weight-bold"><strong>{{ text }}: </strong></label>
           <template v-if="!text.toLowerCase().endsWith('url')">
-            <span v-if="!fileSelected" class="filename">no file selected</span>
-            <span v-if="fileSelected" data-toggle="tooltip" data-placement="top" :title="file?.name" class="filename green">{{file?.name}}</span>
+            <span v-if="!fileSelected && !existsFile" class="filename blue" @click="visible = !visible">no file selected</span>
+            <span v-if="fileSelected || existsFile" data-toggle="tooltip" data-placement="top" :title="existsFile && !fileSelected ? fileName : file?.name"
+                  class="filename green" @click="visible = !visible">{{ existsFile && !fileSelected ? fileName : file?.name }}</span>
+            <DownloadButton v-if="existsFile && downloadAction"
+                            :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="module" :action="downloadAction" icon-class="bi bi-download"
+                            :filename="fileName"/>
           </template>
-
-          <div style="display: flex; width: 100%; flex-flow: row;">
+          </div>
+          <div style="display: none; width: 100%; flex-flow: row;" :class="{ 'visible': visible }">
             <template v-if="useBridgeheadChooser && visibleBridgeheads.length > 1">
               <select v-model="selectedBridgehead" class="form-select">
-                <option v-for="value in visibleBridgeheads" :key="value" :value="value.bridgehead">{{ value.humanReadable ? value.humanReadable : value.bridgehead }}</option>
+                <option v-for="value in visibleBridgeheads" :key="value.bridgehead" :value="value.bridgehead">
+                  {{ value.humanReadable ? value.humanReadable : value.bridgehead }}
+                </option>
               </select>
             </template>
             <div v-if="isFile">
               <div style="display: flex; flex-flow: row; align-items: center; width: 110%;">
-                <label for="fileInput" class="btn btn-primary fileChooser">
+                <label :for="'file-'+uniqueId" class="btn btn-primary fileChooser">
                   Choose File
-                  <input id="fileInput" type="file" ref="fileInput" @change="onFileSelected($event)"
+                  <input :id="'file-'+uniqueId" type="file" ref="fileInput" @change="onFileSelected($event)"
                          style="display: none;">
                 </label>
 
-                <input id="labelInput" type="text" v-model="label" placeholder="Enter label (optional)"
+                <input :id="'label-'+uniqueId" type="text" v-model="label" placeholder="Enter label (optional)"
                        class="form-control inputField" :disabled="!fileSelected">
                 <button style="display: flex; flex-flow: row;" @click="uploadFile"
                         class="btn btn-primary fileChooser" :disabled="!fileSelected">
@@ -125,11 +166,15 @@ export default class UploadButton extends Vue {
             </div>
 
             <div v-else style="display: flex; flex-flow: row; align-items: center; width: 100%;">
-              <input id="labelInput" type="text" v-model="label" placeholder="Enter label" class="form-control inputField" style="border-radius: 5px 5px 5px 5px; margin-right: 2%; width: 50%;">
+              <input :id="'label-'+uniqueId" type="text" v-model="label" placeholder="Enter label"
+                     class="form-control inputField"
+                     style="border-radius: 5px 5px 5px 5px; margin-right: 2%; width: 50%;">
 
-              <input id="urlInput" type="text" v-model="url" placeholder="Enter URL" class="form-control inputField" style="border-radius: 5px 5px 5px 5px; width: 50%;">
+              <input :id="'url-'+uniqueId" type="text" v-model="url" placeholder="Enter URL" class="form-control inputField"
+                     style="border-radius: 5px 5px 5px 5px; width: 50%;">
 
-              <button style="display: flex; flex-flow: row;" @click="uploadFile" class="btn btn-primary fileChooser" :disabled="url.length === 0">
+              <button style="display: flex; flex-flow: row;" @click="uploadFile" class="btn btn-primary fileChooser"
+                      :disabled="url.length === 0">
                 <i class="bi bi-cloud-upload" style="font-size: medium"></i>
                 <span style="font-size: small; padding: 2px 0 0 5px">Upload File</span>
               </button>
@@ -143,22 +188,22 @@ export default class UploadButton extends Vue {
 
 <style scoped>
 .filename {
-  display: inline-block;
+  display: inline;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: calc(30 * 1ch);
   font-size: small;
-  cursor: default;
+  cursor: pointer;
   padding-left: 5px;
 }
+
 .green {
   color: #009a00;
   background-color: transparent;
 }
-.red {
-  color: red;
-  background-color: transparent;
+.blue {
+  color: #00489c;
 }
 .fileChooser {
   font-size: 10pt;
@@ -166,6 +211,7 @@ export default class UploadButton extends Vue {
   padding: 0.4rem 0.75rem;
   margin-right: 3%;
 }
+
 .inputField {
   border-radius: 5px;
   width: 100%;
@@ -173,9 +219,13 @@ export default class UploadButton extends Vue {
   padding: .5rem .75rem;
   margin-right: 3%;
 }
+
 .form-select {
   height: fit-content;
   width: fit-content;
   margin-right: 3%;
+}
+.visible {
+  display: flex!important;
 }
 </style>

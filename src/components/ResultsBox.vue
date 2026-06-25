@@ -1,12 +1,11 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
+import {Project, UserProjectState} from "@/services/projectManagerBackendService";
 import {
   Action,
   ActionButton,
   Bridgehead,
   Module,
-  Project,
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,
@@ -18,19 +17,31 @@ import "@/assets/styles/state-circle.css"
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import {EmailRole} from "@/services/emailRole";
+import {PropType, watch} from "vue";
 
 
 @Options({
   name: "ResultsBox",
-  components: {ProjectManagerButton, UserAndEmail, CredentialsSharingTool}
+  components: {ProjectManagerButton, UserAndEmail, CredentialsSharingTool},
+  props: {
+    callRefreshContext: {type: Function as unknown as () => () => void, required: true},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
+    project: {type: Object as PropType<Project>, required: true},
+    currentUsers: {type: Array as PropType<User[]>, required: true},
+    projectRoles: {type: Array as PropType<ProjectRole[]>, required: true},
+  }
 })
 export default class ResultsBox extends Vue {
-  @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly project!: Project;
-  @Prop() readonly currentUsers!: User[];
-  @Prop() readonly projectRoles!: ProjectRole[];
+
+  // For templates:
+  // noinspection JSUnusedGlobalSymbols
+  readonly callRefreshContext!: () => void;
+  readonly context!: ProjectManagerContext;
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly project!: Project;
+  readonly currentUsers!: User[];
+  readonly projectRoles!: ProjectRole[];
 
   readonly RESULTS_ALREADY_SENT = 'Results already sent';
 
@@ -38,16 +49,27 @@ export default class ResultsBox extends Vue {
   projectResults: Results | undefined = undefined;
   projectBridgeheadResults: Results[] | undefined = undefined;
   canSendProjectResults = false;
-  canSendProjectBridgheadResults = false;
+  canSendProjectBridgeheadResults = false;
   canAcceptProjectResults = false;
-  canAcceptProjectBridgheadResults = false;
+  canAcceptProjectBridgeheadResults = false;
   resultsToShow: Results[] = [];
   isPopupVisible = false;
   actionButtons: ActionButton[] = [];
   emailRecipients: EmailRole[] = [];
-  // Reactive property to control the visibility of the long message
   isExpanded = false;
 
+  mounted() {
+    watch(
+        () => this.projectManagerBackendService,
+        () => {
+          this.resetEmailRecipients();
+          this.resetCanAccept();
+          this.resetCanSend();
+          this.resetResults();
+        },
+        {immediate: true}
+    );
+  }
 
   // Method to toggle the visibility
   toggleReadMore() {
@@ -100,32 +122,24 @@ export default class ResultsBox extends Vue {
     this.isPopupVisible = false;
   }
 
-  @Watch('projectManagerBackendService', {immediate: true})
-  onProjectManagerBackendServiceChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
-    this.resetEmailRecipients();
-    this.resetCanAccept();
-    this.resetCanSend();
-    this.resetResults();
-  }
-
   resetCanSend() {
     this.canSendProjectResults = false;
-    this.canSendProjectBridgheadResults = false;
+    this.canSendProjectBridgeheadResults = false;
     this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_RESULTS_URL_ACTION).then(condition => {
       this.canSendProjectResults = condition;
     });
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGHEAD_RESULTS_URL_ACTION).then(condition => {
-      this.canSendProjectBridgheadResults = condition;
+    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION).then(condition => {
+      this.canSendProjectBridgeheadResults = condition;
     });
   }
 
-  areThereFinalUsers(): boolean{
+  areThereFinalUsers(): boolean {
     return this.currentUsers?.length > 0 || this.isFinalUser();
   }
 
   resetCanAccept() {
     this.canAcceptProjectResults = false;
-    this.canAcceptProjectBridgheadResults = false;
+    this.canAcceptProjectBridgeheadResults = false;
     if (this.areThereFinalUsers()) { // It makes only sense if there are final users
       this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ACCEPT_PROJECT_RESULTS_URL_ACTION).then(condition => {
         this.canAcceptProjectResults = condition;
@@ -133,7 +147,7 @@ export default class ResultsBox extends Vue {
       });
     }
     this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ACCEPT_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION).then(condition => {
-      this.canAcceptProjectBridgheadResults = condition;
+      this.canAcceptProjectBridgeheadResults = condition;
       this.updateActionButtons();
     });
   }
@@ -177,12 +191,12 @@ export default class ResultsBox extends Vue {
 
   updateResultsToShow() {
     // Update resultsToShow based on the priority of projectResults and projectBridgeheadResults
-    if (this.isFinalUser()){ // If it is final user, they can see all results.
+    if (this.isFinalUser()) { // If it is a final user, they can see all results.
       const tempResults = [];
-      if (this.projectResults){
+      if (this.projectResults) {
         tempResults.push(this.projectResults);
       }
-      if (this.projectBridgeheadResults){
+      if (this.projectBridgeheadResults) {
         tempResults.push(...this.projectBridgeheadResults);
       }
       this.resultsToShow = tempResults;
@@ -200,32 +214,32 @@ export default class ResultsBox extends Vue {
       if (this.actionButtons !== this.projectResultsButtons) {
         this.actionButtons = this.projectResultsButtons;
       }
-    } else if (this.canAcceptProjectBridgheadResults) {
+    } else if (this.canAcceptProjectBridgeheadResults) {
       if (this.actionButtons !== this.projectBridgeheadResultsButtons) {
         this.actionButtons = this.projectBridgeheadResultsButtons;
       }
     }
   }
 
-  sendResults(resultsUrl: string){
-    if (this.canSendProjectResults){
+  sendResults(resultsUrl: string) {
+    if (this.canSendProjectResults) {
       this.sendProjectResults(resultsUrl);
-    } else if (this.canSendProjectBridgheadResults){
+    } else if (this.canSendProjectBridgeheadResults) {
       this.sendProjectBridgeheadResults(resultsUrl);
     }
   }
 
   sendProjectResults(resultsUrl: string) {
     if (resultsUrl && this.canSendProjectResults) {
-      this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_RESULTS_URL_ACTION, this.context, new Map([['results-url', resultsUrl]])).then(response => {
+      this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_RESULTS_URL_ACTION, this.context, new Map([['results-url', resultsUrl]])).then(() => {
         this.resetResults();
       });
     }
   }
 
   sendProjectBridgeheadResults(resultsUrl: string) {
-    if (resultsUrl && this.canSendProjectBridgheadResults) {
-      this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGHEAD_RESULTS_URL_ACTION, this.context, new Map([['results-url', resultsUrl]])).then(response => {
+    if (resultsUrl && this.canSendProjectBridgeheadResults) {
+      this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION, this.context, new Map([['results-url', resultsUrl]])).then(() => {
         this.resetResults();
       });
     }
@@ -239,38 +253,36 @@ export default class ResultsBox extends Vue {
     if (!this.isUrl(results?.url) && results?.url != this.RESULTS_ALREADY_SENT) {
       return false;
     }
-    if (results.creatorState === 'ACCEPTED' && actionButton.action.includes('ACCEPT')) {
+    if (results.creatorState === UserProjectState.ACCEPTED && actionButton.action.includes('ACCEPT')) {
       return false;
     }
-    if (results.creatorState === 'REJECTED' && actionButton.action.includes('REJECT')) {
-      return false;
-    }
-    return true;
+    return !(results.creatorState === UserProjectState.REJECTED && actionButton.action.includes('REJECT'));
+
   }
 
-  fetchButtonContext(results: Results){
-    if (this.canAcceptProjectResults){
+  fetchButtonContext(results: Results) {
+    if (this.canAcceptProjectResults) {
       return this.context;
     }
-    if (this.canAcceptProjectBridgheadResults){
-      const bridgehead: Bridgehead = {"bridgehead" : results.bridgehead, "projectCode" : this.context.projectCode, "creatorState" : null, "state": null, "queryState": null, "humanReadable": null, "modifiedAt": null};
+    if (this.canAcceptProjectBridgeheadResults) {
+      const bridgehead: Bridgehead = {"bridgehead": results.bridgehead, "projectCode": this.context.projectCode};
       return new ProjectManagerContext(this.context.projectCode, bridgehead);
     }
   }
 
-  fetchUserAccess(results: Results){
+  fetchUserAccess(results: Results) {
     return results.bridgeheadAdminState ? results.bridgeheadAdminState : results.finalUserState;
   }
 
-  fetchCreatorState(results: Results){
-    return (this.fetchUserAccess(results) === 'ACCEPTED') ? results.creatorState : 'CREATED';
+  fetchCreatorState(results: Results) {
+    return (this.fetchUserAccess(results) === 'ACCEPTED') ? results.creatorState : UserProjectState.CREATED;
   }
 
-  isFinalUser(): boolean{
+  isFinalUser(): boolean {
     return this.projectRoles.includes(ProjectRole.FINAL);
   }
 
-  areResultsAlreadyMarkedAsSent(): boolean{
+  areResultsAlreadyMarkedAsSent(): boolean {
     return this.resultsToShow?.length > 0 && this.resultsToShow[0].url == this.RESULTS_ALREADY_SENT;
   }
 
@@ -278,11 +290,12 @@ export default class ResultsBox extends Vue {
 </script>
 
 <template>
-  <div v-if="canSendProjectResults || canSendProjectBridgheadResults">
+  <div v-if="canSendProjectResults || canSendProjectBridgeheadResults">
     <!-- Text field for user input -->
     <div v-if="projectResults?.finalUserState !== 'ACCEPTED' && projectResults?.bridgeheadAdminState !== 'ACCEPTED'">
       <p>Please review and accept the results in the 'Actions' section. Once accepted, we recommend securing the results
-        URL with a password before sharing it with the request applicant, either through this interface or, if necessary,
+        URL with a password before sharing it with the request applicant, either through this interface or, if
+        necessary,
         via other communication methods such as email or messaging.</p>
     </div>
     <div v-else>
@@ -291,7 +304,7 @@ export default class ResultsBox extends Vue {
         or messaging.</p>
     </div>
     <!-- Button to directly call sendProjectResults -->
-    <div class="results-url-sender" v-if="canSendProjectResults || canSendProjectBridgheadResults">
+    <div class="results-url-sender" v-if="canSendProjectResults || canSendProjectBridgeheadResults">
       <input
           type="text"
           v-model="resultsUrl"
@@ -334,8 +347,8 @@ export default class ResultsBox extends Vue {
           <li>
             <strong>Separation of Credentials and File URLs:</strong>
             <ul>
-              <li>The URL for accessing cloud files is sent via the Data Science Orchestrator's SMTP server and can be
-                found in the Data Science Orchestrator.
+              <li>The URL for accessing cloud files is sent via the Samply.Requester's SMTP server and can be
+                found in the Samply.Requester.
               </li>
               <li>
                 The password (or other authentication details) is sent through the results provider's SMTP server,
@@ -347,7 +360,7 @@ export default class ResultsBox extends Vue {
           <li>
             <strong>Secure File Access:</strong> Instead of sharing the direct cloud file URL, the email template
             includes a link to the
-            Data Science Orchestrator, where the file can be securely downloaded.
+            Samply.Requester, where the file can be securely downloaded.
           </li>
           <li>
             <strong>Flexible Formats:</strong> Offers multiple email formats and solutions to simplify sharing and
@@ -382,7 +395,7 @@ export default class ResultsBox extends Vue {
         <th v-if="!projectResults">Site</th>
         <th v-if="!projectResults">Bridgehead Admin</th>
         <th v-if="projectResults && !isFinalUser()">Final User</th>
-        <th v-if="isFinalUser()">Final User / Brigehead Admin</th>
+        <th v-if="isFinalUser()">Final User / Bridgehead Admin</th>
         <th>URL</th>
         <th>User Access</th>
         <th>Applicant Acceptance</th>
@@ -411,14 +424,15 @@ export default class ResultsBox extends Vue {
         </td>
         <td>
           <div class="states-circle-container">
-            <div class="state_circle" :class="fetchCreatorState(result)?.toLowerCase()" :title="fetchCreatorState(result)"/>
+            <div class="state_circle" :class="fetchCreatorState(result)?.toLowerCase()"
+                 :title="fetchCreatorState(result)"/>
           </div>
         </td>
         <td v-if="actionButtons.length > 0">
           <div style="display: flex">
             <ProjectManagerButton v-for="(button, index) in actionButtons" :key="index"
                                   :module="button.module" :action="button.action"
-                                  :context="fetchButtonContext(result)" :call-refreh-context="this.callRefrehContext"
+                                  :context="fetchButtonContext(result)" :call-refresh-context="this.callRefreshContext"
                                   :text="button.text"
                                   :button-class="button.cssClass" :with-message="button.withMessage"
                                   :visibility="isButtonVisible(button, result)"
@@ -447,11 +461,6 @@ th, td {
 
 th {
   background-color: #f4f4f4;
-}
-
-.copy-icon {
-  cursor: pointer;
-  margin-left: 5px;
 }
 
 p {
@@ -528,7 +537,7 @@ p {
   color: #0056b3;
 }
 
-.results-url-sender{
+.results-url-sender {
   display: flex;
   gap: 10px; /* Adds space between buttons */
 }

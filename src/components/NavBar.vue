@@ -1,30 +1,35 @@
 <template>
-  <header class="site-header">
-    <a href="https://dktk.dkfz.de/" class="header-logo">
-      <img src="@/assets/logo-dktk-sign.svg" class="dktk-logo" alt="DKTK Logo" />
-      <div class="dktk-text">
-        <div class="dktk-name">DKTK</div>
-        <div class="dktk-slogan">Deutsches Konsortium für<br>Translationale Krebsforschung</div>
+  <div>
+    <nav class="navbar navbar-dark custom-navbar">
+      <div class="navbar__logo">
+        <a href="https://dktk.dkfz.de/" class="navbar-brand dk-logo">
+          <span class="dk-logo__sign"><img src="../assets/logo-dktk-sign.svg" alt="dktk"></span>
+          <span class="dk-logo__brand">
+            <span class="dk-logo__brand-part1">D</span><span class="dk-logo__brand-part2">K</span><span class="dk-logo__brand-part3">TK</span>
+          </span>
+          <span class="dk-logo__slogan">Deutsches Konsortium für <br> Translationale Krebsforschung</span>
+        </a>
       </div>
-    </a>
-
-    <router-link class="header-app-name" to="/">
-      Samply<span class="header-dot">.</span>Requester
-    </router-link>
-
-    <div class="header-user">
-      <span class="user-info" :title="auth.getEmail()">
-        <i class="bi bi-person-fill"></i>
-        {{ auth.getFirstName() + " " + auth.getLastName() }}
-      </span>
-      <router-link v-if="isProjectManagerAdmin" class="admin-link" to="/config" title="Admin config">
-        <i class="bi bi-gear"></i>
+      <router-link class="navbar-brand" to="/">
+        <span class="navbar-title" v-html="frontendName"></span>
       </router-link>
-      <button @click="logout" class="logout-btn">
-        <i class="bi bi-box-arrow-right"></i> logout
-      </button>
-    </div>
-  </header>
+      <div class="user-logout-container">
+        <!-- User information -->
+        <span class="user-info" :title="auth.getEmail()">
+          <i class="bi bi-person-fill user-icon"></i>
+          {{ auth.getFirstName() + " " + auth.getLastName() }}
+        </span>
+        <!-- PM-Admin Config  -->
+        <router-link v-if="isProjectManagerAdmin" class="btn admin-button" to="/config">
+          <i class="bi bi-gear"></i>
+        </router-link>
+        <!-- Logout button -->
+        <button @click="logout" class="btn btn-outline-danger">
+          <i class="bi bi-box-arrow-right"></i> logout
+        </button>
+      </div>
+    </nav>
+  </div>
 </template>
 
 <script lang="ts">
@@ -91,101 +96,89 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.site-header {
-  background: #fff;
-  border-bottom: 1px solid #dde1e7;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  height: 60px;
-  padding: 0 28px;
+.custom-navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-shrink: 0;
+  padding-left: 2%;
+}
+.navbar-title {
+  color: #00489c;
+  font-size: larger;
+}
+.navbar-icon {
+  margin-right: 5px;
+  color: #00489c;
 }
 
-.header-logo {
+.user-logout-container {
   display: flex;
   align-items: center;
-  gap: 11px;
-  text-decoration: none;
-}
-
-.dktk-logo {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-}
-
-.dktk-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.dktk-name {
-  font-size: 17px;
-  font-weight: 700;
-  color: #1a3a6b;
-  letter-spacing: 1.5px;
-  line-height: 1.2;
-}
-
-.dktk-slogan {
-  font-size: 8.5px;
-  color: #64748b;
-  line-height: 1.35;
-}
-
-.header-app-name {
-  font-size: 17px;
-  font-weight: 600;
-  color: #1a3a6b;
-  letter-spacing: 0.3px;
-  text-decoration: none;
-}
-
-.header-dot {
-  color: #e05c2a;
-  font-weight: 300;
-}
-
-.header-user {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 13px;
-  color: #475569;
+  padding-right: 2%;
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 5px;
+  margin-right: 10px;
+  color: #00489c;
+  font-weight: bold;
 }
 
-.admin-link {
-  color: #2655a2;
-  text-decoration: none;
-  font-size: 16px;
+.user-icon {
+  margin-right: 5px;
 }
 
-.admin-link:hover {
-  color: #1a3a6b;
+.admin-button {
+  color: #00489c;
+  margin-right: 10px;
 }
 
-.logout-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #2655a2;
-  font-size: 13px;
-  display: flex;
+.admin-button:hover {
+  color: white;
+  font-size: large;
+  padding: 0.3rem 0.68rem;
+}
+.btn-outline-danger {
+  color: #fa7b26!important;
+  border: none!important;
+  font-weight: bold;
+}
+.dk-logo {
   align-items: center;
-  gap: 4px;
-  padding: 0;
-  font-family: inherit;
+  color: #00489c;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: Open Sans, serif;
+  font-weight: 200;
+  height: auto;
 }
-
-.logout-btn:hover {
-  text-decoration: underline;
+.dk-logo__sign {
+  display: inline-block;
+  margin-right: 15px;
+  vertical-align: top;
+  width: 40px;
+}
+.dk-logo__sign img {
+  vertical-align: middle;
+}
+.dk-logo__brand {
+  color: #00489c;
+  display: inline-block;
+  font-size: 48px;
+  margin-right: 15px;
+}
+div.ccm-page .dk-logo__brand-part1 {
+  letter-spacing: -2px;
+}
+.dk-logo__brand-part2 {
+  letter-spacing: 2px;
+}
+.dk-logo__slogan {
+  color: #00489c;
+  display: inline-block;
+  font-size: 17px;
+  font-weight: 200;
+  line-height: 1.4;
 }
 </style>

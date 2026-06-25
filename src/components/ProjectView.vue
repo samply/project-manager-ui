@@ -1917,30 +1917,20 @@ export default defineComponent({
 
 .main-menu {
   width: 100%;
-  background-color: #1a3a6b;
+  background-color: rgba(0, 72, 156, .95);
   display: flex;
-  padding: 0 28px;
-  flex-shrink: 0;
+  padding-left: 60%;
 }
 
 .menu-item {
-  padding: 12px 20px;
-  color: rgba(255, 255, 255, 0.55);
+  padding: 1.2rem 2rem;
+  color: white;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  border-bottom: 3px solid transparent;
-  transition: color 0.15s;
-}
-
-.menu-item:hover {
-  color: rgba(255, 255, 255, 0.85);
+  font-weight: bold;
 }
 
 .menu-item.active {
-  color: #fff;
-  border-bottom-color: #fff;
-  background-color: transparent;
+  background-color: rgb(0, 56, 124);
 }
 
 .main-container {

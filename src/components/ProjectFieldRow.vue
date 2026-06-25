@@ -648,7 +648,7 @@ export default class ProjectFieldRow extends Vue {
                   </button>
                 </div>
               </div>
-              <div v-if="editedValue[1]" style="
+              <div v-if="editedValue[0]" style="
                 padding: 12px 14px;
                 font-size: 12px;
                 color: rgb(71, 85, 105);
@@ -659,16 +659,7 @@ export default class ProjectFieldRow extends Vue {
                 border: 1px solid #dee2e6;
                 border-radius: 4px;
                 background-color: #f8f9fa;
-                margin-bottom: 8px;
-              ">{{ editedValue[1] }}</div>
-              <div v-if="(isDraft() && !isSummaryStep()) || editMode" class="grow-wrap" :data-replicated-value="editedValue[0]">
-                <textarea
-                  type="text"
-                  v-model="editedValue[0]"
-                  @change="onInputChange"
-                  class="form-control grey"
-                ></textarea>
-              </div>
+              ">{{ editedValue[0] }}</div>
             </div>
 
             <div v-else-if="isDescription() || isCohortDefinition() || isComments()" style="width:100%">

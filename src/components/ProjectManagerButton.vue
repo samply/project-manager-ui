@@ -26,7 +26,8 @@ import {PropType, watch} from "vue";
     params: {type: Object as PropType<Map<string, string>>, default: () => new Map()},
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
     tooltipText: {type: String, default: ''},
-    doActionOnClick: {type: Function as unknown as () => void, required: false}
+    doActionOnClick: {type: Function as unknown as () => void, required: false},
+    iconClass: {type: String, required: false, default: ''}
   }
 })
 export default class ProjectManagerButton extends Vue {
@@ -41,6 +42,7 @@ export default class ProjectManagerButton extends Vue {
   readonly text2?: string;
   // noinspection JSUnusedGlobalSymbols
   readonly buttonClass!: string;
+  readonly iconClass!: string;
   // noinspection JSUnusedGlobalSymbols
   readonly withMessage!: boolean;
   // noinspection JSUnusedGlobalSymbols
@@ -115,7 +117,7 @@ export default class ProjectManagerButton extends Vue {
              placeholder="optional message"/>
       <div :title="tooltipText">
         <button :class="[buttonClass, 'button-spacing', { 'hidden': !hideInput }]" @click="toggleVisibility"
-                :disabled="isDisabled">{{ text }}</button>
+                :disabled="isDisabled"><i v-if="iconClass" :class="iconClass" style="margin-right: 6px;"></i>{{ text }}</button>
       </div>
       <button :class="[buttonClass, 'button-spacing', { 'hidden': hideInput }]" @click="handleButtonClick"
               :disabled="isDisabled">Submit</button>
@@ -124,7 +126,7 @@ export default class ProjectManagerButton extends Vue {
     </template>
     <template v-else>
       <div :title="tooltipText">
-        <button :class="buttonClass" @click="handleButtonClick" :disabled="isDisabled">{{ text }}</button>
+        <button :class="buttonClass" @click="handleButtonClick" :disabled="isDisabled"><i v-if="iconClass" :class="iconClass" style="margin-right: 6px;"></i>{{ text }}</button>
       </div>
     </template>
     <label v-if="action2" class="pm-checkbox">

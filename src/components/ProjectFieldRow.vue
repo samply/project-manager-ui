@@ -292,8 +292,17 @@ export default class ProjectFieldRow extends Vue {
 
 
   redirectToURL() {
+   let bridgeheads:string[] = []
+    let query = "";
+
+    if (this.bridgeheads?.selected?.length) {
+      bridgeheads = this.bridgeheads.selected.map((bridgehead) => bridgehead.bridgehead)
+    }
+    if (this.editedValue[2]) {
+      query = atob(this.editedValue[2])
+    }
     if (this.redirectUrl) {
-      window.location.href = this.redirectUrl;
+      window.location.href = this.redirectUrl.split('?')[0] + '?query=' + query + '&datarequests='+btoa(JSON.stringify(bridgeheads));
     }
   }
 
@@ -608,11 +617,12 @@ export default class ProjectFieldRow extends Vue {
                 <div style="padding: 0 0.75rem">{{editedValue[0]==="true" ? "Yes" : "No"}}</div>
               </div>
             </div>
-            <div v-else-if="isQuery()" style="width:100%;padding: 0 0.75rem">
+            <div v-else-if="isQuery()">
               <div  v-if="editedValue[2]" style="display: flex">
                 <lens-search-bar
                     placeholderText=""
                     readonly="true"
+                    style="width: 100%"
                 />
                 <lens-query-explain-button
                     noQueryMessage="Empty Search."
@@ -1119,7 +1129,7 @@ export default class ProjectFieldRow extends Vue {
  textarea.form-control {
    /*resize: both;*/
    /*height: 200px;*/
-
+  max-height: 300px;
  }
  .dktk-darkblue {
    background-color: #00529c!important;
@@ -1168,9 +1178,6 @@ export default class ProjectFieldRow extends Vue {
 .grow-wrap > textarea {
   /* You could leave this, but after a user resizes, then it ruins the auto sizing */
   resize: none;
-
-  /* Firefox shows scrollbar on growth, you can hide like this. */
-  overflow: hidden;
 }
 .grow-wrap > textarea,
 .grow-wrap::after {

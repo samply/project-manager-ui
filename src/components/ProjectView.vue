@@ -1518,6 +1518,10 @@ export default defineComponent({
           fieldKey: "Query",
           fieldValue: [this.project?.humanReadable ? this.project?.humanReadable : "", this.project?.query ? this.project?.query : "", this.project?.queryDetails ? this.project?.queryDetails : ""],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
+          bridgeheads: {
+            selected: this.bridgeheads,
+            available: this.allBridgeheads,
+          },
           isEditable: true,
           editMode: this.editMode,
           mandatory: true,

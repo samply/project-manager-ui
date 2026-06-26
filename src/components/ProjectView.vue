@@ -286,14 +286,14 @@
                     <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
                       <div :class="[
                              'step-circle',
-                             index < draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep) ? 'step-circle--done' :
+                             index < draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) ? 'step-circle--done' :
                              draftDialogStepper.currentStep === step ? 'step-circle--active' : 'step-circle--future'
                            ]"
                            @click="draftDialogStepper.setCurrentStep(step.id)">
-                        <span>{{ index < draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep) ? '✓' : index + 1 }}</span>
+                        <span>{{ index < draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) ? '✓' : index + 1 }}</span>
                       </div>
                       <div v-if="index < draftDialogStepper.currentSteps.length - 1"
-                           :class="['stepper-line2', index < draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep) ? 'stepper-line2--done' : '']">
+                           :class="['stepper-line2', index < draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) ? 'stepper-line2--done' : '']">
                       </div>
                     </div>
                     <div class="stepper-step-textbox"
@@ -341,6 +341,7 @@
                     </div>
                     <ProjectFieldRow
                         v-if="projectField.visibilityCondition &&
+                        projectField.category !== 'samples' &&
                         (!existsDraftDialog ||
                         projectField.isEditable && draftDialogStepper.currentStep?.id !== DialogStep.SUMMARY ||
                         draftDialogStepper.currentStep?.id === DialogStep.SUMMARY)"
@@ -371,10 +372,40 @@
                         :extra-params="projectField.extraParams"
                         :delete-action="projectField.deleteAction"
                         :delete-module="projectField.deleteModule"
-                        :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
+                        :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep ?? undefined : undefined"
                         :context="context"
                         :project-manager-backend-service="projectManagerBackendService"/>
                   </template>
+
+                  <!-- Biosample entries panel (replaces flat ProjectFieldRow for the samples form) -->
+                  <BiosamlpeEntriesPanel
+                      v-if="selectedForms.some(f => f.title === 'samples') &&
+                            (!existsDraftDialog ||
+                             draftDialogStepper.currentStep?.id === 'samples' ||
+                             draftDialogStepper.currentStep?.id === DialogStep.SUMMARY)"
+                      :form-fields="formFields.filter(f => f.title === 'samples')"
+                      :is-editable="true"
+                      :edit-mode="editMode"
+                      :project-manager-backend-service="projectManagerBackendService"
+                      :context="context"
+                      :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep ?? undefined : undefined"
+                      :exists-draft-dialog="existsDraftDialog"
+                      @validity-change="biosampleEntriesValid = $event"/>
+
+                  <!-- Collaborator entries panel (replaces flat collaborators textarea in the project form) -->
+                  <CollaboratorEntriesPanel
+                      v-if="selectedForms.some(f => f.title === DialogStep.PROJECT) &&
+                            (!existsDraftDialog ||
+                             draftDialogStepper.currentStep?.id === DialogStep.PROJECT ||
+                             draftDialogStepper.currentStep?.id === DialogStep.SUMMARY)"
+                      :form-fields="formFields.filter(f => f.title === DialogStep.PROJECT)"
+                      :is-editable="true"
+                      :edit-mode="editMode"
+                      :project-manager-backend-service="projectManagerBackendService"
+                      :context="context"
+                      :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep ?? undefined : undefined"
+                      :exists-draft-dialog="existsDraftDialog"
+                      @validity-change="collaboratorEntriesValid = $event"/>
                 </div>
 
                 <div v-if="project?.state === ProjectState.DRAFT" class="button-container">
@@ -392,7 +423,7 @@
                   <!-- Right: step counter + navigation -->
                   <div class="button-nav-right">
                     <span class="step-counter">
-                      Step {{ draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep) + 1 }} of {{ draftDialogStepper.currentSteps.length }}
+                      Step {{ draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) + 1 }} of {{ draftDialogStepper.currentSteps.length }}
                     </span>
                     <button class="btn btn-nav-back" @click="draftDialogStepper.previousStep()"
                             :disabled="!draftDialogStepper.hasPreviousStep">
@@ -558,6 +589,8 @@ import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
 import {ActionFunction, ProjectField, Section} from "@/services/utils";
 import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
+import BiosamlpeEntriesPanel from "@/components/BiosamlpeEntriesPanel.vue";
+import CollaboratorEntriesPanel from "@/components/CollaboratorEntriesPanel.vue";
 import {PollingService} from "@/services/PollingService";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
 
@@ -606,7 +639,9 @@ export default defineComponent({
     UserInput,
     NotificationBox,
     ProjectFieldRow,
-    ProjectManagerButton
+    ProjectManagerButton,
+    BiosamlpeEntriesPanel,
+    CollaboratorEntriesPanel
   },
 
   data() {
@@ -617,7 +652,7 @@ export default defineComponent({
       visibleBridgeheads: [] as Bridgehead[],
       pollingService: null as PollingService | null,
       context: new ProjectManagerContext(this.projectCode, undefined),
-      projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
+      projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE) as ProjectManagerBackendService,
       project: undefined as Project | undefined,
       projectTypes: [] as string[],
       outputFormats: {} as Record<ProjectType, string[]>,
@@ -666,6 +701,8 @@ export default defineComponent({
       formTemplates: [] as FormTemplate[],
       formTitles: [] as FormTitle[],
       formFields: [] as FormField[],
+      biosampleEntriesValid: false,
+      collaboratorEntriesValid: true,
       selectedForms: [] as FormTitle[],
       projectFields: [] as ProjectField[],
       groupedMissingFields: {} as Record<string, string[]>,
@@ -720,6 +757,14 @@ export default defineComponent({
       } else {
         this.draftDialogStepper.removeFilteredStep(FixedDialogStep.CUSTOM);
       }
+    },
+    biosampleEntriesValid() {
+      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
+    },
+    collaboratorEntriesValid() {
+      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
     }
   },
 
@@ -795,11 +840,14 @@ export default defineComponent({
       );
 
       // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
+      // Biosample entries (samples form) are validated separately via the panel's validity-change event.
       const mandatoryFormFieldsValid = this.formFields
-          ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && this.selectedForms.some(ft => ft.title === field.title))
+          ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && field.title !== 'samples' && this.selectedForms.some(ft => ft.title === field.title))
           .every(field => field.value != null && field.value !== '');
 
-      return baseFieldsValid && mandatoryFormFieldsValid;
+      const biosampleValid = !this.selectedForms.some(f => f.title === 'samples') || this.biosampleEntriesValid;
+
+      return baseFieldsValid && mandatoryFormFieldsValid && biosampleValid && this.collaboratorEntriesValid;
     },
 
     fetchTooltipTextForCreateButton() {
@@ -828,8 +876,9 @@ export default defineComponent({
 
         // 👇 group missing mandatory form fields
         // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
+        // Biosample entries (samples form) are excluded here — they are validated by the panel.
         this.groupedMissingFields = this.formFields
-            ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && !field.value && this.selectedForms.some(ft => ft.title === field.title))
+            ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && !field.value && field.title !== 'samples' && this.selectedForms.some(ft => ft.title === field.title))
             .reduce((acc, field) => {
               const title = field.titleDisplayName ?? field.title;
               const label = field.labelDisplayName ?? field.label;
@@ -838,6 +887,20 @@ export default defineComponent({
               acc[title].push(label);
               return acc;
             }, {} as Record<string, string[]>);
+
+        // Add biosample missing-field indicator when entries are invalid
+        if (this.selectedForms.some(f => f.title === 'samples') && !this.biosampleEntriesValid) {
+          const samplesTitle = this.formFields.find(f => f.title === 'samples')?.titleDisplayName ?? 'Biosample Request';
+          if (!this.groupedMissingFields[samplesTitle]) this.groupedMissingFields[samplesTitle] = [];
+          this.groupedMissingFields[samplesTitle].push('Biosample type');
+        }
+
+        // Add collaborator missing-field indicator when entries are partially filled
+        if (!this.collaboratorEntriesValid) {
+          const projectTitle = this.formFields.find(f => f.title === 'project')?.titleDisplayName ?? 'Project';
+          if (!this.groupedMissingFields[projectTitle]) this.groupedMissingFields[projectTitle] = [];
+          this.groupedMissingFields[projectTitle].push('Collaborators (incomplete entry)');
+        }
 
         // Create blocks for each title
         const blocks = Object.entries(this.groupedMissingFields ?? {}).map(
@@ -1145,6 +1208,7 @@ export default defineComponent({
         transformForSending: this.buildTransformForSendingFormField(formField),
         category: formField.title,
         visibilityCondition:
+            formField.label !== 'collaborators' && // replaced by CollaboratorEntriesPanel
             this.selectedForms.some(f => f.title === formField.title) && // only if the field is already selected
             (!this.existsDraftDialog ||
                 this.draftDialogStepper.currentStep?.id === formField.title ||

@@ -1571,7 +1571,8 @@ export default defineComponent({
           action: Action.SET_PROJECT_CONFIGURATION_ACTION
         },
         {
-          fieldKey: "Query",
+          fieldKey: "Cohort Query",
+          fieldDescription: "This query was automatically imported from your Explorer session. Use \"Edit in Explorer\" to adjust your search criteria.",
           fieldValue: [this.project?.humanReadable ? this.project?.humanReadable : "", this.project?.query ? this.project?.query : "", this.project?.queryDetails ? this.project?.queryDetails : ""],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
           isEditable: true,

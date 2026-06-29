@@ -103,6 +103,50 @@
             </div>
           </div>
 
+          <!-- Recipient checkboxes (inline) -->
+          <div class="cl-field">
+            <div class="cl-field-header"></div>
+            <div class="cl-field-control">
+            <div class="cl-inline-checks">
+              <label class="cl-check-item">
+                <template v-if="!isInEditMode">
+                  <input type="checkbox" :checked="entry.dataRecipient" disabled class="cl-checkbox-readonly" />
+                </template>
+                <template v-else>
+                  <input
+                      type="checkbox"
+                      :checked="entry.dataRecipient"
+                      class="cl-checkbox"
+                      @change="onCheckboxChange(idx, 'dataRecipient', ($event.target as HTMLInputElement).checked)"
+                  />
+                </template>
+                <span class="cl-check-label">
+                  <span class="cl-field-title">Data recipient</span>
+                  <span class="cl-field-desc">Participant receives access to requested data</span>
+                </span>
+              </label>
+
+              <label class="cl-check-item">
+                <template v-if="!isInEditMode">
+                  <input type="checkbox" :checked="entry.biosampleRecipient" disabled class="cl-checkbox-readonly" />
+                </template>
+                <template v-else>
+                  <input
+                      type="checkbox"
+                      :checked="entry.biosampleRecipient"
+                      class="cl-checkbox"
+                      @change="onCheckboxChange(idx, 'biosampleRecipient', ($event.target as HTMLInputElement).checked)"
+                  />
+                </template>
+                <span class="cl-check-label">
+                  <span class="cl-field-title">Biosample recipient</span>
+                  <span class="cl-field-desc">Receives access to requested biosamples</span>
+                </span>
+              </label>
+            </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -133,12 +177,14 @@ import type {DialogStep} from '@/services/fixedDialogStep';
 import {FixedDialogStep} from '@/services/fixedDialogStep';
 
 const PROJECT_FORM_TITLE = 'project';
-const COLLAB_LABEL_REGEX = /^collaborator_(name|affiliation|email)_(\d+)$/;
+const COLLAB_LABEL_REGEX = /^collaborator_(name|affiliation|email|data_recipient|biosample_recipient)_(\d+)$/;
 
 interface CollaboratorEntry {
   name: string;
   affiliation: string;
   email: string;
+  dataRecipient: boolean;
+  biosampleRecipient: boolean;
   collapsed: boolean;
 }
 
@@ -243,9 +289,11 @@ export default defineComponent({
         maxIdx = Math.max(maxIdx, idx);
         if (!entryMap[idx]) entryMap[idx] = this.newEntry();
         switch (base) {
-          case 'name':        entryMap[idx].name        = field.value ?? ''; break;
-          case 'affiliation': entryMap[idx].affiliation = field.value ?? ''; break;
-          case 'email':       entryMap[idx].email       = field.value ?? ''; break;
+          case 'name':               entryMap[idx].name              = field.value ?? ''; break;
+          case 'affiliation':        entryMap[idx].affiliation       = field.value ?? ''; break;
+          case 'email':              entryMap[idx].email             = field.value ?? ''; break;
+          case 'data_recipient':     entryMap[idx].dataRecipient     = field.value === 'true'; break;
+          case 'biosample_recipient':entryMap[idx].biosampleRecipient = field.value === 'true'; break;
         }
       }
 
@@ -262,7 +310,7 @@ export default defineComponent({
     },
 
     newEntry(): CollaboratorEntry {
-      return {name: '', affiliation: '', email: '', collapsed: false};
+      return {name: '', affiliation: '', email: '', dataRecipient: false, biosampleRecipient: false, collapsed: false};
     },
 
     addEntry() {
@@ -301,20 +349,29 @@ export default defineComponent({
       this.saveTimer = setTimeout(() => this.saveEntries(), 600);
     },
 
+    onCheckboxChange(idx: number, field: 'dataRecipient' | 'biosampleRecipient', value: boolean) {
+      this.entries[idx][field] = value;
+      this.saveEntries();
+    },
+
     async saveEntries() {
       const fieldsToSave: Array<{title: string; label: string; value: string}> = [];
 
       for (let i = 0; i < this.entries.length; i++) {
-        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_name_${i}`,        value: this.entries[i].name});
-        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_affiliation_${i}`, value: this.entries[i].affiliation});
-        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_email_${i}`,       value: this.entries[i].email});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_name_${i}`,               value: this.entries[i].name});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_affiliation_${i}`,        value: this.entries[i].affiliation});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_email_${i}`,              value: this.entries[i].email});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_data_recipient_${i}`,     value: String(this.entries[i].dataRecipient)});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_biosample_recipient_${i}`,value: String(this.entries[i].biosampleRecipient)});
       }
 
       const clearUpTo = Math.max(this.maxSavedIndex, this.entries.length - 1);
       for (let i = this.entries.length; i <= clearUpTo; i++) {
-        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_name_${i}`,        value: ''});
-        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_affiliation_${i}`, value: ''});
-        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_email_${i}`,       value: ''});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_name_${i}`,               value: ''});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_affiliation_${i}`,        value: ''});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_email_${i}`,              value: ''});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_data_recipient_${i}`,     value: ''});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_biosample_recipient_${i}`,value: ''});
       }
 
       this.maxSavedIndex = this.entries.length - 1;
@@ -505,6 +562,49 @@ export default defineComponent({
   font-size: 11px;
   margin-top: 3px;
   display: block;
+}
+
+.cl-field-control--checkbox {
+  display: flex;
+  align-items: center;
+  padding-top: 6px;
+}
+
+.cl-inline-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.cl-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.cl-check-item input[type="checkbox"] {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.cl-check-label {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.cl-checkbox,
+.cl-checkbox-readonly {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #2655a2;
+}
+
+.cl-checkbox-readonly {
+  cursor: default;
 }
 
 .collab-empty {

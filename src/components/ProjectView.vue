@@ -343,6 +343,16 @@
                         {{ getDialogStep(projectField.category)?.description }}
                       </div>
                     </div>
+                    <PrincipalInvestigatorPanel
+                        v-if="projectField.isPrincipalInvestigatorGroup && projectField.visibilityCondition"
+                        :form-fields="formFields.filter(f => f.title === DialogStep.PROJECT)"
+                        :is-editable="true"
+                        :edit-mode="editMode"
+                        :project-manager-backend-service="projectManagerBackendService"
+                        :context="context"
+                        :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep ?? undefined : undefined"
+                        :exists-draft-dialog="existsDraftDialog"
+                        @validity-change="principalInvestigatorValid = $event"/>
                     <CollaboratorEntriesPanel
                         v-if="projectField.isCollaboratorGroup && projectField.visibilityCondition"
                         :form-fields="formFields.filter(f => f.title === DialogStep.PROJECT)"
@@ -356,6 +366,7 @@
                     <ProjectFieldRow
                         v-if="projectField.visibilityCondition &&
                         !projectField.isCollaboratorGroup &&
+                        !projectField.isPrincipalInvestigatorGroup &&
                         projectField.category !== 'samples' &&
                         (!existsDraftDialog ||
                         projectField.isEditable && draftDialogStepper.currentStep?.id !== DialogStep.SUMMARY ||
@@ -600,6 +611,7 @@ import {ActionFunction, ProjectField, Section} from "@/services/utils";
 import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
 import BiosamlpeEntriesPanel from "@/components/BiosamlpeEntriesPanel.vue";
 import CollaboratorEntriesPanel from "@/components/CollaboratorEntriesPanel.vue";
+import PrincipalInvestigatorPanel from "@/components/PrincipalInvestigatorPanel.vue";
 import {PollingService} from "@/services/PollingService";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
 
@@ -653,7 +665,8 @@ export default defineComponent({
     ProjectFieldRow,
     ProjectManagerButton,
     BiosamlpeEntriesPanel,
-    CollaboratorEntriesPanel
+    CollaboratorEntriesPanel,
+    PrincipalInvestigatorPanel
   },
 
   data() {
@@ -717,6 +730,7 @@ export default defineComponent({
       formFields: [] as FormField[],
       biosampleEntriesValid: false,
       collaboratorEntriesValid: true,
+      principalInvestigatorValid: false,
       selectedForms: [] as FormTitle[],
       projectFields: [] as ProjectField[],
       groupedMissingFields: {} as Record<string, string[]>,
@@ -777,6 +791,10 @@ export default defineComponent({
       this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
     },
     collaboratorEntriesValid() {
+      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
+    },
+    principalInvestigatorValid() {
       this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
       this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
     }
@@ -861,7 +879,7 @@ export default defineComponent({
 
       const biosampleValid = !this.selectedForms.some(f => f.title === 'samples') || this.biosampleEntriesValid;
 
-      return baseFieldsValid && mandatoryFormFieldsValid && biosampleValid && this.collaboratorEntriesValid;
+      return baseFieldsValid && mandatoryFormFieldsValid && biosampleValid && this.collaboratorEntriesValid && this.principalInvestigatorValid;
     },
 
     fetchTooltipTextForCreateButton() {
@@ -914,6 +932,13 @@ export default defineComponent({
           const projectTitle = this.formFields.find(f => f.title === 'project')?.titleDisplayName ?? 'Project';
           if (!this.groupedMissingFields[projectTitle]) this.groupedMissingFields[projectTitle] = [];
           this.groupedMissingFields[projectTitle].push('Collaborators (incomplete entry)');
+        }
+
+        // Add PI missing-field indicator when required fields are not filled
+        if (!this.principalInvestigatorValid) {
+          const projectTitle = this.formFields.find(f => f.title === 'project')?.titleDisplayName ?? 'Project';
+          if (!this.groupedMissingFields[projectTitle]) this.groupedMissingFields[projectTitle] = [];
+          this.groupedMissingFields[projectTitle].push('Principal Investigator (Applicant)');
         }
 
         // Create blocks for each title
@@ -1230,8 +1255,10 @@ export default defineComponent({
         transformForSending: this.buildTransformForSendingFormField(formField),
         category: formField.title,
         isCollaboratorGroup: formField.label === 'collaborators',
+        isPrincipalInvestigatorGroup: formField.label === 'principal_investigator',
         visibilityCondition:
-            !/^collaborator_(name|affiliation|email)_\d+$/.test(formField.label) && // hide individual sub-fields managed by CollaboratorEntriesPanel
+            !/^collaborator_(name|affiliation|email|data_recipient|biosample_recipient)_\d+$/.test(formField.label) && // hide individual sub-fields managed by CollaboratorEntriesPanel
+            !/^principal_investigator_(title_name|affiliation|email)$/.test(formField.label) && // hide individual sub-fields managed by PrincipalInvestigatorPanel
             this.selectedForms.some(f => f.title === formField.title) && // only if the field is already selected
             (!this.existsDraftDialog ||
                 this.draftDialogStepper.currentStep?.id === formField.title ||
@@ -1508,7 +1535,7 @@ export default defineComponent({
     fetchProjectFields(): ProjectField[] {
       const fixedFields: ProjectField[] = [
         {
-          fieldKey: "Title",
+          fieldKey: "Project Title",
           fieldValue: this.project?.label ? [this.project.label] : [],
           editProjectParam: [EditProjectParam.LABEL],
           fieldDescription: "Please provide a title for your project.",
@@ -1519,7 +1546,7 @@ export default defineComponent({
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
-          fieldKey: "Description",
+          fieldKey: "Project Description",
           fieldValue: this.project?.description ? [this.project.description] : [],
           editProjectParam: [EditProjectParam.DESCRIPTION],
           fieldDescription: "Briefly describe your project in a few words. What is the objective or aim of your project?",
@@ -1571,7 +1598,8 @@ export default defineComponent({
           action: Action.SET_PROJECT_CONFIGURATION_ACTION
         },
         {
-          fieldKey: "Query",
+          fieldKey: "Cohort Query",
+          fieldDescription: "This query was automatically imported from your Explorer session. Use \"Edit in Explorer\" to adjust your search criteria.",
           fieldValue: [this.project?.humanReadable ? this.project?.humanReadable : "", this.project?.query ? this.project?.query : "", this.project?.queryDetails ? this.project?.queryDetails : ""],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
           isEditable: true,

@@ -45,6 +45,7 @@ export interface ProjectField {
     deleteAction?: Action,
     deleteModule?: Module
     isCollaboratorGroup?: boolean
+    isPrincipalInvestigatorGroup?: boolean
 }
 
 

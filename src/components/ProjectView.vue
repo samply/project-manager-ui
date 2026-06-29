@@ -339,8 +339,19 @@
                         {{ getDialogStep(projectField.category)?.description }}
                       </div>
                     </div>
+                    <CollaboratorEntriesPanel
+                        v-if="projectField.isCollaboratorGroup && projectField.visibilityCondition"
+                        :form-fields="formFields.filter(f => f.title === DialogStep.PROJECT)"
+                        :is-editable="true"
+                        :edit-mode="editMode"
+                        :project-manager-backend-service="projectManagerBackendService"
+                        :context="context"
+                        :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep ?? undefined : undefined"
+                        :exists-draft-dialog="existsDraftDialog"
+                        @validity-change="collaboratorEntriesValid = $event"/>
                     <ProjectFieldRow
                         v-if="projectField.visibilityCondition &&
+                        !projectField.isCollaboratorGroup &&
                         projectField.category !== 'samples' &&
                         (!existsDraftDialog ||
                         projectField.isEditable && draftDialogStepper.currentStep?.id !== DialogStep.SUMMARY ||
@@ -392,20 +403,6 @@
                       :exists-draft-dialog="existsDraftDialog"
                       @validity-change="biosampleEntriesValid = $event"/>
 
-                  <!-- Collaborator entries panel (replaces flat collaborators textarea in the project form) -->
-                  <CollaboratorEntriesPanel
-                      v-if="selectedForms.some(f => f.title === DialogStep.PROJECT) &&
-                            (!existsDraftDialog ||
-                             draftDialogStepper.currentStep?.id === DialogStep.PROJECT ||
-                             draftDialogStepper.currentStep?.id === DialogStep.SUMMARY)"
-                      :form-fields="formFields.filter(f => f.title === DialogStep.PROJECT)"
-                      :is-editable="true"
-                      :edit-mode="editMode"
-                      :project-manager-backend-service="projectManagerBackendService"
-                      :context="context"
-                      :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep ?? undefined : undefined"
-                      :exists-draft-dialog="existsDraftDialog"
-                      @validity-change="collaboratorEntriesValid = $event"/>
                 </div>
 
                 <div v-if="project?.state === ProjectState.DRAFT" class="button-container">
@@ -1207,8 +1204,9 @@ export default defineComponent({
         action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
         transformForSending: this.buildTransformForSendingFormField(formField),
         category: formField.title,
+        isCollaboratorGroup: formField.label === 'collaborators',
         visibilityCondition:
-            formField.label !== 'collaborators' && // replaced by CollaboratorEntriesPanel
+            !/^collaborator_(name|affiliation|email)_\d+$/.test(formField.label) && // hide individual sub-fields managed by CollaboratorEntriesPanel
             this.selectedForms.some(f => f.title === formField.title) && // only if the field is already selected
             (!this.existsDraftDialog ||
                 this.draftDialogStepper.currentStep?.id === formField.title ||

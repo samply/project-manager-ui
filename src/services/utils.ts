@@ -44,6 +44,7 @@ export interface ProjectField {
     extraParams?: Map<string, unknown>,
     deleteAction?: Action,
     deleteModule?: Module
+    isCollaboratorGroup?: boolean
 }
 
 

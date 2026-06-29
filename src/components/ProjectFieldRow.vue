@@ -376,6 +376,9 @@ export default class ProjectFieldRow extends Vue {
   isDescriptionUpload(): boolean {
     return this.fieldKey === "DescriptionUpload";
   }
+  isEthicsVoteUpload(): boolean {
+    return this.fieldKey === "EthicsVoteUpload";
+  }
   isBridgeheads(): boolean {
     return this.includesEditProjectParam(EditProjectParam.BRIDGEHEADS);
   }
@@ -577,7 +580,7 @@ export default class ProjectFieldRow extends Vue {
 
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
       <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() }">
-        <div v-if="!isDescriptionUpload()" style="display: flex;">
+        <div v-if="!isDescriptionUpload() && !isEthicsVoteUpload()" style="display: flex;">
           <span class="input-field-title">{{ fieldKey }}<span v-if="this.mandatory" class="mandatory-asterisk">&nbsp*</span></span>
 
           <span v-if="this.uploadAction && todos?.get(this.uploadAction)"
@@ -588,7 +591,7 @@ export default class ProjectFieldRow extends Vue {
         <div v-if="!isSummaryStep()" class="field-description" v-html="fieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() }"></div>
       </div>
       <div :class="getEditFieldCssClass()">
-        <div v-if="uploadAction && !isDescriptionUpload()" :style="isDraft() && !isSummaryStep() ? 'width:100%' : 'width:75%;padding: 0 0.75rem'">
+        <div v-if="uploadAction && !isDescriptionUpload() && !isEthicsVoteUpload()" :style="isDraft() && !isSummaryStep() ? 'width:100%' : 'width:75%;padding: 0 0.75rem'">
           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
                         :download-action="downloadAction"
@@ -682,6 +685,14 @@ export default class ProjectFieldRow extends Vue {
                             :download-action="downloadAction"
                             text="Upload project description" :call-refresh-context="exitAndCallRefreshContext" :is-file="true" :exists-file="existsFile"
                             :file-name="fieldValue[1]" :toggle-input="true"/>
+            </div>
+
+            <div v-else-if="isEthicsVoteUpload()" style="margin:1rem 0 0 1rem">
+              <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
+                            :download-action="downloadAction"
+                            text="Upload ethics vote document" :call-refresh-context="exitAndCallRefreshContext" :is-file="true" :exists-file="existsFile"
+                            :file-name="fieldValue[1]"/>
             </div>
 
             <div v-else-if="isBridgeheads()" :style="isDraft() && !isSummaryStep() ? 'width:100%' : 'width:75%;padding: 0 0.75rem'">

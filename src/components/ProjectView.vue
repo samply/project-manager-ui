@@ -329,7 +329,7 @@
 
                   <template v-for="(projectField, index) in projectFields" :key="index">
                     <div
-                        v-if="projectField.visibilityCondition && projectField.fieldKey !== 'DescriptionUpload' &&
+                        v-if="projectField.visibilityCondition && projectField.fieldKey !== 'DescriptionUpload' && projectField.fieldKey !== 'EthicsVoteUpload' &&
                               ((!existsDraftDialog && (index === 0 || projectFields[index - 1]?.category !== projectField.category)) ||
                                (draftDialogStepper.currentStep?.id === DialogStep.SUMMARY && isCategoryBoundaryInSummary(index)))"
                         :class="draftDialogStepper.currentStep?.id === DialogStep.SUMMARY
@@ -629,6 +629,9 @@ export default defineComponent({
     },
     ProjectType() {
       return ProjectType
+    },
+    isEthicalApprovalYes(): boolean {
+      return this.formFields.find((f: any) => f.label === 'ethical_approval')?.value === 'true';
     }
   },
   props: {
@@ -676,6 +679,7 @@ export default defineComponent({
       existsFinalReport: false,
       showExplanations: true,
       existsVotum: false,
+      existsEthicsApproval: false,
       mergedQueryStates: [] as { state: string; types: ProjectType[] }[],
       existsProjectDescription: false,
       existsVotumForAllBridgeheads: false,
@@ -690,6 +694,7 @@ export default defineComponent({
       existsDraftDialog: false,
       scriptDescription: {} as ProjectDocument,
       votumDescription: {} as ProjectDocument,
+      ethicsApprovalDescription: {} as ProjectDocument,
       projectDescription: {} as ProjectDocument,
       votumForAllBridgeheadsDescription: {} as ProjectDocument,
       existInvitedUsers: false,
@@ -973,6 +978,14 @@ export default defineComponent({
               await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_DESCRIPTION_ACTION, new Map(), 'votumDescription');
             } else {
               this.votumDescription = {} as ProjectDocument
+            }
+          }),
+          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_ETHICS_APPROVAL_ACTION, new Map(), async (result: boolean) => {
+            this.existsEthicsApproval = result;
+            if (this.existsEthicsApproval) {
+              await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_ETHICS_APPROVAL_DESCRIPTION_ACTION, new Map(), 'ethicsApprovalDescription');
+            } else {
+              this.ethicsApprovalDescription = {} as ProjectDocument
             }
           }),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION, new Map(), async (result: boolean) => {
@@ -1652,6 +1665,25 @@ export default defineComponent({
         }
       ];
       const dynamicFields = this.buildDynamicProjectFieldsFromFormFields(this.formFields);
+      const ethicalApprovalIndex = this.formFields.findIndex((f: any) => f.label === 'ethical_approval');
+      if (ethicalApprovalIndex !== -1) {
+        dynamicFields.splice(ethicalApprovalIndex + 1, 0, {
+          fieldKey: "EthicsVoteUpload",
+          fieldValue: [this.ethicsApprovalDescription.label, this.ethicsApprovalDescription.originalFilename],
+          isEditable: true,
+          editMode: this.editMode,
+          existFile: this.existsEthicsApproval,
+          uploadAction: this.Action.UPLOAD_ETHICS_APPROVAL_ACTION,
+          downloadAction: this.Action.DOWNLOAD_ETHICS_APPROVAL_ACTION,
+          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          category: FixedDialogStep.PROJECT,
+          visibilityCondition: this.isEthicalApprovalYes &&
+              this.project?.state === ProjectState.DRAFT &&
+              (!this.existsDraftDialog ||
+                  this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT ||
+                  this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+        });
+      }
       const dynamicSelectedForms = this.buildDynamicProjectFieldsFromFormTitles(
           this.formTitles.filter(formTitle => {
             this.draftDialogStepper.hasCurrentStep(formTitle.title)
@@ -1918,7 +1950,7 @@ export default defineComponent({
       if (field.category === 'samples') return false;
       for (let i = index - 1; i >= 0; i--) {
         const prev = this.projectFields[i];
-        if (prev.visibilityCondition && prev.fieldKey !== 'DescriptionUpload' && prev.category !== 'samples') {
+        if (prev.visibilityCondition && prev.fieldKey !== 'DescriptionUpload' && prev.fieldKey !== 'EthicsVoteUpload' && prev.category !== 'samples') {
           return prev.category !== field.category;
         }
       }

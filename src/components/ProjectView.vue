@@ -329,13 +329,17 @@
 
                   <template v-for="(projectField, index) in projectFields" :key="index">
                     <div
-                        v-if="!existsDraftDialog && (index === 0 || projectFields[index - 1]?.category !== projectField.category) && projectField.visibilityCondition && projectField.fieldKey !== 'DescriptionUpload'"
-                        class="project-field-header project-field-category-header"
+                        v-if="projectField.visibilityCondition && projectField.fieldKey !== 'DescriptionUpload' &&
+                              ((!existsDraftDialog && (index === 0 || projectFields[index - 1]?.category !== projectField.category)) ||
+                               (draftDialogStepper.currentStep?.id === DialogStep.SUMMARY && isCategoryBoundaryInSummary(index)))"
+                        :class="draftDialogStepper.currentStep?.id === DialogStep.SUMMARY
+                          ? 'summary-section-header'
+                          : 'project-field-header project-field-category-header'"
                     >
-                      <div class="project-field-title">
+                      <div :class="draftDialogStepper.currentStep?.id === DialogStep.SUMMARY ? 'summary-section-label' : 'project-field-title'">
                         {{ getDialogStep(projectField.category)?.displayName }}
                       </div>
-                      <div class="project-field-notification">
+                      <div v-if="draftDialogStepper.currentStep?.id !== DialogStep.SUMMARY" class="project-field-notification">
                         {{ getDialogStep(projectField.category)?.description }}
                       </div>
                     </div>
@@ -389,6 +393,14 @@
                   </template>
 
                   <!-- Biosample entries panel (replaces flat ProjectFieldRow for the samples form) -->
+                  <div
+                      v-if="selectedForms.some(f => f.title === 'samples') && draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
+                      class="summary-section-header"
+                  >
+                    <div class="summary-section-label">
+                      {{ draftDialogStepper.currentSteps.find(s => s.id === 'samples')?.displayName || 'Biosample Request' }}
+                    </div>
+                  </div>
                   <BiosamlpeEntriesPanel
                       v-if="selectedForms.some(f => f.title === 'samples') &&
                             (!existsDraftDialog ||
@@ -1517,7 +1529,8 @@ export default defineComponent({
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
-          fieldKey: "Sites",
+          fieldKey: "Queried Sites",
+          fieldDescription: "Sites identified via the DKTK Explorer as having samples or data matching your search criteria.",
           fieldValue: [],
           bridgeheads: {
             selected: this.bridgeheads,
@@ -1898,6 +1911,18 @@ export default defineComponent({
         displayName: stepId.charAt(0).toUpperCase() + stepId.slice(1),
         description: ""
       }
+    },
+
+    isCategoryBoundaryInSummary(index: number): boolean {
+      const field = this.projectFields[index];
+      if (field.category === 'samples') return false;
+      for (let i = index - 1; i >= 0; i--) {
+        const prev = this.projectFields[i];
+        if (prev.visibilityCondition && prev.fieldKey !== 'DescriptionUpload' && prev.category !== 'samples') {
+          return prev.category !== field.category;
+        }
+      }
+      return true;
     }
   }
 
@@ -2500,5 +2525,19 @@ export default defineComponent({
 
 .clickable:hover {
   text-decoration: underline;
+}
+
+.summary-section-header {
+  padding: 20px 28px 8px;
+  border-top: 1.5px dashed #c8d5e8;
+  margin-top: 4px;
+}
+
+.summary-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #7a92b4;
 }
 </style>

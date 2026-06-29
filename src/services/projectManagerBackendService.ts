@@ -445,6 +445,12 @@ export interface FormField extends FormTitle {
     type?: FormDataType;
     allowedValues?: FormFieldValue[];
     mandatory?: boolean;
+    block?: string,
+    blockInstance?: number,
+    multipleBlock?: boolean,
+    minBlockInstances?: number,
+    blockDisplayName?: string,
+    blockDescription?: string,
     order?: number;
     value?: string;
 }

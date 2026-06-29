@@ -333,57 +333,73 @@
                   </div>
                 </div>
 
-                <template v-for="(projectField, index) in projectFields" :key="index">
-                  <!-- Category header: show when not in draft dialog AND this is the first row of a new category -->
-                  <div
-                      v-if="!existsDraftDialog && (index === 0 || projectFields[index - 1]?.category !== projectField.category) && projectField.visibilityCondition && projectField.fieldKey !== 'DescriptionUpload'"
-                      class="project-field-header project-field-category-header"
-                  >
-                    <div class="project-field-title">
-                      {{ getDialogStep(projectField.category)?.displayName }}
+                <template v-for="(block, blockIndex) in projectFieldRenderBlock" :key="block.key">
+                  <template v-if="shouldRenderFieldBlockItems(block)">
+                    <div :class="{ 'project-field-block': shouldRenderBlock(block) }">
+                      <template v-for="item in block.items" :key="item.key">
+                        <div
+                            v-if="item.showCategoryHeader"
+                            class="project-field-header project-field-category-header"
+                        >
+                          <div class="project-field-title">
+                            {{ getDialogStep(item.field.category)?.displayName }}
+                          </div>
+                          <div class="project-field-notification">
+                            {{ getDialogStep(item.field.category)?.description }}
+                          </div>
+                        </div>
+                        <div
+                            v-else-if="item.showSeparator"
+                            class="input-field-separator"></div>
+                        <ProjectFieldRow
+                            v-if="item.shouldRenderRow"
+                            :field-key="item.field.fieldKey"
+                            :field-value="item.field.fieldValue"
+                            :field-description="item.field.fieldDescription"
+                            :bridgeheads="item.field.bridgeheads"
+                            :action="item.field.action"
+                            :module="item.field.module"
+                            :edit-project-param="item.field.editProjectParam"
+                            :is-editable="item.field.isEditable"
+                            :edit-mode="editMode"
+                            :redirect-url="item.field.redirectUrl"
+                            :transform-for-sending="item.field.transformForSending"
+                            :possible-values="item.field.possibleValues"
+                            :display-possible-value="item.field.displayPossibleValue"
+                            :configurations="item.field.configurations"
+                            :exists-file="item.field.existFile"
+                            :upload-action="item.field.uploadAction"
+                            :download-action="item.field.downloadAction"
+                            :download-module="item.field.downloadModule"
+                            :todos="extendedExplanations"
+                            :visible-bridgeheads="visibleBridgeheads"
+                            :mandatory="item.field.mandatory"
+                            :type="item.field.type"
+                            :section="item.field.section"
+                            :block="item.field.block"
+                            :call-refresh-context="refreshContext"
+                            :extra-params="item.field.extraParams"
+                            :delete-action="item.field.deleteAction"
+                            :delete-module="item.field.deleteModule"
+                            :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
+                            :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"/>
+                      </template>
                     </div>
-                    <div class="project-field-notification">
-                      {{ getDialogStep(projectField.category)?.description }}
-                    </div>
-                  </div>
-                  <div
-                      v-else-if="projectField.visibilityCondition && !(index === 0 || projectFields[index - 1]?.category !== projectField.category) && projectField.fieldKey !== 'DescriptionUpload'"
-                      class="input-field-separator"></div>
-                  <ProjectFieldRow
-                      v-if="projectField.visibilityCondition &&
-                      (!existsDraftDialog ||
-                      projectField.isEditable && draftDialogStepper.currentStep?.id !== DialogStep.SUMMARY ||
-                      draftDialogStepper.currentStep?.id === DialogStep.SUMMARY)"
-                      :field-key="projectField.fieldKey"
-                      :field-value="projectField.fieldValue"
-                      :field-description="projectField.fieldDescription"
-                      :bridgeheads="projectField.bridgeheads"
-                      :action="projectField.action"
-                      :module="projectField.module"
-                      :edit-project-param="projectField.editProjectParam"
-                      :is-editable="projectField.isEditable"
-                      :edit-mode="editMode"
-                      :redirect-url="projectField.redirectUrl"
-                      :transform-for-sending="projectField.transformForSending"
-                      :possible-values="projectField.possibleValues"
-                      :display-possible-value="projectField.displayPossibleValue"
-                      :configurations="projectField.configurations"
-                      :exists-file="projectField.existFile"
-                      :upload-action="projectField.uploadAction"
-                      :download-action="projectField.downloadAction"
-                      :download-module="projectField.downloadModule"
-                      :todos="extendedExplanations"
-                      :visible-bridgeheads="visibleBridgeheads"
-                      :mandatory="projectField.mandatory"
-                      :type="projectField.type"
-                      :section="projectField.section"
-                      :call-refresh-context="refreshContext"
-                      :extra-params="projectField.extraParams"
-                      :delete-action="projectField.deleteAction"
-                      :delete-module="projectField.deleteModule"
-                      :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
-                      :context="context"
-                      :project-manager-backend-service="projectManagerBackendService"/>
+                  </template>
+                  <template v-if="block.block">
+                    <button
+                        v-if="shouldShowAddButtonAfterBlockGroup(blockIndex)"
+                        type="button"
+                        class="btn btn-outline-secondary project-field-block-add-button"
+                        @click="addBlockInstance(block.block)">
+                      Add {{ block.block?.displayName ?? block.block?.label }}
+                    </button>
+                    <div
+                        v-if="shouldShowAddButtonAfterBlockGroup(blockIndex) && block.block?.description"
+                        class="project-field-block-description"
+                        v-html="block.block.description"></div>
+                  </template>
                 </template>
 
               </div>
@@ -630,6 +646,21 @@ import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdf
 import {PollingService} from "@/services/PollingService";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
 
+interface ProjectFieldRenderItem {
+  key: string;
+  field: ProjectField;
+  showCategoryHeader: boolean;
+  showSeparator: boolean;
+  shouldRenderRow: boolean;
+}
+
+interface ProjectFieldRenderGroup {
+  key: string;
+  block?: ProjectField["block"];
+  items: ProjectFieldRenderItem[];
+}
+
+type BlockMetadata = ProjectField["block"];
 
 export default defineComponent({
   computed: {
@@ -656,6 +687,9 @@ export default defineComponent({
     },
     ProjectType() {
       return ProjectType
+    },
+    projectFieldRenderBlock(): ProjectFieldRenderGroup[] {
+      return this.getProjectFieldRenderGroups();
     }
   },
   props: {
@@ -760,7 +794,11 @@ export default defineComponent({
       })
     },
     async project() {
-      await this.initializeProjectRelatedData();
+      try {
+        await this.initializeProjectRelatedData();
+      } catch (error) {
+        console.error('Failed to initialize project-related data:', error);
+      }
     },
     'draftDialogStepper.currentStep': function () {
       this.extendedExplanations = this.fetchExtendedExplanations();
@@ -806,6 +844,169 @@ export default defineComponent({
   methods: {
     hasProjectType,
     getMergedQueryStates,
+
+    getProjectFieldRenderGroups(): ProjectFieldRenderGroup[] {
+      const groups: ProjectFieldRenderGroup[] = [];
+      const projectFields = this.projectFields as ProjectField[];
+
+      projectFields.forEach((field, index) => {
+        const item = this.buildProjectFieldRenderItem(field, index);
+        const currentGroup = groups[groups.length - 1];
+
+        if (field.block && currentGroup && this.areSameBlock(currentGroup.block, field.block)) {
+          currentGroup.items.push(item);
+          return;
+        }
+
+        groups.push({
+          key: field.block
+              ? `block-${field.block.label}-${field.block.instance ?? 0}-${index}`
+              : `field-${index}`,
+          block: field.block,
+          items: [item]
+        });
+      });
+
+      return groups;
+    },
+
+    buildProjectFieldRenderItem(field: ProjectField, index: number): ProjectFieldRenderItem {
+      const previousField = (this.projectFields as ProjectField[])[index - 1];
+      const startsCategory = index === 0 || previousField?.category !== field.category;
+      const showStructuralElement = field.visibilityCondition && field.fieldKey !== 'DescriptionUpload';
+
+      return {
+        key: `field-${index}`,
+        field,
+        showCategoryHeader: !this.existsDraftDialog && startsCategory && showStructuralElement,
+        showSeparator: !startsCategory && showStructuralElement,
+        shouldRenderRow: field.visibilityCondition &&
+            (!this.existsDraftDialog ||
+                field.isEditable && this.draftDialogStepper.currentStep?.id !== FixedDialogStep.SUMMARY ||
+                this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+      };
+    },
+
+    areSameBlock(first?: ProjectField["block"], second?: ProjectField["block"]): boolean {
+      if (!first || !second) {
+        return false;
+      }
+
+      return first.label === second.label && first.instance === second.instance
+    },
+
+    areSameBlockType(first?: ProjectField["block"], second?: ProjectField["block"]): boolean {
+      if (!first || !second) {
+        return false;
+      }
+
+      return first.label === second.label
+    },
+
+    shouldShowAddButtonAfterBlockGroup(groupIndex: number): boolean {
+      const groups = this.projectFieldRenderBlock;
+      const currentGroup = groups[groupIndex];
+
+      if (!currentGroup?.block || !this.isProjectFieldBlockVisible(currentGroup)) {
+        return false;
+      }
+
+      if (currentGroup.block.multiple === false && this.hasBlockInstance(currentGroup.block)) {
+        return false;
+      }
+
+      const nextGroup = groups
+          .slice(groupIndex + 1)
+          .find((group) => this.isProjectFieldBlockVisible(group));
+
+      return !this.areSameBlockType(currentGroup.block, nextGroup?.block);
+    },
+
+    shouldRenderBlock(group: ProjectFieldRenderGroup): boolean {
+      if (!group.block) {
+        return false;
+      }
+
+      return this.isProjectFieldBlockVisible(group) &&
+          group.block.instance != null;
+    },
+
+    shouldRenderFieldBlockItems(group: ProjectFieldRenderGroup): boolean {
+      return !group.block || this.shouldRenderBlock(group);
+    },
+
+    isProjectFieldBlockVisible(group: ProjectFieldRenderGroup): boolean {
+      return group.items.some((item) => item.field.visibilityCondition);
+    },
+
+    addBlockInstance(block?: BlockMetadata) {
+      if (!block) {
+        return;
+      }
+
+      const matchingFields = this.formFields.filter((field) => this.isSameFormFieldBlockType(field, block));
+      if (matchingFields.length === 0) {
+        return;
+      }
+
+      const numericInstances = matchingFields
+          .map((field) => field.blockInstance)
+          .filter((instance): instance is number => instance != null);
+      const maxInstance = numericInstances.length > 0 ? Math.max(...numericInstances) : undefined;
+      const sourceFields = matchingFields.filter((field) =>
+          maxInstance !== undefined
+              ? field.blockInstance === maxInstance
+              : field.blockInstance === undefined || field.blockInstance === null
+      );
+
+      if (sourceFields.length === 0) {
+        return;
+      }
+
+      const newInstance = maxInstance !== undefined ? maxInstance + 1 : 1;
+      const clonedFields: FormField[] = sourceFields.map((field) => ({
+        ...field,
+        value: undefined,
+        blockInstance: newInstance
+      }));
+
+      const insertionIndex = this.findBlockInsertionIndex(block);
+      this.formFields = [
+        ...this.formFields.slice(0, insertionIndex),
+        ...clonedFields,
+        ...this.formFields.slice(insertionIndex)
+      ];
+      this.updateProjectFields();
+      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
+    },
+
+    isSameFormFieldBlockType(field: FormField, block?: BlockMetadata): boolean {
+      return !!block &&
+          field.block === block.label &&
+          field.blockDisplayName === block.displayName &&
+          field.blockDescription === block.description;
+    },
+
+    hasBlockInstance(block: BlockMetadata): boolean {
+      return this.formFields.some((field) =>
+          this.isSameFormFieldBlockType(field, block) && field.blockInstance != null
+      );
+    },
+
+    findBlockInsertionIndex(block?: BlockMetadata): number {
+      if (!block) {
+        return this.formFields.length;
+      }
+
+      for (let index = this.formFields.length - 1; index >= 0; index--) {
+        if (this.isSameFormFieldBlockType(this.formFields[index], block)) {
+          return index + 1;
+        }
+      }
+
+      return this.formFields.length;
+    },
 
     toggleNotification() {
       this.showNotification = !this.showNotification;
@@ -1004,12 +1205,7 @@ export default defineComponent({
           this.initializeData(Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, new Map(), 'currentUser'),
           this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_BEST_PROJECT_FORM_TEMPLATES_ACTION, new Map(), 'formTemplates'),
-          this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_SELECTED_PROJECT_FORMS_ACTION, new Map(), async result => {
-            this.selectedForms = result;
-            await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async result => {
-              this.addFormFields(result);
-            })
-          }),
+          this.initializeProjectFormsData(),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, new Map(), 'exporterTemplateIds')
         ]);
         await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), async (result: Record<string, ProjectAndForms>) => {
@@ -1041,6 +1237,22 @@ export default defineComponent({
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
         this.project?.state === ProjectState.DRAFT && this.currentMenuStep === "Status" ? this.currentMenuStep = "Request" : {}
+      }
+    },
+
+    async initializeProjectFormsData() {
+      try {
+        await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_SELECTED_PROJECT_FORMS_ACTION, new Map(), async result => {
+          this.selectedForms = result;
+          await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async formFields => {
+            this.addFormFields(formFields);
+          });
+        });
+      } catch (error) {
+        console.warn('Failed to load project form definitions.', error);
+        this.selectedForms = [];
+        this.formFields = [];
+        this.formTitles = [];
       }
     },
 
@@ -1229,7 +1441,14 @@ export default defineComponent({
             (!this.existsDraftDialog ||
                 this.draftDialogStepper.currentStep?.id === formField.title ||
                 this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
-
+        block: formField.block ? {
+          label: formField.block,
+          instance: formField.blockInstance,
+          multiple: formField.multipleBlock,
+          minInstances: formField.minBlockInstances,
+          displayName: formField.blockDisplayName,
+          description: formField.blockDescription
+        } : undefined,
         section: new Section(formFields, index)
       }));
     },
@@ -1266,7 +1485,15 @@ export default defineComponent({
         return [{
           title: formField.title,
           label: formField.label,
-          value: input
+          value: input,
+          ...(formField.block ? {
+            block: formField.block,
+            blockInstance: formField.blockInstance,
+            multipleBlock: formField.multipleBlock,
+            minBlockInstances: formField.minBlockInstances,
+            blockDisplayName: formField.blockDisplayName,
+            blockDescription: formField.blockDescription
+          } : {})
         }];
       };
     },
@@ -2346,6 +2573,23 @@ export default defineComponent({
 
 .form-switch .form-check-input.inactive {
   background-color: #EEEEEE;
+}
+
+.project-field-block {
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  margin: 1rem 1rem 1rem 0;
+  padding: 0 1rem 1rem 1rem;
+}
+
+.project-field-block-add-button {
+  margin: 0 1rem 1rem 0;
+}
+
+.project-field-block-description {
+  font-size: small;
+  font-weight: normal;
+  margin: -0.5rem 1rem 1rem 0;
 }
 
 .input-field-separator {

@@ -121,6 +121,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Polling Service for visible bridgeheads
 - Project field row category
 - Final Report
+- Form field blocks
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

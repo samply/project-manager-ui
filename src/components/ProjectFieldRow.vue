@@ -16,7 +16,7 @@ import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import type {DialogStep} from "@/services/fixedDialogStep";
 import {FixedDialogStep} from "@/services/fixedDialogStep";
-import type {BridgeheadsProjectField} from "@/services/utils";
+import type {Block, BridgeheadsProjectField} from "@/services/utils";
 import {ActionFunction, Section} from "@/services/utils";
 import {PropType, watch} from "vue";
 import "@samply/lens";
@@ -65,6 +65,7 @@ import {QueryItem,setQueryStore} from "@samply/lens";
     draftDialogCurrentStep: {type: Object as PropType<DialogStep>, required: false},
     visibleBridgeheads: {type: Array as PropType<Bridgehead[]>, required: true},
     section: {type: Object as PropType<Section>, required: false},
+    block: {type: Object as PropType<Block>, required: false},
     transformForSending: {
       type: Function as unknown as () => (input: string) => string,
       default: (input: string) => input
@@ -117,6 +118,8 @@ export default class ProjectFieldRow extends Vue {
   readonly visibleBridgeheads!: Bridgehead[];
   // noinspection JSUnusedGlobalSymbols
   readonly section?: Section;
+  // noinspection JSUnusedGlobalSymbols
+  readonly block?: Block;
   uploadAction?: Action;
   // noinspection JSUnusedGlobalSymbols
   downloadAction?: Action;

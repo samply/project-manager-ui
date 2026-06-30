@@ -450,7 +450,9 @@
                       <i class="bi bi-chevron-left"></i> Back
                     </button>
                     <button v-if="draftDialogStepper.hasNextStep"
-                            class="btn btn-nav-continue" @click="draftDialogStepper.nextStep()">
+                            class="btn btn-nav-continue"
+                            :disabled="isServicesStepContinueDisabled"
+                            @click="draftDialogStepper.nextStep()">
                       Continue <i class="bi bi-chevron-right"></i>
                     </button>
                     <ProjectManagerButton v-if="!draftDialogStepper.hasNextStep"
@@ -780,7 +782,8 @@ export default defineComponent({
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
     currentProjectConfiguration(newValue, _oldValue) {
-      if (newValue !== CUSTOM_PROJECT_CONFIGURATION) {
+      const selectedKeys = (newValue as string).split(',').map((s: string) => s.trim());
+      if (!selectedKeys.includes(CUSTOM_PROJECT_CONFIGURATION)) {
         this.draftDialogStepper.filterStep(FixedDialogStep.CUSTOM);
       } else {
         this.draftDialogStepper.removeFilteredStep(FixedDialogStep.CUSTOM);
@@ -955,6 +958,12 @@ export default defineComponent({
       return result.length > 0 ? 'missing fields:<br><br>' + result : result;
     },
 
+    isServicesStepContinueDisabled(): boolean {
+      if (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id !== FixedDialogStep.SERVICES) return false;
+      const selected = this.currentProjectConfiguration.split(',').map(s => s.trim()).filter(s => s && s !== CUSTOM_PROJECT_CONFIGURATION);
+      return selected.length === 0;
+    },
+
     hasMissingFieldsInStep(step: string): boolean {
       if (this.draftDialogStepper.visitedSteps.has(step)) {
         return this.groupedMissingFields[step]?.length > 0;
@@ -1101,8 +1110,9 @@ export default defineComponent({
       const isAdmin = this.projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN);
       const customFlag = this.project?.isCustomConfigSelected;
 
+      const selectedKeys = this.currentProjectConfiguration.split(',').map(s => s.trim());
       return !isAdmin &&
-          (customFlag === undefined || (!customFlag && this.currentProjectConfiguration !== CUSTOM_PROJECT_CONFIGURATION));
+          (customFlag === undefined || (!customFlag && !selectedKeys.includes(CUSTOM_PROJECT_CONFIGURATION)));
     },
 
     updateProjectFields() {
@@ -1155,27 +1165,33 @@ export default defineComponent({
               if (result) {
                 const keys = Object.keys(result);
                 if (keys.length > 0) {
-                  this.currentProjectConfiguration = keys[0];
-                  const currentProjectConfig = result[this.currentProjectConfiguration];
-                  const project = currentProjectConfig?.project;
+                  this.currentProjectConfiguration = keys.join(',');
 
-                  this.currentProjectConfigurationFields = project
-                      ? [
-                        ...Object.keys(project).filter(
-                            key => key !== 'outputs' && (project as any)[key] !== null
-                        ),
-                        ...(project.outputs ?? []).flatMap(output => {
-                          const prefix = output.projectType;
-                          return [
-                            `${prefix}.projectType`,
-                            ...(output.outputFormat ? [`${prefix}.outputFormat`] : []),
-                            ...(output.templateId ? [`${prefix}.templateId`] : [])
-                          ];
-                        })
-                      ]
-                      : [];
-
-                  this.formFields = currentProjectConfig?.formFields ?? [];
+                  const allFields: string[] = [];
+                  const allFormFields: any[] = [];
+                  for (const key of keys) {
+                    const cfg = result[key];
+                    const project = cfg?.project;
+                    if (project) {
+                      Object.keys(project)
+                          .filter(k => k !== 'outputs' && (project as any)[k] !== null)
+                          .forEach(k => { if (!allFields.includes(k)) allFields.push(k); });
+                      (project.outputs ?? []).forEach((output: any) => {
+                        const prefix = output.projectType;
+                        [`${prefix}.projectType`,
+                          ...(output.outputFormat ? [`${prefix}.outputFormat`] : []),
+                          ...(output.templateId ? [`${prefix}.templateId`] : [])
+                        ].forEach(f => { if (!allFields.includes(f)) allFields.push(f); });
+                      });
+                    }
+                    (cfg?.formFields ?? []).forEach((ff: any) => {
+                      if (!allFormFields.some((e: any) => e.title === ff.title && e.label === ff.label)) {
+                        allFormFields.push(ff);
+                      }
+                    });
+                  }
+                  this.currentProjectConfigurationFields = allFields;
+                  this.formFields = allFormFields;
                 } else {
                   this.resetCurrentProjectConfiguration();
                 }
@@ -1201,7 +1217,8 @@ export default defineComponent({
     },
 
     isNotIncludedInCurrentProjectConfiguration(field: string) {
-      return this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION || this.currentProjectConfigurationFields.includes(field);
+      const selectedKeys = this.currentProjectConfiguration.split(',').map(s => s.trim());
+      return selectedKeys.includes(CUSTOM_PROJECT_CONFIGURATION) || this.currentProjectConfigurationFields.includes(field);
     },
 
     async initializeData(module: Module, action: Action, params: Map<string, unknown>, dataVariable: string): Promise<any> {
@@ -1642,7 +1659,7 @@ export default defineComponent({
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('queryContext'),
           editMode: this.editMode,
           category: FixedDialogStep.CUSTOM,
-          visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION && this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || (this.currentProjectConfiguration.split(',').map(s => s.trim()).includes(CUSTOM_PROJECT_CONFIGURATION) && this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM) || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
           fieldKey: "Votum",

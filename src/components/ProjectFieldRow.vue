@@ -232,6 +232,23 @@ export default class ProjectFieldRow extends Vue {
     }
   }
 
+  isServiceSelected(step: string): boolean {
+    const selected = (this.editedValue[0] ?? '').split(',').map((s: string) => s.trim()).filter(Boolean);
+    return selected.includes(step);
+  }
+
+  toggleService(step: string) {
+    const selected = (this.editedValue[0] ?? '').split(',').map((s: string) => s.trim()).filter(Boolean);
+    const idx = selected.indexOf(step);
+    if (idx >= 0) {
+      selected.splice(idx, 1);
+    } else {
+      selected.push(step);
+    }
+    this.editedValue[0] = selected.join(',');
+    this.saveField();
+  }
+
   saveField() {
     this.showInputs = false;
     this.editing = false;
@@ -529,16 +546,16 @@ export default class ProjectFieldRow extends Vue {
     <td colspan="3" style="display: block;width:100%">
       <div>
         <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
-             :class="{ 'active': editedValue[0] === step }">
+             :class="{ 'active': isServiceSelected(step) }">
           <div class="config-button"
                role="button"
                tabindex="0"
-               @click="editedValue[0]=step; saveField()"
-               @keydown.enter="editedValue[0]=step; saveField()"
+               @click="toggleService(step)"
+               @keydown.enter="toggleService(step)"
                style="cursor: pointer; height:100%; min-width: fit-content;">
             <div style="display: flex;flex-direction: row;">
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"  :checked="editedValue[0] === step">
+                <input class="form-check-input" type="checkbox" :checked="isServiceSelected(step)" @click.stop @change="toggleService(step)">
               </div>
               <div style="height:100%; display: flex; flex-direction: column;width:100%">
                 <div class="config-box-header">{{ configurations?.get(step)?.project?.label }}</div>
@@ -547,24 +564,6 @@ export default class ProjectFieldRow extends Vue {
                     <div style="margin-bottom:2%;text-align:left;">
                       {{ configurations?.get(step)?.project?.description }}
                     </div>
-                    <div v-if="!configurations?.get(step)?.project?.isCustomConfigSelected"
-                         style="text-align: right;margin-bottom:2%">
-                      <!--<button @click.stop="showDetails[index]=!showDetails[index]"
-                              style="background: none; border:none; color: #007bff;">
-                        <span v-if="!showDetails[index]">show details</span>
-                        <span v-if="showDetails[index]">hide details</span>
-                      </button>-->
-                    </div>
-                    <table v-if="showDetails[index]" style="text-align: left">
-                      <tr v-for="(param, key) in configurations?.get(step)?.project?.outputs?.[0]" :key="key">
-                        <!--<template v-if="!['customConfig', 'label', 'description'].includes(key.toString())">-->
-                          <td style="width: 20%">{{ configLabel[key] }}:</td>
-                          <td class="truncate-15" data-toggle="tooltip" data-placement="top" :title="param?.toString()">
-                            {{ param }}
-                          </td>
-                        <!--</template>-->
-                      </tr>
-                    </table>
                   </div>
                 </div>
               </div>

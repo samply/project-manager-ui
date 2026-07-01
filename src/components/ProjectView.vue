@@ -451,7 +451,7 @@
                     </button>
                     <button v-if="draftDialogStepper.hasNextStep"
                             class="btn btn-nav-continue"
-                            :disabled="isServicesStepContinueDisabled"
+                            :disabled="isServicesStepContinueDisabled()"
                             @click="draftDialogStepper.nextStep()">
                       Continue <i class="bi bi-chevron-right"></i>
                     </button>
@@ -459,7 +459,7 @@
                                           :module="Module.PROJECT_STATE_MODULE"
                                           :action="Action.CREATE_PROJECT_ACTION"
                                           :context="context" :call-refresh-context="refreshContext"
-                                          text="Create Request"
+                                          text="Submit Request"
                                           button-class="btn btn-create-request"
                                           :with-message="false"
                                           :is-disabled="!hasProjectAllMandatoryFields"

@@ -1274,8 +1274,8 @@ export default defineComponent({
         isCollaboratorGroup: formField.label === 'collaborators',
         isPrincipalInvestigatorGroup: formField.label === 'principal_investigator',
         visibilityCondition:
-            !/^collaborator_(name|affiliation|email|data_recipient|biosample_recipient)_\d+$/.test(formField.label) && // hide individual sub-fields managed by CollaboratorEntriesPanel
-            !/^principal_investigator_(title_name|affiliation|email)$/.test(formField.label) && // hide individual sub-fields managed by PrincipalInvestigatorPanel
+            !/^collaborator_(title|first_name|last_name|name|affiliation|email|data_recipient|biosample_recipient)_\d+$/.test(formField.label) && // hide individual sub-fields managed by CollaboratorEntriesPanel ('name' kept for legacy pre-split data)
+            !/^principal_investigator_(title|first_name|last_name|title_name|affiliation|email)$/.test(formField.label) && // hide individual sub-fields managed by PrincipalInvestigatorPanel ('title_name' kept for legacy pre-split data)
             this.selectedForms.some(f => f.title === formField.title) && // only if the field is already selected
             (!this.existsDraftDialog ||
                 this.draftDialogStepper.currentStep?.id === formField.title ||

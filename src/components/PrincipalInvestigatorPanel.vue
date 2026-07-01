@@ -8,25 +8,69 @@
     </div>
 
     <div class="pi-card">
-      <!-- Title and Name -->
+      <!-- Title -->
       <div class="pi-field">
         <div class="pi-field-header">
-          <span class="pi-field-title">Title and Name<span class="mandatory-asterisk"> *</span></span>
-          <div class="pi-field-desc">Academic title and full name of the principal investigator</div>
+          <span class="pi-field-title">Title</span>
+          <div class="pi-field-desc">Academic title of the principal investigator</div>
         </div>
         <div class="pi-field-control">
           <template v-if="!isInEditMode">
-            <span class="pi-display-value">{{ entry.titleName || '—' }}</span>
+            <span class="pi-display-value">{{ entry.title || '—' }}</span>
           </template>
           <template v-else>
             <input
                 type="text"
                 class="form-control grey"
-                :class="{ 'is-invalid': showValidation && !entry.titleName }"
-                :value="entry.titleName"
-                @input="onTextInput('titleName', ($event.target as HTMLInputElement).value)"
+                :value="entry.title"
+                @input="onTextInput('title', ($event.target as HTMLInputElement).value)"
             />
-            <div v-if="showValidation && !entry.titleName" class="invalid-feedback">Required</div>
+          </template>
+        </div>
+      </div>
+
+      <!-- First Name -->
+      <div class="pi-field">
+        <div class="pi-field-header">
+          <span class="pi-field-title">First Name<span class="mandatory-asterisk"> *</span></span>
+          <div class="pi-field-desc">First name of the principal investigator</div>
+        </div>
+        <div class="pi-field-control">
+          <template v-if="!isInEditMode">
+            <span class="pi-display-value">{{ entry.firstName || '—' }}</span>
+          </template>
+          <template v-else>
+            <input
+                type="text"
+                class="form-control grey"
+                :class="{ 'is-invalid': showValidation && !entry.firstName }"
+                :value="entry.firstName"
+                @input="onTextInput('firstName', ($event.target as HTMLInputElement).value)"
+            />
+            <div v-if="showValidation && !entry.firstName" class="invalid-feedback">Required</div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Last Name -->
+      <div class="pi-field">
+        <div class="pi-field-header">
+          <span class="pi-field-title">Last Name<span class="mandatory-asterisk"> *</span></span>
+          <div class="pi-field-desc">Last name of the principal investigator</div>
+        </div>
+        <div class="pi-field-control">
+          <template v-if="!isInEditMode">
+            <span class="pi-display-value">{{ entry.lastName || '—' }}</span>
+          </template>
+          <template v-else>
+            <input
+                type="text"
+                class="form-control grey"
+                :class="{ 'is-invalid': showValidation && !entry.lastName }"
+                :value="entry.lastName"
+                @input="onTextInput('lastName', ($event.target as HTMLInputElement).value)"
+            />
+            <div v-if="showValidation && !entry.lastName" class="invalid-feedback">Required</div>
           </template>
         </div>
       </div>
@@ -94,10 +138,12 @@ import type {DialogStep} from '@/services/fixedDialogStep';
 import {FixedDialogStep} from '@/services/fixedDialogStep';
 
 const PROJECT_FORM_TITLE = 'project';
-const PI_LABEL_REGEX = /^principal_investigator_(title_name|affiliation|email)$/;
+const PI_LABEL_REGEX = /^principal_investigator_(title|first_name|last_name|affiliation|email)$/;
 
 interface PrincipalInvestigatorEntry {
-  titleName: string;
+  title: string;
+  firstName: string;
+  lastName: string;
   affiliation: string;
   email: string;
 }
@@ -140,7 +186,7 @@ export default defineComponent({
 
   data() {
     return {
-      entry: {titleName: '', affiliation: '', email: ''} as PrincipalInvestigatorEntry,
+      entry: {title: '', firstName: '', lastName: '', affiliation: '', email: ''} as PrincipalInvestigatorEntry,
       saveTimer: null as ReturnType<typeof setTimeout> | null,
       showValidation: false,
     };
@@ -159,7 +205,7 @@ export default defineComponent({
     },
 
     isValid(): boolean {
-      return Boolean(this.entry.titleName) && Boolean(this.entry.affiliation) && Boolean(this.entry.email);
+      return Boolean(this.entry.firstName) && Boolean(this.entry.lastName) && Boolean(this.entry.affiliation) && Boolean(this.entry.email);
     }
   },
 
@@ -193,7 +239,9 @@ export default defineComponent({
         if (!m) continue;
         const base = m[1];
         switch (base) {
-          case 'title_name':  this.entry.titleName   = field.value ?? ''; break;
+          case 'title':       this.entry.title       = field.value ?? ''; break;
+          case 'first_name':  this.entry.firstName   = field.value ?? ''; break;
+          case 'last_name':   this.entry.lastName    = field.value ?? ''; break;
           case 'affiliation': this.entry.affiliation = field.value ?? ''; break;
           case 'email':       this.entry.email       = field.value ?? ''; break;
         }
@@ -209,7 +257,9 @@ export default defineComponent({
 
     async saveEntry() {
       const fieldsToSave = [
-        {title: PROJECT_FORM_TITLE, label: 'principal_investigator_title_name', value: this.entry.titleName},
+        {title: PROJECT_FORM_TITLE, label: 'principal_investigator_title',      value: this.entry.title},
+        {title: PROJECT_FORM_TITLE, label: 'principal_investigator_first_name', value: this.entry.firstName},
+        {title: PROJECT_FORM_TITLE, label: 'principal_investigator_last_name',  value: this.entry.lastName},
         {title: PROJECT_FORM_TITLE, label: 'principal_investigator_affiliation', value: this.entry.affiliation},
         {title: PROJECT_FORM_TITLE, label: 'principal_investigator_email',       value: this.entry.email},
       ];

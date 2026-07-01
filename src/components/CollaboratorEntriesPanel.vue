@@ -34,25 +34,69 @@
 
         <div v-show="!entry.collapsed" class="collab-card-body">
 
-          <!-- Name -->
+          <!-- Title -->
           <div class="cl-field">
             <div class="cl-field-header">
-              <span class="cl-field-title">Name<span class="mandatory-asterisk"> *</span></span>
-              <div class="cl-field-desc">Full name of the collaborator</div>
+              <span class="cl-field-title">Title</span>
+              <div class="cl-field-desc">Academic title of the collaborator</div>
             </div>
             <div class="cl-field-control">
               <template v-if="!isInEditMode">
-                <span class="cl-display-value">{{ entry.name || '—' }}</span>
+                <span class="cl-display-value">{{ entry.title || '—' }}</span>
               </template>
               <template v-else>
                 <input
                     type="text"
                     class="form-control grey"
-                    :class="{ 'is-invalid': isFieldInvalid(entry, 'name') }"
-                    :value="entry.name"
-                    @input="onTextInput(idx, 'name', ($event.target as HTMLInputElement).value)"
+                    :value="entry.title"
+                    @input="onTextInput(idx, 'title', ($event.target as HTMLInputElement).value)"
                 />
-                <div v-if="isFieldInvalid(entry, 'name')" class="invalid-feedback">Required</div>
+              </template>
+            </div>
+          </div>
+
+          <!-- First Name -->
+          <div class="cl-field">
+            <div class="cl-field-header">
+              <span class="cl-field-title">First Name<span class="mandatory-asterisk"> *</span></span>
+              <div class="cl-field-desc">First name of the collaborator</div>
+            </div>
+            <div class="cl-field-control">
+              <template v-if="!isInEditMode">
+                <span class="cl-display-value">{{ entry.firstName || '—' }}</span>
+              </template>
+              <template v-else>
+                <input
+                    type="text"
+                    class="form-control grey"
+                    :class="{ 'is-invalid': isFieldInvalid(entry, 'firstName') }"
+                    :value="entry.firstName"
+                    @input="onTextInput(idx, 'firstName', ($event.target as HTMLInputElement).value)"
+                />
+                <div v-if="isFieldInvalid(entry, 'firstName')" class="invalid-feedback">Required</div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Last Name -->
+          <div class="cl-field">
+            <div class="cl-field-header">
+              <span class="cl-field-title">Last Name<span class="mandatory-asterisk"> *</span></span>
+              <div class="cl-field-desc">Last name of the collaborator</div>
+            </div>
+            <div class="cl-field-control">
+              <template v-if="!isInEditMode">
+                <span class="cl-display-value">{{ entry.lastName || '—' }}</span>
+              </template>
+              <template v-else>
+                <input
+                    type="text"
+                    class="form-control grey"
+                    :class="{ 'is-invalid': isFieldInvalid(entry, 'lastName') }"
+                    :value="entry.lastName"
+                    @input="onTextInput(idx, 'lastName', ($event.target as HTMLInputElement).value)"
+                />
+                <div v-if="isFieldInvalid(entry, 'lastName')" class="invalid-feedback">Required</div>
               </template>
             </div>
           </div>
@@ -177,10 +221,12 @@ import type {DialogStep} from '@/services/fixedDialogStep';
 import {FixedDialogStep} from '@/services/fixedDialogStep';
 
 const PROJECT_FORM_TITLE = 'project';
-const COLLAB_LABEL_REGEX = /^collaborator_(name|affiliation|email|data_recipient|biosample_recipient)_(\d+)$/;
+const COLLAB_LABEL_REGEX = /^collaborator_(title|first_name|last_name|affiliation|email|data_recipient|biosample_recipient)_(\d+)$/;
 
 interface CollaboratorEntry {
-  name: string;
+  title: string;
+  firstName: string;
+  lastName: string;
   affiliation: string;
   email: string;
   dataRecipient: boolean;
@@ -245,7 +291,7 @@ export default defineComponent({
     },
 
     isValid(): boolean {
-      return this.entries.every(e => Boolean(e.name) && Boolean(e.affiliation) && Boolean(e.email));
+      return this.entries.every(e => Boolean(e.firstName) && Boolean(e.lastName) && Boolean(e.affiliation) && Boolean(e.email));
     }
   },
 
@@ -289,7 +335,9 @@ export default defineComponent({
         maxIdx = Math.max(maxIdx, idx);
         if (!entryMap[idx]) entryMap[idx] = this.newEntry();
         switch (base) {
-          case 'name':               entryMap[idx].name              = field.value ?? ''; break;
+          case 'title':              entryMap[idx].title             = field.value ?? ''; break;
+          case 'first_name':         entryMap[idx].firstName          = field.value ?? ''; break;
+          case 'last_name':          entryMap[idx].lastName           = field.value ?? ''; break;
           case 'affiliation':        entryMap[idx].affiliation       = field.value ?? ''; break;
           case 'email':              entryMap[idx].email             = field.value ?? ''; break;
           case 'data_recipient':     entryMap[idx].dataRecipient     = field.value === 'true'; break;
@@ -300,7 +348,7 @@ export default defineComponent({
       const result: CollaboratorEntry[] = [];
       for (let i = 0; i <= maxIdx; i++) {
         const e = entryMap[i];
-        if (e && (e.name || e.affiliation || e.email)) {
+        if (e && (e.title || e.firstName || e.lastName || e.affiliation || e.email)) {
           result.push(e);
         }
       }
@@ -310,7 +358,7 @@ export default defineComponent({
     },
 
     newEntry(): CollaboratorEntry {
-      return {name: '', affiliation: '', email: '', dataRecipient: false, biosampleRecipient: false, collapsed: false};
+      return {title: '', firstName: '', lastName: '', affiliation: '', email: '', dataRecipient: false, biosampleRecipient: false, collapsed: false};
     },
 
     addEntry() {
@@ -334,16 +382,17 @@ export default defineComponent({
 
     cardTitle(index: number): string {
       const entry = this.entries[index];
-      const namePart = entry.name ? ` — ${entry.name}` : '';
+      const fullName = [entry.firstName, entry.lastName].filter(Boolean).join(' ');
+      const namePart = fullName ? ` — ${fullName}` : '';
       return `Collaborator #${index + 1}${namePart}`;
     },
 
-    isFieldInvalid(entry: CollaboratorEntry, field: keyof Pick<CollaboratorEntry, 'name' | 'affiliation' | 'email'>): boolean {
-      const hasAnyField = Boolean(entry.name || entry.affiliation || entry.email);
+    isFieldInvalid(entry: CollaboratorEntry, field: keyof Pick<CollaboratorEntry, 'firstName' | 'lastName' | 'affiliation' | 'email'>): boolean {
+      const hasAnyField = Boolean(entry.title || entry.firstName || entry.lastName || entry.affiliation || entry.email);
       return hasAnyField && !entry[field];
     },
 
-    onTextInput(idx: number, field: keyof Pick<CollaboratorEntry, 'name' | 'affiliation' | 'email'>, value: string) {
+    onTextInput(idx: number, field: keyof Pick<CollaboratorEntry, 'title' | 'firstName' | 'lastName' | 'affiliation' | 'email'>, value: string) {
       this.entries[idx][field] = value;
       if (this.saveTimer) clearTimeout(this.saveTimer);
       this.saveTimer = setTimeout(() => this.saveEntries(), 600);
@@ -358,7 +407,9 @@ export default defineComponent({
       const fieldsToSave: Array<{title: string; label: string; value: string}> = [];
 
       for (let i = 0; i < this.entries.length; i++) {
-        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_name_${i}`,               value: this.entries[i].name});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_title_${i}`,               value: this.entries[i].title});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_first_name_${i}`,         value: this.entries[i].firstName});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_last_name_${i}`,          value: this.entries[i].lastName});
         fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_affiliation_${i}`,        value: this.entries[i].affiliation});
         fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_email_${i}`,              value: this.entries[i].email});
         fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_data_recipient_${i}`,     value: String(this.entries[i].dataRecipient)});
@@ -367,7 +418,9 @@ export default defineComponent({
 
       const clearUpTo = Math.max(this.maxSavedIndex, this.entries.length - 1);
       for (let i = this.entries.length; i <= clearUpTo; i++) {
-        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_name_${i}`,               value: ''});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_title_${i}`,               value: ''});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_first_name_${i}`,         value: ''});
+        fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_last_name_${i}`,          value: ''});
         fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_affiliation_${i}`,        value: ''});
         fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_email_${i}`,              value: ''});
         fieldsToSave.push({title: PROJECT_FORM_TITLE, label: `collaborator_data_recipient_${i}`,     value: ''});

@@ -1,8 +1,8 @@
 //projectManagerBackendService.ts
 import axios, {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
 import axiosRetry from "axios-retry";
-import KeyCloakService from "@/services/keycloak";
 import {getConfig} from "@/services/configLoader";
+import {AuthService} from "@/services/auth";
 
 
 const bridgeheadParam = 'bridgehead'
@@ -11,7 +11,11 @@ const siteParam = 'site'
 
 const actionsPath = '/actions'
 
+export const CUSTOM_PROJECT_CONFIGURATION = 'CUSTOM';
+
 export enum ProjectRole {
+    // These values are defined in the backend and come from the backend. Therefore, we suppress the warning:
+    // noinspection JSUnusedGlobalSymbols
     CREATOR = "CREATOR",
     DEVELOPER = "DEVELOPER",
     PILOT = "PILOT",
@@ -31,7 +35,7 @@ export enum Module {
     PROJECTS_MODULE = "PROJECTS",
     USER_MODULE = "USER",
     PROJECT_STATE_MODULE = "PROJECT_STATE",
-    PROJECT_RESULTS_MODULE= "PROJECT_RESULTS",
+    PROJECT_RESULTS_MODULE = "PROJECT_RESULTS",
     PROJECT_BRIDGEHEAD_MODULE = "PROJECT_BRIDGEHEAD",
     PROJECT_EDITION_MODULE = "PROJECT_EDITION",
     PROJECT_DOCUMENTS_MODULE = "PROJECT_DOCUMENTS",
@@ -56,7 +60,6 @@ export enum Action {
     START_PILOT_STAGE_ACTION = "START_PILOT_STAGE",
     START_FINAL_STAGE_ACTION = "START_FINAL_STAGE",
     FINISH_PROJECT_ACTION = "FINISH_PROJECT",
-    DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION = "DOWNLOAD_APPLICATION_FORM_TEMPLATE",
     SAVE_QUERY_IN_BRIDGEHEAD_ACTION = "SAVE_QUERY_IN_BRIDGEHEAD",
     SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION = "SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD",
     DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION = "DOWNLOAD_AUTHENTICATION_SCRIPT",
@@ -64,20 +67,25 @@ export enum Action {
     FETCH_EXPORTER_TEMPLATES_ACTION = "EXPORTER_TEMPLATES",
     FETCH_QUERY_FORMATS_ACTION = "FETCH_QUERY_FORMATS",
     FETCH_OUTPUT_FORMATS_ACTION = "FETCH_OUTPUT_FORMATS",
+    UPLOAD_DESCRIPTION_ACTION = "UPLOAD_DESCRIPTION",
+    UPLOAD_ETHICS_APPROVAL_ACTION = "UPLOAD_ETHICS_APPROVAL",
     UPLOAD_VOTUM_ACTION = "UPLOAD_VOTUM",
     UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION = "UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS",
-    UPLOAD_APPLICATION_FORM_ACTION = "UPLOAD_APPLICATION_FORM",
     UPLOAD_PUBLICATION_ACTION = "UPLOAD_PUBLICATION",
     UPLOAD_SCRIPT_ACTION = "UPLOAD_SCRIPT",
     UPLOAD_OTHER_DOCUMENT_ACTION = "UPLOAD_OTHER_DOCUMENT",
     ADD_PUBLICATION_URL_ACTION = "ADD_PUBLICATION_URL",
     ADD_OTHER_DOCUMENT_URL_ACTION = "ADD_OTHER_DOCUMENT_URL",
+    DOWNLOAD_DESCRIPTION_ACTION = "DOWNLOAD_DESCRIPTION",
+    DOWNLOAD_ETHICS_APPROVAL_ACTION = "DOWNLOAD_ETHICS_APPROVAL",
+    EXISTS_ETHICS_APPROVAL_ACTION = "EXISTS_ETHICS_APPROVAL",
+    FETCH_ETHICS_APPROVAL_DESCRIPTION_ACTION = "FETCH_ETHICS_APPROVAL_DESCRIPTION",
     DOWNLOAD_VOTUM_ACTION = "DOWNLOAD_VOTUM",
     DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION = "DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS",
+    EXISTS_DESCRIPTION_ACTION = "EXISTS_DESCRIPTION",
+    FETCH_DESCRIPTION_ACTION = "FETCH_DESCRIPTION",
     EXISTS_VOTUM_ACTION = "EXISTS_VOTUM",
     EXISTS_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION = "EXISTS_VOTUM_FOR_ALL_BRIDGEHEADS",
-    EXISTS_APPLICATION_FORM_ACTION = "EXISTS_APPLICATION_FORM",
-    DOWNLOAD_APPLICATION_FORM_ACTION = "DOWNLOAD_APPLICATION_FORM",
     DOWNLOAD_PUBLICATION_ACTION = "DOWNLOAD_PUBLICATION",
     DOWNLOAD_SCRIPT_ACTION = "DOWNLOAD_SCRIPT",
     EXISTS_SCRIPT_ACTION = "EXISTS_SCRIPT",
@@ -110,7 +118,6 @@ export enum Action {
     SET_PROJECT_CONFIGURATION_ACTION = "SET_PROJECT_CONFIGURATION",
     FETCH_VISIBLE_PROJECT_BRIDGEHEADS_ACTION = "FETCH_VISIBLE_PROJECT_BRIDGEHEADS",
     FETCH_PROJECT_ROLES_ACTION = "FETCH_PROJECT_ROLES",
-    FETCH_APPLICATION_FORM_DESCRIPTION_ACTION = "FETCH_APPLICATION_FORM_DESCRIPTION",
     FETCH_VOTUM_DESCRIPTION_ACTION = "FETCH_VOTUM_DESCRIPTION",
     FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION_ACTION = "FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION",
     FETCH_SCRIPT_DESCRIPTION_ACTION = "FETCH_SCRIPT_DESCRIPTION",
@@ -124,7 +131,7 @@ export enum Action {
     REMOVE_USER_FROM_MAILING_BLACK_LIST_ACTION = "REMOVE_USER_FROM_MAILING_BLACK_LIST",
     FETCH_MAILING_BLACK_LIST_ACTION = "FETCH_MAILING_BLACK_LIST",
     FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST_ACTION = "FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST",
-    ADD_PROJECT_BRIDGHEAD_RESULTS_URL_ACTION = "ADD_PROJECT_BRIDGHEAD_RESULTS_URL",
+    ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION = "ADD_PROJECT_BRIDGEHEAD_RESULTS_URL",
     ADD_PROJECT_RESULTS_URL_ACTION = "ADD_PROJECT_RESULTS_URL",
     ACCEPT_PROJECT_RESULTS_URL_ACTION = "ACCEPT_PROJECT_RESULTS_URL",
     REJECT_PROJECT_RESULTS_URL_ACTION = "REJECT_PROJECT_RESULTS_URL",
@@ -138,7 +145,21 @@ export enum Action {
     FETCH_EMAIL_MESSAGE_AND_SUBJECT_ACTION = "FETCH_EMAIL_MESSAGE_AND_SUBJECT",
     IS_PROJECT_MANAGER_ADMIN_ACTION = "IS_PROJECT_MANAGER_ADMIN",
     FETCH_RESEARCH_ENVIRONMENT_URL_ACTION = "FETCH_RESEARCH_ENVIRONMENT_URL",
-    EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION = "EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE"
+    EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION = "EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE",
+    FETCH_PROJECT_FORM_FIELDS_ACTION = "FETCH_PROJECT_FORM_FIELDS",
+    FETCH_BEST_PROJECT_FORM_TEMPLATES_ACTION = "FETCH_BEST_FORM_TEMPLATES",
+    EDIT_PROJECT_FORM_FIELDS_ACTION = "EDIT_PROJECT_FORM_FIELDS",
+    DOWNLOAD_FORM_AS_PDF_ACTION = "DOWNLOAD_FORM_AS_PDF",
+    FETCH_SELECTED_PROJECT_FORMS_ACTION = "FETCH_SELECTED_PROJECT_FORMS",
+    ADD_SELECTED_PROJECT_FORM_ACTION = "ADD_SELECTED_PROJECT_FORM",
+    REMOVE_SELECTED_PROJECT_FORM_ACTION = "REMOVE_SELECTED_PROJECT_FORM",
+    REMOVE_PROJECT_OUTPUT_ACTION = "REMOVE_PROJECT_OUTPUT",
+    EXISTS_PUBLICATION_ACTION = "EXISTS_PUBLICATION",
+    UPLOAD_FINAL_REPORT_ACTION = "UPLOAD_FINAL_REPORT",
+    ADD_FINAL_REPORT_URL_ACTION = "ADD_FINAL_REPORT_URL",
+    EXISTS_FINAL_REPORT_ACTION = "EXISTS_FINAL_REPORT",
+    DOWNLOAD_FINAL_REPORT_ACTION = "DOWNLOAD_FINAL_REPORT",
+    FETCH_FINAL_REPORTS_ACTION = "FETCH_FINAL_REPORTS"
 }
 
 export enum EditProjectParam {
@@ -151,53 +172,106 @@ export enum EditProjectParam {
     TEMPLATE_ID = "template-id",
     HUMAN_READABLE = "human-readable",
     PROJECT_TYPE = "project-type",
-    QUERY_CONTEXT = "query-context"
+    QUERY_CONTEXT = "query-context",
+    FORM_FIELDS = "form-fields",
+    FORM_TEMPLATE = "form-template",
+    FORM_TITLE = "form-title",
+    COHORT_DEFINITION = "cohort-definition",
+    QUERY_DETAILS = "query-details"
+}
+
+export enum ProjectType {
+    // These values are defined in the backend and come from the backend. Therefore, we suppress the warning:
+    // noinspection JSUnusedGlobalSymbols
+    EXPORT = "EXPORT",
+    SAMPLES = "SAMPLES", // Interacts with Negotiator
+    DATASHIELD = "DATASHIELD",
+    RESEARCH_ENVIRONMENT = "RESEARCH_ENVIRONMENT"
+}
+
+export enum ProjectState {
+    ALL = "ALL",
+    DRAFT = "DRAFT",
+    REVIEW = "REVIEW",
+    APPROVAL = "APPROVAL",
+    DEVELOP = "DEVELOP",
+    PILOT = "PILOT",
+    FINAL = "FINAL",
+    FINISHED = "FINISHED",
+    REJECTED = "REJECTED",
+    ARCHIVED = "ARCHIVED"
+}
+
+export enum UserProjectState {
+    CREATED = "CREATED",
+    REQUEST_CHANGES = "REQUEST_CHANGES",
+    ACCEPTED = "ACCEPTED",
+    REJECTED = "REJECTED"
 }
 
 export interface Project {
-    code: string | null;
-    creatorEmail: string | null | undefined;
-    creatorName: string | null;
-    createdAt: Date | null;
-    expiresAt: Date | null;
-    archivedAt: Date | null;
-    modifiedAt: Date | null;
-    state: string | null;
-    type: string | null;
-    query: string | null;
-    humanReadable: string | null;
-    queryFormat: string | null;
-    outputFormat: string | null;
-    templateId: string | null;
-    label: string | null;
-    description: string | null;
-    explorerUrl: string | null;
-    queryContext: string | null;
-    isCustomConfig: boolean | null;
-    creatorState: string;
-    resultsUrl: string | null | undefined;
+    code?: string;
+    creatorEmail?: string;
+    creatorName?: string;
+    createdAt?: Date;
+    expiresAt?: Date;
+    archivedAt?: Date;
+    modifiedAt?: Date;
+    state?: ProjectState;
+    query?: string;
+    humanReadable?: string;
+    queryFormat?: string;
+    queryDetails?: string;
+    label?: string;
+    description?: string;
+    explorerUrl?: string;
+    queryContext?: string;
+    isCustomConfigSelected?: boolean;
+    creatorState?: UserProjectState;
+    resultsUrl?: string;
+    cohortDefinition?: string;
+    outputs?: ProjectOutput[];
+}
+
+export interface ProjectOutput {
+    projectType: ProjectType;
+    outputFormat?: string;
+    templateId?: string;
+}
+
+export function getAllProjectTypes(project?: Project): ProjectType[] {
+    return project?.outputs?.map(o => o.projectType) ?? [];
+}
+
+export function getAllProjectTypesFromBridgehead(bridgehead?: Bridgehead): ProjectType[] {
+    return bridgehead?.executions?.map(e => e.projectType) ?? [];
+}
+
+export function hasProjectType(project?: Project, type?: ProjectType): boolean {
+    if (!type) return false; // nothing to check
+    return project?.outputs?.some(o => o.projectType === type) ?? false;
 }
 
 export interface Notification {
-    id: number | null;
-    email: string | null;
-    timestamp: Date | null;
-    projectCode: string | null;
-    bridgehead: string | null;
-    humanReadableBridgehead: string | null;
-    operationType: string | null;
-    details: string | null;
-    error: string | null;
-    httpStatus: number | null;
-    read: boolean | null;
+    id?: number;
+    email?: string;
+    timestamp?: Date;
+    projectCode?: string;
+    bridgehead?: string;
+    humanReadableBridgehead?: string;
+    operationType?: string;
+    details?: string;
+    error?: string;
+    httpStatus?: number;
+    read?: boolean;
 }
 
 export interface User {
     email: string;
-    firstName: string | null;
-    lastName: string | null;
+    firstName?: string;
+    lastName?: string;
     bridgehead: string;
-    humanReadableBridgehead: string | null;
+    humanReadableBridgehead?: string;
     projectRole: string;
     projectState: string;
 }
@@ -208,15 +282,86 @@ export interface MessageSubject {
     emailTo: string; // This field is not included in the backend
 }
 
+export enum ProjectBridgeheadState {
+    CREATED = "CREATED",
+    ACCEPTED = "ACCEPTED",
+    REJECTED = "REJECTED"
+}
 
 export interface Bridgehead {
-    projectCode: string | null | undefined;
     bridgehead: string;
-    humanReadable: string | null | undefined;
-    state: string | null | undefined;
-    modifiedAt: string | null | undefined;
-    queryState: string | null | undefined;
-    creatorState: string | null | undefined;
+    humanReadable?: string;
+    projectCode?: string;
+    modifiedAt?: string;
+    creatorState?: UserProjectState;
+    state?: ProjectBridgeheadState;
+    executions?: BridgeheadExecution[];
+}
+
+export enum QueryState {
+    CREATED = "CREATED",
+    TO_BE_SENT = "TO_BE_SENT",
+    TO_BE_SENT_AND_EXECUTED = "TO_BE_SENT_AND_EXECUTED",
+    SENDING = "SENDING",
+    SENDING_AND_EXECUTING = "SENDING_AND_EXECUTING",
+    EXPORT_RUNNING_1 = "EXPORT_RUNNING_1",
+    EXPORT_RUNNING_2 = "EXPORT_RUNNING_2",
+    ERROR = "ERROR",
+    FINISHED = "FINISHED"
+}
+
+export function isQueryOnTheWay(queryState: QueryState) {
+    return [QueryState.TO_BE_SENT, QueryState.TO_BE_SENT_AND_EXECUTED, QueryState.SENDING, QueryState.SENDING_AND_EXECUTING].includes(queryState);
+}
+
+export interface BridgeheadExecution {
+    projectType: ProjectType;
+    queryState: QueryState;
+}
+
+export function hasExecution(bridgehead?: Bridgehead, projectType?: ProjectType, queryState?: QueryState): boolean {
+    if (!bridgehead?.executions?.length) return false; // no executions at all
+
+    return bridgehead.executions.some(exec => {
+        // if projectType is defined, it must match
+        const typeMatches = projectType ? exec.projectType === projectType : true;
+        // if queryState is defined, it must match
+        const stateMatches = queryState ? exec.queryState === queryState : true;
+
+        return typeMatches && stateMatches;
+    });
+}
+
+export function getQueryState(bridgehead: Bridgehead, projectType?: ProjectType): string | undefined {
+    return projectType
+        ? bridgehead.executions?.find(e => e.projectType === projectType)?.queryState
+        : undefined;
+}
+
+export function getMergedQueryStates(
+    bridgehead: Bridgehead,
+    types: ProjectType[]
+): { state: string; types: ProjectType[] }[] {
+    const stateMap = new Map<string, ProjectType[]>();
+
+    for (const type of types) {
+        const state = getQueryState(bridgehead, type) ?? 'unknown';
+        if (!stateMap.has(state)) {
+            stateMap.set(state, []);
+        }
+        stateMap.get(state)!.push(type);
+    }
+
+    return Array.from(stateMap.entries()).map(([state, types]) => ({ state, types }));
+}
+
+export function hasValidOutputs(project?: Project): boolean {
+    return (
+        (project?.outputs?.length ?? 0) > 0 &&
+        project!.outputs!.every(
+            o => o.templateId !== undefined && o.outputFormat !== undefined && o.projectType !== undefined
+        )
+    );
 }
 
 export interface ProjectDocument {
@@ -229,24 +374,6 @@ export interface ProjectDocument {
     creatorEmail: string;
     label: string;
     type: string;
-}
-
-export interface ProjectField {
-    fieldKey: string
-    editProjectParam: EditProjectParam[]
-    fieldValue: string[]
-    redirectUrl?: string
-    isEditable: boolean
-    possibleValues?: string[]
-    configurations?: Map<string, Project>
-    uploadAction?: Action
-    downloadAction?: Action
-    downloadModule?: Module
-    todos?: Explanations
-    existFile?: boolean
-    transformForSending?: (input: string) => string
-    draftDialogCurrentStep: number
-    visibilityCondition: boolean
 }
 
 export interface Results {
@@ -267,11 +394,6 @@ export interface DataShieldProjectStatus {
     project_status: string;
 }
 
-export interface ActionModule {
-    module: Module
-    action: Action
-}
-
 export interface ActionButtonGroup {
     label: string
     button: ActionButton[]
@@ -284,8 +406,62 @@ export interface ActionButton {
     text: string
     withMessage: boolean
     cssClass: string
+    params?: Map<string, string>
     visibilityCondition?: boolean
     doActionOnClick?: () => void
+}
+
+export interface FormFieldGroup {
+    group: string
+    displayName: string
+    description: string
+}
+
+export interface FormFieldValue {
+    label: string
+    displayName: string
+    description?: string
+}
+
+export enum FormDataType {
+    // These values are defined in the backend and come from the backend. Therefore, we suppress the warning:
+    // noinspection JSUnusedGlobalSymbols
+    INTEGER = "INTEGER",
+    DOUBLE = "DOUBLE",
+    BOOLEAN = "BOOLEAN",
+    STRING = "STRING",
+    DATE = "DATE",
+    TIMESTAMP = "TIMESTAMP",
+    ENUM = "ENUM"
+}
+
+export interface FormTitle {
+    title: string;
+    titleDisplayName?: string;
+    titleDescription?: string;
+}
+
+export interface FormField extends FormTitle {
+    label: string;
+    labelDisplayName?: string;
+    labelDescription?: string;
+    groups?: FormFieldGroup[];
+    type?: FormDataType;
+    allowedValues?: FormFieldValue[];
+    mandatory?: boolean;
+    order?: number;
+    value?: string;
+}
+
+export interface ProjectAndForms {
+    project?: Project;
+    forms?: FormTitle[];
+    formFields: FormField[];
+}
+
+export interface FormTemplate {
+    template: string
+    displayName: string
 }
 
 function getActionFromString(value: string): Action | undefined {
@@ -294,7 +470,9 @@ function getActionFromString(value: string): Action | undefined {
 
 export enum HttpMethod {
     GET,
-    POST
+    POST,
+    PUT,
+    DELETE
 }
 
 export type ActionMetadata = {
@@ -317,7 +495,8 @@ function jsonToActionMetadata(json: any): ActionMetadata | undefined {
     const methodMapping: Record<string, HttpMethod> = {
         'GET': HttpMethod.GET,
         'POST': HttpMethod.POST,
-        // Add more mappings if necessary
+        'PUT': HttpMethod.PUT,
+        'DELETE': HttpMethod.DELETE
     };
     const method: HttpMethod | undefined = methodMapping[json.method];
     if (method === undefined) {
@@ -383,7 +562,7 @@ export class ProjectManagerBackendService {
     private axiosInstance?: AxiosInstance;
     private activeModuleActionsMetadata?: Map<Module, Map<Action, ActionMetadata>> | undefined;
     private activeModuleActionsMetadataWithExplanation?: Map<Module, Map<Action, ActionMetadata>> | undefined;
-    private initializedPromise: Promise<void> | undefined;
+    private readonly initializedPromise: Promise<void> | undefined;
 
     constructor(context: ProjectManagerContext, site: Site) {
         this.initializedPromise = this.initialize(context, site);
@@ -423,7 +602,7 @@ export class ProjectManagerBackendService {
             const filteredActionMap = new Map<Action, ActionMetadata>();
 
             for (const [action, metadata] of actionMap) {
-                // Only include actions where explanation is not null or undefined
+                // Only include actions where the explanation is not null or undefined
                 if (metadata.explanation) {
                     filteredActionMap.set(action, metadata);
                 }
@@ -533,7 +712,7 @@ export class ProjectManagerBackendService {
         action: Action,
         context: ProjectManagerContext,
         params: Map<string, unknown>
-    ): Promise<AxiosResponse<any, any>> {
+    ): Promise<AxiosResponse> {
         await this.initializedPromise;
         const actionMetadata = this.getActionMetadata(module, action);
         if (!actionMetadata) {
@@ -560,47 +739,74 @@ export class ProjectManagerBackendService {
         httpMethod: HttpMethod,
         endpoint: string,
         params: Map<string, unknown>
-    ): Promise<AxiosResponse<any, any>> {
+    ): Promise<AxiosResponse> {
         if (!this.axiosInstance) throw new Error("Axios instance not initialized");
 
+        const token = await AuthService.getToken();
         const config: AxiosRequestConfig = {
             headers: {
-                Authorization: `Bearer ${KeyCloakService.getToken()}`,
+                Authorization: `Bearer ${token}`,
             },
-            params: this.convertToUrlSearchParams(params),
             withCredentials: true,
         };
 
-        if (endpoint.includes('download')) config.responseType = 'blob';
+        // If this is a download, expect blob
+        if (endpoint.includes('download')) {
+            config.responseType = 'blob';
+        }
 
+        // If this is an upload, send it as multipart/form-data
         if (endpoint.includes('upload')) {
             config.headers!["Content-Type"] = 'multipart/form-data';
             const uploadFile = params.get(UPLOAD_DOCUMENT_PARAM);
             if (!uploadFile) throw new Error("Upload file not provided");
             params.delete(UPLOAD_DOCUMENT_PARAM);
+
             const data = new FormData();
             data.append('document', uploadFile as File);
+
+            // Append all other params to FormData
+            for (const [key, value] of params) {
+                if (value !== undefined && value !== null) {
+                    data.append(key, String(value));
+                }
+            }
+
             return this.axiosInstance.post(endpoint, data, config);
         }
 
+        // Retry configuration for normal requests
         axiosRetry(this.axiosInstance, {retries: 2, retryDelay: axiosRetry.exponentialDelay});
+
+        // Convert Map params to a plain object
+        const plainParams: Record<string, unknown> = {};
+        for (const [key, value] of params) {
+            plainParams[key] = value;
+        }
 
         switch (httpMethod) {
             case HttpMethod.GET:
-                return this.axiosInstance.get(endpoint, config);
+            case HttpMethod.DELETE:
+                // Variables as query parameters
+                config.params = plainParams;
+                if (httpMethod === HttpMethod.GET) {
+                    return this.axiosInstance.get(endpoint, config);
+                } else {
+                    return this.axiosInstance.delete(endpoint, config);
+                }
+
             case HttpMethod.POST:
-                return this.axiosInstance.post(endpoint, {}, config);
+            case HttpMethod.PUT:
+                // Variables as JSON body
+                if (httpMethod === HttpMethod.POST) {
+                    return this.axiosInstance.post(endpoint, plainParams, config);
+                } else {
+                    return this.axiosInstance.put(endpoint, plainParams, config);
+                }
+
             default:
                 throw new Error(`Unsupported HTTP method: ${httpMethod}`);
         }
-    }
-
-    private convertToUrlSearchParams(map: Map<string, unknown>): URLSearchParams {
-        const result = new URLSearchParams();
-        for (const [key, value] of map) {
-            result.append(key, String(value));
-        }
-        return result;
     }
 
 }

@@ -3,7 +3,7 @@ import ProjectView from '../components/ProjectView.vue';
 import ProjectDashboard from "@/components/ProjectDashboard.vue";
 import AdminConfig from "@/components/AdminConfig.vue";
 
-import { createStore } from 'vuex';
+import {createStore} from 'vuex';
 
 createStore({
     state: {
@@ -19,10 +19,10 @@ createStore({
         }
     },
     actions: {
-        // Actions zum Setzen von Benutzername und Rolle
+        /* Actions to set username and role */
     },
     getters: {
-        // Getters zum Abrufen von Benutzername und Rolle
+        /* Getters for retrieving username and role */
     }
 });
 
@@ -30,7 +30,7 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/project-view',
         name: 'ProjectView',
-        meta: {title: 'Data Science Orchestrator'},
+        meta: {title: 'Samply.Requester'},
         component: ProjectView,
         props: (route) => ({
             projectCode: route.query['project-code'] // Accessing the project-code query parameter
@@ -39,7 +39,7 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/',
         name: 'ProjectDashboard',
-        meta: {title: 'Data Science Orchestrator'},
+        meta: {title: 'Samply.Requester'},
         component: ProjectDashboard,
     },
     {
@@ -54,7 +54,7 @@ const router = createRouter({
     history: createWebHistory(),
     routes,
 });
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
     document.title = to.meta.title as string;
     next();
 });

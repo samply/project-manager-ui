@@ -426,6 +426,32 @@
                       :exists-draft-dialog="existsDraftDialog"
                       @validity-change="biosampleEntriesValid = $event"/>
 
+                  <div v-if="project?.state === ProjectState.DRAFT && draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
+                       class="summary-section-header">
+                    <div class="summary-section-label">Consent</div>
+                  </div>
+                  <div v-if="project?.state === ProjectState.DRAFT && draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
+                       class="consent-checkboxes">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="dataProtectionConsentCheck"
+                             v-model="dataProtectionConfirmed">
+                      <label class="form-check-label" for="dataProtectionConsentCheck">
+                        I confirm that I have read and understood the
+                        <a href="https://hub.dkfz.de/s/5LPccy6fgRSoD65" target="_blank" rel="noopener noreferrer">Data Protection Declaration</a>,
+                        and that my project complies with the requirements set out therein regarding the processing of personal health data.
+                      </label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="usageAgreementConsentCheck"
+                             v-model="usageAgreementConfirmed">
+                      <label class="form-check-label" for="usageAgreementConsentCheck">
+                        I confirm that I have read and understood the
+                        <a href="https://hub.dkfz.de/s/MPCg2kK23LH8Yii" target="_blank" rel="noopener noreferrer">Usage Agreement</a>.
+                        I agree to its terms and understand that a final, binding agreement will be concluded individually with each participating site/project.
+                      </label>
+                    </div>
+                  </div>
+
                 </div>
 
                 <div v-if="project?.state === ProjectState.DRAFT" class="button-container">
@@ -722,6 +748,8 @@ export default defineComponent({
       currentUser: undefined as User | undefined,
       hasProjectAllMandatoryFields: false,
       tooltipTextForCreateButton: '',
+      dataProtectionConfirmed: false,
+      usageAgreementConfirmed: false,
       canShowBridgeheadAdminButtons: false,
       currentUsers: [] as User[],
       creatorAcceptance: UserProjectState.CREATED,
@@ -798,6 +826,14 @@ export default defineComponent({
       this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
     },
     principalInvestigatorValid() {
+      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
+    },
+    dataProtectionConfirmed() {
+      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
+    },
+    usageAgreementConfirmed() {
       this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
       this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
     }
@@ -882,7 +918,8 @@ export default defineComponent({
 
       const biosampleValid = !this.selectedForms.some(f => f.title === 'samples') || this.biosampleEntriesValid;
 
-      return baseFieldsValid && mandatoryFormFieldsValid && biosampleValid && this.collaboratorEntriesValid && this.principalInvestigatorValid;
+      return baseFieldsValid && mandatoryFormFieldsValid && biosampleValid && this.collaboratorEntriesValid && this.principalInvestigatorValid &&
+          this.dataProtectionConfirmed && this.usageAgreementConfirmed;
     },
 
     fetchTooltipTextForCreateButton() {
@@ -942,6 +979,13 @@ export default defineComponent({
           const projectTitle = this.formFields.find(f => f.title === 'project')?.titleDisplayName ?? 'Project';
           if (!this.groupedMissingFields[projectTitle]) this.groupedMissingFields[projectTitle] = [];
           this.groupedMissingFields[projectTitle].push('Principal Investigator (Applicant)');
+        }
+
+        // Add consent missing-field indicators for the mandatory Summary-step checkboxes
+        if (!this.dataProtectionConfirmed || !this.usageAgreementConfirmed) {
+          if (!this.groupedMissingFields['Consent']) this.groupedMissingFields['Consent'] = [];
+          if (!this.dataProtectionConfirmed) this.groupedMissingFields['Consent'].push('Data Protection Declaration confirmation');
+          if (!this.usageAgreementConfirmed) this.groupedMissingFields['Consent'].push('Usage Agreement confirmation');
         }
 
         // Create blocks for each title
@@ -2621,5 +2665,20 @@ export default defineComponent({
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: #7a92b4;
+}
+
+.consent-checkboxes {
+  padding: 0.5rem 2rem 1.5rem;
+}
+
+.consent-checkboxes .form-check {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.consent-checkboxes .form-check-input {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
 }
 </style>

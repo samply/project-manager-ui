@@ -420,8 +420,8 @@ export default class ProjectFieldRow extends Vue {
     return this.type === FormDataType.BOOLEAN
   }
 
-  isComments(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.FORM_FIELDS) && this.fieldKey === 'Comments';
+  isMultilineTextField(): boolean {
+    return this.includesEditProjectParam(EditProjectParam.FORM_FIELDS) && (this.fieldKey === 'Comments' || this.fieldKey === 'Funding' || this.fieldKey === 'Project methodology');
   }
   isDraft(): boolean {
     return this.draftDialogCurrentStep  !== undefined
@@ -664,7 +664,7 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
 
-            <div v-else-if="isDescription() || isCohortDefinition() || isComments()" style="width:100%">
+            <div v-else-if="isDescription() || isCohortDefinition() || isMultilineTextField()" style="width:100%">
               <div v-if="isSummaryStep()" style="padding: 0 0.75rem">{{ editedValue[0] }}</div>
               <div v-else class="grow-wrap" :data-replicated-value="editedValue[0]">
                 <textarea
@@ -1136,7 +1136,8 @@ export default class ProjectFieldRow extends Vue {
   background-color: #fff;
   border: 1px solid #d1d5db;
   border-radius: 4px;
-  padding: 9px 12px;
+  padding: 9px 2.25rem 9px 12px;
+  min-width: 120px;
   color: #1f2937;
 }
 .input-field .form-control:focus,

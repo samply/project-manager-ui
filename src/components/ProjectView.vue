@@ -1563,7 +1563,7 @@ export default defineComponent({
           possibleValues: this.projectConfigurationLabels,
           configurations: this.projectConfigurations,
           category: FixedDialogStep.SERVICES,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+          visibilityCondition: this.isProjectManagerAdmin() && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
           action: Action.SET_PROJECT_CONFIGURATION_ACTION
         },
         {
@@ -1590,7 +1590,7 @@ export default defineComponent({
           },
           mandatory: true,
           category: FixedDialogStep.QUERY,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: this.isProjectManagerAdmin() && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Cohort Definition",

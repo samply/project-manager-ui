@@ -786,7 +786,7 @@ export default defineComponent({
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
     currentProjectConfiguration(newValue, _oldValue) {
-      if (newValue !== CUSTOM_PROJECT_CONFIGURATION) {
+      if (newValue !== CUSTOM_PROJECT_CONFIGURATION || !this.isProjectManagerAdmin() ) {
         this.draftDialogStepper.filterStep(FixedDialogStep.CUSTOM);
       } else {
         this.draftDialogStepper.removeFilteredStep(FixedDialogStep.CUSTOM);
@@ -834,6 +834,10 @@ export default defineComponent({
 
     refreshContext() {
       this.context = new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
+    },
+
+    isProjectManagerAdmin(){
+      return this.projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN);
     },
 
     async fetchVisibleBridgeheads() {
@@ -1250,9 +1254,10 @@ export default defineComponent({
         transformForSending: () => formTitle.title,
         category: FixedDialogStep.CUSTOM,
         visibilityCondition:
-            !this.existsDraftDialog ||
+            this.isProjectManagerAdmin() &&
+            (!this.existsDraftDialog ||
             this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
-            this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+            this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
       }));
     },
 
@@ -1448,9 +1453,10 @@ export default defineComponent({
           mandatory: true,
           category: FixedDialogStep.CUSTOM,
           visibilityCondition:
-              !this.existsDraftDialog ||
+              this.isProjectManagerAdmin() &&
+              (!this.existsDraftDialog ||
               this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
-              this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+              this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
           extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.PROJECT_TYPE, exec),
           deleteAction: Action.REMOVE_PROJECT_OUTPUT_ACTION,
           deleteModule: Module.PROJECT_EDITION_MODULE
@@ -1468,9 +1474,10 @@ export default defineComponent({
           mandatory: true,
           category: FixedDialogStep.CUSTOM,
           visibilityCondition:
-              !this.existsDraftDialog ||
+              this.isProjectManagerAdmin() &&
+              (!this.existsDraftDialog ||
               this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
-              this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+              this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
           extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.OUTPUT_FORMAT, exec)
         },
         {
@@ -1486,9 +1493,10 @@ export default defineComponent({
           mandatory: true,
           category: FixedDialogStep.CUSTOM,
           visibilityCondition:
-              !this.existsDraftDialog ||
+              this.isProjectManagerAdmin() &&
+              (!this.existsDraftDialog ||
               this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
-              this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY,
+              this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
           extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.TEMPLATE_ID, exec)
         }
       ]);
@@ -1602,7 +1610,8 @@ export default defineComponent({
           isEditable: this.isNotIncludedInCurrentProjectConfiguration('queryContext'),
           editMode: this.editMode,
           category: FixedDialogStep.CUSTOM,
-          visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION && this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: this.isProjectManagerAdmin() &&
+              (!this.existsDraftDialog || this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION && this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Votum",

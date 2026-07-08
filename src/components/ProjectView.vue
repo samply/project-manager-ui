@@ -309,10 +309,10 @@
 
               <div class="draft-form-card">
                   <div v-if="existsDraftDialog" class="project-field-header">
-                    <div class="project-field-title">{{
+                    <span class="project-field-title"><div>{{
                         draftDialogStepper.currentStep?.displayName
-                      }}
-                    </div>
+                      }}</div>
+                    </span>
                     <div class="project-field-notification">{{
                         extendedExplanations.get("2")?.message
                       }}
@@ -329,23 +329,29 @@
                   </div>
 
                   <template v-for="(block, blockIndex) in projectFieldRenderBlock" :key="block.key">
+                    <template v-if="block.block">
+                      <div v-if="shouldShowHeaderOfBlockGroup(blockIndex)" class="input-field-header" >
+                        <div style="display: flex;">
+                          <span class="project-field-block-title">{{ block.block?.displayName ?? block.block?.label}}<!--<span v-if="item.field.mandatory">&nbsp*</span>--></span>
+                        </div>
+                        <div class="project-field-block-description" v-html="block.block?.description"></div>
+                      </div>
+                    </template>
+
                     <template v-if="shouldRenderFieldBlockItems(block)">
                       <div :class="{ 'project-field-block': shouldRenderBlock(block) }">
                         <template v-for="item in block.items" :key="item.key">
                           <div
                               v-if="item.showCategoryHeader"
-                              class="project-field-header project-field-category-header"
+                              class="project-field-header-inline project-field-category-header"
                           >
-                            <div class="project-field-title">
+                            <div class="project-field-title-inline">
                               {{ getDialogStep(item.field.category)?.displayName }}
                             </div>
-                            <div class="project-field-notification">
+                            <!--<div class="project-field-notification-inline">
                               {{ getDialogStep(item.field.category)?.description }}
-                            </div>
+                            </div>-->
                           </div>
-                          <div
-                              v-else-if="item.showSeparator"
-                              class="input-field-separator"></div>
                           <ProjectFieldRow
                               v-if="item.shouldRenderRow"
                               :field-key="item.field.fieldKey"
@@ -383,17 +389,13 @@
                       </div>
                     </template>
                     <template v-if="block.block">
-                      <button
+                      <div
                           v-if="shouldShowAddButtonAfterBlockGroup(blockIndex)"
                           type="button"
                           class="btn btn-outline-secondary project-field-block-add-button"
                           @click="addBlockInstance(block.block)">
                         Add {{ block.block?.displayName ?? block.block?.label }}
-                      </button>
-                      <div
-                          v-if="shouldShowAddButtonAfterBlockGroup(blockIndex) && block.block?.description"
-                          class="project-field-block-description"
-                          v-html="block.block.description"></div>
+                      </div>
                     </template>
                   </template>
                 </div>
@@ -912,16 +914,33 @@ export default defineComponent({
       if (!currentGroup?.block || !this.isProjectFieldBlockVisible(currentGroup)) {
         return false;
       }
-
       if (currentGroup.block.multiple === false && this.hasBlockInstance(currentGroup.block)) {
         return false;
       }
-
+      if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY || (!this.existsDraftDialog && !this.editMode)) {
+        return false
+      }
       const nextGroup = groups
           .slice(groupIndex + 1)
           .find((group) => this.isProjectFieldBlockVisible(group));
 
       return !this.areSameBlockType(currentGroup.block, nextGroup?.block);
+    },
+
+    shouldShowHeaderOfBlockGroup(groupIndex: number): boolean {
+      const groups = this.projectFieldRenderBlock;
+      const currentGroup = groups[groupIndex];
+
+      if (!currentGroup?.block || !this.isProjectFieldBlockVisible(currentGroup)) {
+        return false;
+      }
+
+      const firstGroup = groups.find((group) => group.block?.label === currentGroup.block?.label)
+
+      if ((!this.existsDraftDialog && !firstGroup?.block?.instance && !this.editMode) || (this.existsDraftDialog && this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY && !firstGroup?.block?.instance)) {
+        return false
+      }
+      return currentGroup.key === firstGroup?.key
     },
 
     shouldRenderBlock(group: ProjectFieldRenderGroup): boolean {
@@ -2693,16 +2712,45 @@ export default defineComponent({
   padding: 17px 28px;
   flex-shrink: 0;
 }
-
+.project-field-header-inline {
+  padding: 17px 28px;
+  display: grid;
+  grid-template-columns: minmax(25px, 1fr) auto minmax(25px, 1fr);
+  align-items: center;
+  grid-gap: 1rem;
+}
 .project-field-title {
   font-size: 19px;
   font-weight: 600;
   color: #fff;
 }
+.project-field-title-inline {
+  font-size: 18px;
+  font-weight: 600;
+  color: #00489cf2;
+}
+.project-field-header-inline:before, .project-field-header-inline:after {
+  content: "";
+  height: 1px;
+  flex-grow: 1;
+  margin: 0 12px;
+  background: #333;
+}
 
+.project-field-header-inline:before {
+  background: linear-gradient(to right, transparent, #818078);
+}
+
+.project-field-header-inline:after {
+  background: linear-gradient(to right, #818078, transparent);
+}
 .project-field-notification {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.82);
+  margin-top: 4px;
+}
+.project-field-notification-inline {
+  font-size: 13px;
   margin-top: 4px;
 }
 
@@ -2739,18 +2787,14 @@ export default defineComponent({
 .project-field-block {
   border: 1px solid #d0d7de;
   border-radius: 6px;
-  margin: 1rem 1rem 1rem 0;
-  padding: 0 1rem 1rem 1rem;
+  margin: 0 4rem 1rem 4rem;
 }
 
 .project-field-block-add-button {
-  margin: 0 1rem 1rem 0;
-}
-
-.project-field-block-description {
-  font-size: small;
-  font-weight: normal;
-  margin: -0.5rem 1rem 1rem 0;
+  margin: 0 4rem 1rem 4rem;
+  display: block;
+  border: 1px dashed #00489cf2;
+  color: #00489cf2;
 }
 
 .clickable {
@@ -2761,4 +2805,17 @@ export default defineComponent({
 .clickable:hover {
   text-decoration: underline;
 }
+.input-field-header {
+  padding: 1.5rem 4rem;
+}
+.project-field-block-title {
+  font-weight: bold;
+  color: #00489cf2;
+}
+.project-field-block-description {
+  font-size: 12px;
+  font-weight: normal;
+  margin-bottom: 3px;
+}
+
 </style>

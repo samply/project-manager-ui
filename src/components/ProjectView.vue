@@ -1563,7 +1563,7 @@ export default defineComponent({
           possibleValues: this.projectConfigurationLabels,
           configurations: this.projectConfigurations,
           category: FixedDialogStep.SERVICES,
-          visibilityCondition: this.isProjectManagerAdmin() && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
+          visibilityCondition:  !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES || (this.isProjectManagerAdmin() && this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
           action: Action.SET_PROJECT_CONFIGURATION_ACTION
         },
         {

@@ -244,8 +244,8 @@ export default class ProjectFieldRow extends Vue {
 
     if (this.editProjectParam && this.editProjectParam.length > 0) {
       if (this.includesEditProjectParam(EditProjectParam.PROJECT_TYPE) && this.tempFieldValue[0] === "DATASHIELD") {
-        params.set("output-format", "OPAL");
-        params.set("template-id", "opal-ccp");
+        params.set(EditProjectParam.OUTPUT_FORMAT, "OPAL");
+        params.set(EditProjectParam.TEMPLATE_ID, "opal-ccp");
       }
 
       if (this.isBridgeheads() && this.bridgeheads) {

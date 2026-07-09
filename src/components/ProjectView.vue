@@ -331,7 +331,7 @@
                   <template v-for="(block, blockIndex) in projectFieldRenderBlock" :key="block.key">
                     <template v-if="block.block">
                       <div v-if="shouldShowHeaderOfBlockGroup(blockIndex)" class="input-field-header" >
-                        <div style="display: flex;">
+                        <div class="d-flex justify-content-between align-items-center">
                           <span class="project-field-block-title">{{ block.block?.displayName ?? block.block?.label}}<!--<span v-if="item.field.mandatory">&nbsp*</span>--></span>
                         </div>
                         <div class="project-field-block-description" v-html="block.block?.description"></div>
@@ -339,7 +339,15 @@
                     </template>
 
                     <template v-if="shouldRenderFieldBlockItems(block)">
-                      <div :class="{ 'project-field-block': shouldRenderBlock(block) }">
+                      <div :class="{ 'project-field-block': shouldRenderBlock(block) }"  class="project-field-block-instance-wrapper" >
+                        <button
+                            v-if="canDeleteBlock(block)"
+                            type="button"
+                            class="btn btn-outline-danger btn-sm project-field-block-delete-button"
+                            @click="deleteBlockInstance(block)"
+                            title="Delete block">
+                          <i class="bi bi-trash"></i>
+                        </button>
                         <template v-for="item in block.items" :key="item.key">
                           <div
                               v-if="item.showCategoryHeader"
@@ -404,7 +412,7 @@
                   <!-- Left: Delete Draft -->
                   <ProjectManagerButton
                       :module="Module.PROJECT_STATE_MODULE"
-                      :action="Action.REJECT_PROJECT_ACTION"
+                      :action="Action.DELETE_PROJECT_ACTION"
                       :context="context" :call-refresh-context="refreshContext"
                       text="Delete Draft"
                       button-class="btn btn-delete-draft"
@@ -658,7 +666,7 @@ interface ProjectFieldRenderItem {
   shouldRenderRow: boolean;
 }
 
-interface ProjectFieldRenderGroup {
+interface ProjectFieldRenderBlock {
   key: string;
   block?: ProjectField["block"];
   items: ProjectFieldRenderItem[];
@@ -692,8 +700,8 @@ export default defineComponent({
     ProjectType() {
       return ProjectType
     },
-    projectFieldRenderBlock(): ProjectFieldRenderGroup[] {
-      return this.getProjectFieldRenderGroups();
+    projectFieldRenderBlock(): ProjectFieldRenderBlock[] {
+      return this.fetchProjectFieldRenderBlocks();
     }
   },
   props: {
@@ -849,8 +857,8 @@ export default defineComponent({
     hasProjectType,
     getMergedQueryStates,
 
-    getProjectFieldRenderGroups(): ProjectFieldRenderGroup[] {
-      const groups: ProjectFieldRenderGroup[] = [];
+    fetchProjectFieldRenderBlocks(): ProjectFieldRenderBlock[] {
+      const groups: ProjectFieldRenderBlock[] = [];
       const projectFields = this.projectFields as ProjectField[];
 
       projectFields.forEach((field, index) => {
@@ -889,6 +897,28 @@ export default defineComponent({
                 field.isEditable && this.draftDialogStepper.currentStep?.id !== FixedDialogStep.SUMMARY ||
                 this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
       };
+    },
+
+    canDeleteBlock(block: ProjectFieldRenderBlock): boolean {
+      // e.g., don't allow deleting the first mandatory instance
+      return block.block?.multiple === true;
+    },
+
+    deleteBlockInstance(block: ProjectFieldRenderBlock): void {
+      // remove all fields belonging to this block instance
+      if (block.block){
+        const params = new Map<string, string>();
+        const formField: FormField = {
+          title: block.block.formTitle,
+          label: '', // it needs at least one value, although it is ignored in the backend
+          block: block.block.label,
+          blockInstance: block.block?.instance
+        };
+        params.set(EditProjectParam.FORM_FIELD, JSON.stringify(formField));
+        this.projectManagerBackendService
+            .fetchData(Module.PROJECT_EDITION_MODULE, Action.DELETE_FORM_FIELD_BLOCK_ACTION, this.context, params)
+            .then(() => this.refreshContext());
+      }
     },
 
     areSameBlock(first?: ProjectField["block"], second?: ProjectField["block"]): boolean {
@@ -943,7 +973,7 @@ export default defineComponent({
       return currentGroup.key === firstGroup?.key
     },
 
-    shouldRenderBlock(group: ProjectFieldRenderGroup): boolean {
+    shouldRenderBlock(group: ProjectFieldRenderBlock): boolean {
       if (!group.block) {
         return false;
       }
@@ -952,11 +982,11 @@ export default defineComponent({
           group.block.instance != null;
     },
 
-    shouldRenderFieldBlockItems(group: ProjectFieldRenderGroup): boolean {
+    shouldRenderFieldBlockItems(group: ProjectFieldRenderBlock): boolean {
       return !group.block || this.shouldRenderBlock(group);
     },
 
-    isProjectFieldBlockVisible(group: ProjectFieldRenderGroup): boolean {
+    isProjectFieldBlockVisible(group: ProjectFieldRenderBlock): boolean {
       return group.items.some((item) => item.field.visibilityCondition);
     },
 
@@ -1004,9 +1034,7 @@ export default defineComponent({
 
     isSameFormFieldBlockType(field: FormField, block?: BlockMetadata): boolean {
       return !!block &&
-          field.block === block.label &&
-          field.blockDisplayName === block.displayName &&
-          field.blockDescription === block.description;
+          field.block === block.label;
     },
 
     hasBlockInstance(block: BlockMetadata): boolean {
@@ -1463,6 +1491,7 @@ export default defineComponent({
                 this.draftDialogStepper.currentStep?.id === formField.title ||
                 this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
         block: formField.block ? {
+          formTitle: formField.title,
           label: formField.block,
           instance: formField.blockInstance,
           multiple: formField.multipleBlock,
@@ -2823,6 +2852,16 @@ export default defineComponent({
   font-size: 12px;
   font-weight: normal;
   margin-bottom: 3px;
+}
+
+.project-field-block-instance-wrapper {
+  position: relative;
+}
+
+.project-field-block-delete-button {
+  position: absolute;
+  top: 0;
+  right: 0;
 }
 
 </style>

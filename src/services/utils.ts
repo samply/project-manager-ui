@@ -48,6 +48,7 @@ export interface ProjectField {
 }
 
 export interface Block {
+    formTitle: string;
     label: string;
     multiple?: boolean;
     instance?: number;
@@ -57,7 +58,7 @@ export interface Block {
 }
 
 /**
- * Groups class is responsible for detecting "new sections" in a list of form fields.
+ * Group class is responsible for detecting "new sections" in a list of form fields.
  *
  * Each form field can belong to a hierarchical set of groups. This class compares
  * the groups of the current fields with the previous field to determine if new

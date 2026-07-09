@@ -155,7 +155,9 @@ export enum Action {
     ADD_FINAL_REPORT_URL_ACTION = "ADD_FINAL_REPORT_URL",
     EXISTS_FINAL_REPORT_ACTION = "EXISTS_FINAL_REPORT",
     DOWNLOAD_FINAL_REPORT_ACTION = "DOWNLOAD_FINAL_REPORT",
-    FETCH_FINAL_REPORTS_ACTION = "FETCH_FINAL_REPORTS"
+    FETCH_FINAL_REPORTS_ACTION = "FETCH_FINAL_REPORTS",
+    DELETE_PROJECT_ACTION = "DELETE_PROJECT",
+    DELETE_FORM_FIELD_BLOCK_ACTION = "DELETE_FORM_FIELD_BLOCK"
 }
 
 export enum EditProjectParam {
@@ -170,6 +172,7 @@ export enum EditProjectParam {
     PROJECT_TYPE = "project-type",
     QUERY_CONTEXT = "query-context",
     FORM_FIELDS = "form-fields",
+    FORM_FIELD = "form-field",
     FORM_TEMPLATE = "form-template",
     FORM_TITLE = "form-title",
     COHORT_DEFINITION = "cohort-definition",

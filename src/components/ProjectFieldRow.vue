@@ -16,7 +16,7 @@ import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import type {DialogStep} from "@/services/fixedDialogStep";
 import {FixedDialogStep} from "@/services/fixedDialogStep";
-import type {BridgeheadsProjectField} from "@/services/utils";
+import type {Block, BridgeheadsProjectField} from "@/services/utils";
 import {ActionFunction, Section} from "@/services/utils";
 import {PropType, watch} from "vue";
 import "@samply/lens";
@@ -65,6 +65,7 @@ import {QueryItem,setQueryStore} from "@samply/lens";
     draftDialogCurrentStep: {type: Object as PropType<DialogStep>, required: false},
     visibleBridgeheads: {type: Array as PropType<Bridgehead[]>, required: true},
     section: {type: Object as PropType<Section>, required: false},
+    block: {type: Object as PropType<Block>, required: false},
     transformForSending: {
       type: Function as unknown as () => (input: string) => string,
       default: (input: string) => input
@@ -117,6 +118,8 @@ export default class ProjectFieldRow extends Vue {
   readonly visibleBridgeheads!: Bridgehead[];
   // noinspection JSUnusedGlobalSymbols
   readonly section?: Section;
+  // noinspection JSUnusedGlobalSymbols
+  readonly block?: Block;
   uploadAction?: Action;
   // noinspection JSUnusedGlobalSymbols
   downloadAction?: Action;
@@ -409,6 +412,9 @@ export default class ProjectFieldRow extends Vue {
   isSummaryStep(): boolean {
     return this.draftDialogCurrentStep?.id === this.dialogStep.SUMMARY
   }
+  isBlock(): boolean {
+    return !!this.block
+  }
   getInputType(): string {
     if (this.type === FormDataType.INTEGER) return 'number'
     return 'text'
@@ -433,7 +439,7 @@ export default class ProjectFieldRow extends Vue {
 
   onBooleanValueChange(_event: Event) {
     //const input = event.target as HTMLInputElement;
-    //this.editedValue[0] = input.checked ? 'true' : 'false';
+    //this.editedValue[0] = input.checked? 'true': 'false';
     this.saveField()
   }
 
@@ -575,8 +581,8 @@ export default class ProjectFieldRow extends Vue {
 
   <div v-else>
 
-    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
-      <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() }">
+    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
+      <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }">
         <div v-if="!isDescriptionUpload()" style="display: flex;">
           <span class="input-field-title">{{ fieldKey }}<span v-if="this.mandatory">&nbsp*</span></span>
 
@@ -585,10 +591,10 @@ export default class ProjectFieldRow extends Vue {
           <span v-if="this.downloadAction && todos?.get(this.downloadAction) && this.existsFile"
                 class="todo-circle-small">#{{ todos?.get(this.downloadAction)?.number }}</span>
         </div>
-        <div class="field-description" v-html="fieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() }"></div>
+        <div class="field-description" v-html="fieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
       </div>
       <div :class="getEditFieldCssClass()">
-        <div v-if="uploadAction && !isDescriptionUpload()" style="width:75%;padding: 0 0.75rem">
+        <div v-if="uploadAction && !isDescriptionUpload()" style="width:100%;padding: 0 0.75rem">
           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
                         :download-action="downloadAction"
@@ -596,7 +602,7 @@ export default class ProjectFieldRow extends Vue {
                         :text="'Upload '+ fieldKey" :call-refresh-context="exitAndCallRefreshContext"
                         :is-file="true" :toggle-input="fieldKey.substring(0,5) === 'Votum'" :file-name="fieldValue[1]" :exists-file="existsFile"/>
         </div>
-        <div v-else style="width:75%">
+        <div v-else style="width:100%">
           <div>
             <div v-if="isTypeBoolean()" style="width: 70%;">
               <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onBooleanValueChange" class="form-select" style="width: fit-content;">
@@ -607,7 +613,7 @@ export default class ProjectFieldRow extends Vue {
                 <div style="padding: 0 0.75rem">{{editedValue[0]==="true" ? "Yes" : "No"}}</div>
               </div>
             </div>
-            <div v-else-if="isQuery()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'" style="padding: 0 0.75rem">
+            <div v-else-if="isQuery()">
               <div style="display: flex;flex-wrap: wrap">
                   <span v-for="box in getFirstLevelCriteria(editedValue[1])"
                       class="btn btn-primary dktk-darkblue"
@@ -654,20 +660,20 @@ export default class ProjectFieldRow extends Vue {
                   v-model="editedValue[0]"
                   @change="onInputChange"
                   class="form-control"
-                  :class="(!isDraft() || isSummaryStep()) && !editMode ? 'white' : 'grey'"
+                  :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
                   :disabled="(!isDraft() || isSummaryStep()) && !editMode"
                 ></textarea>
               </div>
             </div>
 
-            <div v-else-if="isDescription() || isCohortDefinition() || isComments()" :style="!isDraft() || isSummaryStep() ? 'width:100%' : 'width: 75%'">
+            <div v-else-if="isDescription() || isCohortDefinition() || isComments()" style="width:100%">
               <div class="grow-wrap" :data-replicated-value="editedValue[0]">
                 <textarea
                   type="text"
                   v-model="editedValue[0]"
                   @change="onInputChange"
                   class="form-control auto-textarea"
-                  :class="(!isDraft() || isSummaryStep()) && !editMode ? 'white' : 'grey'"
+                  :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
                   :disabled="(!isDraft() || isSummaryStep()) && !editMode"
                 ></textarea>
               </div>
@@ -681,7 +687,7 @@ export default class ProjectFieldRow extends Vue {
                             :file-name="fieldValue[1]" :toggle-input="true"/>
             </div>
 
-            <div v-else-if="isBridgeheads()" style="width: 75%;padding: 0 0.75rem">
+            <div v-else-if="isBridgeheads()" style="width: 100%;padding: 0 0.75rem">
                     <span v-if="editingBridgeheads && editingBridgeheads.length > 0">
                       <span v-for="(bridgehead, index) in editingBridgeheads" :key="index" class="btn btn-primary dktk-darkblue"
                             style="margin-right: 2%; margin-bottom: 0.5%;">
@@ -710,8 +716,8 @@ export default class ProjectFieldRow extends Vue {
                       </span>
                     </span>
             </div>
-            <div v-else-if="isEnvironmentVariables()" style="width:75%;">
-                    <span v-if="editedValue && editedValue.length > 0 && editedValue[0]" style="width: 75%">
+            <div v-else-if="isEnvironmentVariables()" style="width:100%;">
+                    <span v-if="editedValue && editedValue.length > 0 && editedValue[0]" style="width: 100%">
                       <span v-for="(pair, index) in editedValue[0].split(';')" :key="index"
                             style="margin-right: 2%;  display: inline;" class="btn btn-primary dktk-darkblue">
                         <span style="display: inline; margin-bottom: 2%">{{ pair }}</span>
@@ -737,16 +743,16 @@ export default class ProjectFieldRow extends Vue {
               </select>
               <div v-if="(!isDraft() || isSummaryStep()) && !editMode" style="padding: 0 0.75rem">
                 <div>{{displayPossibleValue(editedValue[0]).name}}</div>
-                <div style="font-size: small">{{displayPossibleValue(editedValue[0]).description}}</div>
+                <div style="font-size: 12px">{{displayPossibleValue(editedValue[0]).description}}</div>
               </div>
             </div>
-            <div v-else :style="{ width: !isDraft() || isSummaryStep() ? '100%' : '75%' }">
+            <div v-else style="width:100%">
               <input
                   :type="getInputType()"
                   v-model="editedValue[0]"
                   @change="onInputChange"
                   class="form-control"
-                  :class="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration() ? 'white' : 'grey'"
+                  :class="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration() ? 'grey' : 'white'"
                   :style="{width: getInputType()==='number' ? '40%' : '100%'}"
                   :disabled="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration()"
               >
@@ -953,8 +959,9 @@ export default class ProjectFieldRow extends Vue {
 }
 
 .field-description {
-  font-size: small;
+  font-size: 12px;
   font-weight: normal;
+  margin-bottom: 3px;
 }
 
 /* Regular section rows */
@@ -1081,22 +1088,19 @@ export default class ProjectFieldRow extends Vue {
 
 .input-field {
   padding: 1.5rem 4rem;
-  margin-bottom: 4%;
   border-radius: 10px;
 }
 
 .input-field-title {
-  font-size: large;
   font-weight: bold;
   color: #00489cf2;
 }
 
-.input-field .form-control.grey {
-  background-color: #f5f5f5;
-  border-color: #fff;
-}
 .input-field .form-control.white {
-  background-color: white;
+  border-color: #dee2e6;
+}
+.input-field .form-control.grey {
+  background-color: #fbfbfb;
   border-color: #fff;
   resize: none;
 }
@@ -1109,8 +1113,11 @@ export default class ProjectFieldRow extends Vue {
 }
  .input-field.sidewise {
   display: flex;
-   margin-bottom: 1%;
    padding: 1rem 4rem;
+}
+.input-field.block {
+  display: flex;
+  padding: 1rem;
 }
  .input-field-header.sidewise {
    width: 30%;
@@ -1156,7 +1163,7 @@ export default class ProjectFieldRow extends Vue {
   max-height: 300px;
 }
 .grow-wrap::after {
-  /* Note the weird space! Needed to preventy jumpy behavior */
+  /* Note the weird space! Needed to prevent jumpy behavior */
   content: attr(data-replicated-value) " ";
 
   /* This is how textarea text behaves */
@@ -1174,7 +1181,7 @@ export default class ProjectFieldRow extends Vue {
   /* Identical styling required!! */
   border: 1px solid black;
   padding: 0.5rem;
-  font: inherit;
+  font-size: medium;
 
   /* Place on top of each other */
   grid-area: 1 / 1 / 2 / 2;

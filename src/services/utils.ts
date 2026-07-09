@@ -38,6 +38,7 @@ export interface ProjectField {
     action?: Action | ActionFunction
     module?: Module
     section?: Section
+    block?: Block
     category: string
     mandatory?: boolean
     type?: FormDataType
@@ -46,6 +47,14 @@ export interface ProjectField {
     deleteModule?: Module
 }
 
+export interface Block {
+    label: string;
+    multiple?: boolean;
+    instance?: number;
+    minInstances?: number;
+    displayName?: string,
+    description?: string,
+}
 
 /**
  * Groups class is responsible for detecting "new sections" in a list of form fields.

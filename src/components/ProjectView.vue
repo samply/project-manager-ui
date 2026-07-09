@@ -29,7 +29,8 @@
               </div>
             </div>
           </div>
-          <div class="data-container mt-12" style="width:100%;padding:3% 4% 0 5%;height:auto">
+          <div class="data-container mt-12" style="width:100%;height:auto"
+               :style="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) ? 'padding:3% 4% 0 5%' : ''">
             <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'"
                  class="info-container">
               <div class="box-header"><span>Status</span></div>
@@ -273,151 +274,170 @@
         </div>
         <div v-if="currentMenuStep==='Request'" class="data-container mt-12"
              :class="{ 'non-draft': !existsDraftDialog }">
-          <div v-if="project">
+          <div v-if="project" style="height:100%">
             <div v-if="!existsDraftDialog" class="box-header"><span>Request</span></div>
-            <div class="table-responsive" style="display: flex; flex-flow: row;height: 78vh">
+            <div class="draft-layout-row" style="height:100%">
 
-              <div v-if="existsDraftDialog" class="container vertical-stepper-box">
-                <div class="row justify-content-center">
-                  <div class="col-auto" style="width:100%">
-                    <!-- Bootstrap Stepper -->
-                    <div class="vertical-stepper2">
-                      <div v-for="(step, index) in draftDialogStepper.currentSteps" :key="index"
-                           class="stepper-step2"
-                           :class="{ 'active': draftDialogStepper.currentStep === step, 'missing-fields': hasMissingFieldsInStep(step.displayName) && (draftDialogStepper.currentStep !== step || draftDialogStepper.visitedSteps.size > 1) }"
-                      >
-                        <div>
-                          <div class="step-circle" style="background-color: #fa7b26"
-                               @click="draftDialogStepper.setCurrentStep(step.id)">
-                            <span>{{ index + 1 }}</span>
-                          </div>
-                          <div v-if="index < draftDialogStepper.currentSteps.length - 1"
-                               class="stepper-line2"></div>
-                        </div>
-                        <div class="stepper-step-textbox"
-                             @click="draftDialogStepper.setCurrentStep(step.id)"
-                             :style="{ fontWeight: draftDialogStepper.currentStep === step ? 'bold' : 'normal' }">
-                          <div class="stepper-step-header">{{
-                              step.displayName
-                            }}
-                          </div>
-                          <div style="font-size: smaller">{{ step.description }}</div>
-                        </div>
-
-
+              <aside v-if="existsDraftDialog" class="vertical-stepper-box">
+                <div class="vertical-stepper2">
+                  <div v-for="(step, index) in draftDialogStepper.currentSteps" :key="index"
+                       class="stepper-step2"
+                       :class="{ 'active': draftDialogStepper.currentStep === step, 'missing-fields': hasMissingFieldsInStep(step.displayName) && (draftDialogStepper.currentStep !== step || draftDialogStepper.visitedSteps.size > 1) }"
+                  >
+                    <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
+                      <div :class="[
+                             'step-circle',
+                             index < draftDialogStepper.currentSteps.indexOf(<DialogStep>draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) ? 'step-circle--done' :
+                             draftDialogStepper.currentStep === step ? 'step-circle--active' : 'step-circle--future'
+                           ]"
+                           @click="draftDialogStepper.setCurrentStep(step.id)">
+                        <span>{{ index < draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) ? '✓' : index + 1 }}</span>
+                      </div>
+                      <div v-if="index < draftDialogStepper.currentSteps.length - 1"
+                           :class="['stepper-line2', index < draftDialogStepper.currentSteps.indexOf(<DialogStep>draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) ? 'stepper-line2--done' : '']">
                       </div>
                     </div>
-
-                  </div>
-                </div>
-              </div>
-
-              <br/>
-              <div id="draft-dialog-box" class="table table-bordered custom-table table-hover" style="overflow-y: auto">
-                <div v-if="existsDraftDialog" class="project-field-header">
-                  <div class="project-field-title">{{
-                      draftDialogStepper.currentStep?.displayName
-                    }}
-                  </div>
-                  <div class="project-field-notification">{{
-                      extendedExplanations.get("2")?.message
-                    }}
-                  </div>
-                </div>
-                <div v-if="!existsDraftDialog" class="form-switch-box">
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch"
-                           id="flexSwitchCheckDefault"
-                           v-model="editMode" :class="{ 'inactive': !editMode }">
-                    <label class="form-check-label" for="flexSwitchCheckDefault">Edit Fields</label>
-                  </div>
-                </div>
-
-                <template v-for="(projectField, index) in projectFields" :key="index">
-                  <!-- Category header: show when not in draft dialog AND this is the first row of a new category -->
-                  <div
-                      v-if="!existsDraftDialog && (index === 0 || projectFields[index - 1]?.category !== projectField.category) && projectField.visibilityCondition && projectField.fieldKey !== 'DescriptionUpload'"
-                      class="project-field-header project-field-category-header"
-                  >
-                    <div class="project-field-title">
-                      {{ getDialogStep(projectField.category)?.displayName }}
-                    </div>
-                    <div class="project-field-notification">
-                      {{ getDialogStep(projectField.category)?.description }}
+                    <div class="stepper-step-textbox"
+                         @click="draftDialogStepper.setCurrentStep(step.id)"
+                         style="padding-top: 4px;">
+                      <div class="stepper-step-header">{{ step.displayName }}</div>
+                      <div class="stepper-step-desc">{{ step.description }}</div>
                     </div>
                   </div>
-                  <div
-                      v-else-if="projectField.visibilityCondition && !(index === 0 || projectFields[index - 1]?.category !== projectField.category) && projectField.fieldKey !== 'DescriptionUpload'"
-                      class="input-field-separator"></div>
-                  <ProjectFieldRow
-                      v-if="projectField.visibilityCondition &&
-                      (!existsDraftDialog ||
-                      projectField.isEditable && draftDialogStepper.currentStep?.id !== DialogStep.SUMMARY ||
-                      draftDialogStepper.currentStep?.id === DialogStep.SUMMARY)"
-                      :field-key="projectField.fieldKey"
-                      :field-value="projectField.fieldValue"
-                      :field-description="projectField.fieldDescription"
-                      :bridgeheads="projectField.bridgeheads"
-                      :action="projectField.action"
-                      :module="projectField.module"
-                      :edit-project-param="projectField.editProjectParam"
-                      :is-editable="projectField.isEditable"
-                      :edit-mode="editMode"
-                      :redirect-url="projectField.redirectUrl"
-                      :transform-for-sending="projectField.transformForSending"
-                      :possible-values="projectField.possibleValues"
-                      :display-possible-value="projectField.displayPossibleValue"
-                      :configurations="projectField.configurations"
-                      :exists-file="projectField.existFile"
-                      :upload-action="projectField.uploadAction"
-                      :download-action="projectField.downloadAction"
-                      :download-module="projectField.downloadModule"
-                      :todos="extendedExplanations"
-                      :visible-bridgeheads="visibleBridgeheads"
-                      :mandatory="projectField.mandatory"
-                      :type="projectField.type"
-                      :section="projectField.section"
-                      :call-refresh-context="refreshContext"
-                      :extra-params="projectField.extraParams"
-                      :delete-action="projectField.deleteAction"
-                      :delete-module="projectField.deleteModule"
-                      :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
-                      :context="context"
+                </div>
+              </aside>
+
+              <div class="draft-form-card">
+                  <div v-if="existsDraftDialog" class="project-field-header">
+                    <div class="project-field-title">{{
+                        draftDialogStepper.currentStep?.displayName
+                      }}
+                    </div>
+                    <div class="project-field-notification">{{
+                        extendedExplanations.get("2")?.message
+                      }}
+                    </div>
+                  </div>
+                <div id="draft-dialog-box" class="draft-dialog-content">
+                  <div v-if="!existsDraftDialog" class="form-switch-box">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" role="switch"
+                             id="flexSwitchCheckDefault"
+                             v-model="editMode" :class="{ 'inactive': !editMode }">
+                      <label class="form-check-label" for="flexSwitchCheckDefault">Edit Fields</label>
+                    </div>
+                  </div>
+
+                  <template v-for="(block, blockIndex) in projectFieldRenderBlock" :key="block.key">
+                    <template v-if="block.block">
+                      <div v-if="shouldShowHeaderOfBlockGroup(blockIndex)" class="input-field-header" >
+                        <div style="display: flex;">
+                          <span class="project-field-block-title">{{ block.block?.displayName ?? block.block?.label}}<!--<span v-if="item.field.mandatory">&nbsp*</span>--></span>
+                        </div>
+                        <div class="project-field-block-description" v-html="block.block?.description"></div>
+                      </div>
+                    </template>
+
+                    <template v-if="shouldRenderFieldBlockItems(block)">
+                      <div :class="{ 'project-field-block': shouldRenderBlock(block) }">
+                        <template v-for="item in block.items" :key="item.key">
+                          <div
+                              v-if="item.showCategoryHeader"
+                              class="project-field-header-inline project-field-category-header"
+                          >
+                            <div class="project-field-title-inline">
+                              {{ getDialogStep(item.field.category)?.displayName }}
+                            </div>
+                            <!--<div class="project-field-notification-inline">
+                              {{ getDialogStep(item.field.category)?.description }}
+                            </div>-->
+                          </div>
+                          <ProjectFieldRow
+                              v-if="item.shouldRenderRow"
+                              :field-key="item.field.fieldKey"
+                              :field-value="item.field.fieldValue"
+                              :field-description="item.field.fieldDescription"
+                              :bridgeheads="item.field.bridgeheads"
+                              :action="item.field.action"
+                              :module="item.field.module"
+                              :edit-project-param="item.field.editProjectParam"
+                              :is-editable="item.field.isEditable"
+                              :edit-mode="editMode"
+                              :redirect-url="item.field.redirectUrl"
+                              :transform-for-sending="item.field.transformForSending"
+                              :possible-values="item.field.possibleValues"
+                              :display-possible-value="item.field.displayPossibleValue"
+                              :configurations="item.field.configurations"
+                              :exists-file="item.field.existFile"
+                              :upload-action="item.field.uploadAction"
+                              :download-action="item.field.downloadAction"
+                              :download-module="item.field.downloadModule"
+                              :todos="extendedExplanations"
+                              :visible-bridgeheads="visibleBridgeheads"
+                              :mandatory="item.field.mandatory"
+                              :type="item.field.type"
+                              :section="item.field.section"
+                              :block="item.field.block"
+                              :call-refresh-context="refreshContext"
+                              :extra-params="item.field.extraParams"
+                              :delete-action="item.field.deleteAction"
+                              :delete-module="item.field.deleteModule"
+                              :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
+                              :context="context"
+                              :project-manager-backend-service="projectManagerBackendService"/>
+                        </template>
+                      </div>
+                    </template>
+                    <template v-if="block.block">
+                      <div
+                          v-if="shouldShowAddButtonAfterBlockGroup(blockIndex)"
+                          type="button"
+                          class="btn btn-outline-secondary project-field-block-add-button"
+                          @click="addBlockInstance(block.block)">
+                        Add {{ block.block?.displayName ?? block.block?.label }}
+                      </div>
+                    </template>
+                  </template>
+                </div>
+
+                <div v-if="project?.state === ProjectState.DRAFT" class="button-container">
+                  <!-- Left: Delete Draft -->
+                  <ProjectManagerButton
+                      :module="Module.PROJECT_STATE_MODULE"
+                      :action="Action.REJECT_PROJECT_ACTION"
+                      :context="context" :call-refresh-context="refreshContext"
+                      text="Delete Draft"
+                      button-class="btn btn-delete-draft"
+                      icon-class="bi bi-trash"
+                      :with-message="true"
                       :project-manager-backend-service="projectManagerBackendService"/>
-                </template>
 
+                  <!-- Right: step counter + navigation -->
+                  <div class="button-nav-right">
+                    <span class="step-counter">
+                      Step {{ draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) + 1 }} of {{ draftDialogStepper.currentSteps.length }}
+                    </span>
+                    <button class="btn btn-nav-back" @click="draftDialogStepper.previousStep()"
+                            :disabled="!draftDialogStepper.hasPreviousStep">
+                      <i class="bi bi-chevron-left"></i> Back
+                    </button>
+                    <button v-if="draftDialogStepper.hasNextStep"
+                            class="btn btn-nav-continue" @click="draftDialogStepper.nextStep()">
+                      Next <i class="bi bi-chevron-right"></i>
+                    </button>
+                    <ProjectManagerButton v-if="!draftDialogStepper.hasNextStep"
+                                          :module="Module.PROJECT_STATE_MODULE"
+                                          :action="Action.CREATE_PROJECT_ACTION"
+                                          :context="context" :call-refresh-context="refreshContext"
+                                          text="Submit"
+                                          button-class="btn btn-create-request"
+                                          :with-message="false"
+                                          :is-disabled="!hasProjectAllMandatoryFields"
+                                          :tooltip-text="tooltipTextForCreateButton"
+                                          :project-manager-backend-service="projectManagerBackendService"/>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div v-if="project?.state === ProjectState.DRAFT" class="button-container mt-3">
-              <ProjectManagerButton :module="Module.PROJECT_STATE_MODULE"
-                                    :action="Action.CREATE_PROJECT_ACTION"
-                                    :context="context" :call-refresh-context="refreshContext"
-                                    text="Submit"
-                                    button-class="btn btn-success mr-2"
-                                    :with-message="false"
-                                    :is-disabled="!hasProjectAllMandatoryFields"
-                                    :tooltip-text="tooltipTextForCreateButton"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
-              <div>
-                <button class="btn btn-primary me-2" @click="draftDialogStepper.previousStep()"
-                        :disabled="!draftDialogStepper.hasPreviousStep">
-                  <!--<i class="bi bi-arrow-left"></i>-->
-                  < Back
-                </button>
-                <button class="btn btn-primary me-2" @click="draftDialogStepper.nextStep()"
-                        :disabled="!draftDialogStepper.hasNextStep">
-                  Next >
-                  <!--<i class="bi bi-arrow-right"></i>-->
-                </button>
-              </div>
-              <ProjectManagerButton v-if="project?.state === ProjectState.DRAFT"
-                                    :module="Module.PROJECT_STATE_MODULE"
-                                    :action="Action.REJECT_PROJECT_ACTION"
-                                    :context="context" :call-refresh-context="refreshContext"
-                                    text="Delete Draft"
-                                    button-class="btn btn-danger"
-                                    :with-message="true"
-                                    :project-manager-backend-service="projectManagerBackendService"/>
             </div>
           </div>
         </div>
@@ -470,13 +490,13 @@
                           :is-file="false"/>
           </div>
         </div>
-        <div class="documents data-container mt-12" v-if="currentMenuStep==='Documents'" style="padding: 0 4% 0 5%">
+        <div class="documents data-container mt-12" v-if="currentMenuStep==='Documents'" style="padding: 0">
           <div class="box-header"><span>Documents</span></div>
-          <div style="padding: 2%">
+          <div style="padding: 2% 4rem">
             <DownloadFormTemplatePdfButtons :form-templates="formTemplates" :context="context"
                                             :project-manager-backend-service="projectManagerBackendService"/>
           </div>
-          <div style="padding: 2%">
+          <div style="padding: 2% 4rem">
             <div style="display:flex; flex-flow:row;  width:100% ">
               <UploadButton :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
@@ -630,6 +650,21 @@ import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdf
 import {PollingService} from "@/services/PollingService";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
 
+interface ProjectFieldRenderItem {
+  key: string;
+  field: ProjectField;
+  showCategoryHeader: boolean;
+  showSeparator: boolean;
+  shouldRenderRow: boolean;
+}
+
+interface ProjectFieldRenderGroup {
+  key: string;
+  block?: ProjectField["block"];
+  items: ProjectFieldRenderItem[];
+}
+
+type BlockMetadata = ProjectField["block"];
 
 export default defineComponent({
   computed: {
@@ -656,6 +691,9 @@ export default defineComponent({
     },
     ProjectType() {
       return ProjectType
+    },
+    projectFieldRenderBlock(): ProjectFieldRenderGroup[] {
+      return this.getProjectFieldRenderGroups();
     }
   },
   props: {
@@ -760,7 +798,11 @@ export default defineComponent({
       })
     },
     async project() {
-      await this.initializeProjectRelatedData();
+      try {
+        await this.initializeProjectRelatedData();
+      } catch (error) {
+        console.error('Failed to initialize project-related data:', error);
+      }
     },
     'draftDialogStepper.currentStep': function () {
       this.extendedExplanations = this.fetchExtendedExplanations();
@@ -806,6 +848,186 @@ export default defineComponent({
   methods: {
     hasProjectType,
     getMergedQueryStates,
+
+    getProjectFieldRenderGroups(): ProjectFieldRenderGroup[] {
+      const groups: ProjectFieldRenderGroup[] = [];
+      const projectFields = this.projectFields as ProjectField[];
+
+      projectFields.forEach((field, index) => {
+        const item = this.buildProjectFieldRenderItem(field, index);
+        const currentGroup = groups[groups.length - 1];
+
+        if (field.block && currentGroup && this.areSameBlock(currentGroup.block, field.block)) {
+          currentGroup.items.push(item);
+          return;
+        }
+
+        groups.push({
+          key: field.block
+              ? `block-${field.block.label}-${field.block.instance ?? 0}-${index}`
+              : `field-${index}`,
+          block: field.block,
+          items: [item]
+        });
+      });
+
+      return groups;
+    },
+
+    buildProjectFieldRenderItem(field: ProjectField, index: number): ProjectFieldRenderItem {
+      const previousField = (this.projectFields as ProjectField[])[index - 1];
+      const startsCategory = index === 0 || previousField?.category !== field.category;
+      const showStructuralElement = field.visibilityCondition && field.fieldKey !== 'DescriptionUpload';
+
+      return {
+        key: `field-${index}`,
+        field,
+        showCategoryHeader: !this.existsDraftDialog && startsCategory && showStructuralElement,
+        showSeparator: !startsCategory && showStructuralElement,
+        shouldRenderRow: field.visibilityCondition &&
+            (!this.existsDraftDialog ||
+                field.isEditable && this.draftDialogStepper.currentStep?.id !== FixedDialogStep.SUMMARY ||
+                this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+      };
+    },
+
+    areSameBlock(first?: ProjectField["block"], second?: ProjectField["block"]): boolean {
+      if (!first || !second) {
+        return false;
+      }
+
+      return first.label === second.label && first.instance === second.instance
+    },
+
+    areSameBlockType(first?: ProjectField["block"], second?: ProjectField["block"]): boolean {
+      if (!first || !second) {
+        return false;
+      }
+
+      return first.label === second.label
+    },
+
+    shouldShowAddButtonAfterBlockGroup(groupIndex: number): boolean {
+      const groups = this.projectFieldRenderBlock;
+      const currentGroup = groups[groupIndex];
+
+      if (!currentGroup?.block || !this.isProjectFieldBlockVisible(currentGroup)) {
+        return false;
+      }
+      if (currentGroup.block.multiple === false && this.hasBlockInstance(currentGroup.block)) {
+        return false;
+      }
+      if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY || (!this.existsDraftDialog && !this.editMode)) {
+        return false
+      }
+      const nextGroup = groups
+          .slice(groupIndex + 1)
+          .find((group) => this.isProjectFieldBlockVisible(group));
+
+      return !this.areSameBlockType(currentGroup.block, nextGroup?.block);
+    },
+
+    shouldShowHeaderOfBlockGroup(groupIndex: number): boolean {
+      const groups = this.projectFieldRenderBlock;
+      const currentGroup = groups[groupIndex];
+
+      if (!currentGroup?.block || !this.isProjectFieldBlockVisible(currentGroup)) {
+        return false;
+      }
+
+      const firstGroup = groups.find((group) => group.block?.label === currentGroup.block?.label)
+
+      if ((!this.existsDraftDialog && !firstGroup?.block?.instance && !this.editMode) || (this.existsDraftDialog && this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY && !firstGroup?.block?.instance)) {
+        return false
+      }
+      return currentGroup.key === firstGroup?.key
+    },
+
+    shouldRenderBlock(group: ProjectFieldRenderGroup): boolean {
+      if (!group.block) {
+        return false;
+      }
+
+      return this.isProjectFieldBlockVisible(group) &&
+          group.block.instance != null;
+    },
+
+    shouldRenderFieldBlockItems(group: ProjectFieldRenderGroup): boolean {
+      return !group.block || this.shouldRenderBlock(group);
+    },
+
+    isProjectFieldBlockVisible(group: ProjectFieldRenderGroup): boolean {
+      return group.items.some((item) => item.field.visibilityCondition);
+    },
+
+    addBlockInstance(block?: BlockMetadata) {
+      if (!block) {
+        return;
+      }
+
+      const matchingFields = this.formFields.filter((field) => this.isSameFormFieldBlockType(field, block));
+      if (matchingFields.length === 0) {
+        return;
+      }
+
+      const numericInstances = matchingFields
+          .map((field) => field.blockInstance)
+          .filter((instance): instance is number => instance != null);
+      const maxInstance = numericInstances.length > 0 ? Math.max(...numericInstances) : undefined;
+      const sourceFields = matchingFields.filter((field) =>
+          maxInstance !== undefined
+              ? field.blockInstance === maxInstance
+              : field.blockInstance === undefined || field.blockInstance === null
+      );
+
+      if (sourceFields.length === 0) {
+        return;
+      }
+
+      const newInstance = maxInstance !== undefined ? maxInstance + 1 : 1;
+      const clonedFields: FormField[] = sourceFields.map((field) => ({
+        ...field,
+        value: undefined,
+        blockInstance: newInstance
+      }));
+
+      const insertionIndex = this.findBlockInsertionIndex(block);
+      this.formFields = [
+        ...this.formFields.slice(0, insertionIndex),
+        ...clonedFields,
+        ...this.formFields.slice(insertionIndex)
+      ];
+      this.updateProjectFields();
+      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
+    },
+
+    isSameFormFieldBlockType(field: FormField, block?: BlockMetadata): boolean {
+      return !!block &&
+          field.block === block.label &&
+          field.blockDisplayName === block.displayName &&
+          field.blockDescription === block.description;
+    },
+
+    hasBlockInstance(block: BlockMetadata): boolean {
+      return this.formFields.some((field) =>
+          this.isSameFormFieldBlockType(field, block) && field.blockInstance != null
+      );
+    },
+
+    findBlockInsertionIndex(block?: BlockMetadata): number {
+      if (!block) {
+        return this.formFields.length;
+      }
+
+      for (let index = this.formFields.length - 1; index >= 0; index--) {
+        if (this.isSameFormFieldBlockType(this.formFields[index], block)) {
+          return index + 1;
+        }
+      }
+
+      return this.formFields.length;
+    },
 
     toggleNotification() {
       this.showNotification = !this.showNotification;
@@ -1004,12 +1226,7 @@ export default defineComponent({
           this.initializeData(Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, new Map(), 'currentUser'),
           this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_BEST_PROJECT_FORM_TEMPLATES_ACTION, new Map(), 'formTemplates'),
-          this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_SELECTED_PROJECT_FORMS_ACTION, new Map(), async result => {
-            this.selectedForms = result;
-            await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async result => {
-              this.addFormFields(result);
-            })
-          }),
+          this.initializeProjectFormsData(),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, new Map(), 'exporterTemplateIds')
         ]);
         await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), async (result: Record<string, ProjectAndForms>) => {
@@ -1041,6 +1258,22 @@ export default defineComponent({
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
         this.project?.state === ProjectState.DRAFT && this.currentMenuStep === "Status" ? this.currentMenuStep = "Request" : {}
+      }
+    },
+
+    async initializeProjectFormsData() {
+      try {
+        await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_SELECTED_PROJECT_FORMS_ACTION, new Map(), async result => {
+          this.selectedForms = result;
+          await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async formFields => {
+            this.addFormFields(formFields);
+          });
+        });
+      } catch (error) {
+        console.warn('Failed to load project form definitions.', error);
+        this.selectedForms = [];
+        this.formFields = [];
+        this.formTitles = [];
       }
     },
 
@@ -1229,7 +1462,14 @@ export default defineComponent({
             (!this.existsDraftDialog ||
                 this.draftDialogStepper.currentStep?.id === formField.title ||
                 this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
-
+        block: formField.block ? {
+          label: formField.block,
+          instance: formField.blockInstance,
+          multiple: formField.multipleBlock,
+          minInstances: formField.minBlockInstances,
+          displayName: formField.blockDisplayName,
+          description: formField.blockDescription
+        } : undefined,
         section: new Section(formFields, index)
       }));
     },
@@ -1266,7 +1506,15 @@ export default defineComponent({
         return [{
           title: formField.title,
           label: formField.label,
-          value: input
+          value: input,
+          ...(formField.block ? {
+            block: formField.block,
+            blockInstance: formField.blockInstance,
+            multipleBlock: formField.multipleBlock,
+            minBlockInstances: formField.minBlockInstances,
+            blockDisplayName: formField.blockDisplayName,
+            blockDescription: formField.blockDescription
+          } : {})
         }];
       };
     },
@@ -1505,7 +1753,7 @@ export default defineComponent({
     fetchProjectFields(): ProjectField[] {
       const fixedFields: ProjectField[] = [
         {
-          fieldKey: "Title",
+          fieldKey: "Project Title",
           fieldValue: this.project?.label ? [this.project.label] : [],
           editProjectParam: [EditProjectParam.LABEL],
           fieldDescription: "Please provide a title for your project.",
@@ -1516,7 +1764,7 @@ export default defineComponent({
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
-          fieldKey: "Description",
+          fieldKey: "Project Description",
           fieldValue: this.project?.description ? [this.project.description] : [],
           editProjectParam: [EditProjectParam.DESCRIPTION],
           fieldDescription: "Briefly describe your project in a few words. What is the objective or aim of your project?",
@@ -1539,7 +1787,8 @@ export default defineComponent({
           visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
         },
         {
-          fieldKey: "Sites",
+          fieldKey: "Queried Sites",
+          fieldDescription: "Sites identified via the DKTK Explorer as having samples or data matching your search criteria.",
           fieldValue: [],
           bridgeheads: {
             selected: this.bridgeheads,
@@ -1567,7 +1816,8 @@ export default defineComponent({
           action: Action.SET_PROJECT_CONFIGURATION_ACTION
         },
         {
-          fieldKey: "Query",
+          fieldKey: "Cohort Query",
+          fieldDescription: "This query was automatically imported from your Explorer session. Use \"Edit in Explorer\" to adjust your search criteria.",
           fieldValue: [this.project?.humanReadable ? this.project?.humanReadable : "", this.project?.query ? this.project?.query : "", this.project?.queryDetails ? this.project?.queryDetails : ""],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
           isEditable: true,
@@ -1932,24 +2182,18 @@ export default defineComponent({
 <style scoped>
 
 .box-header {
-  padding: 10px 30px 10px 2%;
-  /*background-color: #00489c;*/
-  color: rgb(0, 56, 124);;
-  font-size: large;
-  font-weight: bold;
+  padding: 17px 28px;;
+  background-color: #2655a2;
+  color: white;
+  font-size: 19px;
+  font-weight: 600;
   /*border-top: 1px solid #95c8dc;
   border-left: 1px solid #95c8dc;
   border-right: 1px solid #95c8dc;*/
-  background-image: linear-gradient(to right, #e1edf5, #bed7e9);
-  /*border-radius: 10px 10px 0 0;*/
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  /*background-image: linear-gradient(to right, #e1edf5, #bed7e9);*/
+  border-radius: 6px 6px 0 0;
 }
 
-.box-header span {
-  font-size: 16pt;
-}
 
 .info-container {
   display: flex;
@@ -1966,22 +2210,24 @@ export default defineComponent({
 .data-container {
   display: flex;
   flex-direction: column;
-  background-color: white;
+  background-color: transparent;
   height: 100%;
-  /*margin: 0 1% 0 1%;*/
+  padding: 0;
 }
 
 .data-container.non-draft {
-  /*box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);*/
-  margin: 0;
-  padding: 0 4% 0 5%;
+  padding: 28px 0 0;
 }
 
+.data-container.documents {
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+}
 .vertical-stepper-box {
-  display: flex;
-  flex-direction: column;
-  width: 30%;
-  margin-right: 3%;
+  width: 208px;
+  flex-shrink: 0;
+  padding-top: 2px;
 }
 
 .project-actions {
@@ -2025,34 +2271,31 @@ export default defineComponent({
   display: flex;
   flex-flow: row;
   width: 100%;
+  height:88vh;
 }
 
 .left-container {
   display: flex;
   flex-flow: column;
   width: 14%;
-  /*min-height: 800px;*/
   margin-top: 1.5%;
   margin-left: 1.5%;
   margin-bottom: 1.5%;
   background-color: white;
-  /*border-radius: 10px;
-  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
-  0 1px 1px 0 rgba(0, 0, 0, 0.14),
-  0 1px 3px 0 rgba(0, 0, 0, 0.12);*/
-
 }
 
 .right-container {
   flex: 3;
   display: flex;
   flex-flow: row;
-  margin: 1.5% 10% 0 10%;
-  width: 56%;
+  margin: 28px auto 0;
+  width: 100%;
+  max-width: 65%;
+  /*align-self: flex-start;*/
 }
 
 .right-container.less-margin {
-  margin-left: 4%;
+  margin-left: 28px;
 }
 
 .main-content {
@@ -2061,19 +2304,41 @@ export default defineComponent({
   width: 100%;
 }
 
-.button-container-right button {
-  margin-bottom: 8px;
+/* Draft form layout */
+.draft-layout-row {
+  display: flex;
+  flex-flow: row;
+  gap: 22px;
+  padding: 0 0 20px;
+  align-items: flex-start;
 }
 
-.table-responsive {
-  overflow-x: auto;
-  padding: 0 2% 2% 2%;
+.draft-form-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  min-height: 580px;
+  overflow: hidden;
+  height:100%;
+}
+
+.draft-dialog-content {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
+}
+
+.button-container-right button {
+  margin-bottom: 8px;
 }
 
 .admin-view {
   display: flex;
   flex-flow: row;
-  background-color: white;
+  background-color: transparent;
 }
 
 .vertical-stepper {
@@ -2084,11 +2349,10 @@ export default defineComponent({
 }
 
 .vertical-stepper2 {
-  margin: 3rem 5% 0 10%;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-
+  padding-top: 8px;
 }
 
 .stepper-line {
@@ -2102,10 +2366,9 @@ export default defineComponent({
 
 .stepper-line2 {
   width: 2px;
-  height: 70px;
-  background-color: #9e9e9e;
-  align-items: flex-start;
-  margin: 10px 0 10px 14px;
+  height: 28px;
+  background-color: #e2e8f0;
+  margin: 3px 0;
 }
 
 .stepper-step {
@@ -2119,31 +2382,79 @@ export default defineComponent({
 .stepper-step2 {
   display: flex;
   flex-flow: row;
+  gap: 11px;
   cursor: pointer;
+  padding: 8px 6px;
+  border-radius: 6px;
+  margin-bottom: 0;
+}
+
+.stepper-step2:hover {
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .stepper-step-textbox {
+  min-width: 0;
 }
 
 .stepper-step-header {
-  color: #00489cf2;
-  font-size: x-large;
+  /* noinspection CssNonIntegerLengthInPixels */
+  font-size: 13.5px;
+  font-weight: 400;
+  color: #94a3b8;
+  line-height: 1.3;
 }
 
+.stepper-step2.active .stepper-step-header {
+  font-weight: 600;
+  color: #e05c2a;
+}
+
+.stepper-step-desc {
+  /* noinspection CssNonIntegerLengthInPixels */
+  font-size: 11.5px;
+  color: #cbd5e1;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.stepper-step2.active .stepper-step-desc {
+  color: #c04a1a;
+}
+
+/* Step circles */
 .step-circle {
   width: 30px;
   height: 30px;
-  background-color: #9e9e9e;
-  color: #fff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background-color: #d1d5db;
+}
+
+/* noinspection CssUnusedSymbol */
+.step-circle--done {
+  background-color: #2655a2;
+}
+
+/* noinspection CssUnusedSymbol */
+.step-circle--active {
+  background-color: #e05c2a;
+}
+
+/* noinspection CssUnusedSymbol */
+.step-circle--future {
+  background-color: #d1d5db;
 }
 
 .step-circle span {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .step-title {
@@ -2157,7 +2468,7 @@ export default defineComponent({
 }
 
 .active-step .step-circle {
-  background-color: #fa7b26;
+  background-color: #e05c2a;
 }
 
 .notification-box {
@@ -2230,9 +2541,116 @@ export default defineComponent({
 .button-container {
   display: flex;
   justify-content: space-between;
-  text-align: center;
-  margin-left: 28%;
-  margin-bottom: 2rem;
+  align-items: center;
+  padding: 14px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
+  flex-shrink: 0;
+}
+
+.button-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step-counter {
+  font-size: 12px;
+  color: #94a3b8;
+  /* noinspection CssNonIntegerLengthInPixels */
+  letter-spacing: 0.4px;
+  user-select: none;
+  margin-right: 4px;
+}
+
+/* Delete Draft button */
+/* noinspection CssUnusedSymbol */
+:deep(.btn-delete-draft) {
+  background: transparent;
+  /* noinspection CssNonIntegerLengthInPixels */
+  border: 1.5px solid #dc2626;
+  color: #dc2626;
+  padding: 9px 18px;
+  border-radius: 5px;
+  /* noinspection CssNonIntegerLengthInPixels */
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+/* noinspection CssUnusedSymbol */
+:deep(.btn-delete-draft:hover) {
+  background: #fef2f2;
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+/* Back button */
+.btn-nav-back {
+  background: #fff;
+  /* noinspection CssNonIntegerLengthInPixels */
+  border: 1.5px solid #2655a2;
+  color: #2655a2;
+  padding: 9px 20px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-nav-back:hover:not(:disabled) {
+  background: #eff4ff;
+}
+
+.btn-nav-back:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Continue button */
+.btn-nav-continue {
+  background: #2655a2;
+  border: none;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(38, 85, 162, 0.28);
+}
+
+.btn-nav-continue:hover {
+  background: #1e4491;
+  box-shadow: 0 2px 6px rgba(38, 85, 162, 0.38);
+}
+
+/* Create Request button */
+/* noinspection CssUnusedSymbol */
+:deep(.btn-create-request) {
+  background: #16a34a;
+  border: none;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.3);
+}
+
+/* noinspection CssUnusedSymbol */
+:deep(.btn-create-request:hover:not(:disabled)) {
+  background: #15803d;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.4);
+}
+
+/* noinspection CssUnusedSymbol */
+:deep(.btn-create-request:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .inviteUser {
@@ -2301,21 +2719,46 @@ export default defineComponent({
 }
 
 .project-field-header {
-  width: 90%;
-  margin: 2rem 1rem 1rem 1rem;
-  padding: 1rem 3rem;
-  background-color: #00489c;
+  background-color: #2655a2;
+  padding: 17px 28px;
+  flex-shrink: 0;
 }
-
+.project-field-header-inline {
+  padding: 17px 28px;
+  display: grid;
+  grid-template-columns: minmax(25px, 1fr) auto minmax(25px, 1fr);
+  align-items: center;
+  grid-gap: 1rem;
+}
 .project-field-title {
-  font-size: x-large;
-  font-weight: bold;
-  color: white
+  font-size: 19px;
+  font-weight: 600;
+  color: #fff;
+}
+.project-field-title-inline {
+  font-size: 18px;
+  font-weight: 600;
+  color: #00489cf2;
+}
+.project-field-header-inline:before, .project-field-header-inline:after {
+  content: "";
+  height: 1px;
+  flex-grow: 1;
+  margin: 0 12px;
+  background: #333;
 }
 
+.project-field-header-inline:before {
+  background: linear-gradient(to right, transparent, #818078);
+}
+
+.project-field-header-inline:after {
+  background: linear-gradient(to right, #818078, transparent);
+}
 .project-field-notification {
-  font-size: small;
-  color: white;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.82);
+  margin-top: 4px;
 }
 
 .missing-fields, .missing-fields .stepper-step-header {
@@ -2348,11 +2791,17 @@ export default defineComponent({
   background-color: #EEEEEE;
 }
 
-.input-field-separator {
-  height: 1px;
-  padding: 0;
-  margin: 1rem 4rem 1rem 0;
-  background-image: linear-gradient(to right, transparent, rgb(180, 180, 180), transparent);
+.project-field-block {
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  margin: 0 4rem 1rem 4rem;
+}
+
+.project-field-block-add-button {
+  margin: 0 4rem 1rem 4rem;
+  display: block;
+  border: 1px dashed #00489cf2;
+  color: #00489cf2;
 }
 
 .clickable {
@@ -2363,4 +2812,17 @@ export default defineComponent({
 .clickable:hover {
   text-decoration: underline;
 }
+.input-field-header {
+  padding: 1.5rem 4rem;
+}
+.project-field-block-title {
+  font-weight: bold;
+  color: #00489cf2;
+}
+.project-field-block-description {
+  font-size: 12px;
+  font-weight: normal;
+  margin-bottom: 3px;
+}
+
 </style>

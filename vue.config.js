@@ -28,6 +28,17 @@ module.exports = {
         if (config.plugins.has("SystemJSPublicPathWebpackPlugin")) {
             config.plugins.delete("SystemJSPublicPathWebpackPlugin");
         }
+
+        config.module
+            .rule('vue')
+            .use('vue-loader')
+            .tap((options = {}) => ({
+                ...options,
+                compilerOptions: {
+                    ...(options.compilerOptions || {}),
+                    isCustomElement: (tag) => tag.startsWith('lens-')
+                }
+            }));
     },
     filenameHashing: false,
 };

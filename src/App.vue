@@ -22,7 +22,7 @@ export default defineComponent({
   font-family: Open Sans, sans-serif;
 }
 @font-face {
-  font-family: Open Sans;
+  font-family: 'Open Sans';
   font-style: normal;
   font-weight: 300;
   src: url(assets/OpenSans-Light.woff2) format("woff2");
@@ -30,5 +30,12 @@ export default defineComponent({
 
 :root {
   background-color: #EEEEEE;
+}
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+html, body {
+  margin: 0;
+  padding: 0;
 }
 </style>

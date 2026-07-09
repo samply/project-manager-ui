@@ -274,9 +274,9 @@
         </div>
         <div v-if="currentMenuStep==='Request'" class="data-container mt-12"
              :class="{ 'non-draft': !existsDraftDialog }">
-          <div v-if="project">
+          <div v-if="project" style="height:100%">
             <div v-if="!existsDraftDialog" class="box-header"><span>Request</span></div>
-            <div class="draft-layout-row">
+            <div class="draft-layout-row" style="height:100%">
 
               <aside v-if="existsDraftDialog" class="vertical-stepper-box">
                 <div class="vertical-stepper2">
@@ -2271,6 +2271,7 @@ export default defineComponent({
   display: flex;
   flex-flow: row;
   width: 100%;
+  height:88vh;
 }
 
 .left-container {
@@ -2290,7 +2291,7 @@ export default defineComponent({
   margin: 28px auto 0;
   width: 100%;
   max-width: 65%;
-  align-self: flex-start;
+  /*align-self: flex-start;*/
 }
 
 .right-container.less-margin {
@@ -2308,7 +2309,7 @@ export default defineComponent({
   display: flex;
   flex-flow: row;
   gap: 22px;
-  padding: 0 0 28px;
+  padding: 0 0 20px;
   align-items: flex-start;
 }
 
@@ -2321,6 +2322,7 @@ export default defineComponent({
   flex-direction: column;
   min-height: 580px;
   overflow: hidden;
+  height:100%;
 }
 
 .draft-dialog-content {

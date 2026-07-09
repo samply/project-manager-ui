@@ -439,7 +439,7 @@ export default class ProjectFieldRow extends Vue {
 
   onBooleanValueChange(_event: Event) {
     //const input = event.target as HTMLInputElement;
-    //this.editedValue[0] = input.checked ? 'true' : 'false';
+    //this.editedValue[0] = input.checked? 'true': 'false';
     this.saveField()
   }
 
@@ -1163,7 +1163,7 @@ export default class ProjectFieldRow extends Vue {
   max-height: 300px;
 }
 .grow-wrap::after {
-  /* Note the weird space! Needed to preventy jumpy behavior */
+  /* Note the weird space! Needed to prevent jumpy behavior */
   content: attr(data-replicated-value) " ";
 
   /* This is how textarea text behaves */

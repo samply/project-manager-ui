@@ -309,10 +309,10 @@
 
               <div class="draft-form-card">
                   <div v-if="existsDraftDialog" class="project-field-header">
-                    <span class="project-field-title"><div>{{
+                    <div class="project-field-title">{{
                         draftDialogStepper.currentStep?.displayName
-                      }}</div>
-                    </span>
+                      }}
+                    </div>
                     <div class="project-field-notification">{{
                         extendedExplanations.get("2")?.message
                       }}
@@ -2335,11 +2335,6 @@ export default defineComponent({
   margin-bottom: 8px;
 }
 
-.table-responsive {
-  overflow-x: visible;
-  padding: 0;
-}
-
 .admin-view {
   display: flex;
   flex-flow: row;
@@ -2376,10 +2371,6 @@ export default defineComponent({
   margin: 3px 0;
 }
 
-.stepper-line2--done {
-  background-color: #2655a2;
-}
-
 .stepper-step {
   display: flex;
   margin-bottom: 10px;
@@ -2407,6 +2398,7 @@ export default defineComponent({
 }
 
 .stepper-step-header {
+  /* noinspection CssNonIntegerLengthInPixels */
   font-size: 13.5px;
   font-weight: 400;
   color: #94a3b8;
@@ -2418,12 +2410,8 @@ export default defineComponent({
   color: #e05c2a;
 }
 
-.stepper-step2:not(.active) .stepper-step-header.done {
-  color: #1e293b;
-  font-weight: 500;
-}
-
 .stepper-step-desc {
+  /* noinspection CssNonIntegerLengthInPixels */
   font-size: 11.5px;
   color: #cbd5e1;
   line-height: 1.4;
@@ -2450,14 +2438,17 @@ export default defineComponent({
   background-color: #d1d5db;
 }
 
+/* noinspection CssUnusedSymbol */
 .step-circle--done {
   background-color: #2655a2;
 }
 
+/* noinspection CssUnusedSymbol */
 .step-circle--active {
   background-color: #e05c2a;
 }
 
+/* noinspection CssUnusedSymbol */
 .step-circle--future {
   background-color: #d1d5db;
 }
@@ -2566,22 +2557,27 @@ export default defineComponent({
 .step-counter {
   font-size: 12px;
   color: #94a3b8;
+  /* noinspection CssNonIntegerLengthInPixels */
   letter-spacing: 0.4px;
   user-select: none;
   margin-right: 4px;
 }
 
 /* Delete Draft button */
+/* noinspection CssUnusedSymbol */
 :deep(.btn-delete-draft) {
   background: transparent;
+  /* noinspection CssNonIntegerLengthInPixels */
   border: 1.5px solid #dc2626;
   color: #dc2626;
   padding: 9px 18px;
   border-radius: 5px;
+  /* noinspection CssNonIntegerLengthInPixels */
   font-size: 13.5px;
   font-weight: 500;
 }
 
+/* noinspection CssUnusedSymbol */
 :deep(.btn-delete-draft:hover) {
   background: #fef2f2;
   border-color: #b91c1c;
@@ -2591,6 +2587,7 @@ export default defineComponent({
 /* Back button */
 .btn-nav-back {
   background: #fff;
+  /* noinspection CssNonIntegerLengthInPixels */
   border: 1.5px solid #2655a2;
   color: #2655a2;
   padding: 9px 20px;
@@ -2632,6 +2629,7 @@ export default defineComponent({
 }
 
 /* Create Request button */
+/* noinspection CssUnusedSymbol */
 :deep(.btn-create-request) {
   background: #16a34a;
   border: none;
@@ -2643,11 +2641,13 @@ export default defineComponent({
   box-shadow: 0 1px 3px rgba(22, 163, 74, 0.3);
 }
 
+/* noinspection CssUnusedSymbol */
 :deep(.btn-create-request:hover:not(:disabled)) {
   background: #15803d;
   box-shadow: 0 2px 6px rgba(22, 163, 74, 0.4);
 }
 
+/* noinspection CssUnusedSymbol */
 :deep(.btn-create-request:disabled) {
   opacity: 0.6;
   cursor: not-allowed;
@@ -2758,10 +2758,6 @@ export default defineComponent({
 .project-field-notification {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.82);
-  margin-top: 4px;
-}
-.project-field-notification-inline {
-  font-size: 13px;
   margin-top: 4px;
 }
 

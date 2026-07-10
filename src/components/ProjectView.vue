@@ -413,7 +413,8 @@
                   <ProjectManagerButton
                       :module="Module.PROJECT_STATE_MODULE"
                       :action="Action.DELETE_PROJECT_ACTION"
-                      :context="context" :call-refresh-context="refreshContext"
+                      :context="context"
+                      :call-refresh-context="() => redirectTo('/')"
                       text="Delete Draft"
                       button-class="btn btn-delete-draft"
                       icon-class="bi bi-trash"
@@ -657,6 +658,7 @@ import {ActionFunction, ProjectField, Section} from "@/services/utils";
 import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
 import {PollingService} from "@/services/PollingService";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
+import router from "@/router";
 
 interface ProjectFieldRenderItem {
   key: string;
@@ -854,6 +856,9 @@ export default defineComponent({
   },
 
   methods: {
+    router() {
+      return router
+    },
     hasProjectType,
     getMergedQueryStates,
 
@@ -1084,6 +1089,10 @@ export default defineComponent({
 
     refreshContext() {
       this.context = new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
+    },
+
+    redirectTo(site: string) {
+      this.$router.push(site)
     },
 
     isProjectManagerAdmin(){

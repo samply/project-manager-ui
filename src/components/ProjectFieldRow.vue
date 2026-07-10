@@ -584,7 +584,7 @@ export default class ProjectFieldRow extends Vue {
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
       <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }">
         <div v-if="!isDescriptionUpload()" style="display: flex;">
-          <span class="input-field-title">{{ fieldKey }}<span v-if="this.mandatory">&nbsp*</span></span>
+          <span class="input-field-title">{{ fieldKey }}<span v-if="this.mandatory" :style="(!isBridgeheads() && !editedValue[0]) || (isBridgeheads() && editingBridgeheads?.length === 0) ? 'color: red' : ''">&nbsp*</span></span>
 
           <span v-if="this.uploadAction && todos?.get(this.uploadAction)"
                 class="todo-circle-small">#{{ todos?.get(this.uploadAction)?.number }}</span>

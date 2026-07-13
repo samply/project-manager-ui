@@ -340,60 +340,67 @@
 
                     <template v-if="shouldRenderFieldBlockItems(block)">
                       <div :class="{ 'project-field-block': shouldRenderBlock(block) }"  class="project-field-block-instance-wrapper" >
-                        <button
-                            v-if="canDeleteBlock(block)"
-                            type="button"
-                            class="btn btn-outline-danger btn-sm project-field-block-delete-button"
-                            @click="deleteBlockInstance(block)"
-                            title="Delete block">
-                          <i class="bi bi-trash"></i>
-                        </button>
-                        <template v-for="item in block.items" :key="item.key">
-                          <div
-                              v-if="item.showCategoryHeader"
-                              class="project-field-header-inline project-field-category-header"
-                          >
-                            <div class="project-field-title-inline">
-                              {{ getDialogStep(item.field.category)?.displayName }}
+                        <div v-if="shouldRenderBlock(block)" class="project-field-block-header" @click="toggleBlock(block?.block)">
+                          <i class="bi project-field-block-header-chevron" :class="isBlockCollapsed(block.block) ? 'bi-chevron-right' : 'bi-chevron-down'"></i>
+                          <div>{{ block.block?.displayName ?? block.block?.label }} #{{ getBlockNumber(block.block?.label, block.block?.instance) }}</div>
+                          <button
+                              v-if="canDeleteBlock(block)"
+                              type="button"
+                              class="btn btn-sm project-field-block-delete-button"
+                              @click.stop="deleteBlockInstance(block)"
+                              title="Delete block"
+                              style="color:red;">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                        <div v-if="!isBlockCollapsed(block.block)" class="project-field-block-body">
+                          <template v-for="item in block.items" :key="item.key">
+                            <div
+                                v-if="item.showCategoryHeader"
+                                class="project-field-header-inline project-field-category-header"
+                            >
+                              <div class="project-field-title-inline">
+                                {{ getDialogStep(item.field.category)?.displayName }}
+                              </div>
+                              <!--<div class="project-field-notification-inline">
+                                {{ getDialogStep(item.field.category)?.description }}
+                              </div>-->
                             </div>
-                            <!--<div class="project-field-notification-inline">
-                              {{ getDialogStep(item.field.category)?.description }}
-                            </div>-->
-                          </div>
-                          <ProjectFieldRow
-                              v-if="item.shouldRenderRow"
-                              :field-key="item.field.fieldKey"
-                              :field-value="item.field.fieldValue"
-                              :field-description="item.field.fieldDescription"
-                              :bridgeheads="item.field.bridgeheads"
-                              :action="item.field.action"
-                              :module="item.field.module"
-                              :edit-project-param="item.field.editProjectParam"
-                              :is-editable="item.field.isEditable"
-                              :edit-mode="editMode"
-                              :redirect-url="item.field.redirectUrl"
-                              :transform-for-sending="item.field.transformForSending"
-                              :possible-values="item.field.possibleValues"
-                              :display-possible-value="item.field.displayPossibleValue"
-                              :configurations="item.field.configurations"
-                              :exists-file="item.field.existFile"
-                              :upload-action="item.field.uploadAction"
-                              :download-action="item.field.downloadAction"
-                              :download-module="item.field.downloadModule"
-                              :todos="extendedExplanations"
-                              :visible-bridgeheads="visibleBridgeheads"
-                              :mandatory="item.field.mandatory"
-                              :type="item.field.type"
-                              :section="item.field.section"
-                              :block="item.field.block"
-                              :call-refresh-context="refreshContext"
-                              :extra-params="item.field.extraParams"
-                              :delete-action="item.field.deleteAction"
-                              :delete-module="item.field.deleteModule"
-                              :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
-                              :context="context"
-                              :project-manager-backend-service="projectManagerBackendService"/>
-                        </template>
+                            <ProjectFieldRow
+                                v-if="item.shouldRenderRow"
+                                :field-key="item.field.fieldKey"
+                                :field-value="item.field.fieldValue"
+                                :field-description="item.field.fieldDescription"
+                                :bridgeheads="item.field.bridgeheads"
+                                :action="item.field.action"
+                                :module="item.field.module"
+                                :edit-project-param="item.field.editProjectParam"
+                                :is-editable="item.field.isEditable"
+                                :edit-mode="editMode"
+                                :redirect-url="item.field.redirectUrl"
+                                :transform-for-sending="item.field.transformForSending"
+                                :possible-values="item.field.possibleValues"
+                                :display-possible-value="item.field.displayPossibleValue"
+                                :configurations="item.field.configurations"
+                                :exists-file="item.field.existFile"
+                                :upload-action="item.field.uploadAction"
+                                :download-action="item.field.downloadAction"
+                                :download-module="item.field.downloadModule"
+                                :todos="extendedExplanations"
+                                :visible-bridgeheads="visibleBridgeheads"
+                                :mandatory="item.field.mandatory"
+                                :type="item.field.type"
+                                :section="item.field.section"
+                                :block="item.field.block"
+                                :call-refresh-context="refreshContext"
+                                :extra-params="item.field.extraParams"
+                                :delete-action="item.field.deleteAction"
+                                :delete-module="item.field.deleteModule"
+                                :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
+                                :context="context"
+                                :project-manager-backend-service="projectManagerBackendService"/>
+                          </template>
+                        </div>
                       </div>
                     </template>
                     <template v-if="block.block">
@@ -654,7 +661,7 @@ import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
-import {ActionFunction, ProjectField, Section} from "@/services/utils";
+import {ActionFunction, Block, ProjectField, Section} from "@/services/utils";
 import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
 import {PollingService} from "@/services/PollingService";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
@@ -790,7 +797,8 @@ export default defineComponent({
       groupedMissingFields: {} as Record<string, string[]>,
       currentMenuStep: "Status",
       editMode: false,
-      categoryRank: {project: 0, query: 1, services: 2} as Record<string, number>  // order the categories how they should appear in the Request tab (except in DRAFT). not listed categories will be shown after these
+      categoryRank: {project: 0, query: 1, services: 2} as Record<string, number>,  // order the categories how they should appear in the Request tab (except in DRAFT). not listed categories will be shown after these
+      blockCollapse: new Map<string, boolean>()
     };
   },
   watch: {
@@ -923,6 +931,7 @@ export default defineComponent({
         this.projectManagerBackendService
             .fetchData(Module.PROJECT_EDITION_MODULE, Action.DELETE_FORM_FIELD_BLOCK_ACTION, this.context, params)
             .then(() => this.refreshContext());
+        this.blockCollapse.delete(block?.block.label+'#'+block?.block.instance)
       }
     },
 
@@ -2209,7 +2218,34 @@ export default defineComponent({
         displayName: stepId.charAt(0).toUpperCase() + stepId.slice(1),
         description: ""
       }
+    },
+
+    toggleBlock(block: Block | undefined): void {
+      const bool = this.blockCollapse.get((block?.label+'#'+block?.instance))
+      this.blockCollapse.set((block?.label+'#'+block?.instance),!bool)
+    },
+
+    isBlockCollapsed(block: Block | undefined): boolean {
+      if (block && !this.blockCollapse.has(block?.label+'#'+block?.instance)) {
+        this.blockCollapse.set((block?.label+'#'+block?.instance),false)
+      }
+      return <boolean>this.blockCollapse.get((block?.label + '#' + block?.instance))
+    },
+
+    getBlockNumber(blockLabel: string | undefined, instance: number | undefined): number {
+      let counter: number = 0;
+      let key, value;
+      for ([key, value] of this.blockCollapse) {
+        if (key.split('#')[0] === blockLabel) {
+          counter++;
+          if (parseInt(key.split('#')[1]) === instance) {
+            return counter
+          }
+        }
+      }
+      return 1
     }
+
   }
 
 });
@@ -2869,8 +2905,21 @@ export default defineComponent({
 
 .project-field-block-delete-button {
   position: absolute;
-  top: 0;
+  top: 4px;
   right: 0;
 }
-
+.project-field-block-header {
+  display: flex;
+  background-color: #d0d7de;
+  height:39px;
+  align-items: center;
+  cursor: pointer;
+}
+.project-field-block-header-chevron {
+  margin: 0 10px;
+  font-weight: bold;
+}
+.project-field-block-header > div {
+  font-weight: bold;
+}
 </style>

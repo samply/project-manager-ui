@@ -2859,6 +2859,7 @@ export default defineComponent({
   margin: 1rem 2rem 0 1rem;
   position: sticky;
   top: 1rem;
+  z-index:100;
 }
 
 .form-switch .form-check-input.inactive {
@@ -2868,7 +2869,7 @@ export default defineComponent({
 .project-field-block {
   border: 1px solid #d0d7de;
   border-radius: 6px;
-  margin: 0 4rem 1rem 4rem;
+  margin: 0 4rem 1.5rem 4rem;
 }
 
 .project-field-block-add-button {

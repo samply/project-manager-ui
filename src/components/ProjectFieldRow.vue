@@ -507,9 +507,9 @@ export default class ProjectFieldRow extends Vue {
     <template v-for="newSection in section.fetchNewSections()"
               :key="`${newSection.level}-${newSection.displayName ?? 'root'}`">
 
-      <tr v-if="newSection.level === 1" class="section-row spacer-row">
+      <!--<tr v-if="newSection.level === 1" class="section-row spacer-row">
         <td colspan="100">&nbsp;</td>
-      </tr>
+      </tr>-->
 
       <!-- Regular section row -->
       <tr v-if="newSection.displayName" class="section-row" :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
@@ -591,7 +591,7 @@ export default class ProjectFieldRow extends Vue {
           <span v-if="this.downloadAction && todos?.get(this.downloadAction) && this.existsFile"
                 class="todo-circle-small">#{{ todos?.get(this.downloadAction)?.number }}</span>
         </div>
-        <div class="field-description" v-html="fieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
+        <div v-if="fieldDescription" class="field-description" v-html="fieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
       </div>
       <div :class="getEditFieldCssClass()">
         <div v-if="uploadAction && !isDescriptionUpload()" style="width:100%;padding: 0 0.75rem">
@@ -842,7 +842,6 @@ export default class ProjectFieldRow extends Vue {
   flex-flow: row;
   width: 70%;
 }
-
 /*noinspection CssUnusedSymbol*/
 .other-edit-fields {
   display: flex;
@@ -978,17 +977,17 @@ export default class ProjectFieldRow extends Vue {
 }
 
 .section-row.level-1 td {
-  background-image: linear-gradient(to right, #eaf0f4, #aed0e6);
+  /*background-image: linear-gradient(to right, #eaf0f4, #aed0e6);*/
   border-left: none;
   border-right: none;
   margin: 0 1rem;
 }
 
-.section-row.spacer-row {
+/* .section-row.spacer-row {
   border: none;
   margin-top: -30px;
   background-color: white;
-}
+}*/
 
 /* Spacer row for sections without displayName */
 .section-row.spacer-row td {
@@ -1010,7 +1009,7 @@ export default class ProjectFieldRow extends Vue {
 .section-title {
   font-weight: 600;
   line-height: 1.4;
-  margin: 0.5rem 2rem;
+  margin: 0.5rem 2rem 0 2.5rem;
   color: #00489c;
   background: none;
 }
@@ -1080,10 +1079,10 @@ export default class ProjectFieldRow extends Vue {
 
 /* Section description styling */
 .section-description {
-  font-size: 0.85rem;
-  color: #00489c;
-  margin-left: 1.75rem;
-  margin-bottom: 0.5rem;
+  font-size: 12px;
+  color: #212529;
+  margin-left: 3rem;
+  margin-bottom: 1rem;
 }
 
 .input-field {
@@ -1114,6 +1113,7 @@ export default class ProjectFieldRow extends Vue {
  .input-field.sidewise {
   display: flex;
    padding: 1rem 4rem;
+   width: 85%;
 }
 .input-field.block {
   display: flex;
@@ -1122,6 +1122,9 @@ export default class ProjectFieldRow extends Vue {
  .input-field-header.sidewise {
    width: 30%;
    margin-right: 1%;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
  }
  textarea.form-control {
    /*resize: both;*/

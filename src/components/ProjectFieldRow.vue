@@ -18,12 +18,13 @@ import type {DialogStep} from "@/services/fixedDialogStep";
 import {FixedDialogStep} from "@/services/fixedDialogStep";
 import type {Block, BridgeheadsProjectField} from "@/services/utils";
 import {ActionFunction, Section} from "@/services/utils";
-import {PropType, watch} from "vue";
+import {handleError, PropType, watch} from "vue";
 import "@samply/lens";
 import {QueryItem,setQueryStore} from "@samply/lens";
 
 @Options({
   name: "ProjectFieldRow",
+  methods: {handleError},
   computed: {
     configLabel() {
       return configLabel;
@@ -437,6 +438,11 @@ export default class ProjectFieldRow extends Vue {
     return [[{id: "", key: "", name: "", type: "", values: []}]]
   }
 
+  hasSection(): boolean {
+    const groups = this.section?.fetchGroups();
+    return !!(groups && groups.length > 0);
+  }
+
   onBooleanValueChange(_event: Event) {
     //const input = event.target as HTMLInputElement;
     //this.editedValue[0] = input.checked? 'true': 'false';
@@ -581,7 +587,7 @@ export default class ProjectFieldRow extends Vue {
 
   <div v-else>
 
-    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
+    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
       <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }">
         <div v-if="!isDescriptionUpload()" style="display: flex;">
           <span class="input-field-title">{{ fieldKey }}<span v-if="this.mandatory" :style="(!isBridgeheads() && !editedValue[0]) || (isBridgeheads() && editingBridgeheads?.length === 0) ? 'color: red' : ''">&nbsp*</span></span>
@@ -1083,6 +1089,12 @@ export default class ProjectFieldRow extends Vue {
   color: #212529;
   margin-left: 3rem;
   margin-bottom: 1rem;
+  border: 1px solid;
+  border-image-slice: 1;
+  border-image-source: linear-gradient(to right, #818078, transparent);
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
 }
 
 .input-field {
@@ -1111,9 +1123,16 @@ export default class ProjectFieldRow extends Vue {
   border-color: #9e9e9e;
 }
  .input-field.sidewise {
-  display: flex;
+   display: flex;
    padding: 1rem 4rem;
    width: 85%;
+}
+.input-field.sidewise.section {
+  width:80%;
+  margin-left:2%;
+}
+.input-field.section {
+  margin-left:2%;
 }
 .input-field.block {
   display: flex;

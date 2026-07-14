@@ -2798,7 +2798,7 @@ export default defineComponent({
   flex-shrink: 0;
 }
 .project-field-header-inline {
-  padding: 17px 28px;
+  padding: 30px 28px;
   display: grid;
   grid-template-columns: minmax(25px, 1fr) auto minmax(25px, 1fr);
   align-items: center;

@@ -429,6 +429,7 @@ export enum FormDataType {
     DOUBLE = "DOUBLE",
     BOOLEAN = "BOOLEAN",
     STRING = "STRING",
+    LONG_STRING = "LONG_STRING",
     DATE = "DATE",
     TIMESTAMP = "TIMESTAMP",
     ENUM = "ENUM"

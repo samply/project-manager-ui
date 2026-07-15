@@ -241,7 +241,6 @@ export default class ProjectFieldRow extends Vue {
     this.showInputs = false;
     this.editing = false;
     this.tempFieldValue = this.editedValue.slice();
-
     const params = new Map<string, string>();
 
     if (this.editProjectParam && this.editProjectParam.length > 0) {
@@ -254,9 +253,13 @@ export default class ProjectFieldRow extends Vue {
         const ids = this.editingBridgeheads.map(b => b.bridgehead).join(',');
         params.set(this.editProjectParam[0], ids);
       } else {
-        for (let i = 0; i < this.editProjectParam.length; i++) {
-          if (i < this.editedValue.length) {
-            params.set(this.editProjectParam[i], this.applyTransformToSend(this.editedValue[i]));
+        if (this.isConfiguration()) {
+          params.set(this.editProjectParam[0], this.editedValue.join(','));
+        } else {
+          for (let i = 0; i < this.editProjectParam.length; i++) {
+            if (i < this.editedValue.length) {
+              params.set(this.editProjectParam[i], this.applyTransformToSend(this.editedValue[i]));
+            }
           }
         }
       }
@@ -367,6 +370,17 @@ export default class ProjectFieldRow extends Vue {
   exitAndCallRefreshContext() {
     this.cancelEdit();
     this.callRefreshContext();
+  }
+
+  isActiveStep(step: string): boolean {
+    return this.editedValue.includes(step)
+  }
+  setActiveSteps(step: string): void {
+    if(this.editedValue.includes(step)) {
+      this.editedValue = this.editedValue.filter(item => item !== step)
+    } else {
+      this.editedValue.push(step)
+    }
   }
 
   isQuery(): boolean {
@@ -540,16 +554,16 @@ export default class ProjectFieldRow extends Vue {
     <td colspan="3" style="display: block;width:100%">
       <div>
         <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
-             :class="{ 'active': editedValue[0] === step }">
+             :class="{ 'active': isActiveStep(step) }">
           <div class="config-button"
                role="button"
                tabindex="0"
-               @click="editedValue[0]=step; saveField()"
-               @keydown.enter="editedValue[0]=step; saveField()"
+               @click="setActiveSteps(step); saveField()"
+               @keydown.enter="setActiveSteps(step); saveField()"
                style="cursor: pointer; height:100%; min-width: fit-content;">
             <div style="display: flex;flex-direction: row;">
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault"  :checked="editedValue[0] === step">
+                <input class="form-check-input" type="checkbox" value="" :checked="isActiveStep(step)">
               </div>
               <div style="height:100%; display: flex; flex-direction: column;width:100%">
                 <div class="config-box-header">{{ configurations?.get(step)?.project?.label }}</div>

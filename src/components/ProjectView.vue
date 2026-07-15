@@ -1009,66 +1009,41 @@ export default defineComponent({
         return;
       }
 
-      const matchingFields = this.formFields.filter((field) => this.isSameFormFieldBlockType(field, block));
-      if (matchingFields.length === 0) {
-        return;
-      }
-
-      const numericInstances = matchingFields
-          .map((field) => field.blockInstance)
-          .filter((instance): instance is number => instance != null);
-      const maxInstance = numericInstances.length > 0 ? Math.max(...numericInstances) : undefined;
-      const sourceFields = matchingFields.filter((field) =>
-          maxInstance !== undefined
-              ? field.blockInstance === maxInstance
-              : field.blockInstance === undefined || field.blockInstance === null
+      const fieldToSend = this.formFields.find((field) =>
+          field.block === block.label && field.blockInstance === block.instance
       );
-
-      if (sourceFields.length === 0) {
+      if (!fieldToSend) {
         return;
       }
 
-      const newInstance = maxInstance !== undefined ? maxInstance + 1 : 1;
-      const clonedFields: FormField[] = sourceFields.map((field) => ({
-        ...field,
-        value: undefined,
-        blockInstance: newInstance
-      }));
-
-      const insertionIndex = this.findBlockInsertionIndex(block);
-      this.formFields = [
-        ...this.formFields.slice(0, insertionIndex),
-        ...clonedFields,
-        ...this.formFields.slice(insertionIndex)
-      ];
-      this.updateProjectFields();
-      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
-      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
+      this.addFormFieldBlockInstance(fieldToSend);
     },
 
-    isSameFormFieldBlockType(field: FormField, block?: BlockMetadata): boolean {
-      return !!block &&
-          field.block === block.label;
+    addFormFieldBlockInstance(formField: FormField) {
+      const nextBlockInstance = this.formFields
+          .filter((field) => field.block === formField.block)
+          .map((field) => field.blockInstance)
+          .filter((instance): instance is number => instance != null)
+          .reduce((max, instance) => Math.max(max, instance), 0) + 1;
+
+      const newFormField: FormField = {
+        ...formField,
+        blockInstance: nextBlockInstance
+      };
+      delete newFormField.value;
+
+      const params = new Map<string, FormField[]>();
+      params.set(EditProjectParam.FORM_FIELDS, [newFormField]);
+
+      this.projectManagerBackendService
+          .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_FORM_FIELDS_ACTION, this.context, params)
+          .then(() => this.refreshContext());
     },
 
     hasBlockInstance(block: BlockMetadata): boolean {
       return this.formFields.some((field) =>
-          this.isSameFormFieldBlockType(field, block) && field.blockInstance != null
+          field.block === block?.label && field.blockInstance != null
       );
-    },
-
-    findBlockInsertionIndex(block?: BlockMetadata): number {
-      if (!block) {
-        return this.formFields.length;
-      }
-
-      for (let index = this.formFields.length - 1; index >= 0; index--) {
-        if (this.isSameFormFieldBlockType(this.formFields[index], block)) {
-          return index + 1;
-        }
-      }
-
-      return this.formFields.length;
     },
 
     toggleNotification() {

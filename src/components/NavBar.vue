@@ -3,7 +3,7 @@
     <nav class="navbar navbar-dark custom-navbar">
       <div class="navbar__logo">
         <a href="https://dktk.dkfz.de/" class="navbar-brand dk-logo">
-          <span class="dk-logo__sign"><img src="../assets/logo-dktk-sign.svg" alt="dktk"></span>
+          <span v-if="logoUrl" class="dk-logo__sign"><img :src="logoUrl" alt="dktk"></span>
           <span class="dk-logo__brand">
             <span class="dk-logo__brand-part1">D</span><span class="dk-logo__brand-part2">K</span><span class="dk-logo__brand-part3">TK</span>
           </span>
@@ -58,6 +58,7 @@ export default defineComponent({
     return {
       isProjectManagerAdmin: false,
       frontendName: '<b>Samply</b>.Requester',
+      logoUrl: "",
       context: new ProjectManagerContext(undefined, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.NAVIGATION_BAR_SITE),
     };
@@ -65,7 +66,7 @@ export default defineComponent({
 
   mounted() {
     this.fetchProjectRoles();
-    this.fetchFrontendName();
+    this.fetchFrontendConfig();
   },
   methods: {
     logout() {
@@ -86,9 +87,10 @@ export default defineComponent({
         console.error('Error loading user roles:', error);
       }
     },
-    async fetchFrontendName() {
+    async fetchFrontendConfig() {
       const config = await getConfig();
       this.frontendName = config.VUE_APP_FRONTEND_NAME;
+      this.logoUrl = config.VUE_APP_LOGO_URL ?? "";
     },
 
   },
@@ -105,10 +107,6 @@ export default defineComponent({
 .navbar-title {
   color: #00489c;
   font-size: larger;
-}
-.navbar-icon {
-  margin-right: 5px;
-  color: #00489c;
 }
 
 .user-logout-container {
@@ -168,6 +166,8 @@ export default defineComponent({
   font-size: 48px;
   margin-right: 15px;
 }
+
+/* noinspection CssUnusedSymbol */
 div.ccm-page .dk-logo__brand-part1 {
   letter-spacing: -2px;
 }

@@ -381,7 +381,7 @@ export default class ProjectFieldRow extends Vue {
     } else {
       this.editedValue.push(step)
       if (this.editedValue.length > 1) {
-        this.editedValue.filter(item => item !== 'CUSTOM')
+        this.editedValue = this.editedValue.filter(item => item !== 'CUSTOM')
       }
     }
   }

@@ -2677,6 +2677,7 @@ export default defineComponent({
 .btn-nav-continue:hover {
   background: #1e4491;
   box-shadow: 0 2px 6px rgba(38, 85, 162, 0.38);
+  color: white;
 }
 
 /* Create Request button */
@@ -2854,6 +2855,10 @@ export default defineComponent({
   display: block;
   border: 1px dashed #00489cf2;
   color: #00489cf2;
+}
+.project-field-block-add-button:hover {
+  background-color: #00489cf2;
+  color:white;
 }
 
 .clickable {

@@ -344,7 +344,6 @@
                           <i class="bi project-field-block-header-chevron" :class="isBlockCollapsed(block.block) ? 'bi-chevron-right' : 'bi-chevron-down'"></i>
                           <div>{{ block.block?.displayName ?? block.block?.label }} #{{ getBlockNumber(block.block?.label, block.block?.instance) }}</div>
                           <button
-                              v-if="canDeleteBlock(block)"
                               type="button"
                               class="btn btn-sm project-field-block-delete-button"
                               @click.stop="deleteBlockInstance(block)"
@@ -910,11 +909,6 @@ export default defineComponent({
                 field.isEditable && this.draftDialogStepper.currentStep?.id !== FixedDialogStep.SUMMARY ||
                 this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
       };
-    },
-
-    canDeleteBlock(block: ProjectFieldRenderBlock): boolean {
-      // e.g., don't allow deleting the first mandatory instance
-      return block.block?.multiple === true;
     },
 
     deleteBlockInstance(block: ProjectFieldRenderBlock): void {

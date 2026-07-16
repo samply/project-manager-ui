@@ -291,7 +291,9 @@
                              draftDialogStepper.currentStep === step ? 'step-circle--active' : 'step-circle--future'
                            ]"
                            @click="draftDialogStepper.setCurrentStep(step.id)">
-                        <span>{{ index < draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) ? '✓' : index + 1 }}</span>
+                        <span>{{ index < draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) ?
+                            (hasMissingFieldsInStep(step.displayName) ? '!' : '✓') :
+                            index + 1 }}</span>
                       </div>
                       <div v-if="index < draftDialogStepper.currentSteps.length - 1"
                            :class="['stepper-line2', index < draftDialogStepper.currentSteps.indexOf(<DialogStep>draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) ? 'stepper-line2--done' : '']">

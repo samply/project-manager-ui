@@ -902,7 +902,7 @@ export default defineComponent({
       return {
         key: `field-${index}`,
         field,
-        showCategoryHeader: !this.existsDraftDialog && startsCategory && showStructuralElement,
+        showCategoryHeader: (!this.existsDraftDialog || (this.existsDraftDialog && this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)) && startsCategory && showStructuralElement,
         showSeparator: !startsCategory && showStructuralElement,
         shouldRenderRow: field.visibilityCondition &&
             (!this.existsDraftDialog ||

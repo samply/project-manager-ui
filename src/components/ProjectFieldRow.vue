@@ -473,8 +473,8 @@ export default class ProjectFieldRow extends Vue {
   }
 
   onBooleanValueChange(_event: Event) {
-    //const input = event.target as HTMLInputElement;
-    //this.editedValue[0] = input.checked? 'true': 'false';
+    const input = _event.target as HTMLInputElement;
+    this.editedValue[0] = input.checked ? 'true': 'false';
     this.saveField()
   }
 
@@ -616,17 +616,27 @@ export default class ProjectFieldRow extends Vue {
 
   <div v-else>
 
-    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
-      <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }">
-        <div v-if="!isDescriptionUpload()" style="display: flex;">
-          <span class="input-field-title">{{ fieldKey }}<span v-if="this.mandatory" :style="(!isBridgeheads() && !editedValue[0]) || (isBridgeheads() && editingBridgeheads?.length === 0) ? 'color: red' : ''">&nbsp*</span></span>
+    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
+      <div style="display:flex" :style="{width: isInputType(FormDataType.BOOLEAN) && !this.mandatory ? '80%' : '30%'}">
+        <input
+            v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory"
+            type="checkbox"
+            style="margin-right:20px"
+            :checked="editedValue[0] === 'true'"
+            @change="onBooleanValueChange"
+            :disabled=" (isDraft() && isSummaryStep()) || (!isDraft() && !editMode)"
+        />
+        <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }">
+          <div v-if="!isDescriptionUpload()" style="display: flex;">
+            <span class="input-field-title">{{ fieldKey }}<span v-if="this.mandatory" :style="(!isBridgeheads() && !editedValue[0]) || (isBridgeheads() && editingBridgeheads?.length === 0) ? 'color: red' : ''">&nbsp*</span></span>
 
-          <span v-if="this.uploadAction && todos?.get(this.uploadAction)"
-                class="todo-circle-small">#{{ todos?.get(this.uploadAction)?.number }}</span>
-          <span v-if="this.downloadAction && todos?.get(this.downloadAction) && this.existsFile"
-                class="todo-circle-small">#{{ todos?.get(this.downloadAction)?.number }}</span>
+            <span v-if="this.uploadAction && todos?.get(this.uploadAction)"
+                  class="todo-circle-small">#{{ todos?.get(this.uploadAction)?.number }}</span>
+            <span v-if="this.downloadAction && todos?.get(this.downloadAction) && this.existsFile"
+                  class="todo-circle-small">#{{ todos?.get(this.downloadAction)?.number }}</span>
+          </div>
+          <div v-if="fieldDescription" class="field-description" v-html="fieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
         </div>
-        <div v-if="fieldDescription" class="field-description" v-html="fieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
       </div>
       <div :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
         <div v-if="uploadAction && !isDescriptionUpload()" style="width:100%;padding: 0 0.75rem">
@@ -640,11 +650,11 @@ export default class ProjectFieldRow extends Vue {
         <div v-else style="width:100%">
           <div>
             <div v-if="isInputType(FormDataType.BOOLEAN)" style="width: 70%;">
-              <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onBooleanValueChange" class="form-select" style="width: fit-content;">
+              <select v-if="((isDraft() && !isSummaryStep()) || editMode) && mandatory" v-model="editedValue[0]" @change="saveField()" class="form-select" style="width: fit-content;">
                 <option value=true>Yes</option>
                 <option value=false>No</option>
               </select>
-              <div v-if="(!isDraft() || isSummaryStep()) && !editMode">
+              <div v-if="(!isDraft() || isSummaryStep()) && !editMode && mandatory">
                 <div style="padding: 0 0.75rem">{{getBooleanValue()}}</div>
               </div>
             </div>
@@ -1156,6 +1166,9 @@ export default class ProjectFieldRow extends Vue {
   width:80%;
   margin-left:2%;
 }
+.input-field.sidewise.wide {
+  width:100%;
+}
 .input-field.section {
   margin-left:2%;
 }
@@ -1164,7 +1177,7 @@ export default class ProjectFieldRow extends Vue {
   padding: 1rem;
 }
  .input-field-header.sidewise {
-   width: 30%;
+   width: 100%;
    margin-right: 1%;
    display: flex;
    flex-direction: column;

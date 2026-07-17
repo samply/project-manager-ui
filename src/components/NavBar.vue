@@ -2,7 +2,7 @@
   <div>
     <nav class="navbar navbar-dark custom-navbar">
       <div class="navbar__logo">
-        <a href="https://dktk.dkfz.de/" class="navbar-brand dk-logo">
+        <a href="https://dktk.dkfz.de/" class="navbar-brand dk-logo" target="_blank" rel="noopener noreferrer">
           <span v-if="logoUrl" class="dk-logo__sign"><img :src="logoUrl" alt="dktk"></span>
           <span class="dk-logo__brand">
             <span class="dk-logo__brand-part1">D</span><span class="dk-logo__brand-part2">K</span><span class="dk-logo__brand-part3">TK</span>

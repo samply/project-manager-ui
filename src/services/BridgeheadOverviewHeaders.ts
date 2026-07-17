@@ -1,5 +1,7 @@
 import {ProjectType} from "@/services/projectManagerBackendService";
 
+export const FRONTEND_VARIABLES_PATH = "/frontend/variables";
+
 export enum BridgeheadOverviewHeader {
   SITES = 'Sites',
   VOTUM = 'Ethic vote',

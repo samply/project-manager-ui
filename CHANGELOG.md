@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-07-15]
+## [1.1.0 - 2026-07-21]
 ### Added
 - Dockerfile
 - Single Spa
@@ -122,8 +122,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Project field row category
 - Final Report
 - Form field blocks
-- Button for removing projet and form field blocks
+- Button for removing project and form field blocks
 - External logo
+- External Backend Configuration
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

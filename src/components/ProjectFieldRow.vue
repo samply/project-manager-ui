@@ -457,6 +457,16 @@ export default class ProjectFieldRow extends Vue {
     return [[{id: "", key: "", name: "", type: "", values: []}]]
   }
 
+  getBooleanValue(): string {
+    if (this.editedValue[0] === "true") {return "Yes"}
+    else {
+      if (this.editedValue[0] === "false") {return "No"}
+      else {
+        if (this.mandatory) {return "not specified"}
+      }
+    }
+    return ""
+  }
   hasSection(): boolean {
     const groups = this.section?.fetchGroups();
     return !!(groups && groups.length > 0);
@@ -635,7 +645,7 @@ export default class ProjectFieldRow extends Vue {
                 <option value=false>No</option>
               </select>
               <div v-if="(!isDraft() || isSummaryStep()) && !editMode">
-                <div style="padding: 0 0.75rem">{{editedValue[0]==="true" ? "Yes" : "No"}}</div>
+                <div style="padding: 0 0.75rem">{{getBooleanValue()}}</div>
               </div>
             </div>
             <div v-else-if="isQuery()">

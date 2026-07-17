@@ -1354,10 +1354,21 @@ export default defineComponent({
         this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
         this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
       }
+
+      const formTitlesByTitle = new Map(
+          this.formTitles.map((formTitle) => [formTitle.title, formTitle])
+      );
+
+      this.selectedForms = this.selectedForms.map((selectedForm) => ({
+        ...selectedForm,
+        titleDisplayName: formTitlesByTitle.get(selectedForm.title)?.titleDisplayName ?? selectedForm.titleDisplayName,
+        titleDescription: formTitlesByTitle.get(selectedForm.title)?.titleDescription ?? selectedForm.titleDescription,
+      }));
+
       if (!this.draftDialogStepper.hasSameFormTitles(this.selectedForms)) {
         this.draftDialogStepper.resetFormTitles();
-        this.draftDialogStepper.addFormTitles(this.selectedForms);
       }
+      this.draftDialogStepper.addFormTitles(this.selectedForms);
     },
 
     async fetchNotifications() {

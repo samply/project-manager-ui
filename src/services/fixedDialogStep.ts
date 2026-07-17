@@ -54,6 +54,21 @@ function formTitleToDialogStep(formTitle: FormTitle): DialogStep {
     };
 }
 
+function mergeDialogStepMetadata(existing: DialogStep, formTitle: FormTitle, isFixedStep: boolean): void {
+    const nextDisplayName = formTitle.titleDisplayName ??
+        (isFixedStep ? existing.displayName : formTitle.title);
+    const nextDescription = formTitle.titleDescription ??
+        (isFixedStep ? existing.description : "");
+
+    if (
+        existing.displayName !== nextDisplayName ||
+        existing.description !== nextDescription
+    ) {
+        existing.displayName = nextDisplayName;
+        existing.description = nextDescription;
+    }
+}
+
 /* -----------------------------
  * DialogStepper
  * ----------------------------- */
@@ -117,26 +132,19 @@ export class DialogStepper {
 
         for (const formTitle of formTitles) {
             const step = formTitleToDialogStep(formTitle);
-
-            // Ignore if it collides with fixed steps
-            if (fixedIds.has(step.id)) continue;
-
+            const isFixedStep = fixedIds.has(step.id);
             const existing = existingStepsById.get(step.id);
 
-            if (!existing) {
-                // --- New dynamic step ---
-                this.allSteps.splice(summaryIndex, 0, step);
-                structureChanged = true;
-            } else {
-                // --- Existing step: update metadata if changed ---
-                if (
-                    existing.displayName !== step.displayName ||
-                    existing.description !== step.description
-                ) {
-                    existing.displayName = step.displayName;
-                    existing.description = step.description;
-                }
+            if (existing) {
+                mergeDialogStepMetadata(existing, formTitle, isFixedStep);
+                continue;
             }
+
+            if (isFixedStep) continue;
+
+            // --- New dynamic step ---
+            this.allSteps.splice(summaryIndex, 0, step);
+            structureChanged = true;
         }
 
         // If the current step was filtered out or removed, recover gracefully
@@ -144,7 +152,7 @@ export class DialogStepper {
             this.currentStepId = this.fetchActiveSteps()[0]?.id ?? null;
         }
 
-        if (structureChanged) {
+        if (structureChanged || formTitles.length > 0) {
             this.updateFields();
         }
     }

@@ -246,7 +246,7 @@
                 </template>
               </div>
               <div
-                  v-if="!existsDraftDialog || draftDialogStepper.currentStep?.id === DialogStep.SUMMARY"
+                  v-if="!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY)"
                   class="inviteUser">
                 <UserInput :project="project" :context="context"
                            :bridgeheads="visibleBridgeheads"
@@ -346,6 +346,7 @@
                           <i class="bi project-field-block-header-chevron" :class="isBlockCollapsed(block.block) ? 'bi-chevron-right' : 'bi-chevron-down'"></i>
                           <div>{{ block.block?.displayName ?? block.block?.label }} #{{ getBlockNumber(block.block?.label, block.block?.instance) }}</div>
                           <button
+                              v-if="(existsDraftDialog && !isCurrentStep(DialogStep.SUMMARY)) || (!existsDraftDialog && editMode)"
                               type="button"
                               class="btn btn-sm project-field-block-delete-button"
                               @click.stop="deleteBlockInstance(block)"
@@ -904,12 +905,12 @@ export default defineComponent({
       return {
         key: `field-${index}`,
         field,
-        showCategoryHeader: (!this.existsDraftDialog || (this.existsDraftDialog && this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)) && startsCategory && showStructuralElement,
+        showCategoryHeader: (!this.existsDraftDialog || (this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY))) && startsCategory && showStructuralElement,
         showSeparator: !startsCategory && showStructuralElement,
         shouldRenderRow: field.visibilityCondition &&
             (!this.existsDraftDialog ||
-                field.isEditable && this.draftDialogStepper.currentStep?.id !== FixedDialogStep.SUMMARY ||
-                this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+                field.isEditable && !this.isCurrentStep(FixedDialogStep.SUMMARY) ||
+                this.isCurrentStep(FixedDialogStep.SUMMARY))
       };
     },
 
@@ -957,7 +958,7 @@ export default defineComponent({
       if (currentGroup.block.multiple === false && this.hasBlockInstance(currentGroup.block)) {
         return false;
       }
-      if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY || (!this.existsDraftDialog && !this.editMode)) {
+      if (this.isCurrentStep(FixedDialogStep.SUMMARY) || (!this.existsDraftDialog && !this.editMode)) {
         return false
       }
       const nextGroup = groups
@@ -977,7 +978,7 @@ export default defineComponent({
 
       const firstGroup = groups.find((group) => group.block?.label === currentGroup.block?.label)
 
-      if ((!this.existsDraftDialog && !firstGroup?.block?.instance && !this.editMode) || (this.existsDraftDialog && this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY && !firstGroup?.block?.instance)) {
+      if ((!this.existsDraftDialog && !firstGroup?.block?.instance && !this.editMode) || (this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY) && !firstGroup?.block?.instance)) {
         return false
       }
       return currentGroup.key === firstGroup?.key
@@ -1489,7 +1490,7 @@ export default defineComponent({
             this.selectedForms.some(f => f.title === formField.title) && // only if the field is already selected
             (!this.existsDraftDialog ||
                 this.draftDialogStepper.currentStep?.id === formField.title ||
-                this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
+                this.isCurrentStep(FixedDialogStep.SUMMARY)),
         block: formField.block ? {
           formTitle: formField.title,
           label: formField.block,
@@ -1525,8 +1526,7 @@ export default defineComponent({
         visibilityCondition:
             this.isProjectManagerAdmin() &&
             (!this.existsDraftDialog ||
-            this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
-            this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+            this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY))
       }));
     },
 
@@ -1605,31 +1605,31 @@ export default defineComponent({
       }
       let count = extendedExplanations.size + 1;
       if (this.existsDraftDialog) {
-        if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT) { // Project
+        if (this.isCurrentStep(FixedDialogStep.PROJECT)) { // Project
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please provide information about your project"
           });
           count++;
-        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES) { // Services
+        } else if (this.isCurrentStep(FixedDialogStep.SERVICES)) { // Services
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please provide information on the resources you are requesting."
           });
           count++;
-        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY && !this.project?.query) { // Query
+        } else if (this.isCurrentStep(FixedDialogStep.QUERY) && !this.project?.query) { // Query
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."
           });
           count++;
-        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM && !hasValidOutputs(this.project)) { // Output
+        } else if (this.isCurrentStep(FixedDialogStep.CUSTOM) && !hasValidOutputs(this.project)) { // Output
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."
           });
           count++;
-        } else if (this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY) { // Summary
+        } else if (this.isCurrentStep(FixedDialogStep.SUMMARY)) {
           extendedExplanations.set(count.toString(), {
             number: count,
             message: "Please check all of the fields in the summary and click 'Create' if everything seems OK."
@@ -1732,8 +1732,7 @@ export default defineComponent({
           visibilityCondition:
               this.isProjectManagerAdmin() &&
               (!this.existsDraftDialog ||
-              this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
-              this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
+              this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY)),
           extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.PROJECT_TYPE, exec),
           deleteAction: Action.REMOVE_PROJECT_OUTPUT_ACTION,
           deleteModule: Module.PROJECT_EDITION_MODULE
@@ -1753,8 +1752,7 @@ export default defineComponent({
           visibilityCondition:
               this.isProjectManagerAdmin() &&
               (!this.existsDraftDialog ||
-              this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
-              this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
+              this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY)),
           extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.OUTPUT_FORMAT, exec)
         },
         {
@@ -1772,8 +1770,7 @@ export default defineComponent({
           visibilityCondition:
               this.isProjectManagerAdmin() &&
               (!this.existsDraftDialog ||
-              this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM ||
-              this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
+              this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY)),
           extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.TEMPLATE_ID, exec)
         }
       ]);
@@ -1790,7 +1787,7 @@ export default defineComponent({
           editMode: this.editMode,
           mandatory: true,
           category: FixedDialogStep.PROJECT,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.PROJECT) || this.isCurrentStep(FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Project Description",
@@ -1802,7 +1799,7 @@ export default defineComponent({
           editMode: this.editMode,
           mandatory: true,
           category: FixedDialogStep.PROJECT,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.PROJECT) || this.isCurrentStep(FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "DescriptionUpload",
@@ -1814,7 +1811,7 @@ export default defineComponent({
           downloadAction: this.Action.DOWNLOAD_DESCRIPTION_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
           category: FixedDialogStep.PROJECT,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.PROJECT) || this.isCurrentStep(FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Queried Sites",
@@ -1831,7 +1828,7 @@ export default defineComponent({
           redirectUrl: this.project?.explorerUrl ?? undefined,
           category: FixedDialogStep.PROJECT,
           transformForSending: (humanReadable: string) => this.allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.PROJECT || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.PROJECT) || this.isCurrentStep(FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Configuration",
@@ -1842,7 +1839,7 @@ export default defineComponent({
           possibleValues: this.projectConfigurationLabels,
           configurations: this.projectConfigurations,
           category: FixedDialogStep.SERVICES,
-          visibilityCondition:  !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SERVICES || (this.isProjectManagerAdmin() && this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY),
+          visibilityCondition:  !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SERVICES) || (this.isProjectManagerAdmin() && this.isCurrentStep(FixedDialogStep.SUMMARY)),
           action: Action.SET_PROJECT_CONFIGURATION_ACTION
         },
         {
@@ -1855,7 +1852,7 @@ export default defineComponent({
           mandatory: true,
           redirectUrl: this.project?.explorerUrl ?? undefined,
           category: FixedDialogStep.QUERY,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.QUERY) || this.isCurrentStep(FixedDialogStep.SUMMARY)
         },
         {
           fieldKey: "Query Format",
@@ -1870,7 +1867,7 @@ export default defineComponent({
           },
           mandatory: true,
           category: FixedDialogStep.QUERY,
-          visibilityCondition: this.isProjectManagerAdmin() && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+          visibilityCondition: this.isProjectManagerAdmin() && (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY))
         },
         {
           fieldKey: "Cohort Definition",
@@ -1881,7 +1878,7 @@ export default defineComponent({
           isEditable: true,
           editMode: this.editMode,
           category: FixedDialogStep.QUERY,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.QUERY || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY
+          visibilityCondition: !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.QUERY) || this.isCurrentStep(FixedDialogStep.SUMMARY)
         },
         ...this.fetchProjectOutputFields(),
         {
@@ -1892,7 +1889,7 @@ export default defineComponent({
           editMode: this.editMode,
           category: FixedDialogStep.CUSTOM,
           visibilityCondition: this.isProjectManagerAdmin() &&
-              (!this.existsDraftDialog || this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION && this.draftDialogStepper.currentStep?.id === FixedDialogStep.CUSTOM || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+              (!this.existsDraftDialog || this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION && this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY))
         },
         {
           fieldKey: "Votum",
@@ -1904,7 +1901,7 @@ export default defineComponent({
           downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
           category: "Votum",
-          visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+          visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY))
         },
         {
           fieldKey: "Votum for all bridgeheads",
@@ -1916,7 +1913,7 @@ export default defineComponent({
           downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
           category: "Votum",
-          visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+          visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY))
         },
         {
           fieldKey: "Script",
@@ -1928,7 +1925,7 @@ export default defineComponent({
           downloadAction: this.Action.DOWNLOAD_SCRIPT_ACTION,
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
           category: "Script",
-          visibilityCondition: !!this.dataShieldStatus && (!this.existsDraftDialog || this.draftDialogStepper.currentStep?.id === FixedDialogStep.SUMMARY)
+          visibilityCondition: !!this.dataShieldStatus && (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY))
         },
         {
           fieldKey: "Authentication Script",
@@ -2228,8 +2225,11 @@ export default defineComponent({
         }
       }
       return 1
-    }
+    },
 
+    isCurrentStep(step: FixedDialogStep): boolean {
+      return this.draftDialogStepper.currentStep?.id === step
+    }
   }
 
 });

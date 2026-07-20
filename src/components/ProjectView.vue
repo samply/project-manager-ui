@@ -799,7 +799,7 @@ export default defineComponent({
       groupedMissingFields: {} as Record<string, string[]>,
       currentMenuStep: "Status",
       editMode: false,
-      categoryRank: {project: 0, query: 1, services: 2} as Record<string, number>,  // order the categories how they should appear in the Request tab (except in DRAFT). not listed categories will be shown after these
+      categoryRank: {project: "0", query: "1", services: "2", consent: "last"} as Record<string, string>,  // order the categories how they should appear in the Request tab (except in DRAFT). Numbers starts from the beginning, 'last', 'last-1', 'last-2' etc from the end. not listed categories will be shown between
       blockCollapse: new Map<string, boolean>()
     };
   },
@@ -1945,7 +1945,7 @@ export default defineComponent({
             this.draftDialogStepper.hasCurrentStep(formTitle.title)
           }));
       return [...fixedFields, ...dynamicSelectedForms, ...dynamicFields].sort((a, b) =>
-          (this.categoryRank[a.category.toLowerCase()] ?? 999) - (this.categoryRank[b.category.toLowerCase()] ?? 999));
+          this.getCategorySortValue(a.category) - this.getCategorySortValue(b.category))
     },
 
     fetchButtons(): void {
@@ -2229,6 +2229,25 @@ export default defineComponent({
 
     isCurrentStep(step: FixedDialogStep): boolean {
       return this.draftDialogStepper.currentStep?.id === step
+    },
+
+    getCategorySortValue(category: string): number {
+      const rank = this.categoryRank[category.toLowerCase()];
+
+      if (!rank) {
+        return 1000; // alle unbekannten Kategorien in die Mitte
+      }
+
+      if (rank === 'last') {
+        return 10000;
+      }
+
+      if (rank.startsWith('last-')) {
+        const offset = parseInt(rank.substring(5), 10);
+        return 10000 - offset;
+      }
+
+      return parseInt(rank, 10);
     }
   }
 

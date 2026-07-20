@@ -472,6 +472,9 @@ export default class ProjectFieldRow extends Vue {
     return !!(groups && groups.length > 0);
   }
 
+  hasShortTitle(): boolean {
+    return (!this.isInputType(FormDataType.BOOLEAN) && (!this.isDraft() || this.isSummaryStep())) || this.isBlock() || (this.isInputType(FormDataType.BOOLEAN) && (!this.isDraft() || this.isSummaryStep()) && this.mandatory)
+  }
   onBooleanValueChange(_event: Event) {
     const input = _event.target as HTMLInputElement;
     this.editedValue[0] = input.checked ? 'true': 'false';
@@ -617,7 +620,7 @@ export default class ProjectFieldRow extends Vue {
   <div v-else>
 
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
-      <div style="display:flex" :style="{width: isInputType(FormDataType.BOOLEAN) && !this.mandatory ? '80%' : '30%'}">
+      <div style="display:flex" :style="{width: hasShortTitle() ? '30%' : '80%'}">
         <input
             v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory"
             type="checkbox"
@@ -1143,7 +1146,7 @@ export default class ProjectFieldRow extends Vue {
 }
 
 .input-field .form-control.white {
-  border-color: #dee2e6;
+  border-color: #c2c6ca;
 }
 .input-field .form-control.grey {
   background-color: #fbfbfb;
@@ -1167,7 +1170,7 @@ export default class ProjectFieldRow extends Vue {
   margin-left:2%;
 }
 .input-field.sidewise.wide {
-  width:100%;
+  width:98%;
 }
 .input-field.section {
   margin-left:2%;

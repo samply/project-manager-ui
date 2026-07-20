@@ -20,7 +20,7 @@ import type {Block, BridgeheadsProjectField} from "@/services/utils";
 import {ActionFunction, Section} from "@/services/utils";
 import {handleError, PropType, watch} from "vue";
 import "@samply/lens";
-import {QueryItem, setQueryStore} from "@samply/lens";
+import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
 
 @Options({
   name: "ProjectFieldRow",
@@ -194,6 +194,7 @@ export default class ProjectFieldRow extends Vue {
     });
 
     if(this.isQuery()) {
+      setOptions({autoUpdateQueryInUrl:false})
       setQueryStore(this.getQueryDetails())
     }
   }
@@ -299,8 +300,17 @@ export default class ProjectFieldRow extends Vue {
 
 
   redirectToURL() {
+   let bridgeheads:string[] = []
+    let query = "";
+
+    if (this.bridgeheads?.selected?.length) {
+      bridgeheads = this.bridgeheads.selected.map((bridgehead) => bridgehead.bridgehead)
+    }
+    if (this.editedValue[2]) {
+      query = atob(this.editedValue[2])
+    }
     if (this.redirectUrl) {
-      window.location.href = this.redirectUrl;
+      window.location.href = this.redirectUrl.split('?')[0] + '?query=' + query + '&datarequests='+btoa(JSON.stringify(bridgeheads));
     }
   }
 
@@ -662,18 +672,22 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else-if="isQuery()">
+              <!--<div  v-if="editedValue[2]" style="display: flex">
+                <lens-search-bar
+                    placeholderText=""
+                    readonly="true"
+                    style="width: 100%"
+                />
+                <lens-query-explain-button
+                    noQueryMessage="Empty Search."
+                ></lens-query-explain-button>
+              </div>-->
+
               <div style="display: flex;flex-wrap: wrap">
                   <span v-for="box in getFirstLevelCriteria(editedValue[1])"
                       class="btn btn-primary dktk-darkblue"
                       style="margin-right: 2%; margin-bottom: 0.5%;width:max-content">
                     {{getCriteriaDetails(box)}}
-                    <!--<lens-query-explain-button
-                        v-if="editedValue[2]"
-                        noQueryMessage="Empty Search."
-                        :queryItemKey="getCriterium(box)?.key"
-                        :queryItemName="getCriterium(box)?.name"
-                        :queryItemValue="getCriterium(box)?.values"
-                    ></lens-query-explain-button>-->
                   </span>
                   <lens-query-explain-button
                       v-if="editedValue[2]"
@@ -1249,12 +1263,44 @@ export default class ProjectFieldRow extends Vue {
   /* Place on top of each other */
   grid-area: 1 / 1 / 2 / 2;
 }
-lens-query-explain-button::part(lens-info-button-dialogue) {
+lens-query-explain-button::part(lens-info-button-dialogue),
+lens-search-bar::part(lens-info-button-dialogue)
+{
   border: 1px solid grey;
+  border-radius: 5px;
   padding: 8px;
   background-color: white;
+  color: black;
 }
 lens-query-explain-button::part(lens-query-explain-button) {
   padding: 8px;
+}
+
+lens-search-bar::part(lens-searchbar) {
+  border: solid 1px lightgray;
+  border-radius: 5px;
+  padding: 5px 10px;
+}
+lens-search-bar::part(lens-searchbar-input) {
+  padding: 10px;
+}
+lens-search-bar::part(lens-searchbar-chips) {
+  gap: 10px;
+  padding-right: 10px;
+}
+lens-search-bar::part(lens-searchbar-chip) {
+  background-color: #00529c;
+  color: white;
+  border-radius: 5px;
+  padding: 5px 10px;
+  gap: 10px;
+  user-select: none;
+}
+lens-search-bar::part(lens-searchbar-chip-item) {
+  gap: 5px;
+}
+lens-search-bar::part(lens-info-button) {
+  color: white;
+  margin-left: 5px;
 }
 </style>

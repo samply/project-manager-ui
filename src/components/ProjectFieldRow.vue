@@ -741,11 +741,13 @@ export default class ProjectFieldRow extends Vue {
                       <span v-for="(bridgehead, index) in editingBridgeheads" :key="index" class="btn btn-primary dktk-darkblue"
                             style="margin-right: 2%; margin-bottom: 0.5%;">
                            <span>{{ bridgehead.humanReadable ?? bridgehead.bridgehead }}</span>
-                        <button @click="removeBridgehead(index)" class="btn btn-sm dktk-darkblue" style="padding: 0 0 0 10px;height: 28px;margin-top:-3px" :disabled="isSummaryStep()"><i v-if="isDraft() && !isSummaryStep()"
-                            style="color: white; font-size: 18px;" class="bi bi-x dktk-darkblue"></i></button>
+                        <button @click="removeBridgehead(index)" class="btn btn-sm dktk-darkblue" style="padding: 0 0 0 10px;height: 28px;margin-top:-3px"
+                                v-if="(isDraft() && !isSummaryStep()) || editMode">
+                          <i style="color: white; font-size: 18px;" class="bi bi-x dktk-darkblue"></i>
+                        </button>
                       </span>
                     </span>
-              <span v-if="areThereMoreBridgeheadsAvailableToAdd() && isDraft() && !isSummaryStep()">
+              <span v-if="areThereMoreBridgeheadsAvailableToAdd() && ((isDraft() && !isSummaryStep()) || editMode)">
                       <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
                       <span v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
                         <select class="form-select" v-model="newValue" >

@@ -7,7 +7,8 @@ import {
     FormField,
     FormFieldGroup,
     Module,
-    ProjectAndForms
+    ProjectAndForms,
+    ProjectConfigurationSelectionType
 } from "@/services/projectManagerBackendService";
 
 export interface BridgeheadsProjectField {
@@ -27,6 +28,7 @@ export interface ProjectField {
     possibleValues?: string[]
     displayPossibleValue?: (input: string) => {name: string, description: string}
     configurations?: Map<string, ProjectAndForms>
+    configurationSelectionType?: ProjectConfigurationSelectionType
     uploadAction?: Action
     downloadAction?: Action
     downloadModule?: Module

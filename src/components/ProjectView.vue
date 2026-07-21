@@ -384,6 +384,7 @@
                                 :possible-values="item.field.possibleValues"
                                 :display-possible-value="item.field.displayPossibleValue"
                                 :configurations="item.field.configurations"
+                                :configuration-selection-type="item.field.configurationSelectionType"
                                 :exists-file="item.field.existFile"
                                 :upload-action="item.field.uploadAction"
                                 :download-action="item.field.downloadAction"
@@ -637,6 +638,7 @@ import {
   Notification,
   Project,
   ProjectAndForms,
+  ProjectConfigurationSelectionType,
   ProjectDocument,
   ProjectManagerBackendService,
   ProjectManagerContext,
@@ -767,8 +769,9 @@ export default defineComponent({
       existsScript: false,
       projectConfigurations: new Map<string, ProjectAndForms>(),
       projectConfigurationLabels: [] as string[],
-      currentProjectConfiguration: '',
+      currentProjectConfiguration: [] as string[],
       currentProjectConfigurationFields: [] as string[],
+      projectConfigurationSelectionType: ProjectConfigurationSelectionType.SINGLE,
       projectRoles: [] as ProjectRole[],
       draftDialogStepper: new DialogStepper(() => this.updateProjectFields()) as DialogStepper,
       existsDraftDialog: false,
@@ -848,7 +851,7 @@ export default defineComponent({
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
     currentProjectConfiguration(newValue, _oldValue) {
-      if (newValue !== CUSTOM_PROJECT_CONFIGURATION || !this.isProjectManagerAdmin() ) {
+      if (!newValue.includes(CUSTOM_PROJECT_CONFIGURATION) || !this.isProjectManagerAdmin() ) {
         this.draftDialogStepper.filterStep(FixedDialogStep.CUSTOM);
       } else {
         this.draftDialogStepper.removeFilteredStep(FixedDialogStep.CUSTOM);
@@ -1200,6 +1203,7 @@ export default defineComponent({
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, new Map(), 'projectTypes'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, new Map(), 'queryFormats'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, new Map(), 'outputFormats'),
+          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATION_SELECTION_TYPE_ACTION, new Map(), 'projectConfigurationSelectionType'),
           this.initializeCurrentProjectConfiguration(),
           this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads'),
           this.initializeData(Module.USER_MODULE, Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION, new Map(), 'existsResearchEnvironmentWorkspace'),
@@ -1260,10 +1264,12 @@ export default defineComponent({
                 this.projectConfigurationLabels = Array.from(
                     this.projectConfigurations.keys()
                 );
+                this.refreshCurrentProjectConfigurationFields();
 
               } else {
                 this.projectConfigurations = new Map();
                 this.projectConfigurationLabels = [];
+                this.refreshCurrentProjectConfigurationFields();
               }
             }
         )
@@ -1323,7 +1329,7 @@ export default defineComponent({
       const customFlag = this.project?.isCustomConfigSelected;
 
       return !isAdmin &&
-          (customFlag === undefined || (!customFlag && this.currentProjectConfiguration !== CUSTOM_PROJECT_CONFIGURATION));
+          (customFlag === undefined || (!customFlag && !this.currentProjectConfiguration.includes(CUSTOM_PROJECT_CONFIGURATION)));
     },
 
     updateProjectFields() {
@@ -1382,32 +1388,22 @@ export default defineComponent({
             Module.PROJECT_EDITION_MODULE,
             Action.FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION,
             new Map(),
-            async (result: Record<string, ProjectAndForms>) => {
+            async (result: string[] | Record<string, ProjectAndForms>) => {
 
               if (result) {
-                const keys = Object.keys(result);
-                if (keys.length > 0) {
-                  this.currentProjectConfiguration = keys[0];
-                  const currentProjectConfig = result[this.currentProjectConfiguration];
-                  const project = currentProjectConfig?.project;
+                if (Array.isArray(result)) {
+                  this.currentProjectConfiguration = result;
+                } else {
+                  const keys = Object.keys(result);
+                  if (keys.length > 0) {
+                    this.currentProjectConfiguration = keys;
+                  } else {
+                    this.resetCurrentProjectConfiguration();
+                  }
+                }
 
-                  this.currentProjectConfigurationFields = project
-                      ? [
-                        ...Object.keys(project).filter(
-                            key => key !== 'outputs' && (project as any)[key] !== null
-                        ),
-                        ...(project.outputs ?? []).flatMap(output => {
-                          const prefix = output.projectType;
-                          return [
-                            `${prefix}.projectType`,
-                            ...(output.outputFormat ? [`${prefix}.outputFormat`] : []),
-                            ...(output.templateId ? [`${prefix}.templateId`] : [])
-                          ];
-                        })
-                      ]
-                      : [];
-
-                  this.formFields = currentProjectConfig?.formFields ?? [];
+                if (this.currentProjectConfiguration.length > 0) {
+                  this.refreshCurrentProjectConfigurationFields();
                 } else {
                   this.resetCurrentProjectConfiguration();
                 }
@@ -1427,13 +1423,40 @@ export default defineComponent({
     },
 
     resetCurrentProjectConfiguration() {
-      this.currentProjectConfiguration = '';
+      this.currentProjectConfiguration = [];
       this.currentProjectConfigurationFields = [];
-      this.formFields = [];
+    },
+
+    refreshCurrentProjectConfigurationFields() {
+      const selectedConfigurations = this.currentProjectConfiguration
+          .map((configuration) => this.projectConfigurations.get(configuration))
+          .filter((configuration): configuration is ProjectAndForms => configuration != null);
+
+      this.currentProjectConfigurationFields = selectedConfigurations.flatMap((configuration) => {
+        const project = configuration.project;
+
+        if (!project) {
+          return [];
+        }
+
+        return [
+          ...Object.keys(project).filter(
+              key => key !== 'outputs' && (project as any)[key] !== null
+          ),
+          ...(project.outputs ?? []).flatMap(output => {
+            const prefix = output.projectType;
+            return [
+              `${prefix}.projectType`,
+              ...(output.outputFormat ? [`${prefix}.outputFormat`] : []),
+              ...(output.templateId ? [`${prefix}.templateId`] : [])
+            ];
+          })
+        ];
+      });
     },
 
     isNotIncludedInCurrentProjectConfiguration(field: string) {
-      return this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION || this.currentProjectConfigurationFields.includes(field);
+      return this.currentProjectConfiguration.includes(CUSTOM_PROJECT_CONFIGURATION) || this.currentProjectConfigurationFields.includes(field);
     },
 
     async initializeData(module: Module, action: Action, params: Map<string, unknown>, dataVariable: string): Promise<any> {
@@ -1832,12 +1855,13 @@ export default defineComponent({
         },
         {
           fieldKey: "Configuration",
-          fieldValue: [this.currentProjectConfiguration],
+          fieldValue: this.currentProjectConfiguration,
           editProjectParam: [EditProjectParam.PROJECT_CONFIGURATION],
           isEditable: true,
           editMode: this.editMode,
           possibleValues: this.projectConfigurationLabels,
           configurations: this.projectConfigurations,
+          configurationSelectionType: this.projectConfigurationSelectionType,
           category: FixedDialogStep.SERVICES,
           visibilityCondition:  !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SERVICES) || (this.isProjectManagerAdmin() && this.isCurrentStep(FixedDialogStep.SUMMARY)),
           action: Action.SET_PROJECT_CONFIGURATION_ACTION
@@ -1889,7 +1913,7 @@ export default defineComponent({
           editMode: this.editMode,
           category: FixedDialogStep.CUSTOM,
           visibilityCondition: this.isProjectManagerAdmin() &&
-              (!this.existsDraftDialog || this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION && this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY))
+              (!this.existsDraftDialog || this.currentProjectConfiguration.includes(CUSTOM_PROJECT_CONFIGURATION) && this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY))
         },
         {
           fieldKey: "Votum",

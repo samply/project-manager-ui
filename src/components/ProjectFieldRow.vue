@@ -9,6 +9,7 @@ import {
   FormDataType,
   Module,
   ProjectAndForms,
+  ProjectConfigurationSelectionType,
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
@@ -51,6 +52,10 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
       default: (input: string) => input
     },
     configurations: {type: Object as PropType<Map<string, ProjectAndForms>>, required: false},
+    configurationSelectionType: {
+      type: String as PropType<ProjectConfigurationSelectionType>,
+      default: ProjectConfigurationSelectionType.SINGLE
+    },
     isEditable: {type: Boolean, required: true},
     editMode: {type: Boolean, required: true},
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
@@ -101,6 +106,7 @@ export default class ProjectFieldRow extends Vue {
   readonly fieldDescription?: string;
   // noinspection JSUnusedGlobalSymbols
   readonly configurations?: Map<string, ProjectAndForms>;
+  readonly configurationSelectionType!: ProjectConfigurationSelectionType;
   // noinspection JSUnusedGlobalSymbols
   readonly downloadModule?: Module;
   // noinspection JSUnusedGlobalSymbols
@@ -386,6 +392,24 @@ export default class ProjectFieldRow extends Vue {
     return this.editedValue.includes(step)
   }
   setActiveSteps(step: string): void {
+    if (this.isConfiguration()) {
+      if (!this.isMultipleConfigurationSelection()) {
+        this.editedValue = [step];
+      } else if (step === 'CUSTOM') {
+        this.editedValue = [step];
+      } else if (this.editedValue.includes(step)) {
+        if (this.editedValue.length > 1) {
+          this.editedValue = this.editedValue.filter(item => item !== step);
+        }
+      } else {
+        this.editedValue = [
+          ...this.editedValue.filter(item => item !== 'CUSTOM'),
+          step
+        ];
+      }
+      return;
+    }
+
     if(this.editedValue.includes(step)) {
       this.editedValue = this.editedValue.filter(item => item !== step)
     } else {
@@ -414,6 +438,10 @@ export default class ProjectFieldRow extends Vue {
 
   isConfiguration(): boolean {
     return this.includesEditProjectParam(EditProjectParam.PROJECT_CONFIGURATION);
+  }
+
+  isMultipleConfigurationSelection(): boolean {
+    return this.configurationSelectionType === ProjectConfigurationSelectionType.MULTIPLE;
   }
 
   isConfigType(): boolean {
@@ -589,7 +617,11 @@ export default class ProjectFieldRow extends Vue {
                style="cursor: pointer; height:100%; min-width: fit-content;">
             <div style="display: flex;flex-direction: row;">
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" :checked="isActiveStep(step)">
+                <input class="form-check-input"
+                       :type="isMultipleConfigurationSelection() ? 'checkbox' : 'radio'"
+                       name="project-configuration"
+                       value=""
+                       :checked="isActiveStep(step)">
               </div>
               <div style="height:100%; display: flex; flex-direction: column;width:100%">
                 <div class="config-box-header">{{ configurations?.get(step)?.project?.label }}</div>

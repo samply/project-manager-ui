@@ -125,6 +125,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Button for removing project and form field blocks
 - External logo
 - External Backend Configuration
+- Multiple selected configurations
 
 ### Changed
 - Rename accept and reject bridgehead state buttons (authorize/revoke)

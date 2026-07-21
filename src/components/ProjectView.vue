@@ -1892,30 +1892,6 @@ export default defineComponent({
               (!this.existsDraftDialog || this.currentProjectConfiguration === CUSTOM_PROJECT_CONFIGURATION && this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY))
         },
         {
-          fieldKey: "Votum",
-          fieldValue: [this.votumDescription.label, this.votumDescription.originalFilename],
-          isEditable: true,
-          editMode: this.editMode,
-          existFile: this.existsVotum,
-          uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
-          downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          category: "Votum",
-          visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY))
-        },
-        {
-          fieldKey: "Votum for all bridgeheads",
-          fieldValue: [this.votumForAllBridgeheadsDescription.label, this.votumForAllBridgeheadsDescription.originalFilename],
-          isEditable: true,
-          editMode: this.editMode,
-          existFile: this.existsVotumForAllBridgeheads,
-          uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
-          downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          category: "Votum",
-          visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY))
-        },
-        {
           fieldKey: "Script",
           fieldValue: [this.scriptDescription.label, this.scriptDescription.originalFilename],
           isEditable: true,
@@ -1939,11 +1915,46 @@ export default defineComponent({
           visibilityCondition: !!this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && this.existsAuthenticationScript
         }
       ];
+      const votumFields: ProjectField[] = [
+        {
+          fieldKey: "Votum",
+          fieldValue: [this.votumDescription.label, this.votumDescription.originalFilename],
+          isEditable: true,
+          editMode: this.editMode,
+          existFile: this.existsVotum,
+          uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
+          downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
+          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          category: "project",
+          visibilityCondition: true
+        },
+        {
+          fieldKey: "Votum for all bridgeheads",
+          fieldValue: [this.votumForAllBridgeheadsDescription.label, this.votumForAllBridgeheadsDescription.originalFilename],
+          isEditable: true,
+          editMode: this.editMode,
+          existFile: this.existsVotumForAllBridgeheads,
+          uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
+          downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
+          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          category: "project",
+          visibilityCondition: true
+        }
+      ]
       const dynamicFields = this.buildDynamicProjectFieldsFromFormFields(this.formFields);
       const dynamicSelectedForms = this.buildDynamicProjectFieldsFromFormTitles(
           this.formTitles.filter(formTitle => {
             this.draftDialogStepper.hasCurrentStep(formTitle.title)
           }));
+
+      const showVoteUpload = dynamicFields.find((field) => field.fieldKey === "Ethics vote")?.fieldValue[0]
+      if (showVoteUpload === "true" && (this.isCurrentStep(FixedDialogStep.PROJECT) || !this.existsDraftDialog )) {
+        const index = dynamicFields.findIndex((field) => field.fieldKey === "Ethics vote")
+        if (index > -1) {
+          dynamicFields.splice(index+1, 0, ...votumFields)
+        }
+      }
+
       return [...fixedFields, ...dynamicSelectedForms, ...dynamicFields].sort((a, b) =>
           this.getCategorySortValue(a.category) - this.getCategorySortValue(b.category))
     },

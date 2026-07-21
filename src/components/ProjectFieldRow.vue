@@ -630,7 +630,7 @@ export default class ProjectFieldRow extends Vue {
   <div v-else>
 
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
-      <div style="display:flex" :style="{width: hasShortTitle() ? '30%' : '80%'}">
+      <div style="display:flex" :style="{width: hasShortTitle() ? (hasSection() ? '28%' : '30%') : '80%'}">
         <input
             v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory"
             type="checkbox"
@@ -1179,10 +1179,10 @@ export default class ProjectFieldRow extends Vue {
  .input-field.sidewise {
    display: flex;
    padding: 1rem 4rem;
-   width: 85%;
+   /*width: 85%;*/
 }
 .input-field.sidewise.section {
-  width:80%;
+  /*width:80%;*/
   margin-left:2%;
 }
 .input-field.sidewise.wide {

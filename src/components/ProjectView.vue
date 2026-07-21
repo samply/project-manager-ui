@@ -2847,6 +2847,10 @@ export default defineComponent({
   background-color: red !important;
 }
 
+.form-switch {
+  background-color: white;
+  box-shadow: 0 0 25px 25px #FFF;
+}
 .form-switch input {
   cursor: pointer;
 }

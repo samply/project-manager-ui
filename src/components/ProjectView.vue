@@ -331,6 +331,19 @@
                   </div>
 
                   <template v-for="(block, blockIndex) in projectFieldRenderBlock" :key="block.key">
+                    <template v-for="item in block.items" :key="item.key">
+                      <div
+                          v-if="item.showCategoryHeader && shouldRenderFieldBlockItems(block)"
+                          class="project-field-header-inline project-field-category-header"
+                      >
+                        <div class="project-field-title-inline">
+                          {{ getDialogStep(item.field.category)?.displayName }}
+                        </div>
+                        <!--<div class="project-field-notification-inline">
+                          {{ getDialogStep(item.field.category)?.description }}
+                        </div>-->
+                      </div>
+                    </template>
                     <template v-if="block.block">
                       <div v-if="shouldShowHeaderOfBlockGroup(blockIndex)" class="input-field-header" >
                         <div class="d-flex justify-content-between align-items-center">
@@ -357,17 +370,6 @@
                         </div>
                         <div v-if="!isBlockCollapsed(block.block)" class="project-field-block-body">
                           <template v-for="item in block.items" :key="item.key">
-                            <div
-                                v-if="item.showCategoryHeader"
-                                class="project-field-header-inline project-field-category-header"
-                            >
-                              <div class="project-field-title-inline">
-                                {{ getDialogStep(item.field.category)?.displayName }}
-                              </div>
-                              <!--<div class="project-field-notification-inline">
-                                {{ getDialogStep(item.field.category)?.description }}
-                              </div>-->
-                            </div>
                             <ProjectFieldRow
                                 v-if="item.shouldRenderRow"
                                 :field-key="item.field.fieldKey"

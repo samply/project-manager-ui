@@ -1942,7 +1942,7 @@ export default defineComponent({
         }
       ];
       const votumFields: ProjectField[] = [
-        {
+        /*{
           fieldKey: "Votum",
           fieldValue: [this.votumDescription.label, this.votumDescription.originalFilename],
           isEditable: true,
@@ -1953,7 +1953,7 @@ export default defineComponent({
           downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
           category: "project",
           visibilityCondition: true
-        },
+        },*/
         {
           fieldKey: "Votum for all bridgeheads",
           fieldValue: [this.votumForAllBridgeheadsDescription.label, this.votumForAllBridgeheadsDescription.originalFilename],

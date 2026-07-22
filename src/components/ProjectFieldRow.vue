@@ -729,7 +729,7 @@ export default class ProjectFieldRow extends Vue {
               <br/>
               <br/>
               <div style="display: flex; justify-content: space-between">
-                <span><strong>Human readable</strong></span>
+                <span><strong>Query Pseudocode</strong></span>
                 <div>
                   <button v-if="isQuery() && fieldValue[0]" class="btn btn-primary query-link-button"
                           data-toggle="tooltip"

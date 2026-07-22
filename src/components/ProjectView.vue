@@ -802,7 +802,7 @@ export default defineComponent({
       groupedMissingFields: {} as Record<string, string[]>,
       currentMenuStep: "Status",
       editMode: false,
-      categoryRank: {project: "0", query: "1", services: "2", consent: "last"} as Record<string, string>,  // order the categories how they should appear in the Request tab (except in DRAFT). Numbers starts from the beginning, 'last', 'last-1', 'last-2' etc from the end. not listed categories will be shown between
+      categoryRank: {project: "0", query: "1", services: "2", consent: "last"} as Record<string, string>,  // order the categories how they should appear in the Request tab (except in DRAFT). Numbers starts from the beginning, 'last', 'last-1', 'last-2' etc. from the end. not listed categories will be shown between
       blockCollapse: new Map<string, boolean>()
     };
   },
@@ -1194,6 +1194,19 @@ export default defineComponent({
     async initializeProjectRelatedData() {
       if (this.project) {
         this.existsDraftDialog = (this.project.state === ProjectState.DRAFT && AuthService.getEmail() === this.project.creatorEmail);
+
+        // Resolve the configuration first. If the only predefined configuration
+        // is assigned automatically, the refreshed context performs a clean initialization.
+        await Promise.all([
+          this.initializeCurrentProjectConfiguration(),
+          this.initializeProjectConfigurations()
+        ]);
+        if (await this.selectOnlyAvailableProjectConfiguration()) {
+          // Reload the project because assigning a configuration changes its fields.
+          this.refreshContext();
+          return;
+        }
+
         await Promise.all([
           this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), async (result: Bridgehead[]) => {
             this.bridgeheads = result;
@@ -1204,7 +1217,6 @@ export default defineComponent({
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, new Map(), 'queryFormats'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, new Map(), 'outputFormats'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATION_SELECTION_TYPE_ACTION, new Map(), 'projectConfigurationSelectionType'),
-          this.initializeCurrentProjectConfiguration(),
           this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads'),
           this.initializeData(Module.USER_MODULE, Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION, new Map(), 'existsResearchEnvironmentWorkspace'),
           this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_PUBLICATION_ACTION, new Map(), 'existsPublication'),
@@ -1251,28 +1263,7 @@ export default defineComponent({
           this.initializeProjectFormsData(),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, new Map(), 'exporterTemplateIds')
         ]);
-        await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), async (result: Record<string, ProjectAndForms>) => {
-
-              const shouldHideCustom = this.shouldHideCustomService();
-              if (result) {
-                this.projectConfigurations = new Map<string, ProjectAndForms>(
-                    Object.entries(result).filter(
-                        ([key]) => !(shouldHideCustom && key === CUSTOM_PROJECT_CONFIGURATION)
-                    )
-                );
-
-                this.projectConfigurationLabels = Array.from(
-                    this.projectConfigurations.keys()
-                );
-                this.refreshCurrentProjectConfigurationFields();
-
-              } else {
-                this.projectConfigurations = new Map();
-                this.projectConfigurationLabels = [];
-                this.refreshCurrentProjectConfigurationFields();
-              }
-            }
-        )
+        this.applyProjectConfigurationVisibility();
         if (hasProjectType(this.project, ProjectType.DATASHIELD)) {
           await this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, new Map(), 'dataShieldStatus');
         }
@@ -1332,6 +1323,44 @@ export default defineComponent({
           (customFlag === undefined || (!customFlag && !this.currentProjectConfiguration.includes(CUSTOM_PROJECT_CONFIGURATION)));
     },
 
+    /**
+     * Assigns the sole predefined configuration to a newly created project.
+     *
+     * A new project initially matches CUSTOM because no configuration has been
+     * assigned yet. For its creator, CUSTOM can be replaced automatically when
+     * custom selection was not requested and exactly one predefined option exists.
+     *
+     * @returns true when the configuration was changed and a context refresh started
+     */
+    async selectOnlyAvailableProjectConfiguration(): Promise<boolean> {
+      const availableConfigurations = Array.from(this.projectConfigurations.keys())
+          .filter(configuration => configuration !== CUSTOM_PROJECT_CONFIGURATION);
+      const isCurrentConfigurationCustom =
+          this.currentProjectConfiguration.length === 1 &&
+          this.currentProjectConfiguration[0] === CUSTOM_PROJECT_CONFIGURATION;
+      const isCurrentUserCreator = AuthService.getEmail() === this.project?.creatorEmail;
+      const isCustomConfigSelected = this.project?.isCustomConfigSelected;
+      const isCustomConfigurationNotSelected =
+          isCustomConfigSelected === undefined || !isCustomConfigSelected;
+
+      if (!isCurrentConfigurationCustom ||
+          !isCurrentUserCreator ||
+          !isCustomConfigurationNotSelected ||
+          availableConfigurations.length !== 1) {
+        return false;
+      }
+
+      const params = new Map<string, string>();
+      params.set(EditProjectParam.PROJECT_CONFIGURATION, availableConfigurations[0]);
+      await this.projectManagerBackendService.fetchData(
+          Module.PROJECT_EDITION_MODULE,
+          Action.SET_PROJECT_CONFIGURATION_ACTION,
+          this.context,
+          params
+      );
+      return true;
+    },
+
     updateProjectFields() {
       if (this.project) {
         this.projectFields = this.fetchProjectFields();
@@ -1380,6 +1409,37 @@ export default defineComponent({
 
     async fetchNotifications() {
       return this.initializeData(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(), 'notifications');
+    },
+
+    async initializeProjectConfigurations(): Promise<void> {
+      this.projectConfigurations = new Map();
+      await this.initializeDataInCallback(
+          Module.PROJECT_EDITION_MODULE,
+          Action.FETCH_PROJECT_CONFIGURATIONS_ACTION,
+          new Map(),
+          async (result: Record<string, ProjectAndForms> | undefined) => {
+            this.projectConfigurations = new Map(Object.entries(result ?? {}));
+          }
+      );
+    },
+
+    applyProjectConfigurationVisibility(): void {
+      // Non-admin users do not need a service-selection step when the backend
+      // offers only CUSTOM and one predefined configuration.
+      const hasOnlyOnePredefinedConfiguration =
+          this.projectConfigurations.size === 2 &&
+          this.projectConfigurations.has(CUSTOM_PROJECT_CONFIGURATION);
+      if (!this.isProjectManagerAdmin() && hasOnlyOnePredefinedConfiguration) {
+        this.draftDialogStepper.filterStep(FixedDialogStep.SERVICES);
+      } else {
+        this.draftDialogStepper.removeFilteredStep(FixedDialogStep.SERVICES);
+      }
+
+      if (this.shouldHideCustomService()) {
+        this.projectConfigurations.delete(CUSTOM_PROJECT_CONFIGURATION);
+      }
+      this.projectConfigurationLabels = Array.from(this.projectConfigurations.keys());
+      this.refreshCurrentProjectConfigurationFields();
     },
 
     async initializeCurrentProjectConfiguration(): Promise<void> {

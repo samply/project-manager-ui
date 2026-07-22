@@ -983,7 +983,7 @@ export default defineComponent({
 
       const firstGroup = groups.find((group) => group.block?.label === currentGroup.block?.label)
 
-      if ((!this.existsDraftDialog && !firstGroup?.block?.instance && !this.editMode) || (this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY) && !firstGroup?.block?.instance)) {
+      if (this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY) && !firstGroup?.block?.instance) {
         return false
       }
       return currentGroup.key === firstGroup?.key

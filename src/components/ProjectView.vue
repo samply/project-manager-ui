@@ -359,7 +359,7 @@
                           <i class="bi project-field-block-header-chevron" :class="isBlockCollapsed(block.block) ? 'bi-chevron-right' : 'bi-chevron-down'"></i>
                           <div>{{ block.block?.displayName ?? block.block?.label }} #{{ getBlockNumber(block.block?.label, block.block?.instance) }}</div>
                           <button
-                              v-if="(existsDraftDialog && !isCurrentStep(DialogStep.SUMMARY)) || (!existsDraftDialog && editMode)"
+                              v-if="!hasMinimumInstances(block.block?.label, block.block?.minInstances) && ((existsDraftDialog && !isCurrentStep(DialogStep.SUMMARY)) || (!existsDraftDialog && editMode))"
                               type="button"
                               class="btn btn-sm project-field-block-delete-button"
                               @click.stop="deleteBlockInstance(block)"
@@ -983,7 +983,7 @@ export default defineComponent({
 
       const firstGroup = groups.find((group) => group.block?.label === currentGroup.block?.label)
 
-      if ((!this.existsDraftDialog && !firstGroup?.block?.instance && !this.editMode) || (this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY) && !firstGroup?.block?.instance)) {
+      if (this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY) && !firstGroup?.block?.instance) {
         return false
       }
       return currentGroup.key === firstGroup?.key
@@ -2322,6 +2322,16 @@ export default defineComponent({
         }
       }
       return 1
+    },
+    hasMinimumInstances(blockLabel: string | undefined, minInstances: number | undefined): boolean {
+      let counter: number = 0;
+      let key, value;
+      for ([key, value] of this.blockCollapse) {
+        if (key.split('#')[0] === blockLabel) {
+          counter++;
+        }
+      }
+      return minInstances ? counter <= minInstances : false
     },
 
     isCurrentStep(step: FixedDialogStep): boolean {

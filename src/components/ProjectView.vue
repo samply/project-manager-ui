@@ -8,8 +8,7 @@
   <div class="main-container">
 
 
-    <div class="right-container"
-         :class="{ 'less-margin': projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) }">
+    <div class="right-container">
       <div class="main-content">
         <div class="admin-view">
           <div class="left-container"
@@ -29,8 +28,7 @@
               </div>
             </div>
           </div>
-          <div class="data-container mt-12" style="width:100%;height:auto"
-               :style="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) ? 'padding:3% 4% 0 5%' : ''">
+          <div class="data-container mt-12" style="width:100%;height:auto">
             <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'"
                  class="info-container">
               <div class="box-header"><span>Status</span></div>
@@ -2340,7 +2338,7 @@ export default defineComponent({
 }
 
 .data-container.non-draft {
-  padding: 28px 0 0;
+  padding: 0;
 }
 
 .data-container.documents {
@@ -2402,10 +2400,7 @@ export default defineComponent({
   display: flex;
   flex-flow: column;
   width: 14%;
-  margin-top: 1.5%;
-  margin-left: 1.5%;
-  margin-bottom: 1.5%;
-  background-color: white;
+  margin-right: 2%;
 }
 
 .right-container {
@@ -2416,10 +2411,6 @@ export default defineComponent({
   width: 100%;
   max-width: 65%;
   /*align-self: flex-start;*/
-}
-
-.right-container.less-margin {
-  margin-left: 28px;
 }
 
 .main-content {
@@ -2583,7 +2574,8 @@ export default defineComponent({
 
 .step-title {
   font-size: 16px;
-  padding-top: 2px;
+  padding-top: 3px;
+  margin-left: 5px;
   color: #00489c;
 }
 

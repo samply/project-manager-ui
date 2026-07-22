@@ -331,6 +331,19 @@
                   </div>
 
                   <template v-for="(block, blockIndex) in projectFieldRenderBlock" :key="block.key">
+                    <template v-for="item in block.items" :key="item.key">
+                      <div
+                          v-if="item.showCategoryHeader && shouldRenderFieldBlockItems(block)"
+                          class="project-field-header-inline project-field-category-header"
+                      >
+                        <div class="project-field-title-inline">
+                          {{ getDialogStep(item.field.category)?.displayName }}
+                        </div>
+                        <!--<div class="project-field-notification-inline">
+                          {{ getDialogStep(item.field.category)?.description }}
+                        </div>-->
+                      </div>
+                    </template>
                     <template v-if="block.block">
                       <div v-if="shouldShowHeaderOfBlockGroup(blockIndex)" class="input-field-header" >
                         <div class="d-flex justify-content-between align-items-center">
@@ -357,17 +370,6 @@
                         </div>
                         <div v-if="!isBlockCollapsed(block.block)" class="project-field-block-body">
                           <template v-for="item in block.items" :key="item.key">
-                            <div
-                                v-if="item.showCategoryHeader"
-                                class="project-field-header-inline project-field-category-header"
-                            >
-                              <div class="project-field-title-inline">
-                                {{ getDialogStep(item.field.category)?.displayName }}
-                              </div>
-                              <!--<div class="project-field-notification-inline">
-                                {{ getDialogStep(item.field.category)?.description }}
-                              </div>-->
-                            </div>
                             <ProjectFieldRow
                                 v-if="item.shouldRenderRow"
                                 :field-key="item.field.fieldKey"
@@ -1976,30 +1978,6 @@ export default defineComponent({
               (!this.existsDraftDialog || this.currentProjectConfiguration.includes(CUSTOM_PROJECT_CONFIGURATION) && this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY))
         },
         {
-          fieldKey: "Votum",
-          fieldValue: [this.votumDescription.label, this.votumDescription.originalFilename],
-          isEditable: true,
-          editMode: this.editMode,
-          existFile: this.existsVotum,
-          uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
-          downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          category: "Votum",
-          visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY))
-        },
-        {
-          fieldKey: "Votum for all bridgeheads",
-          fieldValue: [this.votumForAllBridgeheadsDescription.label, this.votumForAllBridgeheadsDescription.originalFilename],
-          isEditable: true,
-          editMode: this.editMode,
-          existFile: this.existsVotumForAllBridgeheads,
-          uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
-          downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          category: "Votum",
-          visibilityCondition: this.project?.state !== ProjectState.DRAFT && (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY))
-        },
-        {
           fieldKey: "Script",
           fieldValue: [this.scriptDescription.label, this.scriptDescription.originalFilename],
           isEditable: true,
@@ -2023,11 +2001,46 @@ export default defineComponent({
           visibilityCondition: !!this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && this.existsAuthenticationScript
         }
       ];
+      const votumFields: ProjectField[] = [
+        {
+          fieldKey: "Votum",
+          fieldValue: [this.votumDescription.label, this.votumDescription.originalFilename],
+          isEditable: true,
+          editMode: this.editMode,
+          existFile: this.existsVotum,
+          uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
+          downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
+          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          category: "project",
+          visibilityCondition: true
+        },
+        {
+          fieldKey: "Votum for all bridgeheads",
+          fieldValue: [this.votumForAllBridgeheadsDescription.label, this.votumForAllBridgeheadsDescription.originalFilename],
+          isEditable: true,
+          editMode: this.editMode,
+          existFile: this.existsVotumForAllBridgeheads,
+          uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
+          downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
+          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
+          category: "project",
+          visibilityCondition: true
+        }
+      ]
       const dynamicFields = this.buildDynamicProjectFieldsFromFormFields(this.formFields);
       const dynamicSelectedForms = this.buildDynamicProjectFieldsFromFormTitles(
           this.formTitles.filter(formTitle => {
             this.draftDialogStepper.hasCurrentStep(formTitle.title)
           }));
+
+      const showVoteUpload = dynamicFields.find((field) => field.fieldKey === "Ethics vote")?.fieldValue[0]
+      if (showVoteUpload === "true" && (this.isCurrentStep(FixedDialogStep.PROJECT) || !this.existsDraftDialog )) {
+        const index = dynamicFields.findIndex((field) => field.fieldKey === "Ethics vote")
+        if (index > -1) {
+          dynamicFields.splice(index+1, 0, ...votumFields)
+        }
+      }
+
       return [...fixedFields, ...dynamicSelectedForms, ...dynamicFields].sort((a, b) =>
           this.getCategorySortValue(a.category) - this.getCategorySortValue(b.category))
     },

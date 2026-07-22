@@ -704,18 +704,18 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else-if="isQuery()">
-              <!--<div  v-if="editedValue[2]" style="display: flex">
+              <div  v-if="editedValue[2]" style="display: flex">
                 <lens-search-bar
                     placeholderText=""
-                    readonly="true"
+                    readOnly="true"
                     style="width: 100%"
                 />
                 <lens-query-explain-button
                     noQueryMessage="Empty Search."
                 ></lens-query-explain-button>
-              </div>-->
+              </div>
 
-              <div style="display: flex;flex-wrap: wrap">
+              <!--<div style="display: flex;flex-wrap: wrap">
                   <span v-for="box in getFirstLevelCriteria(editedValue[1])"
                       class="btn btn-primary dktk-darkblue"
                       style="margin-right: 2%; margin-bottom: 0.5%;width:max-content">
@@ -725,7 +725,7 @@ export default class ProjectFieldRow extends Vue {
                       v-if="editedValue[2]"
                       noQueryMessage="Empty Search."
                   ></lens-query-explain-button>
-              </div>
+              </div>-->
               <br/>
               <br/>
               <div style="display: flex; justify-content: space-between">

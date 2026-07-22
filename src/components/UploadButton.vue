@@ -149,7 +149,7 @@ export default class UploadButton extends Vue {
             </template>
             <div v-if="isFile">
               <div style="display: flex; flex-flow: row; align-items: center; width: 110%;">
-                <label :for="'file-'+uniqueId" class="btn btn-primary fileChooser">
+                <label :for="'file-'+uniqueId" class="btn btn-primary fileChooser dktk-darkblue">
                   Choose File
                   <input :id="'file-'+uniqueId" type="file" ref="fileInput" @change="onFileSelected($event)"
                          style="display: none;">
@@ -158,7 +158,7 @@ export default class UploadButton extends Vue {
                 <input :id="'label-'+uniqueId" type="text" v-model="label" placeholder="Enter label (optional)"
                        class="form-control inputField" :disabled="!fileSelected">
                 <button style="display: flex; flex-flow: row;" @click="uploadFile"
-                        class="btn btn-primary fileChooser" :disabled="!fileSelected">
+                        class="btn btn-primary fileChooser dktk-darkblue" :disabled="!fileSelected">
                   <i class="bi bi-cloud-upload" style="font-size: medium"></i>
                   <span style="font-size: small; padding: 2px 0 0 5px">Upload File</span>
                 </button>
@@ -173,7 +173,7 @@ export default class UploadButton extends Vue {
               <input :id="'url-'+uniqueId" type="text" v-model="url" placeholder="Enter URL" class="form-control inputField"
                      style="border-radius: 5px 5px 5px 5px; width: 50%;">
 
-              <button style="display: flex; flex-flow: row;" @click="uploadFile" class="btn btn-primary fileChooser"
+              <button style="display: flex; flex-flow: row;" @click="uploadFile" class="btn btn-primary fileChooser darkblue"
                       :disabled="url.length === 0">
                 <i class="bi bi-cloud-upload" style="font-size: medium"></i>
                 <span style="font-size: small; padding: 2px 0 0 5px">Upload File</span>
@@ -204,6 +204,9 @@ export default class UploadButton extends Vue {
 }
 .blue {
   color: #00489c;
+}
+.dktk-darkblue {
+  background-color: #00529c !important;
 }
 .fileChooser {
   font-size: 10pt;

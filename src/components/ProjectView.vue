@@ -314,7 +314,7 @@
                       }}
                     </div>
                     <div class="project-field-notification">{{
-                        extendedExplanations.get("2")?.message
+                        extendedExplanations.get("2") ? extendedExplanations.get("2")?.message : draftDialogStepper.currentStep?.description
                       }}
                     </div>
                   </div>

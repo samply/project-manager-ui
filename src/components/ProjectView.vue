@@ -1898,7 +1898,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Queried Sites",
-          fieldDescription: "Sites identified via the DKTK Explorer as having samples or data matching your search criteria.",
+          fieldDescription: "Sites identified via the Explorer as having samples or data matching your search criteria.",
           fieldValue: [],
           bridgeheads: {
             selected: this.bridgeheads,

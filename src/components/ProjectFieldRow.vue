@@ -313,10 +313,11 @@ export default class ProjectFieldRow extends Vue {
       bridgeheads = this.bridgeheads.selected.map((bridgehead) => bridgehead.bridgehead)
     }
     if (this.editedValue[2]) {
-      query = atob(this.editedValue[2])
+      query = this.editedValue[2]
     }
     if (this.redirectUrl) {
-      window.location.href = this.redirectUrl.split('?')[0] + '?query=' + query + '&datarequests='+btoa(JSON.stringify(bridgeheads));
+      const projectCode = new URLSearchParams(this.redirectUrl).get("project-code")
+      window.location.href = this.redirectUrl.split('?')[0] + '?query=' + query + '&datarequests='+btoa(JSON.stringify(bridgeheads)) + '&project-code=' + projectCode;
     }
   }
 

@@ -203,7 +203,6 @@ export default defineComponent({
   display: inline-block;
   margin-right: 15px;
   vertical-align: top;
-  width: 40px;
 }
 
 .dk-logo__sign img {

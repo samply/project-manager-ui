@@ -2,7 +2,7 @@
 import {FRONTEND_VARIABLES_PATH} from "@/services/BridgeheadOverviewHeaders";
 
 export interface FrontendConfig {
-    VUE_APP_PROJECT_MANAGER_BACKEND_URL: string;
+    VUE_APP_BACKEND_URL: string;
     VUE_APP_OIDC_URL: string;
     VUE_APP_OIDC_CLIENT_ID: string;
     VUE_APP_FRONTEND_NAME: string;
@@ -36,7 +36,7 @@ const loadConfig = async () => {
             let backendConfig: Partial<FrontendConfig> = {};
             try {
                 backendConfig = await fetchJson<Partial<FrontendConfig>>(
-                    `${frontendConfig.VUE_APP_PROJECT_MANAGER_BACKEND_URL}${FRONTEND_VARIABLES_PATH}`
+                    `${frontendConfig.VUE_APP_BACKEND_URL}${FRONTEND_VARIABLES_PATH}`
                 );
             } catch (error) {
                 console.warn('Failed to load backend config:', error);

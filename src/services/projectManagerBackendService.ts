@@ -544,7 +544,7 @@ let projectManagerBackendUrl: string | null = null;
 // Initialize configuration on first load
 const initializeConfig = async () => {
     const config = await getConfig();
-    projectManagerBackendUrl = config.VUE_APP_PROJECT_MANAGER_BACKEND_URL;
+    projectManagerBackendUrl = config.VUE_APP_BACKEND_URL;
 };
 
 // Ensure configuration is initialized at module load

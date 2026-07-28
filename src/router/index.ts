@@ -1,4 +1,5 @@
 import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router';
+import {getFrontendUrl} from "@/services/frontendUrl";
 import ProjectView from '../components/ProjectView.vue';
 import ProjectDashboard from "@/components/ProjectDashboard.vue";
 import AdminConfig from "@/components/AdminConfig.vue";
@@ -50,13 +51,16 @@ const routes: Array<RouteRecordRaw> = [
     }
 ];
 
-const router = createRouter({
-    history: createWebHistory(),
-    routes,
-});
-router.beforeEach((to, _from, next) => {
-    document.title = to.meta.title as string;
-    next();
-});
+export function createAppRouter(frontendUrlValue: string) {
+    const router = createRouter({
+        history: createWebHistory(getFrontendUrl(frontendUrlValue).pathname),
+        routes,
+    });
 
-export default router;
+    router.beforeEach((to, _from, next) => {
+        document.title = to.meta.title as string;
+        next();
+    });
+
+    return router;
+}

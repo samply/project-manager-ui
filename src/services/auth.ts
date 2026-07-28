@@ -1,5 +1,6 @@
 import {User, UserManager, WebStorageStateStore} from "oidc-client-ts";
 import {getConfig} from "@/services/configLoader";
+import {getFrontendRelativeLocation, getFrontendUrl} from "@/services/frontendUrl";
 
 let userManager: UserManager | null = null;
 let cachedUser: User | null = null;
@@ -10,13 +11,14 @@ const TARGET_URL_KEY = "oidc:target_url";
 export async function getUserManager(): Promise<UserManager> {
     if (!userManager) {
         const config = await getConfig();
+        const frontendUrl = getFrontendUrl(config.VUE_APP_FRONTEND_URL);
 
         userManager = new UserManager({
             authority: config.VUE_APP_OIDC_URL,
             client_id: config.VUE_APP_OIDC_CLIENT_ID,
-            redirect_uri: `${window.location.origin}/`,
-            post_logout_redirect_uri: window.location.origin,
-            silent_redirect_uri: `${window.location.origin}/silent-renew.html`,
+            redirect_uri: frontendUrl.toString(),
+            post_logout_redirect_uri: frontendUrl.toString(),
+            silent_redirect_uri: new URL('silent-renew.html', frontendUrl).toString(),
             silentRequestTimeoutInSeconds: 1,
             response_type: "code",
             scope: "openid profile email offline_access",
@@ -45,9 +47,10 @@ export async function getUserManager(): Promise<UserManager> {
 
 export async function startLoginFlow(): Promise<void> {
     const mgr = await getUserManager();
+    const config = await getConfig();
 
     // Save the current URL *before* the redirect wipes it
-    const intended = window.location.pathname + window.location.search;
+    const intended = getFrontendRelativeLocation(config.VUE_APP_FRONTEND_URL);
     if (intended && intended !== "/") {
         sessionStorage.setItem(TARGET_URL_KEY, intended);
     }

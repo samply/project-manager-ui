@@ -1,7 +1,15 @@
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const applicationName = require('./package.json').name;
 
 module.exports = {
+    // Bootstrap resources must be relative because runtime config is not
+    // available until after the application bundle has loaded.
+    publicPath: './',
+    devServer: {
+        // Let Vue Router handle direct navigation and browser refreshes.
+        historyApiFallback: true,
+    },
     configureWebpack: {
         entry: {
             silentRenew: path.resolve(__dirname, 'src/services/silent-renew.ts'),
@@ -27,6 +35,24 @@ module.exports = {
     chainWebpack: (config) => {
         if (config.plugins.has("SystemJSPublicPathWebpackPlugin")) {
             config.plugins.delete("SystemJSPublicPathWebpackPlugin");
+        }
+
+        // silentRenew belongs only to silent-renew.html.
+        config.plugin('html').tap((args) => {
+            args[0].chunks = ['app'];
+            return args;
+        });
+
+        // Keep the standalone Single-SPA import relative as well.
+        if (config.plugins.has("StandaloneSingleSpaPlugin")) {
+            config.plugin("StandaloneSingleSpaPlugin").tap((args) => {
+                args[0].importMap = {
+                    imports: {
+                        [applicationName]: './js/app.js',
+                    },
+                };
+                return args;
+            });
         }
 
         config.module

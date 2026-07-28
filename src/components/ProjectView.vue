@@ -669,7 +669,6 @@ import {ActionFunction, Block, ProjectField, Section} from "@/services/utils";
 import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
 import {PollingService} from "@/services/PollingService";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
-import router from "@/router";
 
 interface ProjectFieldRenderItem {
   key: string;
@@ -869,9 +868,6 @@ export default defineComponent({
   },
 
   methods: {
-    router() {
-      return router
-    },
     hasProjectType,
     getMergedQueryStates,
 

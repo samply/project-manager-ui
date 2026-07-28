@@ -1,8 +1,10 @@
 import {createApp, h} from 'vue';
 import singleSpaVue from 'single-spa-vue';
 import App from './App.vue';
-import router from './router';
+import {createAppRouter} from './router';
 import store from './services/store';
+import type {Router} from "vue-router";
+import {getConfig} from "@/services/configLoader";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -10,14 +12,15 @@ import 'bootstrap';
 
 import {AuthService, finishLoginFlow, tryLoadUserFromStorage} from "@/services/auth";
 
+let router: Router | null = null;
 
-async function handleOidcRedirect() {
+async function handleOidcRedirect(appRouter: Router) {
     const url = new URL(window.location.href);
 
     if (url.searchParams.has("code")) {
         // finishLoginFlow now returns the saved target URL
         const targetUrl = await finishLoginFlow();
-        await router.replace(targetUrl);
+        await appRouter.replace(targetUrl);
     }
 }
 
@@ -43,6 +46,9 @@ const vueLifecycles = singleSpaVue({
         },
     },
     handleInstance(app) {
+        if (!router) {
+            throw new Error('Router has not been initialized');
+        }
         app.use(router);
         app.use(store);
     },
@@ -51,7 +57,10 @@ const vueLifecycles = singleSpaVue({
 // noinspection JSUnusedGlobalSymbols
 export const bootstrap = [
     async () => {
-        await handleOidcRedirect();
+        const config = await getConfig();
+        router = createAppRouter(config.VUE_APP_FRONTEND_URL);
+
+        await handleOidcRedirect(router);
         await tryLoadUserFromStorage();
 
         if (!AuthService.isLoggedIn()) {

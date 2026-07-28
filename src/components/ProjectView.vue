@@ -1931,6 +1931,10 @@ export default defineComponent({
           fieldDescription: "This query was automatically imported from your Explorer session. Use \"Edit in Explorer\" to adjust your search criteria.",
           fieldValue: [this.project?.humanReadable ? this.project?.humanReadable : "", this.project?.query ? this.project?.query : "", this.project?.queryDetails ? this.project?.queryDetails : ""],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
+          bridgeheads: {
+            selected: this.bridgeheads,
+            available: this.allBridgeheads,
+          },
           isEditable: true,
           editMode: this.editMode,
           mandatory: true,

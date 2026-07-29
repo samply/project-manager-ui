@@ -179,7 +179,7 @@ export default defineComponent({
             params
         ).then(projects => {
           this.projects = projects.content;
-          this.totalPages = projects.totalPages;
+          this.totalPages = projects.totalPages === 0 ? 1 : projects.totalPages;
           this.getProjectApplicants()
           if(this.selectedApplicant !== "All Applicants") {
             this.projects = this.projects.filter((project) => project.creatorName === this.selectedApplicant)

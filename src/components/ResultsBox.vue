@@ -1,6 +1,6 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Project, UserProjectState} from "@/services/projectManagerBackendService";
+import {PmRequestParameter, Project, UserProjectState} from "@/services/projectManagerBackendService";
 import {
   Action,
   ActionButton,
@@ -231,7 +231,7 @@ export default class ResultsBox extends Vue {
 
   sendProjectResults(resultsUrl: string) {
     if (resultsUrl && this.canSendProjectResults) {
-      this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_RESULTS_URL_ACTION, this.context, new Map([['results-url', resultsUrl]])).then(() => {
+      this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_RESULTS_URL_ACTION, this.context, new Map([[PmRequestParameter.RESULTS_URL, resultsUrl]])).then(() => {
         this.resetResults();
       });
     }
@@ -239,7 +239,7 @@ export default class ResultsBox extends Vue {
 
   sendProjectBridgeheadResults(resultsUrl: string) {
     if (resultsUrl && this.canSendProjectBridgeheadResults) {
-      this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION, this.context, new Map([['results-url', resultsUrl]])).then(() => {
+      this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION, this.context, new Map([[PmRequestParameter.RESULTS_URL, resultsUrl]])).then(() => {
         this.resetResults();
       });
     }

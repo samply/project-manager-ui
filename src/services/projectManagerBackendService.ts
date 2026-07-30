@@ -185,6 +185,10 @@ export enum EditProjectParam {
     QUERY_DETAILS = "query-details"
 }
 
+export enum PmRequestParameter {
+    RESULTS_URL = "results-url"
+}
+
 export enum ProjectType {
     // These values are defined in the backend and come from the backend. Therefore, we suppress the warning:
     // noinspection JSUnusedGlobalSymbols

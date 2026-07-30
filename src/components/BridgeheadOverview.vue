@@ -55,16 +55,16 @@
         <!-- Data for each bridgehead in subsequent columns -->
         <td
             v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(scrollIndex, scrollIndex + numberBridgeheadShown)"
-            :key="bridgeheadIndex"
+            :key="bridgehead.bridgehead"
             class="data-cell"
-            :class="{ 'selected': selectedBridgehead === bridgeheadIndex }"
+            :class="{ 'selected': selectedBridgehead === bridgehead.bridgehead }"
         >
           <div v-if="header === Header.SITES" style="font-weight: bold; text-align: center"
-               @click="selectBridgehead(bridgeheadIndex)">
+               @click="selectBridgehead(bridgehead)">
             {{ bridgehead.humanReadable }}
           </div>
           <div v-else-if="header === Header.VOTUM">
-            <div v-if="existsVotums.length > 0 && existsVotums[bridgeheadIndex]"
+            <div v-if="existsVotums.length > 0 && existsVotums[scrollIndex + bridgeheadIndex]"
                  class="states-circle-container">
               <div class="state_circle green"></div>
               <DownloadButton
@@ -117,11 +117,11 @@
                  :title="getCreatorStatusForBridgehead(bridgehead) ?? undefined"/>
           </div>
           <div v-else-if="header === 'DataSHIELD Status'">
-            <div v-if="dataShieldStatusArray[bridgeheadIndex]" class="states-circle-container">
+            <div v-if="dataShieldStatusArray[scrollIndex + bridgeheadIndex]" class="states-circle-container">
               <div class="state_circle"
-                   :class="dataShieldStatusArray[bridgeheadIndex]?.project_status?.toLowerCase()"
+                   :class="dataShieldStatusArray[scrollIndex + bridgeheadIndex]?.project_status?.toLowerCase()"
                    data-toggle="tooltip" data-placement="top"
-                   :title="dataShieldStatusArray[bridgeheadIndex]?.project_status">
+                   :title="dataShieldStatusArray[scrollIndex + bridgeheadIndex]?.project_status">
               </div>
             </div>
             <div v-else></div>
@@ -250,7 +250,7 @@ export default class BridgeheadOverview extends Vue {
   // noinspection SpellCheckingInspection
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
-  selectedBridgehead: number | null = null;
+  selectedBridgehead: string | null = null;
   scrollIndex = 0;
   numberBridgeheadShown = 4;
 
@@ -266,7 +266,7 @@ export default class BridgeheadOverview extends Vue {
 
   async created() {
     await this.updateBridgeheadExtraInfo();
-    this.selectedBridgehead = 0;
+    this.selectedBridgehead = this.context.bridgehead?.bridgehead ?? this.bridgeheads[0]?.bridgehead ?? null;
   }
 
   buildHeaders(): void {
@@ -333,9 +333,9 @@ export default class BridgeheadOverview extends Vue {
         });
   }
 
-  selectBridgehead(index: number) {
-    this.selectedBridgehead = index;
-    this.callUpdateActiveBridgehead(this.bridgeheads[index]);
+  selectBridgehead(bridgehead: Bridgehead) {
+    this.selectedBridgehead = bridgehead.bridgehead;
+    this.callUpdateActiveBridgehead(bridgehead);
   }
 
   scrollBridgehead(direction: string) {

@@ -807,7 +807,9 @@ export default defineComponent({
   },
   watch: {
     activeBridgehead(newValue, _oldValue) {
-      this.activeBridgeheadIndex = this.visibleBridgeheads.findIndex(bridgehead => bridgehead === newValue);
+      this.activeBridgeheadIndex = this.visibleBridgeheads.findIndex(
+          bridgehead => bridgehead.bridgehead === newValue?.bridgehead
+      );
       this.context = new ProjectManagerContext(this.projectCode, newValue);
       this.creatorAcceptance = (this.project?.creatorState) ? this.project.creatorState : UserProjectState.CREATED;
     },
@@ -1081,6 +1083,7 @@ export default defineComponent({
 
     async fetchVisibleBridgeheads() {
       try {
+        const activeBridgeheadId = this.activeBridgehead?.bridgehead ?? this.context.bridgehead?.bridgehead;
         return await this.projectManagerBackendService.fetchData(
             Module.PROJECT_BRIDGEHEAD_MODULE,
             Action.FETCH_VISIBLE_PROJECT_BRIDGEHEADS_ACTION,
@@ -1088,7 +1091,9 @@ export default defineComponent({
             new Map()
         ).then(bridgeheads => {
           this.visibleBridgeheads = bridgeheads;
-          this.activeBridgehead = bridgeheads[this.activeBridgeheadIndex];
+          this.activeBridgehead = bridgeheads.find(
+              (bridgehead: Bridgehead) => bridgehead.bridgehead === activeBridgeheadId
+          ) ?? bridgeheads[0];
         });
       } catch (error) {
         console.error('Error loading BridgeheadList:', error);

@@ -149,6 +149,7 @@ export enum Action {
     FETCH_RESEARCH_ENVIRONMENT_URL_ACTION = "FETCH_RESEARCH_ENVIRONMENT_URL",
     EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION = "EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE",
     FETCH_PROJECT_FORM_FIELDS_ACTION = "FETCH_PROJECT_FORM_FIELDS",
+    FETCH_PROJECT_FORM_LAYOUTS_ACTION = "FETCH_PROJECT_FORM_LAYOUTS",
     FETCH_BEST_PROJECT_FORM_TEMPLATES_ACTION = "FETCH_BEST_FORM_TEMPLATES",
     EDIT_PROJECT_FORM_FIELDS_ACTION = "EDIT_PROJECT_FORM_FIELDS",
     DOWNLOAD_FORM_AS_PDF_ACTION = "DOWNLOAD_FORM_AS_PDF",
@@ -468,6 +469,14 @@ export interface FormField extends FormTitle {
     blockDescription?: string,
     order?: number;
     value?: string;
+}
+
+export interface FormFieldLayoutRow {
+    fields: string[];
+}
+
+export interface FormFieldLayout {
+    rows: FormFieldLayoutRow[];
 }
 
 export interface ProjectAndForms {

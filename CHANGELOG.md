@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-07-28]
+## [1.1.0 - 2026-07-31]
 ### Added
 - Dockerfile
 - Single Spa
@@ -154,6 +154,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Query Details
 - Rename overview headers
 - Filter services and auto select service if only one
+- Form field layouts
 
 ### Removed
 - Application Form

@@ -627,6 +627,7 @@ import {
   Explanations,
   FormDataType,
   FormField,
+  FormFieldLayout,
   FormTemplate,
   FormTitle,
   getAllProjectTypes,
@@ -796,6 +797,7 @@ export default defineComponent({
       formTemplates: [] as FormTemplate[],
       formTitles: [] as FormTitle[],
       formFields: [] as FormField[],
+      layouts: {} as Record<string, FormFieldLayout[]>,
       selectedForms: [] as FormTitle[],
       projectFields: [] as ProjectField[],
       groupedMissingFields: {} as Record<string, string[]>,
@@ -1281,16 +1283,26 @@ export default defineComponent({
       try {
         await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_SELECTED_PROJECT_FORMS_ACTION, new Map(), async result => {
           this.selectedForms = result;
-          await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async formFields => {
-            this.addFormFields(formFields);
-          });
+          await Promise.all([
+            this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async formFields => {
+              this.addFormFields(formFields);
+            }),
+            this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_LAYOUTS_ACTION, new Map(), 'layouts')
+          ]);
         });
       } catch (error) {
         console.warn('Failed to load project form definitions.', error);
         this.selectedForms = [];
         this.formFields = [];
         this.formTitles = [];
+        this.layouts = {};
       }
+    },
+
+    getFormFieldLayout(formTitle: string, formFieldLabel: string): FormFieldLayout | undefined {
+      return this.layouts[formTitle]?.find(layout =>
+          layout.rows.some(row => row.fields.includes(formFieldLabel))
+      );
     },
 
     /**

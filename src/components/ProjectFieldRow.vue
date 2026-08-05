@@ -660,7 +660,7 @@ export default class ProjectFieldRow extends Vue {
   </tr>
 
 
-  <div v-else>
+  <div v-else style="width:100%">
 
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
       <div style="display:flex" :style="{width: hasShortTitle() ? (hasSection() ? '28%' : '30%') : '80%'}">

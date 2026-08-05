@@ -46,7 +46,8 @@ export interface ProjectField {
     type?: FormDataType
     extraParams?: Map<string, unknown>,
     deleteAction?: Action,
-    deleteModule?: Module
+    deleteModule?: Module,
+    label?: string
 }
 
 export interface Block {

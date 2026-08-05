@@ -21,12 +21,13 @@ export interface ProjectField {
     editProjectParam?: EditProjectParam[]
     fieldValue: string[]
     fieldDescription?: string
+    fieldShortDescription?: string
     bridgeheads?: BridgeheadsProjectField
     redirectUrl?: string
     isEditable: boolean
     editMode: boolean
     possibleValues?: string[]
-    displayPossibleValue?: (input: string) => {name: string, description: string}
+    displayPossibleValue?: (input: string) => {name: string, description: string, shortDescription?: string}
     configurations?: Map<string, ProjectAndForms>
     configurationSelectionType?: ProjectConfigurationSelectionType
     uploadAction?: Action
@@ -57,6 +58,7 @@ export interface Block {
     minInstances?: number;
     displayName?: string,
     description?: string,
+    shortDescription?: string,
 }
 
 /**
@@ -75,6 +77,7 @@ export interface NewSection {
     level: number;          // 0 = ungrouped
     displayName?: string;   // undefined for level 0
     description?: string;
+    shortDescription?: string;
 }
 
 export class Section {
@@ -152,6 +155,7 @@ export class Section {
                     level: i + 1,
                     displayName: curr.displayName,
                     description: curr.description,
+                    shortDescription: curr.shortDescription,
                 });
             }
         }

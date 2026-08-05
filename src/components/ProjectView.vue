@@ -301,7 +301,7 @@
                          @click="draftDialogStepper.setCurrentStep(step.id)"
                          style="padding-top: 4px;">
                       <div class="stepper-step-header">{{ step.displayName }}</div>
-                      <div class="stepper-step-desc">{{ step.description }}</div>
+                      <div class="stepper-step-desc">{{ step.shortDescription ?? step.description }}</div>
                     </div>
                   </div>
                 </div>
@@ -347,7 +347,10 @@
                         <div class="d-flex justify-content-between align-items-center">
                           <span class="project-field-block-title">{{ block.block?.displayName ?? block.block?.label}}<!--<span v-if="item.field.mandatory">&nbsp*</span>--></span>
                         </div>
-                        <div class="project-field-block-description" v-html="block.block?.description"></div>
+                        <div class="project-field-block-description"
+                             v-html="(!existsDraftDialog || isCurrentStep(FixedDialogStep.SUMMARY))
+                               ? (block.block?.shortDescription ?? block.block?.description)
+                               : block.block?.description"></div>
                       </div>
                     </template>
 
@@ -373,6 +376,7 @@
                                 :field-key="item.field.fieldKey"
                                 :field-value="item.field.fieldValue"
                                 :field-description="item.field.fieldDescription"
+                                :field-short-description="item.field.fieldShortDescription"
                                 :bridgeheads="item.field.bridgeheads"
                                 :action="item.field.action"
                                 :module="item.field.module"
@@ -1397,6 +1401,7 @@ export default defineComponent({
             title: field.title,
             titleDisplayName: field.titleDisplayName,
             titleDescription: field.titleDescription,
+            titleShortDescription: field.titleShortDescription,
           });
         }
 
@@ -1412,6 +1417,7 @@ export default defineComponent({
         ...selectedForm,
         titleDisplayName: formTitlesByTitle.get(selectedForm.title)?.titleDisplayName ?? selectedForm.titleDisplayName,
         titleDescription: formTitlesByTitle.get(selectedForm.title)?.titleDescription ?? selectedForm.titleDescription,
+        titleShortDescription: formTitlesByTitle.get(selectedForm.title)?.titleShortDescription ?? selectedForm.titleShortDescription,
       }));
 
       if (!this.draftDialogStepper.hasSameFormTitles(this.selectedForms)) {
@@ -1569,6 +1575,7 @@ export default defineComponent({
         editProjectParam: [EditProjectParam.FORM_FIELDS],
         mandatory: formField.mandatory,
         fieldDescription: formField.labelDescription,
+        fieldShortDescription: formField.labelShortDescription,
         type: formField.type,
         isEditable: true,
         editMode: this.editMode,
@@ -1576,7 +1583,11 @@ export default defineComponent({
         displayPossibleValue: formField.allowedValues?.length
             ? (label: string) => {
               const field = formField.allowedValues!.find(v => v.label === label)
-              return {name: field?.displayName ?? label, description: field?.description ?? ""}
+              return {
+                name: field?.displayName ?? label,
+                description: field?.description ?? "",
+                shortDescription: field?.shortDescription
+              }
             }
             : undefined,
         action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
@@ -1594,7 +1605,8 @@ export default defineComponent({
           multiple: formField.multipleBlock,
           minInstances: formField.minBlockInstances,
           displayName: formField.blockDisplayName,
-          description: formField.blockDescription
+          description: formField.blockDescription,
+          shortDescription: formField.blockShortDescription
         } : undefined,
         section: new Section(formFields, index)
       }));
@@ -1607,6 +1619,7 @@ export default defineComponent({
         editProjectParam: [EditProjectParam.FORM_TITLE],
         mandatory: false,
         fieldDescription: formTitle.titleDescription,
+        fieldShortDescription: formTitle.titleShortDescription,
         type: FormDataType.BOOLEAN,
         isEditable: true,
         editMode: this.editMode,
@@ -1638,7 +1651,8 @@ export default defineComponent({
             multipleBlock: formField.multipleBlock,
             minBlockInstances: formField.minBlockInstances,
             blockDisplayName: formField.blockDisplayName,
-            blockDescription: formField.blockDescription
+            blockDescription: formField.blockDescription,
+            blockShortDescription: formField.blockShortDescription
           } : {})
         }];
       };

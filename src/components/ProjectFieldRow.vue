@@ -18,7 +18,7 @@ import UploadButton from "@/components/UploadButton.vue";
 import type {DialogStep} from "@/services/fixedDialogStep";
 import {FixedDialogStep} from "@/services/fixedDialogStep";
 import type {Block, BridgeheadsProjectField} from "@/services/utils";
-import {ActionFunction, Section} from "@/services/utils";
+import {ActionFunction, Section, Utils} from "@/services/utils";
 import {handleError, PropType, watch} from "vue";
 import "@samply/lens";
 import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
@@ -320,7 +320,7 @@ export default class ProjectFieldRow extends Vue {
     }
     if (this.redirectUrl) {
       const projectCode = new URLSearchParams(this.redirectUrl).get("project-code")
-      window.location.href = this.redirectUrl.split('?')[0] + '?query=' + query + '&datarequests='+btoa(JSON.stringify(bridgeheads)) + '&project-code=' + projectCode;
+      window.location.href = this.redirectUrl.split('?')[0] + '?query=' + query + '&datarequests='+Utils.encodeBase64(JSON.stringify(bridgeheads)) + '&project-code=' + projectCode;
     }
   }
 
@@ -500,7 +500,7 @@ export default class ProjectFieldRow extends Vue {
 
   getQueryDetails(): QueryItem[][] {
     if (this.editedValue[2]) {
-      return JSON.parse(atob(this.editedValue[2])) as QueryItem[][]}
+      return JSON.parse(Utils.decodeBase64(this.editedValue[2])) as QueryItem[][]}
     return [[{id: "", key: "", name: "", type: "", values: []}]]
   }
 

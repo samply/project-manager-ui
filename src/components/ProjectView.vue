@@ -916,8 +916,8 @@ export default defineComponent({
           i++;
         }
       }
-      console.log('original: ', projectFields)
-      console.log('test: ', result)
+      //console.log('original: ', projectFields)
+      //console.log('test: ', result)
       return result
     },
 
@@ -942,8 +942,8 @@ export default defineComponent({
           items: [item]
         });
       });
-      console.log('projectfields: ', this.projectFields)
-console.log('groups: ', groups)
+      //console.log('projectfields: ', this.projectFields)
+      //console.log('groups: ', groups)
       return groups;
     },
 

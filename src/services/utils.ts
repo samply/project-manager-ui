@@ -209,3 +209,19 @@ export class ActionFunction {
     }
 
 }
+export class Utils {
+    static decodeBase64(base64: string): string {
+        const binary = atob(base64);
+
+        const bytes = Uint8Array.from(
+            binary,
+            char => char.charCodeAt(0)
+        );
+
+        return new TextDecoder().decode(bytes);
+    }
+
+    static encodeBase64(str: string): string {
+        return btoa(String.fromCharCode(...new TextEncoder().encode(str)))
+    }
+}

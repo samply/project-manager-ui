@@ -17,14 +17,14 @@ export interface DialogStep {
 
 export const FixedDialogSteps: readonly DialogStep[] = [
     {
-        id: FixedDialogStep.SERVICES,
-        displayName: "Services",
-        description: "Please provide information on the resources you are requesting",
-    },
-    {
         id: FixedDialogStep.QUERY,
         displayName: "Query",
         description: "Your selection criteria and query logic",
+    },
+    {
+        id: FixedDialogStep.SERVICES,
+        displayName: "Services",
+        description: "Please provide information on the resources you are requesting",
     },
     {
         id: FixedDialogStep.PROJECT,

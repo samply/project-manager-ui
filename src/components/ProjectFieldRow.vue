@@ -37,6 +37,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     editProjectParam: {type: Array as PropType<EditProjectParam[]>, required: false, default: []},
     fieldValue: {type: Array as PropType<string[]>, required: true},
     fieldDescription: {type: String, required: false},
+    fieldShortDescription: {type: String, required: false},
     bridgeheads: {type: Object as PropType<BridgeheadsProjectField>, required: false},
     projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
     context: {type: Object as PropType<ProjectManagerContext>, required: true},
@@ -48,7 +49,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     },
     possibleValues: {type: Array as PropType<string[]>, required: false},
     displayPossibleValue: {
-      type: Function as unknown as () => (input: string) => {name: string, description: string},
+      type: Function as unknown as () => (input: string) => {name: string, description: string, shortDescription?: string},
       default: (input: string) => input
     },
     configurations: {type: Object as PropType<Map<string, ProjectAndForms>>, required: false},
@@ -93,7 +94,7 @@ export default class ProjectFieldRow extends Vue {
   readonly action!: Action | ActionFunction;
   readonly possibleValues?: string[];
   // noinspection JSUnusedGlobalSymbols
-  readonly displayPossibleValue!: (input: string) => {name: string, description: string};
+  readonly displayPossibleValue!: (input: string) => {name: string, description: string, shortDescription: string};
   // noinspection JSUnusedGlobalSymbols
   readonly isEditable!: boolean;
   readonly callRefreshContext!: () => void;
@@ -104,6 +105,8 @@ export default class ProjectFieldRow extends Vue {
   readonly editMode!: boolean;
   // noinspection JSUnusedGlobalSymbols
   readonly fieldDescription?: string;
+  // noinspection JSUnusedGlobalSymbols
+  readonly fieldShortDescription?: string;
   // noinspection JSUnusedGlobalSymbols
   readonly configurations?: Map<string, ProjectAndForms>;
   readonly configurationSelectionType!: ProjectConfigurationSelectionType;
@@ -469,6 +472,11 @@ export default class ProjectFieldRow extends Vue {
   isBlock(): boolean {
     return !!this.block
   }
+  get displayedFieldDescription(): string | undefined {
+    return !this.isDraft() || this.isSummaryStep() || this.isBlock()
+      ? this.fieldShortDescription ?? this.fieldDescription
+      : this.fieldDescription;
+  }
   getInputType(): string {
     if (this.type === FormDataType.INTEGER) return 'number'
     if (this.type === FormDataType.STRING) return 'text'
@@ -595,8 +603,8 @@ export default class ProjectFieldRow extends Vue {
                :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
             {{ newSection.displayName }}
           </div>
-          <div v-if="newSection.description" class="section-description">
-            {{ newSection.description }}
+          <div v-if="newSection.description || newSection.shortDescription" class="section-description">
+            {{ (!isDraft() || isSummaryStep()) ? (newSection.shortDescription ?? newSection.description) : newSection.description }}
           </div>
         </td>
       </tr>
@@ -681,7 +689,7 @@ export default class ProjectFieldRow extends Vue {
             <span v-if="this.downloadAction && todos?.get(this.downloadAction) && this.existsFile"
                   class="todo-circle-small">#{{ todos?.get(this.downloadAction)?.number }}</span>
           </div>
-          <div v-if="fieldDescription" class="field-description" v-html="fieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
+          <div v-if="displayedFieldDescription" class="field-description" v-html="displayedFieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
         </div>
       </div>
       <div :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
@@ -827,7 +835,7 @@ export default class ProjectFieldRow extends Vue {
               </select>
               <div v-if="(!isDraft() || isSummaryStep()) && !editMode" style="padding: 0 0.75rem">
                 <div>{{displayPossibleValue(editedValue[0]).name}}</div>
-                <div style="font-size: 12px">{{displayPossibleValue(editedValue[0]).description}}</div>
+                <div style="font-size: 12px">{{displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description}}</div>
               </div>
             </div>
             <div v-else-if="isInputType(FormDataType.LONG_STRING)" style="width:100%">

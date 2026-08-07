@@ -425,12 +425,14 @@ export interface FormFieldGroup {
     group: string
     displayName: string
     description: string
+    shortDescription?: string
 }
 
 export interface FormFieldValue {
     label: string
     displayName: string
     description?: string
+    shortDescription?: string
 }
 
 export enum FormDataType {
@@ -450,12 +452,14 @@ export interface FormTitle {
     title: string;
     titleDisplayName?: string;
     titleDescription?: string;
+    titleShortDescription?: string;
 }
 
 export interface FormField extends FormTitle {
     label: string;
     labelDisplayName?: string;
     labelDescription?: string;
+    labelShortDescription?: string;
     groups?: FormFieldGroup[];
     type?: FormDataType;
     allowedValues?: FormFieldValue[];
@@ -467,6 +471,7 @@ export interface FormField extends FormTitle {
     minBlockInstances?: number,
     blockDisplayName?: string,
     blockDescription?: string,
+    blockShortDescription?: string,
     order?: number;
     value?: string;
 }

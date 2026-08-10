@@ -887,7 +887,7 @@ export default defineComponent({
       const projectFields = this.projectFields as ProjectField[];
 
       const layout = [
-          ['derivatives_concentration', 'derivatives_min_vol']
+          ['derivatives_concentration_volume', 'derivatives_unit'],['liquid_concentration_volume', 'liquid_unit']
       ]
 
       const result = [];
@@ -899,11 +899,11 @@ export default defineComponent({
         );
 
         if (groupIds) {
-          const groupElements = [];
+          const groupElements:ProjectField[] = [];
 
           for (const id of groupIds) {
-            const element = projectFields.find(item => item.label === id);
-
+            const elements = projectFields.filter((item) => item.label === id)
+            const element = elements.find(item => item.block?.instance === projectFields[i].block?.instance)
             if (element) {
               groupElements.push(element);
             }

@@ -371,6 +371,34 @@
                         </div>
                         <div v-if="!isBlockCollapsed(block.block)" class="project-field-block-body">
                           <template v-for="row in block.items" :key="row.key">
+                            <template v-for="item in row.field">
+                            <template v-if="hasSection(item.section) && row.shouldRenderRow">
+                              <template v-for="newSection in item.section?.fetchNewSections()"
+                                        :key="`${newSection.level}-${newSection.displayName ?? 'root'}`">
+
+                                <!--<tr v-if="newSection.level === 1" class="section-row spacer-row">
+                                  <td colspan="100">&nbsp;</td>
+                                </tr>-->
+
+                                <!-- Regular section row -->
+                                <tr v-if="newSection.displayName" class="section-row" :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
+                                  <td colspan="100" style="display: block;">
+                                    <div class="section-title"
+                                         :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
+                                      {{ newSection.displayName }}
+                                    </div>
+                                    <div v-if="newSection.description || newSection.shortDescription" class="section-description">
+                                      {{ (!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY)) ? (newSection.shortDescription ?? newSection.description) : newSection.description }}
+                                    </div>
+                                  </td>
+                                </tr>
+                              </template>
+                            </template>
+                            </template>
+
+
+
+
                             <div :class="row.field.length > 1 ? 'project-field-grid' : ''">
                             <template v-for="item in row.field">
                             <ProjectFieldRow
@@ -887,7 +915,7 @@ export default defineComponent({
       const projectFields = this.projectFields as ProjectField[];
 
       const layout = [
-          ['derivatives_concentration_volume', 'derivatives_unit'],['liquid_concentration_volume', 'liquid_unit']
+          ['derivatives_concentration_volume', 'derivatives_unit'],['liquid_concentration_volume', 'liquid_unit'], ["data_layer_wgs","data_layer_wes"], ["data_layer_rnaseq", "data_layer_epic", "data_layer_clinical_data"]
       ]
 
       const result = [];
@@ -1651,7 +1679,8 @@ export default defineComponent({
           shortDescription: formField.blockShortDescription
         } : undefined,
         section: new Section(formFields, index),
-        label: formField.label
+        label: formField.label,
+        properties: formField.properties ? formField.properties : []
       }));
     },
 
@@ -2427,6 +2456,12 @@ export default defineComponent({
       }
 
       return parseInt(rank, 10);
+    },
+
+    hasSection(section:Section | undefined): boolean {
+      console.log('section: ',section)
+      const groups = section?.fetchGroups();
+      return !!(groups && groups.length > 0);
     }
   }
 
@@ -3111,4 +3146,116 @@ export default defineComponent({
 .project-field-grid {
   display: flex;
 }
+/* Regular section rows */
+.section-row {
+  color: white;
+  display:block;
+  width: 100%;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-row.level-1 {
+  margin-top: 10px;
+  border: none;
+}
+
+.section-row.level-1 td {
+  /*background-image: linear-gradient(to right, #eaf0f4, #aed0e6);*/
+  border-left: none;
+  border-right: none;
+  margin: 0 1rem;
+}
+
+.section-row.empty-row td {
+  background-color: transparent; /* no color */
+  height: 0; /* smaller vertical space */
+  border-left: none;
+  border-right: none;
+  padding: 0; /* remove padding */
+}
+
+/* Section titles */
+.section-title {
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0.5rem 2rem 0 2.5rem;
+  color: #00489c;
+  background: none;
+}
+
+/* Prefix arrows for levels */
+.section-title::before {
+  display: inline-block;
+  margin-right: 0.5rem;
+  opacity: 0.8;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-0::before {
+  content: "";
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-1::before {
+  content: "";
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-2::before {
+  content: "❯";
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-3::before {
+  content: "❯❯";
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-4::before {
+  content: "❯❯❯";
+}
+
+/* Font sizes & weights per level */
+/*noinspection CssUnusedSymbol*/
+.section-title.level-0 {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-1 {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-3 {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-4 {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Section description styling */
+.section-description {
+  font-size: 12px;
+  color: #212529;
+  margin-left: 3rem;
+  margin-bottom: 1rem;
+  border: 0 solid;
+  border-bottom-width: 1px;
+  border-image-slice: 1;
+  border-image-source: linear-gradient(to right, #818078, transparent);
+}
+
 </style>

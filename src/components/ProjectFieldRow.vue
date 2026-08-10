@@ -78,6 +78,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
       default: (input: string) => input
     },
     extraParams: {type: Object as PropType<Map<string, string>>, required: false},
+    properties: {type: Array as PropType<string[]>, required: false},
   }
 })
 export default class ProjectFieldRow extends Vue {
@@ -93,6 +94,7 @@ export default class ProjectFieldRow extends Vue {
   readonly module!: Module;
   readonly action!: Action | ActionFunction;
   readonly possibleValues?: string[];
+  readonly properties?: string[];
   // noinspection JSUnusedGlobalSymbols
   readonly displayPossibleValue!: (input: string) => {name: string, description: string, shortDescription: string};
   // noinspection JSUnusedGlobalSymbols
@@ -582,36 +584,16 @@ export default class ProjectFieldRow extends Vue {
   getCriterium(crit: any): QueryItem | undefined {
     return this.getQueryDetails()[0].find((element) => element.key === crit.key)
   }
+
+  getCssProperty(): string {
+    const cssClasses = this.properties?.filter((property) => property.substr(0,3) === "css")
+    return cssClasses && cssClasses?.length > 0 ? cssClasses.join(",") : "";
+  }
 }
 
 </script>
 
 <template>
-  <!-- Section -->
-  <template v-if="section">
-    <template v-for="newSection in section.fetchNewSections()"
-              :key="`${newSection.level}-${newSection.displayName ?? 'root'}`">
-
-      <!--<tr v-if="newSection.level === 1" class="section-row spacer-row">
-        <td colspan="100">&nbsp;</td>
-      </tr>-->
-
-      <!-- Regular section row -->
-      <tr v-if="newSection.displayName" class="section-row" :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
-        <td colspan="100" style="display: block;">
-          <div class="section-title"
-               :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
-            {{ newSection.displayName }}
-          </div>
-          <div v-if="newSection.description || newSection.shortDescription" class="section-description">
-            {{ (!isDraft() || isSummaryStep()) ? (newSection.shortDescription ?? newSection.description) : newSection.description }}
-          </div>
-        </td>
-      </tr>
-    </template>
-  </template>
-
-
   <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep && draftDialogCurrentStep.id === dialogStep.SERVICES"
       class="config-box-row">
     <td colspan="3" style="display: block;width:100%">
@@ -668,7 +650,7 @@ export default class ProjectFieldRow extends Vue {
   </tr>
 
 
-  <div v-else style="width:100%">
+  <div v-else>
 
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
       <div style="display:flex" :style="{width: hasShortTitle() ? (hasSection() ? '28%' : '30%') : '80%'}">
@@ -1064,132 +1046,6 @@ export default class ProjectFieldRow extends Vue {
   font-size: 12px;
   font-weight: normal;
   margin-bottom: 3px;
-}
-
-/* Regular section rows */
-.section-row {
-  color: white;
-  display:block;
-  width: 100%;
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-row.level-1 {
-  margin-top: 10px;
-  border: none;
-}
-
-.section-row.level-1 td {
-  /*background-image: linear-gradient(to right, #eaf0f4, #aed0e6);*/
-  border-left: none;
-  border-right: none;
-  margin: 0 1rem;
-}
-
-/* .section-row.spacer-row {
-  border: none;
-  margin-top: -30px;
-  background-color: white;
-}*/
-
-/* Spacer row for sections without displayName */
-.section-row.spacer-row td {
-  background-color: transparent; /* no color */
-  height: 0.25rem; /* smaller vertical space */
-  border: none;
-  padding: 0; /* remove padding */
-}
-
-.section-row.empty-row td {
-  background-color: transparent; /* no color */
-  height: 0; /* smaller vertical space */
-  border-left: none;
-  border-right: none;
-  padding: 0; /* remove padding */
-}
-
-/* Section titles */
-.section-title {
-  font-weight: 600;
-  line-height: 1.4;
-  margin: 0.5rem 2rem 0 2.5rem;
-  color: #00489c;
-  background: none;
-}
-
-/* Prefix arrows for levels */
-.section-title::before {
-  display: inline-block;
-  margin-right: 0.5rem;
-  opacity: 0.8;
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-0::before {
-  content: "";
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-1::before {
-  content: "";
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-2::before {
-  content: "❯";
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-3::before {
-  content: "❯❯";
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-4::before {
-  content: "❯❯❯";
-}
-
-/* Font sizes & weights per level */
-/*noinspection CssUnusedSymbol*/
-.section-title.level-0 {
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-1 {
-  font-size: 1.15rem;
-  font-weight: 600;
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-2 {
-  font-size: 1.05rem;
-  font-weight: 600;
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-3 {
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-4 {
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-/* Section description styling */
-.section-description {
-  font-size: 12px;
-  color: #212529;
-  margin-left: 3rem;
-  margin-bottom: 1rem;
-  border: 0 solid;
-  border-bottom-width: 1px;
-  border-image-slice: 1;
-  border-image-source: linear-gradient(to right, #818078, transparent);
 }
 
 .input-field {

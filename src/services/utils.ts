@@ -48,7 +48,8 @@ export interface ProjectField {
     extraParams?: Map<string, unknown>,
     deleteAction?: Action,
     deleteModule?: Module,
-    label?: string
+    label?: string,
+    properties?: string[]
 }
 
 export interface Block {

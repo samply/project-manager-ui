@@ -474,6 +474,7 @@ export interface FormField extends FormTitle {
     blockShortDescription?: string,
     order?: number;
     value?: string;
+    properties?: string[]
 }
 
 export interface FormFieldLayoutRow {

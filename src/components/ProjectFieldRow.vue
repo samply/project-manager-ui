@@ -586,8 +586,31 @@ export default class ProjectFieldRow extends Vue {
   }
 
   getCssProperty(): string {
-    const cssClasses = this.properties?.filter((property) => property.substr(0,3) === "css")
-    return cssClasses && cssClasses?.length > 0 ? cssClasses.join(",") : "";
+    const cssClasses = this.properties?.filter((property) => property.substring(0,3) === "css")
+    return cssClasses && cssClasses?.length > 0 ? cssClasses.join(",")+' layout' : "";
+  }
+  getWidth(): string {
+    let width = "80%"
+    if (this.getCssProperty().includes("layout")) {
+      if (this.getCssProperty().includes("unit")) {
+        width = "30%"
+      }
+      if (this.getCssProperty().includes("unit-value")) {
+        width = "54%"
+      }
+      if (this.getCssProperty().includes("checkbox")) {
+        width = "100%"
+      }
+    } else {
+      if (this.hasShortTitle()) {
+        if (this.hasSection()) {
+          width = "28%"
+        } else {
+          width = "30%"
+        }
+      }
+    }
+    return width
   }
 }
 
@@ -650,10 +673,10 @@ export default class ProjectFieldRow extends Vue {
   </tr>
 
 
-  <div v-else>
+  <div v-else :class="getCssProperty()">
 
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
-      <div style="display:flex" :style="{width: hasShortTitle() ? (hasSection() ? '28%' : '30%') : '80%'}">
+      <div style="display:flex" :style="{width: getWidth()}">
         <input
             v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory"
             type="checkbox"
@@ -674,7 +697,7 @@ export default class ProjectFieldRow extends Vue {
           <div v-if="displayedFieldDescription" class="field-description" v-html="displayedFieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
         </div>
       </div>
-      <div :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
+      <div v-if="!(isInputType(FormDataType.BOOLEAN) && !this.mandatory)" :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
         <div v-if="uploadAction && !isDescriptionUpload()" style="width:100%;padding: 0 0.75rem">
           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
@@ -808,8 +831,8 @@ export default class ProjectFieldRow extends Vue {
                 </button>
               </div>
             </div>
-            <div v-else-if="isSelection() && !isConfiguration()" style="width: 70%;">
-              <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onInputChange" class="form-select" style="width: fit-content;">
+            <div v-else-if="isSelection() && !isConfiguration()" style="width: 100%;">
+              <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onInputChange" class="form-select">
                 <option v-for="value in possibleValues" :key="value" :value="value">
                   {{ displayPossibleValue(value).name }}
                   <!--<span style="font-size: smaller"> {{displayPossibleValue(value).description}}</span>-->
@@ -839,7 +862,7 @@ export default class ProjectFieldRow extends Vue {
                   @change="onInputChange"
                   class="form-control"
                   :class="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration() ? 'grey' : 'white'"
-                  :style="{width: getInputType()==='number' ? '40%' : '100%'}"
+                  :style="{width: getInputType()==='number' ? '100%' : '100%'}"
                   :disabled="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration()"
               >
             </div>
@@ -981,7 +1004,7 @@ export default class ProjectFieldRow extends Vue {
 .config-box {
   /*width: fit-content;
   /*text-align: center;*/
-  margin: 10px 10px 20px 10px;
+  margin: 20px 30px;
   /*border: 1px solid #0000001E;*/
   border-radius: 10px;
   min-width: 250px;
@@ -1078,15 +1101,18 @@ export default class ProjectFieldRow extends Vue {
    padding: 1rem 4rem;
    /*width: 85%;*/
 }
+.layout > .input-field {
+  padding: 1.5rem 0.5rem 1.5rem 4rem;
+}
 .input-field.sidewise.section {
   /*width:80%;*/
-  margin-left:2%;
+  margin-left: 10px;
 }
 .input-field.sidewise.wide {
-  width:98%;
+  width: 98%;
 }
 .input-field.section {
-  margin-left:2%;
+  margin-left: 10px;
 }
 .input-field.block {
   display: flex;
@@ -1097,7 +1123,7 @@ export default class ProjectFieldRow extends Vue {
    margin-right: 1%;
    display: flex;
    flex-direction: column;
-   padding-top:2px;
+   padding-top: 2px;
  }
  textarea.form-control {
    /*resize: both;*/
@@ -1161,6 +1187,12 @@ export default class ProjectFieldRow extends Vue {
 
   /* Place on top of each other */
   grid-area: 1 / 1 / 2 / 2;
+}
+.css-unit-value {
+  width:70%;
+}
+.css-unit {
+  width:30%;
 }
 lens-query-explain-button::part(lens-info-button-dialogue),
 lens-search-bar::part(lens-info-button-dialogue)

@@ -435,6 +435,7 @@
                                 :delete-module="item.deleteModule"
                                 :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
                                 :context="context"
+                                :properties="item.properties"
                                 :project-manager-backend-service="projectManagerBackendService"/>
                             </template>
                             </div>
@@ -913,19 +914,11 @@ export default defineComponent({
 
     sortProjectFieldsByLayout(): ProjectField[][] {
       const projectFields = this.projectFields as ProjectField[];
-
-      const layout = [
-          ['derivatives_concentration_volume', 'derivatives_unit'],['liquid_concentration_volume', 'liquid_unit'], ["data_layer_wgs","data_layer_wes"], ["data_layer_rnaseq", "data_layer_epic", "data_layer_clinical_data"]
-      ]
-
       const result = [];
       let i = 0;
 
       while (i < projectFields.length) {
-        const groupIds = layout.find(
-            group => group.length > 0 && group[0] === projectFields[i].label
-        );
-
+        const groupIds = this.getFormFieldLayout(projectFields[i].category as string,projectFields[i].label as string)?.rows[0]?.fields
         if (groupIds) {
           const groupElements:ProjectField[] = [];
 
@@ -2459,7 +2452,6 @@ export default defineComponent({
     },
 
     hasSection(section:Section | undefined): boolean {
-      console.log('section: ',section)
       const groups = section?.fetchGroups();
       return !!(groups && groups.length > 0);
     }

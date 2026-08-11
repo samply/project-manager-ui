@@ -331,7 +331,7 @@
                   <template v-for="(block, blockIndex) in projectFieldRenderBlock" :key="block.key">
                     <template v-for="item in block.items" :key="item.key">
                       <div
-                          v-if="item.showCategoryHeader && shouldRenderFieldBlockItems(block)"
+                          v-if="item.showCategoryHeader"
                           class="project-field-header-inline project-field-category-header"
                       >
                         <div class="project-field-title-inline">

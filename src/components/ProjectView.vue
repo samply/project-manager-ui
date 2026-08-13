@@ -1122,10 +1122,19 @@ export default defineComponent({
 
       // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
       const mandatoryFormFieldsValid = this.formFields
-          ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && this.selectedForms.some(ft => ft.title === field.title))
+          ?.filter(field => this.isApplicableMandatoryFormField(field))
           .every(field => field.value != null && field.value !== '');
 
       return baseFieldsValid && mandatoryFormFieldsValid;
+    },
+
+    isApplicableMandatoryFormField(field: FormField): boolean {
+      const belongsToExistingBlock = !field.block || field.blockInstance != null;
+
+      return field.type != FormDataType.BOOLEAN &&
+          Boolean(field.mandatory) &&
+          belongsToExistingBlock &&
+          this.selectedForms.some(form => form.title === field.title);
     },
 
     fetchTooltipTextForCreateButton() {
@@ -1155,7 +1164,7 @@ export default defineComponent({
         // 👇 group missing mandatory form fields
         // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
         this.groupedMissingFields = this.formFields
-            ?.filter(field => field.type != FormDataType.BOOLEAN && field.mandatory && !field.value && this.selectedForms.some(ft => ft.title === field.title))
+            ?.filter(field => this.isApplicableMandatoryFormField(field) && !field.value)
             .reduce((acc, field) => {
               const title = field.titleDisplayName ?? field.title;
               const label = field.labelDisplayName ?? field.label;
@@ -1400,9 +1409,11 @@ export default defineComponent({
           });
         }
 
-        this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
-        this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
       }
+
+      // Recalculate even when the last block removal leaves no form fields.
+      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
 
       const formTitlesByTitle = new Map(
           this.formTitles.map((formTitle) => [formTitle.title, formTitle])

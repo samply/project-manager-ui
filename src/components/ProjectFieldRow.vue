@@ -18,7 +18,7 @@ import UploadButton from "@/components/UploadButton.vue";
 import type {DialogStep} from "@/services/fixedDialogStep";
 import {FixedDialogStep} from "@/services/fixedDialogStep";
 import type {Block, BridgeheadsProjectField} from "@/services/utils";
-import {ActionFunction, Section} from "@/services/utils";
+import {ActionFunction, Section, Utils} from "@/services/utils";
 import {handleError, PropType, watch} from "vue";
 import "@samply/lens";
 import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
@@ -37,6 +37,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     editProjectParam: {type: Array as PropType<EditProjectParam[]>, required: false, default: []},
     fieldValue: {type: Array as PropType<string[]>, required: true},
     fieldDescription: {type: String, required: false},
+    fieldShortDescription: {type: String, required: false},
     bridgeheads: {type: Object as PropType<BridgeheadsProjectField>, required: false},
     projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
     context: {type: Object as PropType<ProjectManagerContext>, required: true},
@@ -48,7 +49,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     },
     possibleValues: {type: Array as PropType<string[]>, required: false},
     displayPossibleValue: {
-      type: Function as unknown as () => (input: string) => {name: string, description: string},
+      type: Function as unknown as () => (input: string) => {name: string, description: string, shortDescription?: string},
       default: (input: string) => input
     },
     configurations: {type: Object as PropType<Map<string, ProjectAndForms>>, required: false},
@@ -77,6 +78,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
       default: (input: string) => input
     },
     extraParams: {type: Object as PropType<Map<string, string>>, required: false},
+    properties: {type: Array as PropType<string[]>, required: false},
   }
 })
 export default class ProjectFieldRow extends Vue {
@@ -92,8 +94,9 @@ export default class ProjectFieldRow extends Vue {
   readonly module!: Module;
   readonly action!: Action | ActionFunction;
   readonly possibleValues?: string[];
+  readonly properties?: string[];
   // noinspection JSUnusedGlobalSymbols
-  readonly displayPossibleValue!: (input: string) => {name: string, description: string};
+  readonly displayPossibleValue!: (input: string) => {name: string, description: string, shortDescription: string};
   // noinspection JSUnusedGlobalSymbols
   readonly isEditable!: boolean;
   readonly callRefreshContext!: () => void;
@@ -104,6 +107,8 @@ export default class ProjectFieldRow extends Vue {
   readonly editMode!: boolean;
   // noinspection JSUnusedGlobalSymbols
   readonly fieldDescription?: string;
+  // noinspection JSUnusedGlobalSymbols
+  readonly fieldShortDescription?: string;
   // noinspection JSUnusedGlobalSymbols
   readonly configurations?: Map<string, ProjectAndForms>;
   readonly configurationSelectionType!: ProjectConfigurationSelectionType;
@@ -317,7 +322,7 @@ export default class ProjectFieldRow extends Vue {
     }
     if (this.redirectUrl) {
       const projectCode = new URLSearchParams(this.redirectUrl).get("project-code")
-      window.location.href = this.redirectUrl.split('?')[0] + '?query=' + query + '&datarequests='+btoa(JSON.stringify(bridgeheads)) + '&project-code=' + projectCode;
+      window.location.href = this.redirectUrl.split('?')[0] + '?query=' + query + '&datarequests='+Utils.encodeBase64(JSON.stringify(bridgeheads)) + '&project-code=' + projectCode;
     }
   }
 
@@ -469,6 +474,11 @@ export default class ProjectFieldRow extends Vue {
   isBlock(): boolean {
     return !!this.block
   }
+  get displayedFieldDescription(): string | undefined {
+    return !this.isDraft() || this.isSummaryStep() || this.isBlock()
+      ? this.fieldShortDescription ?? this.fieldDescription
+      : this.fieldDescription;
+  }
   getInputType(): string {
     if (this.type === FormDataType.INTEGER) return 'number'
     if (this.type === FormDataType.STRING) return 'text'
@@ -492,7 +502,7 @@ export default class ProjectFieldRow extends Vue {
 
   getQueryDetails(): QueryItem[][] {
     if (this.editedValue[2]) {
-      return JSON.parse(atob(this.editedValue[2])) as QueryItem[][]}
+      return JSON.parse(Utils.decodeBase64(this.editedValue[2])) as QueryItem[][]}
     return [[{id: "", key: "", name: "", type: "", values: []}]]
   }
 
@@ -574,36 +584,39 @@ export default class ProjectFieldRow extends Vue {
   getCriterium(crit: any): QueryItem | undefined {
     return this.getQueryDetails()[0].find((element) => element.key === crit.key)
   }
+
+  getCssProperty(): string {
+    const cssClasses = this.properties?.filter((property) => property.substring(0,3) === "css")
+    return cssClasses && cssClasses?.length > 0 ? cssClasses.join(",")+' layout' : "";
+  }
+  getWidth(): string {
+    let width = "80%"
+    if (this.getCssProperty().includes("layout")) {
+      if (this.getCssProperty().includes("unit")) {
+        width = "30%"
+      }
+      if (this.getCssProperty().includes("unit-value")) {
+        width = "54%"
+      }
+      if (this.getCssProperty().includes("checkbox")) {
+        width = "100%"
+      }
+    } else {
+      if (this.hasShortTitle()) {
+        if (this.hasSection()) {
+          width = "28%"
+        } else {
+          width = "30%"
+        }
+      }
+    }
+    return width
+  }
 }
 
 </script>
 
 <template>
-  <!-- Section -->
-  <template v-if="section">
-    <template v-for="newSection in section.fetchNewSections()"
-              :key="`${newSection.level}-${newSection.displayName ?? 'root'}`">
-
-      <!--<tr v-if="newSection.level === 1" class="section-row spacer-row">
-        <td colspan="100">&nbsp;</td>
-      </tr>-->
-
-      <!-- Regular section row -->
-      <tr v-if="newSection.displayName" class="section-row" :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
-        <td colspan="100" style="display: block;">
-          <div class="section-title"
-               :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
-            {{ newSection.displayName }}
-          </div>
-          <div v-if="newSection.description" class="section-description">
-            {{ newSection.description }}
-          </div>
-        </td>
-      </tr>
-    </template>
-  </template>
-
-
   <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep && draftDialogCurrentStep.id === dialogStep.SERVICES"
       class="config-box-row">
     <td colspan="3" style="display: block;width:100%">
@@ -660,10 +673,10 @@ export default class ProjectFieldRow extends Vue {
   </tr>
 
 
-  <div v-else>
+  <div v-else :class="getCssProperty()">
 
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
-      <div style="display:flex" :style="{width: hasShortTitle() ? (hasSection() ? '28%' : '30%') : '80%'}">
+      <div style="display:flex" :style="{width: getWidth()}">
         <input
             v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory"
             type="checkbox"
@@ -681,10 +694,10 @@ export default class ProjectFieldRow extends Vue {
             <span v-if="this.downloadAction && todos?.get(this.downloadAction) && this.existsFile"
                   class="todo-circle-small">#{{ todos?.get(this.downloadAction)?.number }}</span>
           </div>
-          <div v-if="fieldDescription" class="field-description" v-html="fieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
+          <div v-if="displayedFieldDescription" class="field-description" v-html="displayedFieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
         </div>
       </div>
-      <div :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
+      <div v-if="!(isInputType(FormDataType.BOOLEAN) && !this.mandatory)" :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
         <div v-if="uploadAction && !isDescriptionUpload()" style="width:100%;padding: 0 0.75rem">
           <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
@@ -818,8 +831,8 @@ export default class ProjectFieldRow extends Vue {
                 </button>
               </div>
             </div>
-            <div v-else-if="isSelection() && !isConfiguration()" style="width: 70%;">
-              <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onInputChange" class="form-select" style="width: fit-content;">
+            <div v-else-if="isSelection() && !isConfiguration()" style="width: 100%;">
+              <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onInputChange" class="form-select">
                 <option v-for="value in possibleValues" :key="value" :value="value">
                   {{ displayPossibleValue(value).name }}
                   <!--<span style="font-size: smaller"> {{displayPossibleValue(value).description}}</span>-->
@@ -827,7 +840,7 @@ export default class ProjectFieldRow extends Vue {
               </select>
               <div v-if="(!isDraft() || isSummaryStep()) && !editMode" style="padding: 0 0.75rem">
                 <div>{{displayPossibleValue(editedValue[0]).name}}</div>
-                <div style="font-size: 12px">{{displayPossibleValue(editedValue[0]).description}}</div>
+                <div style="font-size: 12px">{{displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description}}</div>
               </div>
             </div>
             <div v-else-if="isInputType(FormDataType.LONG_STRING)" style="width:100%">
@@ -849,7 +862,7 @@ export default class ProjectFieldRow extends Vue {
                   @change="onInputChange"
                   class="form-control"
                   :class="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration() ? 'grey' : 'white'"
-                  :style="{width: getInputType()==='number' ? '40%' : '100%'}"
+                  :style="{width: getInputType()==='number' ? '100%' : '100%'}"
                   :disabled="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration()"
               >
             </div>
@@ -991,7 +1004,7 @@ export default class ProjectFieldRow extends Vue {
 .config-box {
   /*width: fit-content;
   /*text-align: center;*/
-  margin: 10px 10px 20px 10px;
+  margin: 20px 30px;
   /*border: 1px solid #0000001E;*/
   border-radius: 10px;
   min-width: 250px;
@@ -1058,132 +1071,6 @@ export default class ProjectFieldRow extends Vue {
   margin-bottom: 3px;
 }
 
-/* Regular section rows */
-.section-row {
-  color: white;
-  display:block;
-  width: 100%;
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-row.level-1 {
-  margin-top: 10px;
-  border: none;
-}
-
-.section-row.level-1 td {
-  /*background-image: linear-gradient(to right, #eaf0f4, #aed0e6);*/
-  border-left: none;
-  border-right: none;
-  margin: 0 1rem;
-}
-
-/* .section-row.spacer-row {
-  border: none;
-  margin-top: -30px;
-  background-color: white;
-}*/
-
-/* Spacer row for sections without displayName */
-.section-row.spacer-row td {
-  background-color: transparent; /* no color */
-  height: 0.25rem; /* smaller vertical space */
-  border: none;
-  padding: 0; /* remove padding */
-}
-
-.section-row.empty-row td {
-  background-color: transparent; /* no color */
-  height: 0; /* smaller vertical space */
-  border-left: none;
-  border-right: none;
-  padding: 0; /* remove padding */
-}
-
-/* Section titles */
-.section-title {
-  font-weight: 600;
-  line-height: 1.4;
-  margin: 0.5rem 2rem 0 2.5rem;
-  color: #00489c;
-  background: none;
-}
-
-/* Prefix arrows for levels */
-.section-title::before {
-  display: inline-block;
-  margin-right: 0.5rem;
-  opacity: 0.8;
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-0::before {
-  content: "";
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-1::before {
-  content: "";
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-2::before {
-  content: "❯";
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-3::before {
-  content: "❯❯";
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-4::before {
-  content: "❯❯❯";
-}
-
-/* Font sizes & weights per level */
-/*noinspection CssUnusedSymbol*/
-.section-title.level-0 {
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-1 {
-  font-size: 1.15rem;
-  font-weight: 600;
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-2 {
-  font-size: 1.05rem;
-  font-weight: 600;
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-3 {
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-/*noinspection CssUnusedSymbol*/
-.section-title.level-4 {
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-/* Section description styling */
-.section-description {
-  font-size: 12px;
-  color: #212529;
-  margin-left: 3rem;
-  margin-bottom: 1rem;
-  border: 0 solid;
-  border-bottom-width: 1px;
-  border-image-slice: 1;
-  border-image-source: linear-gradient(to right, #818078, transparent);
-}
-
 .input-field {
   padding: 1.5rem 4rem;
   border-radius: 10px;
@@ -1214,15 +1101,18 @@ export default class ProjectFieldRow extends Vue {
    padding: 1rem 4rem;
    /*width: 85%;*/
 }
+.layout > .input-field {
+  padding: 1.5rem 0.5rem 1.5rem 4rem;
+}
 .input-field.sidewise.section {
   /*width:80%;*/
-  margin-left:2%;
+  margin-left: 10px;
 }
 .input-field.sidewise.wide {
-  width:98%;
+  width: 98%;
 }
 .input-field.section {
-  margin-left:2%;
+  margin-left: 10px;
 }
 .input-field.block {
   display: flex;
@@ -1233,7 +1123,7 @@ export default class ProjectFieldRow extends Vue {
    margin-right: 1%;
    display: flex;
    flex-direction: column;
-   padding-top:2px;
+   padding-top: 2px;
  }
  textarea.form-control {
    /*resize: both;*/
@@ -1297,6 +1187,12 @@ export default class ProjectFieldRow extends Vue {
 
   /* Place on top of each other */
   grid-area: 1 / 1 / 2 / 2;
+}
+.css-unit-value {
+  width:70%;
+}
+.css-unit {
+  width:30%;
 }
 lens-query-explain-button::part(lens-info-button-dialogue),
 lens-search-bar::part(lens-info-button-dialogue)

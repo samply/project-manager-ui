@@ -301,7 +301,7 @@
                          @click="draftDialogStepper.setCurrentStep(step.id)"
                          style="padding-top: 4px;">
                       <div class="stepper-step-header">{{ step.displayName }}</div>
-                      <div class="stepper-step-desc">{{ step.description }}</div>
+                      <div class="stepper-step-desc">{{ step.shortDescription ?? step.description }}</div>
                     </div>
                   </div>
                 </div>
@@ -331,11 +331,11 @@
                   <template v-for="(block, blockIndex) in projectFieldRenderBlock" :key="block.key">
                     <template v-for="item in block.items" :key="item.key">
                       <div
-                          v-if="item.showCategoryHeader && shouldRenderFieldBlockItems(block)"
+                          v-if="item.showCategoryHeader"
                           class="project-field-header-inline project-field-category-header"
                       >
                         <div class="project-field-title-inline">
-                          {{ getDialogStep(item.field.category)?.displayName }}
+                          {{ getDialogStep(item.field[0].category)?.displayName }}
                         </div>
                         <!--<div class="project-field-notification-inline">
                           {{ getDialogStep(item.field.category)?.description }}
@@ -347,7 +347,10 @@
                         <div class="d-flex justify-content-between align-items-center">
                           <span class="project-field-block-title">{{ block.block?.displayName ?? block.block?.label}}<!--<span v-if="item.field.mandatory">&nbsp*</span>--></span>
                         </div>
-                        <div class="project-field-block-description" v-html="block.block?.description"></div>
+                        <div class="project-field-block-description"
+                             v-html="(!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY))
+                               ? (block.block?.shortDescription ?? block.block?.description)
+                               : block.block?.description"></div>
                       </div>
                     </template>
 
@@ -367,41 +370,75 @@
                           </button>
                         </div>
                         <div v-if="!isBlockCollapsed(block.block)" class="project-field-block-body">
-                          <template v-for="item in block.items" :key="item.key">
+                          <template v-for="row in block.items" :key="row.key">
+                            <template v-for="item in row.field">
+                            <template v-if="hasSection(item.section) && row.shouldRenderRow">
+                              <template v-for="newSection in item.section?.fetchNewSections()"
+                                        :key="`${newSection.level}-${newSection.displayName ?? 'root'}`">
+
+                                <!--<tr v-if="newSection.level === 1" class="section-row spacer-row">
+                                  <td colspan="100">&nbsp;</td>
+                                </tr>-->
+
+                                <!-- Regular section row -->
+                                <tr v-if="newSection.displayName" class="section-row" :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
+                                  <td colspan="100" style="display: block;">
+                                    <div class="section-title"
+                                         :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
+                                      {{ newSection.displayName }}
+                                    </div>
+                                    <div v-if="newSection.description || newSection.shortDescription" class="section-description">
+                                      {{ (!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY)) ? (newSection.shortDescription ?? newSection.description) : newSection.description }}
+                                    </div>
+                                  </td>
+                                </tr>
+                              </template>
+                            </template>
+                            </template>
+
+
+
+
+                            <div :class="row.field.length > 1 ? 'project-field-grid' : ''">
+                            <template v-for="item in row.field">
                             <ProjectFieldRow
-                                v-if="item.shouldRenderRow"
-                                :field-key="item.field.fieldKey"
-                                :field-value="item.field.fieldValue"
-                                :field-description="item.field.fieldDescription"
-                                :bridgeheads="item.field.bridgeheads"
-                                :action="item.field.action"
-                                :module="item.field.module"
-                                :edit-project-param="item.field.editProjectParam"
-                                :is-editable="item.field.isEditable"
+                                v-if="row.shouldRenderRow"
+                                :field-key="item.fieldKey"
+                                :field-value="item.fieldValue"
+                                :field-description="item.fieldDescription"
+                                :field-short-description="item.fieldShortDescription"
+                                :bridgeheads="item.bridgeheads"
+                                :action="item.action"
+                                :module="item.module"
+                                :edit-project-param="item.editProjectParam"
+                                :is-editable="item.isEditable"
                                 :edit-mode="editMode"
-                                :redirect-url="item.field.redirectUrl"
-                                :transform-for-sending="item.field.transformForSending"
-                                :possible-values="item.field.possibleValues"
-                                :display-possible-value="item.field.displayPossibleValue"
-                                :configurations="item.field.configurations"
-                                :configuration-selection-type="item.field.configurationSelectionType"
-                                :exists-file="item.field.existFile"
-                                :upload-action="item.field.uploadAction"
-                                :download-action="item.field.downloadAction"
-                                :download-module="item.field.downloadModule"
+                                :redirect-url="item.redirectUrl"
+                                :transform-for-sending="item.transformForSending"
+                                :possible-values="item.possibleValues"
+                                :display-possible-value="item.displayPossibleValue"
+                                :configurations="item.configurations"
+                                :configuration-selection-type="item.configurationSelectionType"
+                                :exists-file="item.existFile"
+                                :upload-action="item.uploadAction"
+                                :download-action="item.downloadAction"
+                                :download-module="item.downloadModule"
                                 :todos="extendedExplanations"
                                 :visible-bridgeheads="visibleBridgeheads"
-                                :mandatory="item.field.mandatory"
-                                :type="item.field.type"
-                                :section="item.field.section"
-                                :block="item.field.block"
+                                :mandatory="item.mandatory"
+                                :type="item.type"
+                                :section="item.section"
+                                :block="item.block"
                                 :call-refresh-context="refreshContext"
-                                :extra-params="item.field.extraParams"
-                                :delete-action="item.field.deleteAction"
-                                :delete-module="item.field.deleteModule"
+                                :extra-params="item.extraParams"
+                                :delete-action="item.deleteAction"
+                                :delete-module="item.deleteModule"
                                 :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
                                 :context="context"
+                                :properties="item.properties"
                                 :project-manager-backend-service="projectManagerBackendService"/>
+                            </template>
+                            </div>
                           </template>
                         </div>
                       </div>
@@ -673,7 +710,7 @@ import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
 
 interface ProjectFieldRenderItem {
   key: string;
-  field: ProjectField;
+  field: ProjectField[];
   showCategoryHeader: boolean;
   showSeparator: boolean;
   shouldRenderRow: boolean;
@@ -875,44 +912,74 @@ export default defineComponent({
     hasProjectType,
     getMergedQueryStates,
 
+    sortProjectFieldsByLayout(): ProjectField[][] {
+      const projectFields = this.projectFields as ProjectField[];
+      const result = [];
+      let i = 0;
+
+      while (i < projectFields.length) {
+        const groupIds = this.getFormFieldLayout(projectFields[i].category as string,projectFields[i].label as string)?.rows[0]?.fields
+        if (groupIds) {
+          const groupElements:ProjectField[] = [];
+
+          for (const id of groupIds) {
+            const elements = projectFields.filter((item) => item.label === id)
+            const element = elements.find(item => item.block?.instance === projectFields[i].block?.instance)
+            if (element) {
+              groupElements.push(element);
+            }
+          }
+
+          result.push(groupElements);
+          i += groupIds.length;
+        } else {
+          result.push([projectFields[i]]);
+          i++;
+        }
+      }
+      //console.log('original: ', projectFields)
+      //console.log('test: ', result)
+      return result
+    },
+
     fetchProjectFieldRenderBlocks(): ProjectFieldRenderBlock[] {
       const groups: ProjectFieldRenderBlock[] = [];
-      const projectFields = this.projectFields as ProjectField[];
+      const layoutedProjectFields = this.sortProjectFieldsByLayout()
 
-      projectFields.forEach((field, index) => {
-        const item = this.buildProjectFieldRenderItem(field, index);
+      layoutedProjectFields.forEach((field, index) => {
+        const item = this.buildProjectFieldRenderItem(field, layoutedProjectFields[index-1], index);
         const currentGroup = groups[groups.length - 1];
 
-        if (field.block && currentGroup && this.areSameBlock(currentGroup.block, field.block)) {
+        if (field[0].block && currentGroup && this.areSameBlock(currentGroup.block, field[0].block)) {
           currentGroup.items.push(item);
           return;
         }
 
         groups.push({
-          key: field.block
-              ? `block-${field.block.label}-${field.block.instance ?? 0}-${index}`
+          key: field[0].block
+              ? `block-${field[0].block.label}-${field[0].block.instance ?? 0}-${index}`
               : `field-${index}`,
-          block: field.block,
+          block: field[0].block,
           items: [item]
         });
       });
-
+      //console.log('projectfields: ', this.projectFields)
+      //console.log('groups: ', groups)
       return groups;
     },
 
-    buildProjectFieldRenderItem(field: ProjectField, index: number): ProjectFieldRenderItem {
-      const previousField = (this.projectFields as ProjectField[])[index - 1];
-      const startsCategory = index === 0 || previousField?.category !== field.category;
-      const showStructuralElement = field.visibilityCondition && field.fieldKey !== 'DescriptionUpload';
+    buildProjectFieldRenderItem(field: ProjectField[], previousField: ProjectField[], index: number): ProjectFieldRenderItem {
+      const startsCategory = index === 0 || previousField[0]?.category !== field[0].category;
+      const showStructuralElement = field[0].visibilityCondition && field[0].fieldKey !== 'DescriptionUpload';
 
       return {
         key: `field-${index}`,
         field,
         showCategoryHeader: (!this.existsDraftDialog || (this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY))) && startsCategory && showStructuralElement,
         showSeparator: !startsCategory && showStructuralElement,
-        shouldRenderRow: field.visibilityCondition &&
+        shouldRenderRow: field[0].visibilityCondition &&
             (!this.existsDraftDialog ||
-                field.isEditable && !this.isCurrentStep(FixedDialogStep.SUMMARY) ||
+                field[0].isEditable && !this.isCurrentStep(FixedDialogStep.SUMMARY) ||
                 this.isCurrentStep(FixedDialogStep.SUMMARY))
       };
     },
@@ -1001,7 +1068,7 @@ export default defineComponent({
     },
 
     isProjectFieldBlockVisible(group: ProjectFieldRenderBlock): boolean {
-      return group.items.some((item) => item.field.visibilityCondition);
+      return group.items.some((item) => item.field[0].visibilityCondition);
     },
 
     addBlockInstance(block?: BlockMetadata) {
@@ -1406,6 +1473,7 @@ export default defineComponent({
             title: field.title,
             titleDisplayName: field.titleDisplayName,
             titleDescription: field.titleDescription,
+            titleShortDescription: field.titleShortDescription,
           });
         }
 
@@ -1423,6 +1491,7 @@ export default defineComponent({
         ...selectedForm,
         titleDisplayName: formTitlesByTitle.get(selectedForm.title)?.titleDisplayName ?? selectedForm.titleDisplayName,
         titleDescription: formTitlesByTitle.get(selectedForm.title)?.titleDescription ?? selectedForm.titleDescription,
+        titleShortDescription: formTitlesByTitle.get(selectedForm.title)?.titleShortDescription ?? selectedForm.titleShortDescription,
       }));
 
       if (!this.draftDialogStepper.hasSameFormTitles(this.selectedForms)) {
@@ -1580,6 +1649,7 @@ export default defineComponent({
         editProjectParam: [EditProjectParam.FORM_FIELDS],
         mandatory: formField.mandatory,
         fieldDescription: formField.labelDescription,
+        fieldShortDescription: formField.labelShortDescription,
         type: formField.type,
         isEditable: true,
         editMode: this.editMode,
@@ -1587,7 +1657,11 @@ export default defineComponent({
         displayPossibleValue: formField.allowedValues?.length
             ? (label: string) => {
               const field = formField.allowedValues!.find(v => v.label === label)
-              return {name: field?.displayName ?? label, description: field?.description ?? ""}
+              return {
+                name: field?.displayName ?? label,
+                description: field?.description ?? "",
+                shortDescription: field?.shortDescription
+              }
             }
             : undefined,
         action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
@@ -1605,9 +1679,12 @@ export default defineComponent({
           multiple: formField.multipleBlock,
           minInstances: formField.minBlockInstances,
           displayName: formField.blockDisplayName,
-          description: formField.blockDescription
+          description: formField.blockDescription,
+          shortDescription: formField.blockShortDescription
         } : undefined,
-        section: new Section(formFields, index)
+        section: new Section(formFields, index),
+        label: formField.label,
+        properties: formField.properties ? formField.properties : []
       }));
     },
 
@@ -1618,6 +1695,7 @@ export default defineComponent({
         editProjectParam: [EditProjectParam.FORM_TITLE],
         mandatory: false,
         fieldDescription: formTitle.titleDescription,
+        fieldShortDescription: formTitle.titleShortDescription,
         type: FormDataType.BOOLEAN,
         isEditable: true,
         editMode: this.editMode,
@@ -1649,7 +1727,8 @@ export default defineComponent({
             multipleBlock: formField.multipleBlock,
             minBlockInstances: formField.minBlockInstances,
             blockDisplayName: formField.blockDisplayName,
-            blockDescription: formField.blockDescription
+            blockDescription: formField.blockDescription,
+            blockShortDescription: formField.blockShortDescription
           } : {})
         }];
       };
@@ -2381,6 +2460,11 @@ export default defineComponent({
       }
 
       return parseInt(rank, 10);
+    },
+
+    hasSection(section:Section | undefined): boolean {
+      const groups = section?.fetchGroups();
+      return !!(groups && groups.length > 0);
     }
   }
 
@@ -3062,4 +3146,119 @@ export default defineComponent({
 .project-field-block-header > div {
   font-weight: bold;
 }
+.project-field-grid {
+  display: flex;
+}
+/* Regular section rows */
+.section-row {
+  color: white;
+  display:block;
+  width: 100%;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-row.level-1 {
+  margin-top: 10px;
+  border: none;
+}
+
+.section-row.level-1 td {
+  /*background-image: linear-gradient(to right, #eaf0f4, #aed0e6);*/
+  border-left: none;
+  border-right: none;
+  margin: 0 1rem;
+}
+
+.section-row.empty-row td {
+  background-color: transparent; /* no color */
+  height: 0; /* smaller vertical space */
+  border-left: none;
+  border-right: none;
+  padding: 0; /* remove padding */
+}
+
+/* Section titles */
+.section-title {
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0.5rem 2rem 0 2.5rem;
+  color: #00489c;
+  background: none;
+}
+
+/* Prefix arrows for levels */
+.section-title::before {
+  display: inline-block;
+  margin-right: 0.5rem;
+  opacity: 0.8;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-0::before {
+  content: "";
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-1::before {
+  content: "";
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-2::before {
+  content: "❯";
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-3::before {
+  content: "❯❯";
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-4::before {
+  content: "❯❯❯";
+}
+
+/* Font sizes & weights per level */
+/*noinspection CssUnusedSymbol*/
+.section-title.level-0 {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-1 {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-3 {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-4 {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Section description styling */
+.section-description {
+  font-size: 12px;
+  color: #212529;
+  margin-left: 3rem;
+  margin-bottom: 1rem;
+  border: 0 solid;
+  border-bottom-width: 1px;
+  border-image-slice: 1;
+  border-image-source: linear-gradient(to right, #818078, transparent);
+}
+
 </style>

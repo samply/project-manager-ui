@@ -21,12 +21,13 @@ export interface ProjectField {
     editProjectParam?: EditProjectParam[]
     fieldValue: string[]
     fieldDescription?: string
+    fieldShortDescription?: string
     bridgeheads?: BridgeheadsProjectField
     redirectUrl?: string
     isEditable: boolean
     editMode: boolean
     possibleValues?: string[]
-    displayPossibleValue?: (input: string) => {name: string, description: string}
+    displayPossibleValue?: (input: string) => {name: string, description: string, shortDescription?: string}
     configurations?: Map<string, ProjectAndForms>
     configurationSelectionType?: ProjectConfigurationSelectionType
     uploadAction?: Action
@@ -46,7 +47,9 @@ export interface ProjectField {
     type?: FormDataType
     extraParams?: Map<string, unknown>,
     deleteAction?: Action,
-    deleteModule?: Module
+    deleteModule?: Module,
+    label?: string,
+    properties?: string[]
 }
 
 export interface Block {
@@ -57,6 +60,7 @@ export interface Block {
     minInstances?: number;
     displayName?: string,
     description?: string,
+    shortDescription?: string,
 }
 
 /**
@@ -75,6 +79,7 @@ export interface NewSection {
     level: number;          // 0 = ungrouped
     displayName?: string;   // undefined for level 0
     description?: string;
+    shortDescription?: string;
 }
 
 export class Section {
@@ -152,6 +157,7 @@ export class Section {
                     level: i + 1,
                     displayName: curr.displayName,
                     description: curr.description,
+                    shortDescription: curr.shortDescription,
                 });
             }
         }
@@ -203,4 +209,20 @@ export class ActionFunction {
         return this.fn(input);
     }
 
+}
+export class Utils {
+    static decodeBase64(base64: string): string {
+        const binary = atob(base64);
+
+        const bytes = Uint8Array.from(
+            binary,
+            char => char.charCodeAt(0)
+        );
+
+        return new TextDecoder().decode(bytes);
+    }
+
+    static encodeBase64(str: string): string {
+        return btoa(String.fromCharCode(...new TextEncoder().encode(str)))
+    }
 }

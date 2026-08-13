@@ -12,18 +12,19 @@ export interface DialogStep {
     readonly id: string;
     displayName: string;
     description: string;
+    shortDescription?: string;
 }
 
 export const FixedDialogSteps: readonly DialogStep[] = [
     {
-        id: FixedDialogStep.SERVICES,
-        displayName: "Services",
-        description: "Please provide information on the resources you are requesting",
-    },
-    {
         id: FixedDialogStep.QUERY,
         displayName: "Query",
         description: "Your selection criteria and query logic",
+    },
+    {
+        id: FixedDialogStep.SERVICES,
+        displayName: "Services",
+        description: "Please provide information on the resources you are requesting",
     },
     {
         id: FixedDialogStep.PROJECT,
@@ -51,6 +52,7 @@ function formTitleToDialogStep(formTitle: FormTitle): DialogStep {
         id: formTitle.title,
         displayName: formTitle.titleDisplayName ?? formTitle.title,
         description: formTitle.titleDescription ?? "",
+        shortDescription: formTitle.titleShortDescription,
     };
 }
 
@@ -59,13 +61,17 @@ function mergeDialogStepMetadata(existing: DialogStep, formTitle: FormTitle, isF
         (isFixedStep ? existing.displayName : formTitle.title);
     const nextDescription = formTitle.titleDescription ??
         (isFixedStep ? existing.description : "");
+    const nextShortDescription = formTitle.titleShortDescription ??
+        (isFixedStep ? existing.shortDescription : undefined);
 
     if (
         existing.displayName !== nextDisplayName ||
-        existing.description !== nextDescription
+        existing.description !== nextDescription ||
+        existing.shortDescription !== nextShortDescription
     ) {
         existing.displayName = nextDisplayName;
         existing.description = nextDescription;
+        existing.shortDescription = nextShortDescription;
     }
 }
 

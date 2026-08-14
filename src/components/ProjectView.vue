@@ -478,7 +478,7 @@
                       <i class="bi bi-chevron-left"></i> Back
                     </button>
                     <button v-if="draftDialogStepper.hasNextStep"
-                            class="btn btn-nav-continue" @click="draftDialogStepper.nextStep()">
+                            class="btn btn-nav-continue" @click="nextDraftDialogStep()">
                       Next <i class="bi bi-chevron-right"></i>
                     </button>
                     <ProjectManagerButton v-if="!draftDialogStepper.hasNextStep"
@@ -1198,8 +1198,7 @@ export default defineComponent({
     isApplicableMandatoryFormField(field: FormField): boolean {
       const belongsToExistingBlock = !field.block || field.blockInstance != null;
 
-      return field.type != FormDataType.BOOLEAN &&
-          Boolean(field.mandatory) &&
+      return Boolean(field.mandatory) &&
           belongsToExistingBlock &&
           this.selectedForms.some(form => form.title === field.title);
     },
@@ -1229,9 +1228,8 @@ export default defineComponent({
         });
 
         // 👇 group missing mandatory form fields
-        // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
         this.groupedMissingFields = this.formFields
-            ?.filter(field => this.isApplicableMandatoryFormField(field) && !field.value)
+            ?.filter(field => this.isApplicableMandatoryFormField(field) && (field.value == null || field.value === ''))
             .reduce((acc, field) => {
               const title = field.titleDisplayName ?? field.title;
               const label = field.labelDisplayName ?? field.label;
@@ -1260,6 +1258,11 @@ export default defineComponent({
         return this.groupedMissingFields[step]?.length > 0;
       }
       return false
+    },
+
+    nextDraftDialogStep(): void {
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
+      this.draftDialogStepper.nextStep();
     },
 
     addMissingField(result: string, field: string, value: any): string {

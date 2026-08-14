@@ -11,7 +11,8 @@ import {
   ProjectAndForms,
   ProjectConfigurationSelectionType,
   ProjectManagerBackendService,
-  ProjectManagerContext
+  ProjectManagerContext,
+  NOT_SELECTED_PROJECT_CONFIGURATION
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
@@ -405,12 +406,13 @@ export default class ProjectFieldRow extends Vue {
       } else if (step === 'CUSTOM') {
         this.editedValue = [step];
       } else if (this.editedValue.includes(step)) {
-        if (this.editedValue.length > 1) {
-          this.editedValue = this.editedValue.filter(item => item !== step);
-        }
+        const remainingValues = this.editedValue.filter(item => item !== step);
+        this.editedValue = remainingValues.length > 0
+            ? remainingValues
+            : [NOT_SELECTED_PROJECT_CONFIGURATION];
       } else {
         this.editedValue = [
-          ...this.editedValue.filter(item => item !== 'CUSTOM'),
+          ...this.editedValue.filter(item => item !== 'CUSTOM' && item !== NOT_SELECTED_PROJECT_CONFIGURATION),
           step
         ];
       }

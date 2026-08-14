@@ -659,6 +659,7 @@ import {
   ActionButtonGroup,
   Bridgehead,
   CUSTOM_PROJECT_CONFIGURATION,
+  NOT_SELECTED_PROJECT_CONFIGURATION,
   DataShieldProjectStatus,
   EditProjectParam,
   Explanations,
@@ -1426,7 +1427,8 @@ export default defineComponent({
      */
     async selectOnlyAvailableProjectConfiguration(): Promise<boolean> {
       const availableConfigurations = Array.from(this.projectConfigurations.keys())
-          .filter(configuration => configuration !== CUSTOM_PROJECT_CONFIGURATION);
+          .filter(configuration => configuration !== CUSTOM_PROJECT_CONFIGURATION &&
+              configuration !== NOT_SELECTED_PROJECT_CONFIGURATION);
       const isCurrentConfigurationCustom =
           this.currentProjectConfiguration.length === 1 &&
           this.currentProjectConfiguration[0] === CUSTOM_PROJECT_CONFIGURATION;
@@ -1521,9 +1523,13 @@ export default defineComponent({
 
     applyProjectConfigurationVisibility(): void {
       // Non-admin users do not need a service-selection step when the backend
-      // offers only CUSTOM and one predefined configuration.
+      // offers only CUSTOM and one predefined configuration. NOT_SELECTED is
+      // an internal state and is not counted as a selectable option.
+      const predefinedConfigurations = Array.from(this.projectConfigurations.keys())
+          .filter(configuration => configuration !== CUSTOM_PROJECT_CONFIGURATION &&
+              configuration !== NOT_SELECTED_PROJECT_CONFIGURATION);
       const hasOnlyOnePredefinedConfiguration =
-          this.projectConfigurations.size === 2 &&
+          predefinedConfigurations.length === 1 &&
           this.projectConfigurations.has(CUSTOM_PROJECT_CONFIGURATION);
       if (!this.isProjectManagerAdmin() && hasOnlyOnePredefinedConfiguration) {
         this.draftDialogStepper.filterStep(FixedDialogStep.SERVICES);
@@ -1534,7 +1540,8 @@ export default defineComponent({
       if (this.shouldHideCustomService()) {
         this.projectConfigurations.delete(CUSTOM_PROJECT_CONFIGURATION);
       }
-      this.projectConfigurationLabels = Array.from(this.projectConfigurations.keys());
+      this.projectConfigurationLabels = Array.from(this.projectConfigurations.keys())
+          .filter(configuration => configuration !== NOT_SELECTED_PROJECT_CONFIGURATION);
       this.refreshCurrentProjectConfigurationFields();
     },
 

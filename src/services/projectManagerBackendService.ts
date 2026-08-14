@@ -12,6 +12,7 @@ const siteParam = 'site'
 const actionsPath = '/actions'
 
 export const CUSTOM_PROJECT_CONFIGURATION = 'CUSTOM';
+export const NOT_SELECTED_PROJECT_CONFIGURATION = 'NOT_SELECTED';
 
 export enum ProjectConfigurationSelectionType {
     SINGLE = "SINGLE",

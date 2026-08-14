@@ -152,6 +152,7 @@ export default class ProjectFieldRow extends Vue {
   copiedToClipboard = false;
   editingBridgeheads: Bridgehead[] = [];
   FormDataType = FormDataType
+  showPseudocode: boolean = false
 
   mounted() {
     watch(
@@ -743,26 +744,33 @@ export default class ProjectFieldRow extends Vue {
               <br/>
               <br/>
               <div style="display: flex; justify-content: space-between">
-                <span><strong>Query Pseudocode</strong></span>
-                <div>
-                  <button v-if="isQuery() && fieldValue[0]" class="btn btn-primary query-link-button"
+                <div style="margin-bottom: 10px">
+                  <span class="query-link-button"
+                          data-toggle="tooltip"
+                          data-placement="top" :title='showPseudocode ? "Hide Pseudocode": "Show Pseudocode"'
+                          @click="showPseudocode = !showPseudocode"
+                    ><i :class="showPseudocode ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                    <span style="font-size: small; padding: 2px 0 0 5px">{{showPseudocode ? "Hide Pseudocode": "Show Pseudocode"}}</span>
+                  </span>
+                  <span v-if="isQuery() && fieldValue[0]" class="query-link-button"
                           data-toggle="tooltip"
                           data-placement="top" title="Copy Query to Clipboard"
-                          ><i
-                      :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"
-                      @click="copyToClipboard(editedValue[1])"></i>
-                  </button>
-                  <button v-if="redirectUrl !== null && redirectUrl !== undefined"
-                          class="btn btn-primary query-link-button"
+                          @click="copyToClipboard(editedValue[1])"
+                    ><i :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"></i>
+                    <span style="font-size: small; padding: 2px 0 0 5px">Copy Query to Clipboard</span>
+                  </span>
+                  <span v-if="redirectUrl !== null && redirectUrl !== undefined"
+                          class="query-link-button"
                           data-toggle="tooltip"
                           data-placement="top" title="Return to the DKTK Explorer to edit the request."
                           @click="redirectToURL">
                     <i class="bi bi-arrow-right-circle"></i>
                     <span style="font-size: small; padding: 2px 0 0 5px">Edit in Explorer</span>
-                  </button>
+                  </span>
                 </div>
               </div>
-              <div class="grow-wrap" :data-replicated-value="editedValue[0]">
+              <Transition name="expand">
+              <div v-if="showPseudocode" class="grow-wrap" :data-replicated-value="editedValue[0]">
                 <textarea
                   type="text"
                   v-model="editedValue[0]"
@@ -772,6 +780,7 @@ export default class ProjectFieldRow extends Vue {
                   :disabled="(!isDraft() || isSummaryStep()) && !editMode"
                 ></textarea>
               </div>
+              </Transition>
             </div>
 
             <div v-else-if="isDescriptionUpload()" style="margin:1rem 0 0 1rem">
@@ -1148,7 +1157,9 @@ export default class ProjectFieldRow extends Vue {
 .query-link-button {
   background:none;
   border:none;
-  color:black
+  color:black;
+  cursor: pointer;
+  margin-right: 20px;
 }
 .query-link-button:hover {
   color: #00489c;
@@ -1234,4 +1245,22 @@ lens-search-bar::part(lens-info-button) {
   color: white;
   margin-left: 5px;
 }
+
+  .expand-enter-active,
+  .expand-leave-active {
+    transition: all 0.4s ease;
+    overflow: hidden;
+  }
+
+  .expand-enter-from,
+  .expand-leave-to {
+    max-height: 0;
+    opacity: 0;
+  }
+
+  .expand-enter-to,
+  .expand-leave-from {
+    max-height: 500px;
+    opacity: 1;
+  }
 </style>

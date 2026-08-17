@@ -58,7 +58,7 @@ const vueLifecycles = singleSpaVue({
 export const bootstrap = [
     async () => {
         const config = await getConfig();
-        router = createAppRouter(config.VUE_APP_FRONTEND_URL);
+        router = createAppRouter(config.VUE_APP_FRONTEND_URL, config.PAGE_TITLE ?? 'Data Request Tool');
 
         await handleOidcRedirect(router);
         await tryLoadUserFromStorage();

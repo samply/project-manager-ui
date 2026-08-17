@@ -93,7 +93,7 @@ export default defineComponent({
 
     async fetchFrontendConfig() {
       const config = await getConfig();
-      this.frontendName = config.VUE_APP_FRONTEND_NAME;
+      this.frontendName = config.FRONTEND_NAME ?? this.frontendName;
       this.logoUrl = config.LOGO_URL ?? "";
       this.logoText = config.LOGO_TEXT ?? "";
       this.projectUrl = config.PROJECT_URL ?? "#";

@@ -6,8 +6,9 @@ export interface FrontendConfig {
     VUE_APP_FRONTEND_URL: string;
     VUE_APP_OIDC_URL: string;
     VUE_APP_OIDC_CLIENT_ID: string;
-    VUE_APP_FRONTEND_NAME: string;
     VUE_APP_LOGO_URL?: string;
+    FRONTEND_NAME?: string;
+    PAGE_TITLE?: string;
     LOGO_TEXT?: string;
     LOGO_URL?: string;
     PROJECT_URL?: string;

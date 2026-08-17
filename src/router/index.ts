@@ -31,7 +31,6 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/project-view',
         name: 'ProjectView',
-        meta: {title: 'Samply.Requester'},
         component: ProjectView,
         props: (route) => ({
             projectCode: route.query['project-code'] // Accessing the project-code query parameter
@@ -40,25 +39,23 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/',
         name: 'ProjectDashboard',
-        meta: {title: 'Samply.Requester'},
         component: ProjectDashboard,
     },
     {
         path: '/config',
         name: 'AdminConfig',
-        meta: {title: 'PM-Admin Configuration'},
         component: AdminConfig,
     }
 ];
 
-export function createAppRouter(frontendUrlValue: string) {
+export function createAppRouter(frontendUrlValue: string, pageTitle: string) {
     const router = createRouter({
         history: createWebHistory(getFrontendUrl(frontendUrlValue).pathname),
         routes,
     });
 
-    router.beforeEach((to, _from, next) => {
-        document.title = to.meta.title as string;
+    router.beforeEach((_to, _from, next) => {
+        document.title = pageTitle;
         next();
     });
 

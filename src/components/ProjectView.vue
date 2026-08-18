@@ -49,6 +49,9 @@
                   <tr>
                     <th class="status-table-header" scope="col">Title</th>
                     <th class="status-table-header" scope="col">Request ID</th>
+                    <th v-if="singleBridgeheadFeasibilityResult" class="status-table-header" scope="col">
+                      Feasibility
+                    </th>
                     <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
                         scope="col">
                       {{ BridgeheadOverviewHeader.VOTUM }}
@@ -99,6 +102,9 @@
                     </td>
                     <td>
                       {{ project ? project.code : '' }}
+                    </td>
+                    <td v-if="singleBridgeheadFeasibilityResult">
+                      <FeasibilityTotals :result="singleBridgeheadFeasibilityResult"/>
                     </td>
                     <td v-if="visibleBridgeheads?.length == 1">
                       <div>
@@ -199,6 +205,7 @@
                 <br/>
                 <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
                                     :project-manager-backend-service="projectManagerBackendService"
+                                    :feasibility-results="feasibilityResults"
                                     :call-update-active-bridgehead="updateActiveBridgehead"
                                     :context="context"
                                     :project="project"
@@ -440,6 +447,25 @@
                                 :project-manager-backend-service="projectManagerBackendService"/>
                             </template>
                             </div>
+                            <div
+                                v-if="showProjectFeasibilityResults && isQueriedSitesRow(row)"
+                                class="project-feasibility"
+                            >
+                              <div class="project-feasibility-title">Feasibility</div>
+                              <div class="project-feasibility-sites">
+                                <template v-for="bridgehead in visibleBridgeheads" :key="bridgehead.bridgehead">
+                                  <div
+                                      v-if="hasFeasibilityResult(feasibilityResults.get(bridgehead.bridgehead))"
+                                      class="project-feasibility-site"
+                                  >
+                                    <div class="project-feasibility-site-name">
+                                      {{ bridgehead.humanReadable }}
+                                    </div>
+                                    <FeasibilityTotals :result="feasibilityResults.get(bridgehead.bridgehead)!"/>
+                                  </div>
+                                </template>
+                              </div>
+                            </div>
                           </template>
                         </div>
                       </div>
@@ -672,6 +698,7 @@ import {
   FormTitle,
   getAllProjectTypes,
   getMergedQueryStates,
+  hasFeasibilityResult,
   hasProjectType,
   hasValidOutputs,
   isQueryOnTheWay,
@@ -700,6 +727,7 @@ import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
+import FeasibilityTotals from "@/components/FeasibilityTotals.vue";
 import {DialogStep, DialogStepper, FixedDialogStep, FixedDialogSteps} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
@@ -729,6 +757,17 @@ type BlockMetadata = ProjectField["block"];
 
 export default defineComponent({
   computed: {
+    singleBridgeheadFeasibilityResult(): FeasibilityResult | undefined {
+      if (this.visibleBridgeheads.length !== 1) return undefined;
+
+      const result = this.feasibilityResults.get(this.visibleBridgeheads[0].bridgehead);
+      return hasFeasibilityResult(result) ? result : undefined;
+    },
+    showProjectFeasibilityResults(): boolean {
+      return this.visibleBridgeheads.some(bridgehead =>
+          hasFeasibilityResult(this.feasibilityResults.get(bridgehead.bridgehead))
+      );
+    },
     BridgeheadOverviewHeader() {
       return BridgeheadOverviewHeader
     },
@@ -764,6 +803,7 @@ export default defineComponent({
     }
   },
   components: {
+    FeasibilityTotals,
     DownloadFormTemplatePdfButtons,
     DownloadButton,
     UserAndEmail,
@@ -1185,6 +1225,14 @@ export default defineComponent({
       } catch (error) {
         console.error('Error loading BridgeheadList:', error);
       }
+    },
+
+    isQueriedSitesRow(row: ProjectFieldRenderItem): boolean {
+      return row.shouldRenderRow && row.field.some(field => field.fieldKey === "Queried Sites");
+    },
+
+    hasFeasibilityResult(result: FeasibilityResult | undefined): boolean {
+      return hasFeasibilityResult(result);
     },
 
     initializeFeasibilityResult(bridgehead: Bridgehead) {
@@ -3198,6 +3246,37 @@ export default defineComponent({
 .project-field-grid {
   display: flex;
 }
+
+.project-feasibility {
+  margin: 0 2% 1rem;
+  padding: 1rem 0.75rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.project-feasibility-title {
+  margin-bottom: 0.75rem;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.project-feasibility-sites {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.project-feasibility-site {
+  padding: 0.75rem;
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+  background-color: #f8fafc;
+}
+
+.project-feasibility-site-name {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
 /* Regular section rows */
 .section-row {
   color: white;

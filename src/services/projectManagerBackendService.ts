@@ -393,6 +393,10 @@ export interface FeasibilityResult {
     totals: Record<string, number>;
 }
 
+export function hasFeasibilityResult(result: FeasibilityResult | undefined): result is FeasibilityResult {
+    return result !== undefined && Object.keys(result.totals ?? {}).length > 0;
+}
+
 export interface Results {
     bridgehead: string
     humanReadableBridgehead: string

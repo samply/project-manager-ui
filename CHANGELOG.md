@@ -43,6 +43,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Project configuration
 - Fetch visible bridgeheads and fetch project bridgeheads
 - Fetch feasibility results independently for each visible bridgehead
+- Display feasibility totals in the single-site and multi-site bridgehead overviews
+- Display available feasibility totals after queried sites for draft and review projects
 - Refresh Keycloak token
 - Redirect to explorer Url for editing bridgeheads or query
 - Keycloak logout
@@ -131,6 +133,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - NOT SELECTED configuration
 
 ### Changed
+- Display feasibility results based only on non-empty backend results
 - Rename accept and reject bridgehead state buttons (authorize/revoke)
 - Rename reject project bridgehead user state as a block
 - Copy query to clipboard is always active, as long as it has a value

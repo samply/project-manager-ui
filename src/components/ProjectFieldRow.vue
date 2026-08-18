@@ -11,7 +11,7 @@ import {
   ProjectAndForms,
   ProjectConfigurationSelectionType,
   ProjectManagerBackendService,
-  ProjectManagerContext
+  ProjectManagerContext, ProjectRole
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
@@ -79,6 +79,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     },
     extraParams: {type: Object as PropType<Map<string, string>>, required: false},
     properties: {type: Array as PropType<string[]>, required: false},
+    projectRoles: {type: Array as PropType<ProjectRole[]>, required: false},
   }
 })
 export default class ProjectFieldRow extends Vue {
@@ -128,6 +129,8 @@ export default class ProjectFieldRow extends Vue {
   readonly draftDialogCurrentStep?: DialogStep;
   // noinspection JSUnusedGlobalSymbols
   readonly visibleBridgeheads!: Bridgehead[];
+  // noinspection JSUnusedGlobalSymbols
+  readonly projectRoles?: ProjectRole[];
   // noinspection JSUnusedGlobalSymbols
   readonly section?: Section;
   // noinspection JSUnusedGlobalSymbols
@@ -475,6 +478,9 @@ export default class ProjectFieldRow extends Vue {
   isBlock(): boolean {
     return !!this.block
   }
+  isProjectManagerAdmin(){
+    return this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN);
+  }
   get displayedFieldDescription(): string | undefined {
     return !this.isDraft() || this.isSummaryStep() || this.isBlock()
       ? this.fieldShortDescription ?? this.fieldDescription
@@ -745,28 +751,28 @@ export default class ProjectFieldRow extends Vue {
               <br/>
               <div style="display: flex; justify-content: space-between">
                 <div style="margin-bottom: 10px">
-                  <span class="query-link-button"
+                  <span v-if="isProjectManagerAdmin()" class="query-link-button"
                           data-toggle="tooltip"
                           data-placement="top" :title='showPseudocode ? "Hide Pseudocode": "Show Pseudocode"'
                           @click="showPseudocode = !showPseudocode"
                     ><i :class="showPseudocode ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                     <span style="font-size: small; padding: 2px 0 0 5px">{{showPseudocode ? "Hide Pseudocode": "Show Pseudocode"}}</span>
                   </span>
-                  <span v-if="isQuery() && fieldValue[0]" class="query-link-button"
+                  <span v-if="isQuery() && isProjectManagerAdmin() && fieldValue[0]" class="query-link-button"
                           data-toggle="tooltip"
                           data-placement="top" title="Copy Query to Clipboard"
                           @click="copyToClipboard(editedValue[1])"
                     ><i :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"></i>
                     <span style="font-size: small; padding: 2px 0 0 5px">Copy Query to Clipboard</span>
                   </span>
-                  <span v-if="redirectUrl !== null && redirectUrl !== undefined"
-                          class="query-link-button"
+                  <button v-if="redirectUrl !== null && redirectUrl !== undefined"
+                          class="btn btn-query-link"
                           data-toggle="tooltip"
                           data-placement="top" title="Return to the DKTK Explorer to edit the request."
                           @click="redirectToURL">
                     <i class="bi bi-arrow-right-circle"></i>
-                    <span style="font-size: small; padding: 2px 0 0 5px">Edit in Explorer</span>
-                  </span>
+                    <span>Edit in Explorer</span>
+                  </button>
                 </div>
               </div>
               <Transition name="expand">
@@ -1168,7 +1174,25 @@ export default class ProjectFieldRow extends Vue {
 .query-link-button:hover span {
   text-decoration: underline;
 }
+.btn-query-link {
+  background: #2655a2;
+  border: none;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(38, 85, 162, 0.28);
+}
 
+.btn-query-link:hover {
+  background: #1e4491;
+  box-shadow: 0 2px 6px rgba(38, 85, 162, 0.38);
+  color: white;
+}
 .grow-wrap {
   /* easy way to plop the elements on top of each other and have them both sized based on the tallest one's height */
   display: grid;

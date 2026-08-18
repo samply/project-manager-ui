@@ -436,6 +436,7 @@
                                 :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
                                 :context="context"
                                 :properties="item.properties"
+                                :project-roles="projectRoles"
                                 :project-manager-backend-service="projectManagerBackendService"/>
                             </template>
                             </div>

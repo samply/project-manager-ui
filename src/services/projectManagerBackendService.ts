@@ -120,6 +120,7 @@ export enum Action {
     EXISTS_AUTHENTICATION_SCRIPT_ACTION = "EXISTS_AUTHENTICATION_SCRIPT",
     SET_PROJECT_CONFIGURATION_ACTION = "SET_PROJECT_CONFIGURATION",
     FETCH_VISIBLE_PROJECT_BRIDGEHEADS_ACTION = "FETCH_VISIBLE_PROJECT_BRIDGEHEADS",
+    FETCH_FEASIBILITY_ACTION = "FETCH_FEASIBILITY",
     FETCH_PROJECT_ROLES_ACTION = "FETCH_PROJECT_ROLES",
     FETCH_VOTUM_DESCRIPTION_ACTION = "FETCH_VOTUM_DESCRIPTION",
     FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION_ACTION = "FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION",
@@ -385,6 +386,11 @@ export interface ProjectDocument {
     creatorEmail: string;
     label: string;
     type: string;
+}
+
+export interface FeasibilityResult {
+    stratifiers: Record<string, Record<string, number>>;
+    totals: Record<string, number>;
 }
 
 export interface Results {

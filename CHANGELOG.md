@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Bridgehead for profile with only one bridgehead in the project view
 - Project configuration
 - Fetch visible bridgeheads and fetch project bridgeheads
+- Fetch feasibility results independently for each visible bridgehead
 - Refresh Keycloak token
 - Redirect to explorer Url for editing bridgeheads or query
 - Keycloak logout

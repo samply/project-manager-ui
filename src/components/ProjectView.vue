@@ -664,6 +664,7 @@ import {
   DataShieldProjectStatus,
   EditProjectParam,
   Explanations,
+  FeasibilityResult,
   FormDataType,
   FormField,
   FormFieldLayout,
@@ -782,6 +783,7 @@ export default defineComponent({
       activeBridgeheadIndex: 0,
       bridgeheads: [] as Bridgehead[],
       visibleBridgeheads: [] as Bridgehead[],
+      feasibilityResults: new Map<string, FeasibilityResult>(),
       pollingService: null as PollingService | null,
       context: new ProjectManagerContext(this.projectCode, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
@@ -853,6 +855,20 @@ export default defineComponent({
       );
       this.context = new ProjectManagerContext(this.projectCode, newValue);
       this.creatorAcceptance = (this.project?.creatorState) ? this.project.creatorState : UserProjectState.CREATED;
+    },
+    visibleBridgeheads(newValue: Bridgehead[], oldValue: Bridgehead[]) {
+      const visibleBridgeheadIds = new Set(newValue.map(bridgehead => bridgehead.bridgehead));
+      const previousBridgeheadIds = new Set(oldValue.map(bridgehead => bridgehead.bridgehead));
+
+      previousBridgeheadIds.forEach(bridgehead => {
+        if (!visibleBridgeheadIds.has(bridgehead)) this.feasibilityResults.delete(bridgehead);
+      });
+
+      newValue
+          .filter(bridgehead => !previousBridgeheadIds.has(bridgehead.bridgehead))
+          .forEach(bridgehead => {
+            void this.initializeFeasibilityResult(bridgehead).catch(() => undefined);
+          });
     },
     context(newValue, _oldValue) {
       this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
@@ -1160,7 +1176,7 @@ export default defineComponent({
             Action.FETCH_VISIBLE_PROJECT_BRIDGEHEADS_ACTION,
             this.context,
             new Map()
-        ).then(bridgeheads => {
+        ).then((bridgeheads: Bridgehead[]) => {
           this.visibleBridgeheads = bridgeheads;
           this.activeBridgehead = bridgeheads.find(
               (bridgehead: Bridgehead) => bridgehead.bridgehead === activeBridgeheadId
@@ -1169,6 +1185,22 @@ export default defineComponent({
       } catch (error) {
         console.error('Error loading BridgeheadList:', error);
       }
+    },
+
+    initializeFeasibilityResult(bridgehead: Bridgehead) {
+      const bridgeheadId = bridgehead.bridgehead;
+      const bridgeheadContext = new ProjectManagerContext(this.projectCode, bridgehead);
+      return this.initializeDataInCallback(
+          Module.PROJECT_BRIDGEHEAD_MODULE,
+          Action.FETCH_FEASIBILITY_ACTION,
+          new Map(),
+          async (results: FeasibilityResult) => {
+            if (!this.visibleBridgeheads.some(current => current.bridgehead === bridgeheadId)) return;
+
+            this.feasibilityResults.set(bridgeheadId, results);
+          },
+          bridgeheadContext
+      );
     },
 
     async fetchProject() {
@@ -1629,11 +1661,17 @@ export default defineComponent({
       });
     },
 
-    async initializeDataInCallback(module: Module, action: Action, params: Map<string, unknown>, callback: (result: any) => Promise<any>) {
+    async initializeDataInCallback(
+        module: Module,
+        action: Action,
+        params: Map<string, unknown>,
+        callback: (result: any) => Promise<any>,
+        context?: ProjectManagerContext) {
       try {
         const condition = await this.projectManagerBackendService.isModuleActionActive(module, action);
         if (condition) {
-          const result = await this.projectManagerBackendService.fetchData(module, action, this.context, params);
+          const requestContext = context ?? this.context;
+          const result = await this.projectManagerBackendService.fetchData(module, action, requestContext, params);
           await callback(result); // Await the callback to handle any async operations inside it
         }
       } catch (error: any) {

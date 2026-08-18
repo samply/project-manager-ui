@@ -2031,7 +2031,7 @@ export default defineComponent({
           action: Action.SET_PROJECT_CONFIGURATION_ACTION
         },
         {
-          fieldKey: "Cohort Query",
+          fieldKey: "Selected Cohort",
           fieldDescription: "This query was automatically imported from your Explorer session. Use \"Edit in Explorer\" to adjust your search criteria.",
           fieldValue: [this.project?.humanReadable ? this.project?.humanReadable : "", this.project?.query ? this.project?.query : "", this.project?.queryDetails ? this.project?.queryDetails : ""],
           editProjectParam: [EditProjectParam.HUMAN_READABLE],
@@ -2062,8 +2062,8 @@ export default defineComponent({
           visibilityCondition: this.isProjectManagerAdmin() && (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY))
         },
         {
-          fieldKey: "Cohort Definition",
-          fieldDescription: "Please briefly list the parameters that determine your requested cohort",
+          fieldKey: "Additional filter criteria",
+          fieldDescription: "Anything that helps us process your request, e.g. inclusion or exclusion criteria you could not apply in the Explorer, notes on the resources you request, etc.",
           fieldValue: this.project?.cohortDefinition ? [this.project.cohortDefinition] : [],
           editProjectParam: [EditProjectParam.COHORT_DEFINITION],
           type: FormDataType.LONG_STRING,

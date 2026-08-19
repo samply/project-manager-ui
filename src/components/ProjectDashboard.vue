@@ -221,7 +221,7 @@ export default defineComponent({
     async fetchProjectStates() {
       try {
         await this.projectManagerBackendService.fetchData(
-            Module.PROJECT_BRIDGEHEAD_MODULE,
+            Module.PROJECTS_MODULE,
             Action.FETCH_PROJECT_STATES_ACTION,
             this.context,
             new Map()

@@ -1,6 +1,26 @@
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const applicationName = require('./package.json').name;
+
+// HtmlWebpackPlugin normalizes publicPath './' to '' (empty string), which the
+// standalone-single-spa-webpack-plugin sees as falsy and falls back to '/'. This
+// produces absolute import map URLs like "/js/app.hash.js" that break sub-path
+// deployments where start.sh sets <base href="/requester/"> — SystemJS cannot
+// resolve absolute paths through the <base> tag. This plugin runs after
+// StandaloneSingleSpaPlugin and rewrites those absolute paths to relative ones.
+class RelativeImportMapPlugin {
+    apply(compiler) {
+        compiler.hooks.compilation.tap('RelativeImportMapPlugin', (compilation) => {
+            const HtmlWebpackPlugin = require('html-webpack-plugin');
+            HtmlWebpackPlugin.getHooks(compilation).beforeEmit.tapAsync(
+                'RelativeImportMapPlugin',
+                (data, cb) => {
+                    data.html = data.html.replace(/"\/js\//g, '"./js/');
+                    cb(null, data);
+                }
+            );
+        });
+    }
+}
 
 module.exports = {
     // Bootstrap resources must be relative because runtime config is not
@@ -15,10 +35,14 @@ module.exports = {
             silentRenew: path.resolve(__dirname, 'src/services/silent-renew.ts'),
         },
         output: {
-            filename: 'js/[name].js',  // ensures silentRenew.js is under /js
+            // silentRenew must keep a fixed name because silent-renew.html references it statically.
+            // All other entry chunks (app) get a content hash so browsers fetch fresh bundles on deploy.
+            filename: (pathData) =>
+                pathData.chunk.name === 'silentRenew' ? 'js/[name].js' : 'js/[name].[contenthash:8].js',
             libraryTarget: "system",
         },
         plugins: [
+            new RelativeImportMapPlugin(),
             new (require('webpack')).DefinePlugin({
                 '__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': 'false',
             }),
@@ -43,18 +67,6 @@ module.exports = {
             return args;
         });
 
-        // Keep the standalone Single-SPA import relative as well.
-        if (config.plugins.has("StandaloneSingleSpaPlugin")) {
-            config.plugin("StandaloneSingleSpaPlugin").tap((args) => {
-                args[0].importMap = {
-                    imports: {
-                        [applicationName]: './js/app.js',
-                    },
-                };
-                return args;
-            });
-        }
-
         config.module
             .rule('vue')
             .use('vue-loader')
@@ -66,5 +78,5 @@ module.exports = {
                 }
             }));
     },
-    filenameHashing: false,
+    filenameHashing: true,
 };

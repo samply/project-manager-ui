@@ -150,7 +150,7 @@
 
       </tr>
       <tr v-if="feasibilityResultCount">
-        <td class="header-cell">Feasibility</td>
+        <td class="header-cell">Statistics</td>
         <td class="header-summary-cell">
           {{ feasibilityResultCount }} / {{ bridgeheads.length }} sites
         </td>

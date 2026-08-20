@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-08-20]
+## [1.1.0 - 2026-08-21]
 ### Added
 - Dockerfile
 - Single Spa
@@ -131,6 +131,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Multiple selected configurations
 - Frontend URL
 - NOT SELECTED configuration
+- Unique feasibility statistics table
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

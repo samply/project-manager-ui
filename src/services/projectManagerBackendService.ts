@@ -388,13 +388,16 @@ export interface ProjectDocument {
     type: string;
 }
 
-export interface FeasibilityResult {
-    stratifiers: Record<string, Record<string, number>>;
-    totals: Record<string, number>;
+export interface FeasibilityItem {
+    label: string;
+    value: number;
+    breakdown?: FeasibilityItem[];
 }
 
+export type FeasibilityResult = FeasibilityItem[];
+
 export function hasFeasibilityResult(result: FeasibilityResult | undefined): result is FeasibilityResult {
-    return result !== undefined && Object.keys(result.totals ?? {}).length > 0;
+    return result !== undefined && result.length > 0;
 }
 
 export interface Results {

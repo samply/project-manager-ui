@@ -50,7 +50,7 @@
                     <th class="status-table-header" scope="col">Title</th>
                     <th class="status-table-header" scope="col">Request ID</th>
                     <th v-if="singleBridgeheadFeasibilityResult" class="status-table-header" scope="col">
-                      Feasibility
+                      Statistics
                     </th>
                     <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
                         scope="col">
@@ -448,23 +448,19 @@
                             </template>
                             </div>
                             <div
-                                v-if="showProjectFeasibilityResults && isQueriedSitesRow(row)"
+                                v-if="showProjectFeasibilityResults && isSelectedCohortRow(row)"
                                 class="project-feasibility"
                             >
-                              <div class="project-feasibility-title">Feasibility</div>
-                              <div class="project-feasibility-sites">
-                                <template v-for="bridgehead in visibleBridgeheads" :key="bridgehead.bridgehead">
-                                  <div
-                                      v-if="hasFeasibilityResult(feasibilityResults.get(bridgehead.bridgehead))"
-                                      class="project-feasibility-site"
-                                  >
-                                    <div class="project-feasibility-site-name">
-                                      {{ bridgehead.humanReadable }}
-                                    </div>
-                                    <FeasibilityTotals :result="feasibilityResults.get(bridgehead.bridgehead)!"/>
-                                  </div>
-                                </template>
+                              <div class="project-feasibility-header">
+                                <span class="project-feasibility-title">Statistics</span>
+                                <div class="project-feasibility-description">Per-bridgehead record counts, used to assess the feasibility of this query.</div>
                               </div>
+                              <FeasibilityTable
+                                  :bridgeheads="visibleBridgeheads"
+                                  :results="feasibilityResults"
+                                  :errors="feasibilityErrors"
+                                  :page-size="feasibilityPageSize"
+                              />
                             </div>
                           </template>
                         </div>
@@ -728,6 +724,8 @@ import UploadButton from "@/components/UploadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
 import FeasibilityTotals from "@/components/FeasibilityTotals.vue";
+import FeasibilityTable from "@/components/FeasibilityTable.vue";
+import {getConfig} from "@/services/configLoader";
 import {DialogStep, DialogStepper, FixedDialogStep, FixedDialogSteps} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
@@ -804,6 +802,7 @@ export default defineComponent({
   },
   components: {
     FeasibilityTotals,
+    FeasibilityTable,
     DownloadFormTemplatePdfButtons,
     DownloadButton,
     UserAndEmail,
@@ -824,6 +823,8 @@ export default defineComponent({
       bridgeheads: [] as Bridgehead[],
       visibleBridgeheads: [] as Bridgehead[],
       feasibilityResults: new Map<string, FeasibilityResult>(),
+      feasibilityErrors: new Set<string>(),
+      feasibilityPageSize: 10,
       pollingService: null as PollingService | null,
       context: new ProjectManagerContext(this.projectCode, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
@@ -960,6 +961,7 @@ export default defineComponent({
   mounted() {
     this.initializePollingService();
     this.pollingService?.execute();
+    this.fetchFeasibilityPageSize();
   },
 
   beforeUnmount() {
@@ -1227,8 +1229,8 @@ export default defineComponent({
       }
     },
 
-    isQueriedSitesRow(row: ProjectFieldRenderItem): boolean {
-      return row.shouldRenderRow && row.field.some(field => field.fieldKey === "Queried Sites");
+    isSelectedCohortRow(row: ProjectFieldRenderItem): boolean {
+      return row.shouldRenderRow && row.field.some(field => field.fieldKey === "Selected Cohort");
     },
 
     hasFeasibilityResult(result: FeasibilityResult | undefined): boolean {
@@ -1238,6 +1240,7 @@ export default defineComponent({
     initializeFeasibilityResult(bridgehead: Bridgehead) {
       const bridgeheadId = bridgehead.bridgehead;
       const bridgeheadContext = new ProjectManagerContext(this.projectCode, bridgehead);
+      this.feasibilityErrors.delete(bridgeheadId);
       return this.initializeDataInCallback(
           Module.PROJECT_BRIDGEHEAD_MODULE,
           Action.FETCH_FEASIBILITY_ACTION,
@@ -1248,7 +1251,17 @@ export default defineComponent({
             this.feasibilityResults.set(bridgeheadId, results);
           },
           bridgeheadContext
-      );
+      ).catch(error => {
+        if (this.visibleBridgeheads.some(current => current.bridgehead === bridgeheadId)) {
+          this.feasibilityErrors.add(bridgeheadId);
+        }
+        throw error;
+      });
+    },
+
+    async fetchFeasibilityPageSize() {
+      const config = await getConfig();
+      this.feasibilityPageSize = Number(config.FEASIBILITY_PAGE_SIZE ?? 10);
     },
 
     async fetchProject() {
@@ -3248,33 +3261,23 @@ export default defineComponent({
 }
 
 .project-feasibility {
-  margin: 0 2% 1rem;
-  padding: 1rem 0.75rem;
-  border-top: 1px solid #e2e8f0;
+  margin: 0 0 1rem;
+  padding: 1rem 4rem;
+}
+
+.project-feasibility-header {
+  margin-bottom: 0.75rem;
 }
 
 .project-feasibility-title {
-  margin-bottom: 0.75rem;
-  font-size: 16px;
-  font-weight: 600;
+  font-weight: bold;
+  color: #00489cf2;
 }
 
-.project-feasibility-sites {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.75rem;
-}
-
-.project-feasibility-site {
-  padding: 0.75rem;
-  border: 1px solid #dddddd;
-  border-radius: 4px;
-  background-color: #f8fafc;
-}
-
-.project-feasibility-site-name {
-  margin-bottom: 0.5rem;
-  font-weight: 600;
+.project-feasibility-description {
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: normal;
 }
 
 /* Regular section rows */

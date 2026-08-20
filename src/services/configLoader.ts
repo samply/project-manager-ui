@@ -14,6 +14,7 @@ export interface FrontendConfig {
     PROJECT_URL?: string;
     LOGO_HTML?: string;
     LOGO_CSS?: string;
+    FEASIBILITY_PAGE_SIZE?: string;
     [key: string]: unknown;
 }
 

@@ -62,6 +62,7 @@
           <div v-if="header === Header.SITES" style="font-weight: bold; text-align: center"
                @click="selectBridgehead(bridgehead)">
             {{ bridgehead.humanReadable }}
+            <BridgeheadContacts :contacts="bridgehead.contacts ?? []" />
           </div>
           <div v-else-if="header === Header.VOTUM">
             <div v-if="existsVotums.length > 0 && existsVotums[scrollIndex + bridgeheadIndex]"
@@ -196,6 +197,7 @@ import {
   UserProjectState
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
+import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
 import '@/assets/styles/state-circle.css'
 import {PropType, watch} from "vue";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
@@ -208,7 +210,7 @@ import FeasibilityTotals from "@/components/FeasibilityTotals.vue";
       return BridgeheadOverview
     }
   },
-  components: {DownloadButton, FeasibilityTotals},
+  components: {DownloadButton, FeasibilityTotals, BridgeheadContacts},
   props: {
     context: {
       type: Object as PropType<ProjectManagerContext>,

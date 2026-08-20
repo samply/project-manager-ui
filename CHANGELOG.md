@@ -132,6 +132,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Frontend URL
 - NOT SELECTED configuration
 - Unique feasibility statistics table
+- Bridgehead contact data
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

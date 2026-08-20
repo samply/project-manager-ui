@@ -41,6 +41,7 @@
                        style="padding: 3px 20px;height: fit-content">
                     <div class="card-body" style="padding: 0 0;">
                       <span style="padding: 0 0;">{{ context.bridgehead?.humanReadable }}</span>
+                      <BridgeheadContacts :contacts="context.bridgehead?.contacts ?? []" />
                     </div>
                   </div>
                 </div>
@@ -723,6 +724,7 @@ import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
+import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
 import FeasibilityTotals from "@/components/FeasibilityTotals.vue";
 import FeasibilityTable from "@/components/FeasibilityTable.vue";
 import {getConfig} from "@/services/configLoader";
@@ -808,6 +810,7 @@ export default defineComponent({
     UserAndEmail,
     ResultsBox,
     BridgeheadOverview,
+    BridgeheadContacts,
     DocumentsTable,
     UploadButton,
     UserInput,

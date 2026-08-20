@@ -303,11 +303,18 @@ export enum ProjectBridgeheadState {
 export interface Bridgehead {
     bridgehead: string;
     humanReadable?: string;
+    contacts?: BridgeheadContact[];
     projectCode?: string;
     modifiedAt?: string;
     creatorState?: UserProjectState;
     state?: ProjectBridgeheadState;
     executions?: BridgeheadExecution[];
+}
+
+export interface BridgeheadContact {
+    name?: string;
+    description?: string;
+    emailAddress?: string;
 }
 
 export enum QueryState {

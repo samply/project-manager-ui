@@ -1532,9 +1532,9 @@ export default defineComponent({
     /**
      * Assigns the sole predefined configuration to a newly created project.
      *
-     * A new project initially matches CUSTOM because no configuration has been
-     * assigned yet. For its creator, CUSTOM can be replaced automatically when
-     * custom selection was not requested and exactly one predefined option exists.
+     * NOT_SELECTED means that no configuration decision has been made yet, so it
+     * may be replaced automatically when exactly one predefined option exists.
+     * CUSTOM is an explicit user choice and must never be replaced automatically.
      *
      * @returns true when the configuration was changed and a context refresh started
      */
@@ -1542,17 +1542,15 @@ export default defineComponent({
       const availableConfigurations = Array.from(this.projectConfigurations.keys())
           .filter(configuration => configuration !== CUSTOM_PROJECT_CONFIGURATION &&
               configuration !== NOT_SELECTED_PROJECT_CONFIGURATION);
-      const isCurrentConfigurationCustom =
+      // Only the transient NOT_SELECTED state is eligible for automatic selection.
+      // In particular, never treat an explicitly selected CUSTOM configuration as unassigned.
+      const isCurrentConfigurationNotSelected =
           this.currentProjectConfiguration.length === 1 &&
-          this.currentProjectConfiguration[0] === CUSTOM_PROJECT_CONFIGURATION;
+          this.currentProjectConfiguration[0] === NOT_SELECTED_PROJECT_CONFIGURATION;
       const isCurrentUserCreator = AuthService.getEmail() === this.project?.creatorEmail;
-      const isCustomConfigSelected = this.project?.isCustomConfigSelected;
-      const isCustomConfigurationNotSelected =
-          isCustomConfigSelected === undefined || !isCustomConfigSelected;
 
-      if (!isCurrentConfigurationCustom ||
+      if (!isCurrentConfigurationNotSelected ||
           !isCurrentUserCreator ||
-          !isCustomConfigurationNotSelected ||
           availableConfigurations.length !== 1) {
         return false;
       }

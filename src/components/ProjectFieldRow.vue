@@ -13,13 +13,15 @@ import {
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,
-  NOT_SELECTED_PROJECT_CONFIGURATION
+  NOT_SELECTED_PROJECT_CONFIGURATION,
+  FORM_FIELD_PROPERTY_RADIO_BUTTON,
+  FORM_FIELD_PROPERTY_CHECK_BOX
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import type {DialogStep} from "@/services/fixedDialogStep";
 import {FixedDialogStep} from "@/services/fixedDialogStep";
-import type {Block, BridgeheadsProjectField} from "@/services/utils";
+import type {Block, BridgeheadsProjectField, ProjectFieldInstance} from "@/services/utils";
 import {ActionFunction, Section, Utils} from "@/services/utils";
 import {handleError, PropType, watch} from "vue";
 import "@samply/lens";
@@ -82,6 +84,19 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     extraParams: {type: Object as PropType<Map<string, string>>, required: false},
     properties: {type: Array as PropType<string[]>, required: false},
     projectRoles: {type: Array as PropType<ProjectRole[]>, required: false},
+    // "multiple" rendering: multiple/instances/buildInstanceTransform come
+    // from the parent (see ProjectField in utils.ts); headless is set only
+    // by THIS component itself, when it recurses into itself to render one
+    // instance's value editor - a headless instance skips its own label/
+    // description chrome (the parent already rendered that once) and shows
+    // just the value editor + a per-instance remove button.
+    multiple: {type: Boolean, required: false, default: false},
+    instances: {type: Array as PropType<ProjectFieldInstance[]>, required: false},
+    buildInstanceTransform: {
+      type: Function as unknown as () => (fieldInstance: number) => (input: string) => unknown,
+      required: false
+    },
+    headless: {type: Boolean, required: false, default: false},
   }
 })
 export default class ProjectFieldRow extends Vue {
@@ -143,6 +158,12 @@ export default class ProjectFieldRow extends Vue {
   readonly type!: FormDataType;
   readonly transformForSending!: (input: string) => string;
   readonly extraParams?: Map<string, string>;
+  // noinspection JSUnusedGlobalSymbols
+  readonly multiple!: boolean;
+  readonly instances?: ProjectFieldInstance[];
+  readonly buildInstanceTransform?: (fieldInstance: number) => (input: string) => unknown;
+  // noinspection JSUnusedGlobalSymbols
+  readonly headless!: boolean;
 
   editing = false;
   editedValue: string[] = [];
@@ -157,6 +178,11 @@ export default class ProjectFieldRow extends Vue {
   copiedToClipboard = false;
   editingBridgeheads: Bridgehead[] = [];
   FormDataType = FormDataType
+  // Unique per component instance, so radio inputs from two different
+  // ENUM+RADIO_BUTTON fields (or two different instances of the same
+  // multiple field) never end up sharing a browser-level radio group just
+  // because they'd otherwise share the same name (e.g. the same fieldKey).
+  radioGroupName = Math.random().toString(36).slice(2);
   showPseudocode: boolean = false
 
   mounted() {
@@ -252,6 +278,84 @@ export default class ProjectFieldRow extends Vue {
       this.projectManagerBackendService
           .fetchData(this.deleteModule, this.deleteAction, this.context, params)
           .then(() => this.callRefreshContext());
+    }
+  }
+
+  // Removes this one value instance (the headless "-" button). Not
+  // deleteField above: deleteField sends an array-shaped payload under the
+  // plural editProjectParam entries - built for the save endpoint's
+  // contract - but removeProjectFormFieldValue expects a single FormField
+  // under the singular EditProjectParam.FORM_FIELD, exactly like
+  // ProjectView.vue's own deleteBlockInstance. transformForSending(...)
+  // always returns an array (also built for the save contract), so it's
+  // unwrapped to its one element here.
+  deleteInstance() {
+    if (!this.deleteAction || !this.deleteModule) {
+      return;
+    }
+    const formField = (this.transformForSending(this.editedValue[0]) as unknown as any[])[0];
+    const params = new Map<string, unknown>();
+    params.set(EditProjectParam.FORM_FIELD, JSON.stringify(formField));
+
+    this.projectManagerBackendService
+        .fetchData(this.deleteModule, this.deleteAction, this.context, params)
+        .then(() => this.callRefreshContext());
+  }
+
+  // Adds a new value instance to a multiple field: next fieldInstance =
+  // max(existing) + 1 - mirrors how ProjectView.vue's addFormFieldBlockInstance
+  // adds a new block instance (clone with the next instance number, POST),
+  // just one level deeper. With no value (the "+" button case), it's blank,
+  // same as a block's blank new instance; the CHECK_BOX case calls this with
+  // the checked value instead, so the instance is created pre-filled.
+  addInstance(value?: string) {
+    if (!this.instances || !this.buildInstanceTransform || !this.editProjectParam || this.editProjectParam.length === 0) {
+      return;
+    }
+    const nextFieldInstance = Math.max(0, ...this.instances.map(instance => instance.fieldInstance)) + 1;
+    const transform = this.buildInstanceTransform(nextFieldInstance);
+    const params = new Map<string, unknown>();
+    // undefined (not ""), so transform drops the "value" key entirely when
+    // there's no initial value, same as a block's blank new instance.
+    params.set(this.editProjectParam[0], transform(value ?? (undefined as unknown as string)));
+
+    this.projectManagerBackendService
+        .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_FORM_FIELDS_ACTION, this.context, params)
+        .then(() => this.callRefreshContext());
+  }
+
+  // The CHECK_BOX counterpart to addInstance: removes whichever instance
+  // currently holds this value (used when a checkbox is unchecked). Unlike
+  // deleteField, this isn't tied to one headless child's own editedValue -
+  // the multiple wrapper itself doesn't have deleteAction/deleteModule set,
+  // so it calls DELETE_FORM_FIELD_VALUE_ACTION directly here instead.
+  //
+  // The delete/remove endpoints (removeProjectFormFieldValue and, mirroring
+  // it, removeProjectFormFieldBlock) expect a SINGLE FormField under the
+  // singular EditProjectParam.FORM_FIELD - unlike the save endpoint, which
+  // takes a FormField[] under the plural FORM_FIELDS. transform(...) always
+  // returns an array (built for the save contract), so it's unwrapped to
+  // its one element here, matching how ProjectView.vue's own
+  // deleteBlockInstance builds its payload for the same reason.
+  removeInstanceByValue(value: string) {
+    const instance = this.instances?.find(candidate => candidate.value === value);
+    if (!instance || !this.buildInstanceTransform) {
+      return;
+    }
+    const formField = (this.buildInstanceTransform(instance.fieldInstance)(value) as any[])[0];
+    const params = new Map<string, unknown>();
+    params.set(EditProjectParam.FORM_FIELD, JSON.stringify(formField));
+
+    this.projectManagerBackendService
+        .fetchData(Module.PROJECT_EDITION_MODULE, Action.DELETE_FORM_FIELD_VALUE_ACTION, this.context, params)
+        .then(() => this.callRefreshContext());
+  }
+
+  toggleCheckboxValue(value: string, checked: boolean) {
+    if (checked) {
+      this.addInstance(value);
+    } else {
+      this.removeInstanceByValue(value);
     }
   }
 
@@ -469,6 +573,22 @@ export default class ProjectFieldRow extends Vue {
     return (this.possibleValues?.length ?? 0) > 0;
   }
 
+  // RADIO_BUTTON is a display-mode override for a single-choice ENUM
+  // (dropdown -> radio group) - independent of multiple, since picking
+  // exactly one value is the same semantics either way.
+  isRadioButton(): boolean {
+    return this.properties?.includes(FORM_FIELD_PROPERTY_RADIO_BUTTON) ?? false;
+  }
+
+  // CHECK_BOX only really makes sense paired with multiple: true (see the
+  // "multiple" template branch, which renders it as one checkbox list
+  // directly manipulating the instance set, instead of repeated single
+  // widgets). Ignored otherwise, same as this file already ignores
+  // properties it doesn't recognize.
+  isCheckBox(): boolean {
+    return (this.properties?.includes(FORM_FIELD_PROPERTY_CHECK_BOX) ?? false) && this.multiple;
+  }
+
   isComments(): boolean {
     return this.includesEditProjectParam(EditProjectParam.FORM_FIELDS) && this.fieldKey === 'Comments';
   }
@@ -627,7 +747,129 @@ export default class ProjectFieldRow extends Vue {
 </script>
 
 <template>
-  <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep && draftDialogCurrentStep.id === dialogStep.SERVICES"
+  <!--
+    Headless: this component recursing into itself to render ONE value
+    instance of a multiple field (see the "multiple" branch below). The
+    parent already rendered the label/description chrome once, so this just
+    shows the value editor for the data types multiple fields actually use,
+    plus a "remove this value" button when deleteAction/deleteModule are set.
+  -->
+  <div v-if="headless" style="display:flex; align-items:center; gap:0.5rem; width:100%">
+    <div style="flex:1; min-width:0;">
+      <div v-if="isSelection() && isRadioButton() && ((isDraft() && !isSummaryStep()) || editMode)" style="display:flex; flex-direction:column; gap:0.25rem;">
+        <div v-for="value in possibleValues" :key="value" class="form-check" style="display:flex; align-items:center; gap:0.5rem; margin:0; padding:0;">
+          <input class="form-check-input" type="radio" style="margin:0;"
+                 :name="radioGroupName" :id="`${radioGroupName}-${value}`" :value="value"
+                 v-model="editedValue[0]" @change="onInputChange">
+          <label class="form-check-label" :for="`${radioGroupName}-${value}`">{{ displayPossibleValue(value).name }}</label>
+        </div>
+      </div>
+      <select v-else-if="isSelection() && ((isDraft() && !isSummaryStep()) || editMode)"
+              v-model="editedValue[0]" @change="onInputChange" class="form-select">
+        <option v-for="value in possibleValues" :key="value" :value="value">
+          {{ displayPossibleValue(value).name }}
+        </option>
+      </select>
+      <div v-else-if="isSelection()" style="padding: 0 0.75rem">
+        <div>{{ displayPossibleValue(editedValue[0]).name }}</div>
+        <div style="font-size: 12px">{{ displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description }}</div>
+      </div>
+      <div v-else-if="isInputType(FormDataType.LONG_STRING)" class="grow-wrap" style="width:100%" :data-replicated-value="editedValue[0]">
+        <textarea
+            v-model="editedValue[0]"
+            @change="onInputChange"
+            class="form-control auto-textarea"
+            :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
+            :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+        ></textarea>
+      </div>
+      <input
+          v-else
+          :type="getInputType()"
+          v-model="editedValue[0]"
+          @change="onInputChange"
+          class="form-control"
+          :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
+          :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+          style="width:100%"
+      >
+    </div>
+    <button v-if="deleteAction && deleteModule && ((isDraft() && !isSummaryStep()) || editMode)"
+            type="button" class="btn btn-sm dktk-darkblue" style="padding: 0 6px; flex-shrink:0;" title="Remove this value"
+            @click="deleteInstance">
+      <i class="bi bi-dash" style="color: white; font-size: 18px"></i>
+    </button>
+  </div>
+
+  <!--
+    Multiple: renders the label/description chrome once, then one headless
+    recursive instance per value (see above) plus a button to add another.
+  -->
+  <div v-else-if="multiple" :class="getCssProperty()">
+    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }">
+      <div style="display:flex" :style="{width: getWidth()}">
+        <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }">
+          <div style="display: flex;">
+            <span class="input-field-title">{{ fieldKey }}<span v-if="mandatory" :style="!instances?.some(instance => instance.value) ? 'color: red' : ''">&nbsp*</span></span>
+          </div>
+          <div v-if="displayedFieldDescription" class="field-description" v-html="displayedFieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
+        </div>
+      </div>
+      <div :class="[getEditFieldCssClass(), { 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]"
+           style="flex-direction: column; align-items: stretch; gap: 0.25rem;">
+        <!--
+          CHECK_BOX: one checkbox list directly manipulating the instance
+          set (checking/unchecking adds/removes a value) - fundamentally a
+          different widget from "repeated single-value rows", not just a
+          different rendering of the same one, so it's handled here rather
+          than inside the headless recursion below.
+        -->
+        <template v-if="isSelection() && isCheckBox()">
+          <div v-for="value in possibleValues" :key="value" class="form-check" style="display:flex; align-items:center; gap:0.5rem; margin:0; padding:0;">
+            <input class="form-check-input" type="checkbox" style="margin:0;"
+                   :id="`${radioGroupName}-${value}`"
+                   :checked="instances?.some(instance => instance.value === value)"
+                   :disabled="!((isDraft() && !isSummaryStep()) || editMode)"
+                   @change="toggleCheckboxValue(value, ($event.target as HTMLInputElement).checked)">
+            <label class="form-check-label" :for="`${radioGroupName}-${value}`">{{ displayPossibleValue(value).name }}</label>
+          </div>
+        </template>
+        <template v-else>
+          <div v-for="instance in instances" :key="instance.fieldInstance">
+            <ProjectFieldRow
+                headless
+                :field-key="fieldKey"
+                :field-value="[instance.value ?? '']"
+                :project-manager-backend-service="projectManagerBackendService"
+                :context="context"
+                :is-editable="isEditable"
+                :edit-mode="editMode"
+                :call-refresh-context="callRefreshContext"
+                :action="action"
+                :module="module"
+                :delete-action="Action.DELETE_FORM_FIELD_VALUE_ACTION"
+                :delete-module="Module.PROJECT_EDITION_MODULE"
+                :mandatory="false"
+                :type="type"
+                :possible-values="possibleValues"
+                :display-possible-value="displayPossibleValue"
+                :visible-bridgeheads="visibleBridgeheads"
+                :edit-project-param="editProjectParam"
+                :draft-dialog-current-step="draftDialogCurrentStep"
+                :properties="properties"
+                :transform-for-sending="buildInstanceTransform!(instance.fieldInstance)"
+            />
+          </div>
+          <button v-if="(isDraft() && !isSummaryStep()) || editMode"
+                  type="button" class="btn btn-secondary" style="align-self: flex-start;" @click="addInstance()">
+            <i class="bi bi-plus"></i>
+          </button>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <tr v-else-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep && draftDialogCurrentStep.id === dialogStep.SERVICES"
       class="config-box-row">
     <td colspan="3" style="display: block;width:100%">
       <div>
@@ -847,6 +1089,20 @@ export default class ProjectFieldRow extends Vue {
                 <button class="btn btn-primary" @click="addEnvVariable"><i style="font-size: 18px"
                                                                            class="bi bi-check"></i>
                 </button>
+              </div>
+            </div>
+            <div v-else-if="isSelection() && isRadioButton() && !isConfiguration()" style="width: 100%;">
+              <div v-if="(isDraft() && !isSummaryStep()) || editMode" style="display:flex; flex-direction:column; gap:0.25rem;">
+                <div v-for="value in possibleValues" :key="value" class="form-check" style="display:flex; align-items:center; gap:0.5rem; margin:0; padding:0;">
+                  <input class="form-check-input" type="radio" style="margin:0;"
+                         :name="radioGroupName" :id="`${radioGroupName}-${value}`" :value="value"
+                         v-model="editedValue[0]" @change="onInputChange">
+                  <label class="form-check-label" :for="`${radioGroupName}-${value}`">{{ displayPossibleValue(value).name }}</label>
+                </div>
+              </div>
+              <div v-if="(!isDraft() || isSummaryStep()) && !editMode" style="padding: 0 0.75rem">
+                <div>{{displayPossibleValue(editedValue[0]).name}}</div>
+                <div style="font-size: 12px">{{displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description}}</div>
               </div>
             </div>
             <div v-else-if="isSelection() && !isConfiguration()" style="width: 100%;">

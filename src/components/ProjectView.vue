@@ -445,6 +445,9 @@
                                 :context="context"
                                 :properties="item.properties"
                                 :project-roles="projectRoles"
+                                :multiple="item.multiple"
+                                :instances="item.instances"
+                                :build-instance-transform="item.buildInstanceTransform"
                                 :project-manager-backend-service="projectManagerBackendService"/>
                             </template>
                             </div>
@@ -1755,50 +1758,97 @@ export default defineComponent({
     fetchIfCanShowBridgeheadAdminButtons(): boolean {
       return (this.project && (this.project.state == ProjectState.DEVELOP || this.project.state == ProjectState.PILOT)) ? this.existInvitedUsers : true;
     },
+    // A multiple field (formField.multiple, ignored for BOOLEAN) arrives here
+    // as several FormFields sharing the same title+label+blockInstance, one
+    // per fieldInstance - mirroring how blocks arrive as several FormFields
+    // sharing the same block+blockInstance. They're grouped back into a
+    // single ProjectField per (title, label, blockInstance) here, same as a
+    // block's fields stay one ProjectField each: everything downstream
+    // (sortProjectFieldsByLayout, fetchProjectFieldRenderBlocks) keeps
+    // assuming exactly one ProjectField per (label, blockInstance), and
+    // ProjectFieldRow.vue is responsible for rendering/editing the several
+    // instances via its own "instances" prop instead.
     buildDynamicProjectFieldsFromFormFields(formFields: FormField[]): ProjectField[] {
-      return formFields.map((formField, index) => ({
-        fieldKey: formField.labelDisplayName ?? formField.label,
-        fieldValue: formField.value != null ? [formField.value] : [],
-        editProjectParam: [EditProjectParam.FORM_FIELDS],
-        mandatory: formField.mandatory,
-        fieldDescription: formField.labelDescription,
-        fieldShortDescription: formField.labelShortDescription,
-        type: formField.type,
-        isEditable: true,
-        editMode: this.editMode,
-        possibleValues: formField.allowedValues?.map(value => value.label),
-        displayPossibleValue: formField.allowedValues?.length
-            ? (label: string) => {
-              const field = formField.allowedValues!.find(v => v.label === label)
-              return {
-                name: field?.displayName ?? label,
-                description: field?.description ?? "",
-                shortDescription: field?.shortDescription
+      interface FieldGroup {
+        representativeIndex: number;
+        instances: FormField[];
+      }
+
+      const groups: FieldGroup[] = [];
+      const groupIndexByKey = new Map<string, number>();
+
+      formFields.forEach((formField, index) => {
+        const isMultiple = formField.multiple && formField.type !== FormDataType.BOOLEAN;
+        if (isMultiple) {
+          const key = `${formField.title}#${formField.label}#${formField.blockInstance ?? ''}`;
+          const existingGroupIndex = groupIndexByKey.get(key);
+          if (existingGroupIndex !== undefined) {
+            groups[existingGroupIndex].instances.push(formField);
+            return;
+          }
+          groupIndexByKey.set(key, groups.length);
+        }
+        groups.push({representativeIndex: index, instances: [formField]});
+      });
+
+      return groups.map(({representativeIndex, instances}) => {
+        const formField = formFields[representativeIndex];
+        const isMultiple = formField.multiple && formField.type !== FormDataType.BOOLEAN;
+
+        return {
+          fieldKey: formField.labelDisplayName ?? formField.label,
+          fieldValue: formField.value != null ? [formField.value] : [],
+          editProjectParam: [EditProjectParam.FORM_FIELDS],
+          mandatory: formField.mandatory,
+          fieldDescription: formField.labelDescription,
+          fieldShortDescription: formField.labelShortDescription,
+          type: formField.type,
+          isEditable: true,
+          editMode: this.editMode,
+          possibleValues: formField.allowedValues?.map(value => value.label),
+          displayPossibleValue: formField.allowedValues?.length
+              ? (label: string) => {
+                const field = formField.allowedValues!.find(v => v.label === label)
+                return {
+                  name: field?.displayName ?? label,
+                  description: field?.description ?? "",
+                  shortDescription: field?.shortDescription
+                }
               }
-            }
-            : undefined,
-        action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
-        transformForSending: this.buildTransformForSendingFormField(formField),
-        category: formField.title,
-        visibilityCondition:
-            this.selectedForms.some(f => f.title === formField.title) && // only if the field is already selected
-            (!this.existsDraftDialog ||
-                this.draftDialogStepper.currentStep?.id === formField.title ||
-                this.isCurrentStep(FixedDialogStep.SUMMARY)),
-        block: formField.block ? {
-          formTitle: formField.title,
-          label: formField.block,
-          instance: formField.blockInstance,
-          multiple: formField.multipleBlock,
-          minInstances: formField.minBlockInstances,
-          displayName: formField.blockDisplayName,
-          description: formField.blockDescription,
-          shortDescription: formField.blockShortDescription
-        } : undefined,
-        section: new Section(formFields, index),
-        label: formField.label,
-        properties: formField.properties ? formField.properties : []
-      }));
+              : undefined,
+          action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
+          transformForSending: this.buildTransformForSendingFormField(formField),
+          category: formField.title,
+          visibilityCondition:
+              this.selectedForms.some(f => f.title === formField.title) && // only if the field is already selected
+              (!this.existsDraftDialog ||
+                  this.draftDialogStepper.currentStep?.id === formField.title ||
+                  this.isCurrentStep(FixedDialogStep.SUMMARY)),
+          block: formField.block ? {
+            formTitle: formField.title,
+            label: formField.block,
+            instance: formField.blockInstance,
+            multiple: formField.multipleBlock,
+            minInstances: formField.minBlockInstances,
+            displayName: formField.blockDisplayName,
+            description: formField.blockDescription,
+            shortDescription: formField.blockShortDescription
+          } : undefined,
+          section: new Section(formFields, representativeIndex),
+          label: formField.label,
+          properties: formField.properties ? formField.properties : [],
+          multiple: isMultiple,
+          instances: isMultiple
+              ? instances
+                  .slice()
+                  .sort((a, b) => (a.fieldInstance ?? 0) - (b.fieldInstance ?? 0))
+                  .map(instance => ({fieldInstance: instance.fieldInstance ?? 1, value: instance.value}))
+              : undefined,
+          buildInstanceTransform: isMultiple
+              ? (fieldInstance: number) => this.buildTransformForSendingFormField({...formField, fieldInstance})
+              : undefined
+        };
+      });
     },
 
     buildDynamicProjectFieldsFromFormTitles(formTitles: FormTitle[]): ProjectField[] {
@@ -1834,6 +1884,10 @@ export default defineComponent({
           title: formField.title,
           label: formField.label,
           value: input,
+          ...(formField.multiple ? {
+            multiple: true,
+            fieldInstance: formField.fieldInstance
+          } : {}),
           ...(formField.block ? {
             block: formField.block,
             blockInstance: formField.blockInstance,

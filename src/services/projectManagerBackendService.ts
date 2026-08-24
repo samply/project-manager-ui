@@ -14,6 +14,16 @@ const actionsPath = '/actions'
 export const CUSTOM_PROJECT_CONFIGURATION = 'CUSTOM';
 export const NOT_SELECTED_PROJECT_CONFIGURATION = 'NOT_SELECTED';
 
+// FormField.properties markers that switch an ENUM field's rendering away
+// from the default dropdown: FORM_FIELD_PROPERTY_RADIO_BUTTON renders
+// possibleValues as a radio group (a single-choice display-mode override,
+// independent of "multiple" - picking exactly one value either way);
+// FORM_FIELD_PROPERTY_CHECK_BOX renders them as a checkbox list that
+// directly manipulates a multiple field's set of values (only meaningful
+// paired with multiple: true - ignored otherwise).
+export const FORM_FIELD_PROPERTY_RADIO_BUTTON = 'RADIO_BUTTON';
+export const FORM_FIELD_PROPERTY_CHECK_BOX = 'CHECK_BOX';
+
 export enum ProjectConfigurationSelectionType {
     SINGLE = "SINGLE",
     MULTIPLE = "MULTIPLE"
@@ -166,7 +176,8 @@ export enum Action {
     DOWNLOAD_FINAL_REPORT_ACTION = "DOWNLOAD_FINAL_REPORT",
     FETCH_FINAL_REPORTS_ACTION = "FETCH_FINAL_REPORTS",
     DELETE_PROJECT_ACTION = "DELETE_PROJECT",
-    DELETE_FORM_FIELD_BLOCK_ACTION = "DELETE_FORM_FIELD_BLOCK"
+    DELETE_FORM_FIELD_BLOCK_ACTION = "DELETE_FORM_FIELD_BLOCK",
+    DELETE_FORM_FIELD_VALUE_ACTION = "DELETE_FORM_FIELD_VALUE"
 }
 
 export enum EditProjectParam {
@@ -485,9 +496,18 @@ export interface FormField extends FormTitle {
     type?: FormDataType;
     allowedValues?: FormFieldValue[];
     mandatory?: boolean;
+    // Whether this field can hold several values of its own data type,
+    // independently of any block-level "multiple" (multipleBlock below).
+    // Ignored for BOOLEAN fields.
+    multiple?: boolean;
     asFile?: boolean;
     block?: string,
     blockInstance?: number,
+    // Index of the value instance for a field whose multiple is true. Scoped
+    // WITHIN blockInstance, not globally per label - a multiple field inside
+    // a multiple block restarts its numbering at 1 for every block instance.
+    // Undefined when multiple is false.
+    fieldInstance?: number,
     multipleBlock?: boolean,
     minBlockInstances?: number,
     blockDisplayName?: string,

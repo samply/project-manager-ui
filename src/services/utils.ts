@@ -16,10 +16,24 @@ export interface BridgeheadsProjectField {
     available: Bridgehead[];
 }
 
+export interface ProjectFieldInstance {
+    fieldInstance: number;
+    value?: string;
+}
+
 export interface ProjectField {
     fieldKey: string
     editProjectParam?: EditProjectParam[]
     fieldValue: string[]
+    // Present only for a multiple field (FormField.multiple): one entry per
+    // saved value, sorted by fieldInstance. fieldValue above still reflects
+    // just the first one, for anything that doesn't know about "multiple".
+    multiple?: boolean
+    instances?: ProjectFieldInstance[]
+    // Builds a transformForSending closure scoped to a specific fieldInstance -
+    // used to save/add/remove one value of a multiple field independently of
+    // the others. Present only alongside multiple/instances.
+    buildInstanceTransform?: (fieldInstance: number) => (input: string) => unknown
     fieldDescription?: string
     fieldShortDescription?: string
     bridgeheads?: BridgeheadsProjectField

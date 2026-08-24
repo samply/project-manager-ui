@@ -134,6 +134,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Unique feasibility statistics table
 - Bridgehead contact data
 - Multiple form fields
+- Form title canonical order
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

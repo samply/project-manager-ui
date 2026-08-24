@@ -731,7 +731,7 @@ import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
 import FeasibilityTotals from "@/components/FeasibilityTotals.vue";
 import FeasibilityTable from "@/components/FeasibilityTable.vue";
 import {getConfig} from "@/services/configLoader";
-import {DialogStep, DialogStepper, FixedDialogStep, FixedDialogSteps} from "@/services/fixedDialogStep";
+import {DialogStep, DialogStepper, FixedDialogStep} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
@@ -883,6 +883,7 @@ export default defineComponent({
       existsResearchEnvironmentWorkspace: false,
       researchEnvironmentUrl: undefined as string | undefined,
       formTemplates: [] as FormTemplate[],
+      formTitleCanonicalOrder: [] as FormTitle[],
       formTitles: [] as FormTitle[],
       formFields: [] as FormField[],
       layouts: {} as Record<string, FormFieldLayout[]>,
@@ -1460,6 +1461,18 @@ export default defineComponent({
     },
 
     async initializeProjectFormsData() {
+      this.formTitleCanonicalOrder = [];
+      try {
+        await this.initializeData(
+            Module.PROJECT_EDITION_MODULE,
+            Action.FETCH_PROJECT_FORM_TITLE_ORDER_ACTION,
+            new Map(),
+            'formTitleCanonicalOrder'
+        );
+      } catch (error) {
+        console.warn('Failed to load canonical project form-title order; using the frontend fallback order.', error);
+      }
+
       try {
         await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_SELECTED_PROJECT_FORMS_ACTION, new Map(), async result => {
           this.selectedForms = result;
@@ -1603,6 +1616,7 @@ export default defineComponent({
         this.draftDialogStepper.resetFormTitles();
       }
       this.draftDialogStepper.addFormTitles(this.selectedForms);
+      this.draftDialogStepper.applyFormTitleCanonicalOrder(this.formTitleCanonicalOrder);
     },
 
     async fetchNotifications() {
@@ -2562,7 +2576,7 @@ export default defineComponent({
     },
 
     getDialogStep(stepId: string): DialogStep | undefined {
-      const step = FixedDialogSteps.find(step => step.id === stepId)
+      const step = this.draftDialogStepper.fetchStep(stepId)
       return step ? step : {
         id: "",
         displayName: stepId.charAt(0).toUpperCase() + stepId.slice(1),
@@ -2611,6 +2625,15 @@ export default defineComponent({
     },
 
     getCategorySortValue(category: string): number {
+      if (this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY)) {
+        const canonicalIndex = this.formTitleCanonicalOrder.findIndex(
+            formTitle => formTitle.title.toLowerCase() === category.toLowerCase()
+        );
+        if (canonicalIndex !== -1) {
+          return canonicalIndex;
+        }
+      }
+
       const rank = this.categoryRank[category.toLowerCase()];
 
       if (!rank) {

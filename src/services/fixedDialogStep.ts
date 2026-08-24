@@ -75,6 +75,12 @@ function mergeDialogStepMetadata(existing: DialogStep, formTitle: FormTitle, isF
     }
 }
 
+function overrideDialogStepMetadata(existing: DialogStep, formTitle: FormTitle): void {
+    existing.displayName = formTitle.titleDisplayName ?? existing.displayName;
+    existing.description = formTitle.titleDescription ?? existing.description;
+    existing.shortDescription = formTitle.titleShortDescription ?? existing.shortDescription;
+}
+
 /* -----------------------------
  * DialogStepper
  * ----------------------------- */
@@ -86,6 +92,7 @@ export class DialogStepper {
     private readonly allSteps: DialogStep[] = [];
     private readonly filteredStepIds = new Set<string>();
     private currentStepId: string | null = null;
+    private hasAppliedCanonicalOrder = false;
 
     /* ---------- Reactive state ---------- */
 
@@ -161,6 +168,45 @@ export class DialogStepper {
         if (structureChanged || formTitles.length > 0) {
             this.updateFields();
         }
+    }
+
+    /**
+     * Applies the canonical backend order and metadata to steps that already
+     * exist. Merely appearing in the canonical order never creates a dynamic
+     * step; dynamic-step membership remains controlled by addFormTitles().
+     */
+    public applyFormTitleCanonicalOrder(formTitles: FormTitle[]): void {
+        if (!formTitles.length) return;
+
+        const canonicalTitlesById = new Map(
+            formTitles.map(formTitle => [formTitle.title, formTitle])
+        );
+        const existingStepsById = new Map(
+            this.allSteps.map(step => [step.id, step])
+        );
+        const canonicalSteps = Array.from(canonicalTitlesById.values())
+            .map(formTitle => {
+                const step = existingStepsById.get(formTitle.title);
+                if (step) overrideDialogStepMetadata(step, formTitle);
+                return step;
+            })
+            .filter((step): step is DialogStep => step !== undefined);
+        const canonicalStepIds = new Set(canonicalSteps.map(step => step.id));
+        const canonicalIndexes = this.allSteps
+            .map((step, index) => canonicalStepIds.has(step.id) ? index : -1)
+            .filter(index => index !== -1);
+        const reorderedSteps = [...this.allSteps];
+
+        canonicalIndexes.forEach((index, canonicalIndex) => {
+            reorderedSteps[index] = canonicalSteps[canonicalIndex];
+        });
+        this.allSteps.splice(0, this.allSteps.length, ...reorderedSteps);
+
+        if (!this.hasAppliedCanonicalOrder || !this.isCurrentStepActive()) {
+            this.currentStepId = this.fetchActiveSteps()[0]?.id ?? null;
+        }
+        this.hasAppliedCanonicalOrder = true;
+        this.updateFields();
     }
 
     public hasSameFormTitles(formTitles: FormTitle[]): boolean {
@@ -252,6 +298,10 @@ export class DialogStepper {
 
     public fetchActiveSteps(): DialogStep[] {
         return this.allSteps.filter(step => !this.filteredStepIds.has(step.id));
+    }
+
+    public fetchStep(stepId: string): DialogStep | undefined {
+        return this.allSteps.find(step => step.id === stepId);
     }
 
     /* ---------- Internal helpers ---------- */

@@ -1057,7 +1057,7 @@ export default class ProjectFieldRow extends Vue {
                       <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
                       <span v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
                         <select class="form-select" v-model="newValue" >
-                          <option disabled value="">Bridgehead</option>
+                          <option disabled value="">Site</option>
                           <option v-for="b in fetchOtherAvailableBridgeheadsToAdd()"
                                   :key="b.bridgehead"
                                   :value="b.bridgehead">

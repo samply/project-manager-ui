@@ -99,7 +99,7 @@ export default class DocumentsTable extends Vue {
         <th>Original Filename</th>
         <th>URL</th>
         <th>Created At</th>
-        <th>Bridgehead</th>
+        <th>Site</th>
         <th>Applicant Email</th>
         <th>Type</th>
         <th>Download</th>

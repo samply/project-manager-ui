@@ -457,7 +457,7 @@
                             >
                               <div class="project-feasibility-header">
                                 <span class="project-feasibility-title">Statistics</span>
-                                <div class="project-feasibility-description">Per-bridgehead record counts, used to assess the feasibility of this query.</div>
+                                <div class="project-feasibility-description">Per-site record counts, used to assess the feasibility of this query.</div>
                               </div>
                               <FeasibilityTable
                                   :bridgeheads="visibleBridgeheads"
@@ -1312,7 +1312,7 @@ export default defineComponent({
         // ✅ project-level fields stay inline
         result = this.addMissingField(result, 'title', this.project.label);
         result = this.addMissingField(result, 'query', this.project.query);
-        result = this.addMissingField(result, 'bridgeheads', this.bridgeheads);
+        result = this.addMissingField(result, 'sites', this.bridgeheads);
         result = this.addMissingField(result, 'query format', this.project.queryFormat);
 
         this.project?.outputs?.forEach(o => {
@@ -2299,7 +2299,7 @@ export default defineComponent({
           visibilityCondition: true
         },*/
         {
-          fieldKey: "Votum for all bridgeheads",
+          fieldKey: "Votum for all sites",
           fieldValue: [this.votumForAllBridgeheadsDescription.label, this.votumForAllBridgeheadsDescription.originalFilename],
           isEditable: true,
           editMode: this.editMode,

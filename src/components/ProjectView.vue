@@ -716,6 +716,8 @@ import {
   EditProjectParam,
   Explanations,
   FeasibilityResult,
+  FORM_FIELD_PROPERTY_CHECK_BOX,
+  FORM_FIELD_PROPERTY_RADIO_BUTTON,
   FormDataType,
   FormField,
   FormFieldLayout,
@@ -1719,8 +1721,23 @@ export default defineComponent({
       }
     },
 
+    // CHECK_BOX renders as one checkbox list manipulating a set of values, so
+    // it only makes sense with multiple: true. RADIO_BUTTON picks exactly one
+    // value, so it only makes sense with multiple: false. Force both,
+    // overriding whatever the backend configured, so the two are never out
+    // of sync with their rendering.
+    normalizeMultipleForFieldProperty(field: FormField): FormField {
+      if (field.properties?.includes(FORM_FIELD_PROPERTY_CHECK_BOX)) {
+        return {...field, multiple: true};
+      }
+      if (field.properties?.includes(FORM_FIELD_PROPERTY_RADIO_BUTTON)) {
+        return {...field, multiple: false};
+      }
+      return field;
+    },
+
     addFormFields(formFieldArray: FormField[]): void {
-      this.formFields = formFieldArray;
+      this.formFields = formFieldArray.map((field) => this.normalizeMultipleForFieldProperty(field));
       this.formTitles = [];
 
       const seenTitles = new Set<string>(); // <-- move outside the loop

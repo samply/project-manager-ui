@@ -16,11 +16,11 @@ export const NOT_SELECTED_PROJECT_CONFIGURATION = 'NOT_SELECTED';
 
 // FormField.properties markers that switch an ENUM field's rendering away
 // from the default dropdown: FORM_FIELD_PROPERTY_RADIO_BUTTON renders
-// possibleValues as a radio group (a single-choice display-mode override,
-// independent of "multiple" - picking exactly one value either way);
-// FORM_FIELD_PROPERTY_CHECK_BOX renders them as a checkbox list that
-// directly manipulates a multiple field's set of values (only meaningful
-// paired with multiple: true - ignored otherwise).
+// possibleValues as a radio group (single-choice); FORM_FIELD_PROPERTY_CHECK_BOX
+// renders them as a checkbox list manipulating a set of values (multi-choice).
+// ProjectView.addFormFields forces FormField.multiple to false/true to match
+// (RADIO_BUTTON/CHECK_BOX respectively), overriding whatever the backend sent,
+// so these markers and "multiple" can never disagree.
 export const FORM_FIELD_PROPERTY_RADIO_BUTTON = 'RADIO_BUTTON';
 export const FORM_FIELD_PROPERTY_CHECK_BOX = 'CHECK_BOX';
 

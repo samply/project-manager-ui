@@ -596,6 +596,15 @@ export default class ProjectFieldRow extends Vue {
     return (this.properties?.includes(FORM_FIELD_PROPERTY_CHECK_BOX) ?? false) && this.multiple;
   }
 
+  // Whether at least one allowed value of this field carries a description.
+  // When none of them do, option names render as plain text (no bold/title
+  // styling) instead of implying there's a subtitle underneath that never
+  // comes - see the option-title/option-title-plain CSS classes.
+  get hasAnyOptionDescription(): boolean {
+    return (this.possibleValues ?? []).some(value =>
+        !!(this.displayPossibleValue(value).shortDescription ?? this.displayPossibleValue(value).description));
+  }
+
   isComments(): boolean {
     return this.includesEditProjectParam(EditProjectParam.FORM_FIELDS) && this.fieldKey === 'Comments';
   }
@@ -763,12 +772,17 @@ export default class ProjectFieldRow extends Vue {
   -->
   <div v-if="headless" style="display:flex; align-items:center; gap:0.5rem; width:100%">
     <div style="flex:1; min-width:0;">
-      <div v-if="isSelection() && isRadioButton() && ((isDraft() && !isSummaryStep()) || editMode)" style="display:flex; flex-direction:column; gap:0.25rem;">
-        <div v-for="value in possibleValues" :key="value" class="form-check" style="display:flex; align-items:center; gap:0.5rem; margin:0; padding:0;">
+      <div v-if="isSelection() && isRadioButton() && ((isDraft() && !isSummaryStep()) || editMode)" class="option-list" style="display:flex; flex-direction:column; gap:0.25rem;">
+        <div v-for="value in possibleValues" :key="value" class="form-check option-row">
           <input class="form-check-input" type="radio" style="margin:0;"
                  :name="radioGroupName" :id="`${radioGroupName}-${value}`" :value="value"
                  v-model="editedValue[0]" @change="onInputChange">
-          <label class="form-check-label" :for="`${radioGroupName}-${value}`">{{ displayPossibleValue(value).name }}</label>
+          <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
+            <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{ displayPossibleValue(value).name }}</span>
+            <span v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
+                  class="option-description"
+                  v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></span>
+          </label>
         </div>
       </div>
       <select v-else-if="isSelection() && ((isDraft() && !isSummaryStep()) || editMode)"
@@ -833,14 +847,41 @@ export default class ProjectFieldRow extends Vue {
           than inside the headless recursion below.
         -->
         <template v-if="isSelection() && isCheckBox()">
-          <div v-for="value in possibleValues" :key="value" class="form-check" style="display:flex; align-items:center; gap:0.5rem; margin:0; padding:0;">
-            <input class="form-check-input" type="checkbox" style="margin:0;"
-                   :id="`${radioGroupName}-${value}`"
-                   :checked="instances?.some(instance => instance.value === value)"
-                   :disabled="!((isDraft() && !isSummaryStep()) || editMode)"
-                   @change="toggleCheckboxValue(value, ($event.target as HTMLInputElement).checked)">
-            <label class="form-check-label" :for="`${radioGroupName}-${value}`">{{ displayPossibleValue(value).name }}</label>
-          </div>
+          <!--
+            Editable: every allowed option, with its description, as a
+            clickable checkbox row.
+          -->
+          <template v-if="(isDraft() && !isSummaryStep()) || editMode">
+            <div class="option-list">
+              <div v-for="value in possibleValues" :key="value" class="form-check option-row">
+                <input class="form-check-input" type="checkbox" style="margin:0;"
+                       :id="`${radioGroupName}-${value}`"
+                       :checked="instances?.some(instance => instance.value === value)"
+                       @change="toggleCheckboxValue(value, ($event.target as HTMLInputElement).checked)">
+                <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
+                  <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{ displayPossibleValue(value).name }}</span>
+                  <span v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
+                        class="option-description"
+                        v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></span>
+                </label>
+              </div>
+            </div>
+          </template>
+          <!--
+            Read-only/Summary: only the selected options, matching the
+            single-value RADIO_BUTTON read-only branch below - no disabled
+            checkboxes for unselected choices.
+          -->
+          <template v-else>
+            <div class="option-list">
+              <div v-for="instance in instances" :key="instance.fieldInstance" class="option-readonly">
+                <div :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{ displayPossibleValue(instance.value ?? '').name }}</div>
+                <div v-if="displayPossibleValue(instance.value ?? '').shortDescription ?? displayPossibleValue(instance.value ?? '').description"
+                     class="option-description"
+                     v-html="displayPossibleValue(instance.value ?? '').shortDescription ?? displayPossibleValue(instance.value ?? '').description"></div>
+              </div>
+            </div>
+          </template>
         </template>
         <template v-else>
           <div v-for="instance in instances" :key="instance.fieldInstance">
@@ -1104,17 +1145,24 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else-if="isSelection() && isRadioButton() && !isConfiguration()" style="width: 100%;">
-              <div v-if="(isDraft() && !isSummaryStep()) || editMode" style="display:flex; flex-direction:column; gap:0.25rem;">
-                <div v-for="value in possibleValues" :key="value" class="form-check" style="display:flex; align-items:center; gap:0.5rem; margin:0; padding:0;">
+              <div v-if="(isDraft() && !isSummaryStep()) || editMode" class="option-list" style="display:flex; flex-direction:column; gap:0.25rem;">
+                <div v-for="value in possibleValues" :key="value" class="form-check option-row">
                   <input class="form-check-input" type="radio" style="margin:0;"
                          :name="radioGroupName" :id="`${radioGroupName}-${value}`" :value="value"
                          v-model="editedValue[0]" @change="onInputChange">
-                  <label class="form-check-label" :for="`${radioGroupName}-${value}`">{{ displayPossibleValue(value).name }}</label>
+                  <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
+                    <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{ displayPossibleValue(value).name }}</span>
+                    <span v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
+                          class="option-description"
+                          v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></span>
+                  </label>
                 </div>
               </div>
-              <div v-if="(!isDraft() || isSummaryStep()) && !editMode" style="padding: 0 0.75rem">
-                <div>{{displayPossibleValue(editedValue[0]).name}}</div>
-                <div style="font-size: 12px">{{displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description}}</div>
+              <div v-if="(!isDraft() || isSummaryStep()) && !editMode" style="padding: 0 0.75rem" class="option-list option-readonly">
+                <div :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{displayPossibleValue(editedValue[0]).name}}</div>
+                <div v-if="displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description"
+                     class="option-description"
+                     v-html="displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description"></div>
               </div>
             </div>
             <div v-else-if="isSelection() && !isConfiguration()" style="width: 100%;">
@@ -1382,6 +1430,71 @@ export default class ProjectFieldRow extends Vue {
 }
 .form-check-input {
   border-color: #9e9e9e;
+}
+
+/*
+ * One clickable option row inside a CHECK_BOX or RADIO_BUTTON ENUM list:
+ * an option-title (matching input-field-title, at a smaller size) with an
+ * optional option-description below it (matching field-description, at a
+ * slightly smaller size). The checkbox/radio input aligns with the title's
+ * line rather than centering against a multi-line description. Declared
+ * after .form-check so its margin overrides that shared rule for the same
+ * tied specificity.
+ */
+/*
+ * Wraps every CHECK_BOX/RADIO_BUTTON option list (and the single-value
+ * RADIO_BUTTON read-only row). Always adds one description-line's worth of
+ * gap below the field header, whether or not that header actually rendered
+ * a description - so the title/description block never sits flush against
+ * the first option either way.
+ */
+.option-list {
+  margin-top: 1.1rem;
+}
+.option-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 0.35rem 0;
+  padding: 0;
+}
+.option-row .form-check-input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+.option-label {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+.option-title {
+  font-weight: bold;
+  color: #00489cf2;
+  font-size: 14px;
+}
+/*
+ * Used instead of .option-title when NONE of the field's allowed values
+ * have a description: bolding/coloring the name like a subtitle-bearing
+ * title would misleadingly promise a description that never follows, so
+ * it renders as plain text at the same size as a title instead.
+ */
+.option-title-plain {
+  font-weight: normal;
+  font-size: 14px;
+}
+.option-description {
+  font-size: 11px;
+  font-weight: normal;
+  margin-top: 1px;
+}
+.option-readonly {
+  /* margin-bottom only - an element combining this with .option-list (the
+     single-value RADIO_BUTTON read-only row) must keep .option-list's
+     margin-top, not have it zeroed out by a margin shorthand here. */
+  margin-bottom: 0.35rem;
+}
+.option-readonly:last-child {
+  margin-bottom: 0;
 }
  .input-field.sidewise {
    display: flex;

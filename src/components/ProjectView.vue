@@ -392,10 +392,10 @@
                                 <tr v-if="newSection.displayName" class="section-row" :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
                                   <td colspan="100" style="display: block;">
                                     <div class="section-title"
-                                         :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
+                                         :class="[`level-${Math.min(newSection.level ?? 0, 4)}`,{'section-underline': !(newSection.description || newSection.shortDescription)}]">
                                       {{ newSection.displayName }}
                                     </div>
-                                    <div v-if="newSection.description || newSection.shortDescription" class="section-description">
+                                    <div v-if="newSection.description || newSection.shortDescription" class="section-description section-underline">
                                       {{ (!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY)) ? (newSection.shortDescription ?? newSection.description) : newSection.description }}
                                     </div>
                                   </td>
@@ -891,7 +891,7 @@ export default defineComponent({
       groupedMissingFields: {} as Record<string, string[]>,
       currentMenuStep: "Status",
       editMode: false,
-      categoryRank: {project: "0", query: "1", services: "2", consent: "last"} as Record<string, string>,  // order the categories how they should appear in the Request tab (except in DRAFT). Numbers starts from the beginning, 'last', 'last-1', 'last-2' etc. from the end. not listed categories will be shown between
+      categoryRank: {query: "0", services: "1", project: "2", consent: "last"} as Record<string, string>,  // order the categories how they should appear in the Request tab (except in DRAFT). Numbers starts from the beginning, 'last', 'last-1', 'last-2' etc. from the end. not listed categories will be shown between
       blockCollapse: new Map<string, boolean>()
     };
   },
@@ -1961,13 +1961,13 @@ export default defineComponent({
         if (this.isCurrentStep(FixedDialogStep.PROJECT)) { // Project
           extendedExplanations.set(count.toString(), {
             number: count,
-            message: "Please provide information about your project"
+            message: "Please describe the project for which you are requesting resources"
           });
           count++;
         } else if (this.isCurrentStep(FixedDialogStep.SERVICES)) { // Services
           extendedExplanations.set(count.toString(), {
             number: count,
-            message: "Please provide information on the resources you are requesting."
+            message: "Start by selecting the categories you want to request."
           });
           count++;
         } else if (this.isCurrentStep(FixedDialogStep.QUERY) && !this.project?.query) { // Query
@@ -2135,7 +2135,6 @@ export default defineComponent({
           fieldKey: "Project Title",
           fieldValue: this.project?.label ? [this.project.label] : [],
           editProjectParam: [EditProjectParam.LABEL],
-          fieldDescription: "Please provide a title for your project.",
           isEditable: true,
           editMode: this.editMode,
           mandatory: true,
@@ -2229,7 +2228,7 @@ export default defineComponent({
         },
         {
           fieldKey: "Additional filter criteria",
-          fieldDescription: "Anything that helps us process your request, e.g. inclusion or exclusion criteria you could not apply in the Explorer, notes on the resources you request, etc.",
+          fieldDescription: "Please provide filter criteria that could not select in the Explorer, or further notes on the resources you want to request",
           fieldValue: this.project?.cohortDefinition ? [this.project.cohortDefinition] : [],
           editProjectParam: [EditProjectParam.COHORT_DEFINITION],
           type: FormDataType.LONG_STRING,
@@ -2314,7 +2313,7 @@ export default defineComponent({
       }
 
       return [...fixedFields, ...dynamicSelectedForms, ...dynamicFields].sort((a, b) =>
-          this.getCategorySortValue(a.category) - this.getCategorySortValue(b.category))
+          this.getCategorySortValue(a.category.toLowerCase()) - this.getCategorySortValue(b.category.toLowerCase()))
     },
 
     fetchButtons(): void {
@@ -3443,10 +3442,12 @@ export default defineComponent({
   color: #212529;
   margin-left: 3rem;
   margin-bottom: 1rem;
+}
+
+.section-underline {
   border: 0 solid;
   border-bottom-width: 1px;
   border-image-slice: 1;
   border-image-source: linear-gradient(to right, #818078, transparent);
 }
-
 </style>

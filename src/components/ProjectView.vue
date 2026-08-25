@@ -335,20 +335,27 @@
                       <label class="form-check-label" for="flexSwitchCheckDefault">Edit Fields</label>
                     </div>
                   </div>
+                  <ContextInfoBox
+                      v-if="existsDraftDialog && draftDialogStepper.currentStep?.preInfo"
+                      :content="draftDialogStepper.currentStep.preInfo"
+                  />
 
                   <template v-for="(block, blockIndex) in projectFieldRenderBlock" :key="block.key">
-                    <template v-for="item in block.items" :key="item.key">
+                    <template v-if="shouldShowFormCategoryStart(blockIndex)">
                       <div
-                          v-if="item.showCategoryHeader"
                           class="project-field-header-inline project-field-category-header"
                       >
                         <div class="project-field-title-inline">
-                          {{ getDialogStep(item.field[0].category)?.displayName }}
+                          {{ getDialogStep(block.category)?.displayName }}
                         </div>
                         <!--<div class="project-field-notification-inline">
                           {{ getDialogStep(item.field.category)?.description }}
                         </div>-->
                       </div>
+                      <ContextInfoBox
+                          v-if="shouldShowFormCategoryPreInfo(blockIndex)"
+                          :content="getDialogStep(block.category)?.preInfo ?? ''"
+                      />
                     </template>
                     <template v-if="block.block">
                       <div v-if="shouldShowHeaderOfBlockGroup(blockIndex)" class="input-field-header" >
@@ -361,6 +368,10 @@
                                : block.block?.description"></div>
                       </div>
                     </template>
+                    <ContextInfoBox
+                        v-if="shouldShowBlockPreInfo(blockIndex)"
+                        :content="block.block?.preInfo ?? ''"
+                    />
 
                     <template v-if="shouldRenderFieldBlockItems(block)">
                       <div :class="{ 'project-field-block': shouldRenderBlock(block) }"  class="project-field-block-instance-wrapper" >
@@ -415,6 +426,8 @@
                                 :field-value="item.fieldValue"
                                 :field-description="item.fieldDescription"
                                 :field-short-description="item.fieldShortDescription"
+                                :field-pre-info="isSummaryReview() ? undefined : item.fieldPreInfo"
+                                :field-post-info="isSummaryReview() ? undefined : item.fieldPostInfo"
                                 :bridgeheads="item.bridgeheads"
                                 :action="item.action"
                                 :module="item.module"
@@ -479,7 +492,19 @@
                         Add {{ block.block?.displayName ?? block.block?.label }}
                       </div>
                     </template>
+                    <ContextInfoBox
+                        v-if="shouldShowBlockPostInfo(blockIndex)"
+                        :content="block.block?.postInfo ?? ''"
+                    />
+                    <ContextInfoBox
+                        v-if="shouldShowFormCategoryPostInfo(blockIndex)"
+                        :content="getDialogStep(block.category)?.postInfo ?? ''"
+                    />
                   </template>
+                  <ContextInfoBox
+                      v-if="existsDraftDialog && draftDialogStepper.currentStep?.postInfo"
+                      :content="draftDialogStepper.currentStep.postInfo"
+                  />
                 </div>
 
                 <div v-if="project?.state === ProjectState.DRAFT" class="button-container">
@@ -722,6 +747,7 @@ import {
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import {format} from "date-fns";
 import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
+import ContextInfoBox from "@/components/ContextInfoBox.vue";
 import NotificationBox from "@/components/Notification.vue";
 import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
@@ -745,15 +771,16 @@ import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
 interface ProjectFieldRenderItem {
   key: string;
   field: ProjectField[];
-  showCategoryHeader: boolean;
   showSeparator: boolean;
   shouldRenderRow: boolean;
 }
 
 interface ProjectFieldRenderBlock {
   key: string;
+  category: string;
   block?: ProjectField["block"];
   items: ProjectFieldRenderItem[];
+  categoryPlaceholder?: boolean;
 }
 
 type BlockMetadata = ProjectField["block"];
@@ -818,6 +845,7 @@ export default defineComponent({
     UploadButton,
     UserInput,
     NotificationBox,
+    ContextInfoBox,
     ProjectFieldRow,
     ProjectManagerButton
   },
@@ -1025,10 +1053,40 @@ export default defineComponent({
           key: field[0].block
               ? `block-${field[0].block.label}-${field[0].block.instance ?? 0}-${index}`
               : `field-${index}`,
+          category: field[0].category,
           block: field[0].block,
           items: [item]
         });
       });
+
+      if (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY)) {
+        const visibleCategories = new Set(
+            groups
+                .filter((group) => this.isFormCategoryRenderGroupVisible(group))
+                .map((group) => group.category)
+        );
+
+        // Active steps come from fixed steps plus selected/configured forms.
+        // Canonical title metadata only reorders/updates those steps and can
+        // never create an informational-only category by itself.
+        if (!this.existsDraftDialog) {
+          this.draftDialogStepper.currentSteps
+              .filter((step) =>
+                  (step.preInfo || step.postInfo) &&
+                  !visibleCategories.has(step.id)
+              )
+              .forEach((step) => groups.push({
+                key: `category-${step.id}`,
+                category: step.id,
+                items: [],
+                categoryPlaceholder: true
+              }));
+        }
+
+        groups.sort((first, second) =>
+            this.getCategorySortValue(first.category) - this.getCategorySortValue(second.category)
+        );
+      }
       //console.log('projectfields: ', this.projectFields)
       //console.log('groups: ', groups)
       return groups;
@@ -1041,13 +1099,70 @@ export default defineComponent({
       return {
         key: `field-${index}`,
         field,
-        showCategoryHeader: (!this.existsDraftDialog || (this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY))) && startsCategory && showStructuralElement,
         showSeparator: !startsCategory && showStructuralElement,
         shouldRenderRow: field[0].visibilityCondition &&
             (!this.existsDraftDialog ||
                 field[0].isEditable && !this.isCurrentStep(FixedDialogStep.SUMMARY) ||
                 this.isCurrentStep(FixedDialogStep.SUMMARY))
       };
+    },
+
+    isFormCategoryRenderGroupVisible(group: ProjectFieldRenderBlock): boolean {
+      if (group.categoryPlaceholder) {
+        return true;
+      }
+      return group.items.some((item) =>
+          item.shouldRenderRow && item.field.some((field) => field.fieldKey !== 'DescriptionUpload')
+      );
+    },
+
+    shouldShowFormCategoryStart(groupIndex: number): boolean {
+      if (this.existsDraftDialog && !this.isCurrentStep(FixedDialogStep.SUMMARY)) {
+        return false;
+      }
+      const groups = this.projectFieldRenderBlock;
+      const currentGroup = groups[groupIndex];
+      if (!currentGroup || !this.isFormCategoryRenderGroupVisible(currentGroup)) {
+        return false;
+      }
+      const previousVisibleGroup = groups
+          .slice(0, groupIndex)
+          .reverse()
+          .find((group) => this.isFormCategoryRenderGroupVisible(group));
+
+      return previousVisibleGroup?.category !== currentGroup.category;
+    },
+
+    shouldShowFormCategoryPreInfo(groupIndex: number): boolean {
+      if (this.isSummaryReview()) {
+        return false;
+      }
+      const group = this.projectFieldRenderBlock[groupIndex];
+      return this.shouldShowFormCategoryStart(groupIndex) &&
+          !(this.existsDraftDialog && this.draftDialogStepper.currentStep?.id === group?.category) &&
+          Boolean(this.getDialogStep(group?.category ?? '')?.preInfo);
+    },
+
+    shouldShowFormCategoryPostInfo(groupIndex: number): boolean {
+      if (this.isSummaryReview()) {
+        return false;
+      }
+      if (this.existsDraftDialog && !this.isCurrentStep(FixedDialogStep.SUMMARY)) {
+        return false;
+      }
+      const groups = this.projectFieldRenderBlock;
+      const currentGroup = groups[groupIndex];
+      if (!currentGroup ||
+          !this.isFormCategoryRenderGroupVisible(currentGroup) ||
+          (this.existsDraftDialog && this.draftDialogStepper.currentStep?.id === currentGroup.category) ||
+          !this.getDialogStep(currentGroup.category)?.postInfo) {
+        return false;
+      }
+      const nextVisibleGroup = groups
+          .slice(groupIndex + 1)
+          .find((group) => this.isFormCategoryRenderGroupVisible(group));
+
+      return nextVisibleGroup?.category !== currentGroup.category;
     },
 
     deleteBlockInstance(block: ProjectFieldRenderBlock): void {
@@ -1073,7 +1188,9 @@ export default defineComponent({
         return false;
       }
 
-      return first.label === second.label && first.instance === second.instance
+      return first.formTitle === second.formTitle &&
+          first.label === second.label &&
+          first.instance === second.instance
     },
 
     areSameBlockType(first?: ProjectField["block"], second?: ProjectField["block"]): boolean {
@@ -1081,7 +1198,37 @@ export default defineComponent({
         return false;
       }
 
-      return first.label === second.label
+      return first.formTitle === second.formTitle && first.label === second.label
+    },
+
+    isLastVisibleBlockGroup(groupIndex: number): boolean {
+      const groups = this.projectFieldRenderBlock;
+      const currentGroup = groups[groupIndex];
+
+      if (!currentGroup?.block || !this.isProjectFieldBlockVisible(currentGroup)) {
+        return false;
+      }
+      const nextVisibleGroup = groups
+          .slice(groupIndex + 1)
+          .find((group) => this.isProjectFieldBlockVisible(group));
+
+      return !this.areSameBlockType(currentGroup.block, nextVisibleGroup?.block);
+    },
+
+    shouldShowBlockPreInfo(groupIndex: number): boolean {
+      if (this.isSummaryReview()) {
+        return false;
+      }
+      const group = this.projectFieldRenderBlock[groupIndex];
+      return this.shouldShowHeaderOfBlockGroup(groupIndex) && Boolean(group?.block?.preInfo);
+    },
+
+    shouldShowBlockPostInfo(groupIndex: number): boolean {
+      if (this.isSummaryReview()) {
+        return false;
+      }
+      const group = this.projectFieldRenderBlock[groupIndex];
+      return this.isLastVisibleBlockGroup(groupIndex) && Boolean(group?.block?.postInfo);
     },
 
     shouldShowAddButtonAfterBlockGroup(groupIndex: number): boolean {
@@ -1097,11 +1244,7 @@ export default defineComponent({
       if (this.isCurrentStep(FixedDialogStep.SUMMARY) || (!this.existsDraftDialog && !this.editMode)) {
         return false
       }
-      const nextGroup = groups
-          .slice(groupIndex + 1)
-          .find((group) => this.isProjectFieldBlockVisible(group));
-
-      return !this.areSameBlockType(currentGroup.block, nextGroup?.block);
+      return this.isLastVisibleBlockGroup(groupIndex);
     },
 
     shouldShowHeaderOfBlockGroup(groupIndex: number): boolean {
@@ -1112,7 +1255,10 @@ export default defineComponent({
         return false;
       }
 
-      const firstGroup = groups.find((group) => group.block?.label === currentGroup.block?.label)
+      const firstGroup = groups.find((group) =>
+          this.areSameBlockType(group.block, currentGroup.block) &&
+          this.isProjectFieldBlockVisible(group)
+      );
 
       if (this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY) && !firstGroup?.block?.instance) {
         return false
@@ -1130,7 +1276,7 @@ export default defineComponent({
     },
 
     shouldRenderFieldBlockItems(group: ProjectFieldRenderBlock): boolean {
-      return !group.block || this.shouldRenderBlock(group);
+      return group.items.length > 0 && (!group.block || this.shouldRenderBlock(group));
     },
 
     isProjectFieldBlockVisible(group: ProjectFieldRenderBlock): boolean {
@@ -1154,7 +1300,7 @@ export default defineComponent({
 
     addFormFieldBlockInstance(formField: FormField) {
       const nextBlockInstance = this.formFields
-          .filter((field) => field.block === formField.block)
+          .filter((field) => field.title === formField.title && field.block === formField.block)
           .map((field) => field.blockInstance)
           .filter((instance): instance is number => instance != null)
           .reduce((max, instance) => Math.max(max, instance), 0) + 1;
@@ -1175,7 +1321,9 @@ export default defineComponent({
 
     hasBlockInstance(block: BlockMetadata): boolean {
       return this.formFields.some((field) =>
-          field.block === block?.label && field.blockInstance != null
+          field.title === block?.formTitle &&
+          field.block === block?.label &&
+          field.blockInstance != null
       );
     },
 
@@ -1589,6 +1737,8 @@ export default defineComponent({
             titleDisplayName: field.titleDisplayName,
             titleDescription: field.titleDescription,
             titleShortDescription: field.titleShortDescription,
+            titlePreInfo: field.titlePreInfo,
+            titlePostInfo: field.titlePostInfo,
           });
         }
 
@@ -1607,6 +1757,8 @@ export default defineComponent({
         titleDisplayName: formTitlesByTitle.get(selectedForm.title)?.titleDisplayName ?? selectedForm.titleDisplayName,
         titleDescription: formTitlesByTitle.get(selectedForm.title)?.titleDescription ?? selectedForm.titleDescription,
         titleShortDescription: formTitlesByTitle.get(selectedForm.title)?.titleShortDescription ?? selectedForm.titleShortDescription,
+        titlePreInfo: formTitlesByTitle.get(selectedForm.title)?.titlePreInfo ?? selectedForm.titlePreInfo,
+        titlePostInfo: formTitlesByTitle.get(selectedForm.title)?.titlePostInfo ?? selectedForm.titlePostInfo,
       }));
 
       if (!this.draftDialogStepper.hasSameFormTitles(this.selectedForms)) {
@@ -1778,7 +1930,8 @@ export default defineComponent({
     // (sortProjectFieldsByLayout, fetchProjectFieldRenderBlocks) keeps
     // assuming exactly one ProjectField per (label, blockInstance), and
     // ProjectFieldRow.vue is responsible for rendering/editing the several
-    // instances via its own "instances" prop instead.
+    // instances via its own "instances" prop instead. Context information is
+    // therefore stored once on that logical ProjectField, not on each value.
     buildDynamicProjectFieldsFromFormFields(formFields: FormField[]): ProjectField[] {
       interface FieldGroup {
         representativeIndex: number;
@@ -1813,6 +1966,11 @@ export default defineComponent({
           mandatory: formField.mandatory,
           fieldDescription: formField.labelDescription,
           fieldShortDescription: formField.labelShortDescription,
+          // The backend already applies project-state restrictions. Structural
+          // visibility remains a UI concern, so every returned value is carried
+          // with the logical field and rendered only when that field is visible.
+          fieldPreInfo: formField.labelPreInfo,
+          fieldPostInfo: formField.labelPostInfo,
           type: formField.type,
           isEditable: true,
           editMode: this.editMode,
@@ -1843,7 +2001,9 @@ export default defineComponent({
             minInstances: formField.minBlockInstances,
             displayName: formField.blockDisplayName,
             description: formField.blockDescription,
-            shortDescription: formField.blockShortDescription
+            shortDescription: formField.blockShortDescription,
+            preInfo: formField.blockPreInfo,
+            postInfo: formField.blockPostInfo
           } : undefined,
           section: new Section(formFields, representativeIndex),
           label: formField.label,
@@ -2606,6 +2766,10 @@ export default defineComponent({
 
     isCurrentStep(step: FixedDialogStep): boolean {
       return this.draftDialogStepper.currentStep?.id === step
+    },
+
+    isSummaryReview(): boolean {
+      return this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY);
     },
 
     getCategorySortValue(category: string): number {

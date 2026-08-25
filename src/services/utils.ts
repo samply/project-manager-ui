@@ -36,6 +36,8 @@ export interface ProjectField {
     buildInstanceTransform?: (fieldInstance: number) => (input: string) => unknown
     fieldDescription?: string
     fieldShortDescription?: string
+    fieldPreInfo?: string
+    fieldPostInfo?: string
     bridgeheads?: BridgeheadsProjectField
     redirectUrl?: string
     isEditable: boolean
@@ -75,6 +77,8 @@ export interface Block {
     displayName?: string,
     description?: string,
     shortDescription?: string,
+    preInfo?: string,
+    postInfo?: string,
 }
 
 /**

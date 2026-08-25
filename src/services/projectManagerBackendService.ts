@@ -486,6 +486,8 @@ export interface FormTitle {
     titleDisplayName?: string;
     titleDescription?: string;
     titleShortDescription?: string;
+    titlePreInfo?: string;
+    titlePostInfo?: string;
 }
 
 export interface FormField extends FormTitle {
@@ -493,6 +495,8 @@ export interface FormField extends FormTitle {
     labelDisplayName?: string;
     labelDescription?: string;
     labelShortDescription?: string;
+    labelPreInfo?: string;
+    labelPostInfo?: string;
     groups?: FormFieldGroup[];
     type?: FormDataType;
     allowedValues?: FormFieldValue[];
@@ -514,6 +518,8 @@ export interface FormField extends FormTitle {
     blockDisplayName?: string,
     blockDescription?: string,
     blockShortDescription?: string,
+    blockPreInfo?: string,
+    blockPostInfo?: string,
     order?: number;
     value?: string;
     properties?: string[]

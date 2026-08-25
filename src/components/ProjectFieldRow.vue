@@ -19,6 +19,7 @@ import {
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
+import ContextInfoBox from "@/components/ContextInfoBox.vue";
 import type {DialogStep} from "@/services/fixedDialogStep";
 import {FixedDialogStep} from "@/services/fixedDialogStep";
 import type {Block, BridgeheadsProjectField, ProjectFieldInstance} from "@/services/utils";
@@ -35,13 +36,15 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
       return configLabel;
     }
   },
-  components: {DownloadButton, UploadButton},
+  components: {ContextInfoBox, DownloadButton, UploadButton},
   props: {
     fieldKey: {type: String, required: true},
     editProjectParam: {type: Array as PropType<EditProjectParam[]>, required: false, default: []},
     fieldValue: {type: Array as PropType<string[]>, required: true},
     fieldDescription: {type: String, required: false},
     fieldShortDescription: {type: String, required: false},
+    fieldPreInfo: {type: String, required: false},
+    fieldPostInfo: {type: String, required: false},
     bridgeheads: {type: Object as PropType<BridgeheadsProjectField>, required: false},
     projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
     context: {type: Object as PropType<ProjectManagerContext>, required: true},
@@ -127,6 +130,10 @@ export default class ProjectFieldRow extends Vue {
   readonly fieldDescription?: string;
   // noinspection JSUnusedGlobalSymbols
   readonly fieldShortDescription?: string;
+  // Context information brackets this complete logical field. Recursive
+  // headless rows for multiple values deliberately receive neither prop.
+  readonly fieldPreInfo?: string;
+  readonly fieldPostInfo?: string;
   // noinspection JSUnusedGlobalSymbols
   readonly configurations?: Map<string, ProjectAndForms>;
   readonly configurationSelectionType!: ProjectConfigurationSelectionType;
@@ -806,6 +813,7 @@ export default class ProjectFieldRow extends Vue {
     recursive instance per value (see above) plus a button to add another.
   -->
   <div v-else-if="multiple" :class="getCssProperty()">
+    <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo"/>
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }">
       <div style="display:flex" :style="{width: getWidth()}">
         <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }">
@@ -867,11 +875,13 @@ export default class ProjectFieldRow extends Vue {
         </template>
       </div>
     </div>
+    <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo"/>
   </div>
 
   <tr v-else-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep && draftDialogCurrentStep.id === dialogStep.SERVICES"
       class="config-box-row">
     <td colspan="3" style="display: block;width:100%">
+      <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo"/>
       <div>
         <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
              :class="{ 'active': isActiveStep(step) }">
@@ -921,12 +931,14 @@ export default class ProjectFieldRow extends Vue {
           </div>
         </div>
       </div>
+      <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo"/>
     </td>
   </tr>
 
 
   <div v-else :class="getCssProperty()">
 
+    <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo"/>
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
       <div style="display:flex" :style="{width: getWidth()}">
         <input
@@ -1145,6 +1157,7 @@ export default class ProjectFieldRow extends Vue {
       </div>
 
     </div>
+    <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo"/>
   </div>
 
 

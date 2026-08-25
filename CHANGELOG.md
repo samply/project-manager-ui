@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-08-24]
+## [1.1.0 - 2026-08-25]
 ### Added
 - Dockerfile
 - Single Spa
@@ -135,6 +135,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Bridgehead contact data
 - Multiple form fields
 - Form title canonical order
+- Pre_info and post_info
 
 ### Changed
 - Display feasibility results based only on non-empty backend results
@@ -162,10 +163,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Cohort definition in a query
 - Query Details
 - Rename overview headers
-- Filter services and auto select service if only one
+- Filter services and auto-select service if only one
 - Form field layouts
 - Short description
-- Page name as backend variable
+- Page name as a backend variable
 
 ### Removed
 - Application Form

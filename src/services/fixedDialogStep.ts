@@ -13,6 +13,8 @@ export interface DialogStep {
     displayName: string;
     description: string;
     shortDescription?: string;
+    preInfo?: string;
+    postInfo?: string;
 }
 
 export const FixedDialogSteps: readonly DialogStep[] = [
@@ -53,6 +55,8 @@ function formTitleToDialogStep(formTitle: FormTitle): DialogStep {
         displayName: formTitle.titleDisplayName ?? formTitle.title,
         description: formTitle.titleDescription ?? "",
         shortDescription: formTitle.titleShortDescription,
+        preInfo: formTitle.titlePreInfo,
+        postInfo: formTitle.titlePostInfo,
     };
 }
 
@@ -63,15 +67,23 @@ function mergeDialogStepMetadata(existing: DialogStep, formTitle: FormTitle, isF
         (isFixedStep ? existing.description : "");
     const nextShortDescription = formTitle.titleShortDescription ??
         (isFixedStep ? existing.shortDescription : undefined);
+    const nextPreInfo = formTitle.titlePreInfo ??
+        (isFixedStep ? existing.preInfo : undefined);
+    const nextPostInfo = formTitle.titlePostInfo ??
+        (isFixedStep ? existing.postInfo : undefined);
 
     if (
         existing.displayName !== nextDisplayName ||
         existing.description !== nextDescription ||
-        existing.shortDescription !== nextShortDescription
+        existing.shortDescription !== nextShortDescription ||
+        existing.preInfo !== nextPreInfo ||
+        existing.postInfo !== nextPostInfo
     ) {
         existing.displayName = nextDisplayName;
         existing.description = nextDescription;
         existing.shortDescription = nextShortDescription;
+        existing.preInfo = nextPreInfo;
+        existing.postInfo = nextPostInfo;
     }
 }
 
@@ -79,6 +91,8 @@ function overrideDialogStepMetadata(existing: DialogStep, formTitle: FormTitle):
     existing.displayName = formTitle.titleDisplayName ?? existing.displayName;
     existing.description = formTitle.titleDescription ?? existing.description;
     existing.shortDescription = formTitle.titleShortDescription ?? existing.shortDescription;
+    existing.preInfo = formTitle.titlePreInfo ?? existing.preInfo;
+    existing.postInfo = formTitle.titlePostInfo ?? existing.postInfo;
 }
 
 /* -----------------------------

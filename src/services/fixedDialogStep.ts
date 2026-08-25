@@ -19,17 +19,19 @@ export const FixedDialogSteps: readonly DialogStep[] = [
     {
         id: FixedDialogStep.QUERY,
         displayName: "Query",
-        description: "Your selection criteria and query logic",
+        description: "Summary of the cohort selected in the DKTK Explorer",
+        shortDescription: "Your selection criteria and query logic"
     },
     {
         id: FixedDialogStep.SERVICES,
-        displayName: "Services",
+        displayName: "Requested Resources",
         description: "Please provide information on the resources you are requesting",
     },
     {
         id: FixedDialogStep.PROJECT,
         displayName: "Project",
-        description: "Please provide information about your project",
+        description: "Please describe the project for which you are requesting resources",
+        shortDescription: "Please provide information about your project"
     },
     {
         id: FixedDialogStep.CUSTOM,

@@ -2287,7 +2287,7 @@ export default defineComponent({
       ];
       const votumFields: ProjectField[] = [
         /*{
-          fieldKey: "Votum",
+          fieldKey: "Ethic vote",
           fieldValue: [this.votumDescription.label, this.votumDescription.originalFilename],
           isEditable: true,
           editMode: this.editMode,
@@ -2299,7 +2299,7 @@ export default defineComponent({
           visibilityCondition: true
         },*/
         {
-          fieldKey: "Votum for all sites",
+          fieldKey: "Ethic vote for all sites",
           fieldValue: [this.votumForAllBridgeheadsDescription.label, this.votumForAllBridgeheadsDescription.originalFilename],
           isEditable: true,
           editMode: this.editMode,

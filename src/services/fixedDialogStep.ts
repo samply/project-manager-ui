@@ -19,29 +19,27 @@ export const FixedDialogSteps: readonly DialogStep[] = [
     {
         id: FixedDialogStep.QUERY,
         displayName: "Query",
-        description: "Summary of the cohort selected in the DKTK Explorer",
-        shortDescription: "Your selection criteria and query logic"
+        description: "Review or define the query associated with this project."
     },
     {
         id: FixedDialogStep.SERVICES,
-        displayName: "Requested Resources",
-        description: "Please provide information on the resources you are requesting",
+        displayName: "Services",
+        description: "Select the services or resources needed for this project.",
     },
     {
         id: FixedDialogStep.PROJECT,
         displayName: "Project",
-        description: "Please describe the project for which you are requesting resources",
-        shortDescription: "Please provide information about your project"
+        description: "Provide information about the project."
     },
     {
         id: FixedDialogStep.CUSTOM,
         displayName: "Custom",
-        description: "Configure how and where the results will be delivered",
+        description: "Configure additional project options.",
     },
     {
         id: FixedDialogStep.SUMMARY,
         displayName: "Summary",
-        description: "Review all selections before final submission",
+        description: "Review the entered information before submission.",
     },
 ] as const;
 
@@ -310,12 +308,15 @@ export class DialogStepper {
 
     private initializeFixedSteps(): void {
         this.allSteps.length = 0;
+        // Metadata overrides mutate active steps. Clone the generic definitions so
+        // deployment-specific values never leak back into the shared fallbacks.
+        const fixedSteps = FixedDialogSteps.map(step => ({...step}));
 
-        const fixedWithoutSummary = FixedDialogSteps.filter(
+        const fixedWithoutSummary = fixedSteps.filter(
             s => s.id !== FixedDialogStep.SUMMARY
         );
 
-        const summary = FixedDialogSteps.find(
+        const summary = fixedSteps.find(
             s => s.id === FixedDialogStep.SUMMARY
         );
 

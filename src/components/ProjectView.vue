@@ -322,7 +322,7 @@
                       }}
                     </div>
                     <div class="project-field-notification">{{
-                        extendedExplanations.get("2") ? extendedExplanations.get("2")?.message : draftDialogStepper.currentStep?.description
+                        draftDialogStepper.currentStep?.description
                       }}
                     </div>
                   </div>
@@ -892,7 +892,6 @@ export default defineComponent({
       groupedMissingFields: {} as Record<string, string[]>,
       currentMenuStep: "Status",
       editMode: false,
-      categoryRank: {query: "0", services: "1", project: "2", consent: "last"} as Record<string, string>,  // order the categories how they should appear in the Request tab (except in DRAFT). Numbers starts from the beginning, 'last', 'last-1', 'last-2' etc. from the end. not listed categories will be shown between
       blockCollapse: new Map<string, boolean>()
     };
   },
@@ -1970,28 +1969,16 @@ export default defineComponent({
       }
       let count = extendedExplanations.size + 1;
       if (this.existsDraftDialog) {
-        if (this.isCurrentStep(FixedDialogStep.PROJECT)) { // Project
+        if (this.isCurrentStep(FixedDialogStep.QUERY) && !this.project?.query) { // Query
           extendedExplanations.set(count.toString(), {
             number: count,
-            message: "Please describe the project for which you are requesting resources"
-          });
-          count++;
-        } else if (this.isCurrentStep(FixedDialogStep.SERVICES)) { // Services
-          extendedExplanations.set(count.toString(), {
-            number: count,
-            message: "Start by selecting the categories you want to request."
-          });
-          count++;
-        } else if (this.isCurrentStep(FixedDialogStep.QUERY) && !this.project?.query) { // Query
-          extendedExplanations.set(count.toString(), {
-            number: count,
-            message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."
+            message: "Please define the query and select its format if they have not already been configured."
           });
           count++;
         } else if (this.isCurrentStep(FixedDialogStep.CUSTOM) && !hasValidOutputs(this.project)) { // Output
           extendedExplanations.set(count.toString(), {
             number: count,
-            message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."
+            message: "Please select the output format and template ID. For advanced configuration, add the required environment variables."
           });
           count++;
         } else if (this.isCurrentStep(FixedDialogStep.SUMMARY)) {
@@ -2325,7 +2312,7 @@ export default defineComponent({
       }
 
       return [...fixedFields, ...dynamicSelectedForms, ...dynamicFields].sort((a, b) =>
-          this.getCategorySortValue(a.category.toLowerCase()) - this.getCategorySortValue(b.category.toLowerCase()))
+          this.getCategorySortValue(a.category) - this.getCategorySortValue(b.category))
     },
 
     fetchButtons(): void {
@@ -2622,31 +2609,29 @@ export default defineComponent({
     },
 
     getCategorySortValue(category: string): number {
-      if (this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY)) {
-        const canonicalIndex = this.formTitleCanonicalOrder.findIndex(
-            formTitle => formTitle.title.toLowerCase() === category.toLowerCase()
-        );
-        if (canonicalIndex !== -1) {
-          return canonicalIndex;
-        }
+      const normalizedCategory = category.toLowerCase();
+      const configuredIndex = this.formTitleCanonicalOrder.findIndex(
+          formTitle => formTitle.title.toLowerCase() === normalizedCategory
+      );
+
+      if (configuredIndex !== -1) return configuredIndex;
+
+      if (this.formTitleCanonicalOrder.length > 0) {
+        // Categories omitted from configuration follow configured categories in
+        // their existing encounter order. Array.prototype.sort is stable.
+        return this.formTitleCanonicalOrder.length + 1000;
       }
 
-      const rank = this.categoryRank[category.toLowerCase()];
+      const fallbackOrder = [
+        FixedDialogStep.QUERY,
+        FixedDialogStep.SERVICES,
+        FixedDialogStep.PROJECT,
+        FixedDialogStep.CUSTOM,
+        FixedDialogStep.SUMMARY,
+      ];
+      const fallbackIndex = fallbackOrder.findIndex(step => step === normalizedCategory);
 
-      if (!rank) {
-        return 1000; // alle unbekannten Kategorien in die Mitte
-      }
-
-      if (rank === 'last') {
-        return 10000;
-      }
-
-      if (rank.startsWith('last-')) {
-        const offset = parseInt(rank.substring(5), 10);
-        return 10000 - offset;
-      }
-
-      return parseInt(rank, 10);
+      return fallbackIndex !== -1 ? fallbackIndex : fallbackOrder.length + 1000;
     },
 
     hasSection(section:Section | undefined): boolean {

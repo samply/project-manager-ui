@@ -5,6 +5,7 @@ import {
     Explanations,
     FormDataType,
     FormField,
+    FixedFormFieldKey,
     FormFieldGroup,
     Module,
     ProjectAndForms,
@@ -23,6 +24,15 @@ export interface ProjectFieldInstance {
 
 export interface ProjectField {
     fieldKey: string
+    // Stable identity of a native fixed frontend field. This is separate from
+    // fieldKey, which is the visible caption and may be overridden/translated.
+    fixedFieldKey?: FixedFormFieldKey
+    // Allows an overridden base name to retain contextual text such as the
+    // project type in "Output Format (EXPORT)".
+    fixedFieldDisplayNameSuffix?: string
+    // Position from the backend form configuration. Used only while composing
+    // the configured group of DYNAMIC fields and customized FIXED fields.
+    configurationOrder?: number
     editProjectParam?: EditProjectParam[]
     fieldValue: string[]
     // Present only for a multiple field (FormField.multiple): one entry per

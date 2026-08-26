@@ -7,15 +7,14 @@ import {
   EditProjectParam,
   Explanations,
   FormDataType,
+  FormFieldProperty,
   Module,
   ProjectAndForms,
   ProjectConfigurationSelectionType,
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,
-  NOT_SELECTED_PROJECT_CONFIGURATION,
-  FORM_FIELD_PROPERTY_RADIO_BUTTON,
-  FORM_FIELD_PROPERTY_CHECK_BOX
+  NOT_SELECTED_PROJECT_CONFIGURATION
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
@@ -584,7 +583,7 @@ export default class ProjectFieldRow extends Vue {
   // (dropdown -> radio group) - independent of multiple, since picking
   // exactly one value is the same semantics either way.
   isRadioButton(): boolean {
-    return this.properties?.includes(FORM_FIELD_PROPERTY_RADIO_BUTTON) ?? false;
+    return this.properties?.includes(FormFieldProperty.RADIO_BUTTON) ?? false;
   }
 
   // CHECK_BOX only really makes sense paired with multiple: true (see the
@@ -593,7 +592,7 @@ export default class ProjectFieldRow extends Vue {
   // widgets). Ignored otherwise, same as this file already ignores
   // properties it doesn't recognize.
   isCheckBox(): boolean {
-    return (this.properties?.includes(FORM_FIELD_PROPERTY_CHECK_BOX) ?? false) && this.multiple;
+    return (this.properties?.includes(FormFieldProperty.CHECK_BOX) ?? false) && this.multiple;
   }
 
   // Whether at least one allowed value of this field carries a description.
@@ -732,19 +731,24 @@ export default class ProjectFieldRow extends Vue {
   }
 
   getCssProperty(): string {
-    const cssClasses = this.properties?.filter((property) => property.substring(0,3) === "css")
+    const cssProperties: FormFieldProperty[] = [
+      FormFieldProperty.CSS_UNIT_VALUE,
+      FormFieldProperty.CSS_UNIT,
+      FormFieldProperty.CSS_CHECKBOX
+    ];
+    const cssClasses = cssProperties.filter((property) => this.properties?.includes(property));
     return cssClasses && cssClasses?.length > 0 ? cssClasses.join(",")+' layout' : "";
   }
   getWidth(): string {
     let width = "80%"
     if (this.getCssProperty().includes("layout")) {
-      if (this.getCssProperty().includes("unit")) {
+      if (this.properties?.includes(FormFieldProperty.CSS_UNIT)) {
         width = "30%"
       }
-      if (this.getCssProperty().includes("unit-value")) {
+      if (this.properties?.includes(FormFieldProperty.CSS_UNIT_VALUE)) {
         width = "54%"
       }
-      if (this.getCssProperty().includes("checkbox")) {
+      if (this.properties?.includes(FormFieldProperty.CSS_CHECKBOX)) {
         width = "100%"
       }
     } else {

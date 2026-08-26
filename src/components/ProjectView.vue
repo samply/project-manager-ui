@@ -12,7 +12,7 @@
       <div class="main-content">
         <div class="admin-view">
           <div class="left-container"
-               v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) && currentMenuStep==='Status'">
+               v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) && currentMenuStep === MenuStep.STATUS">
             <!--<div class="box-header" style="padding-left:7%"><span>Phase</span></div>-->
             <div class="vertical-stepper">
               <div v-for="(projectState, index) in getProjectStates()" :key="index"
@@ -29,7 +29,7 @@
             </div>
           </div>
           <div class="data-container mt-12" style="width:100%;height:auto">
-            <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep==='Status'"
+            <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep === MenuStep.STATUS"
                  class="info-container">
               <div class="box-header"><span>Status</span></div>
 
@@ -98,7 +98,7 @@
                   </thead>
                   <tbody>
                   <tr>
-                    <td class="clickable" @click="currentMenuStep='Request'">
+                    <td class="clickable" @click="currentMenuStep = MenuStep.REQUEST">
                       {{ project ? project.label : '' }}
                     </td>
                     <td>
@@ -218,7 +218,7 @@
               </div>
             </div>
             <div
-                v-if="!(project?.state === ProjectState.DRAFT && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep==='Status'"
+                v-if="!(project?.state === ProjectState.DRAFT && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep === MenuStep.STATUS"
                 class="project-actions">
               <div class="box-header"><span>Actions</span></div>
               <div style="padding:2%">
@@ -264,7 +264,7 @@
               </div>
             </div>
             <div class="documents"
-                 v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) && currentMenuStep === 'Status'">
+                 v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) && currentMenuStep === MenuStep.STATUS">
               <div class="box-header"><span>Results</span></div>
               <div style="padding: 2%">
                 <ResultsBox :call-refresh-context="refreshContext"
@@ -278,7 +278,7 @@
             </div>
           </div>
         </div>
-        <div v-if="currentMenuStep==='Request'" class="data-container mt-12"
+        <div v-if="currentMenuStep === MenuStep.REQUEST" class="data-container mt-12"
              :class="{ 'non-draft': !existsDraftDialog }">
           <div v-if="project" style="height:100%">
             <div v-if="!existsDraftDialog" class="box-header"><span>Request</span></div>
@@ -549,8 +549,38 @@
             </div>
           </div>
         </div>
+        <div v-if="currentMenuStep === MenuStep.SCRIPT" class="data-container mt-12 non-draft">
+          <div class="box-header"><span>Script</span></div>
+          <div style="padding: 2% 4rem">
+            <UploadButton
+                :context="context"
+                :project-manager-backend-service="projectManagerBackendService"
+                :module="Module.PROJECT_DOCUMENTS_MODULE"
+                :upload-action="Action.UPLOAD_SCRIPT_ACTION"
+                text="Upload script"
+                :call-refresh-context="refreshContext"
+                :is-file="true"
+            />
+            <DownloadButton
+                :context="context"
+                :project-manager-backend-service="projectManagerBackendService"
+                :module="Module.PROJECT_DOCUMENTS_MODULE"
+                :action="Action.DOWNLOAD_SCRIPT_ACTION"
+                :filename="scriptDescription.originalFilename"
+                text="Last uploaded script"
+            />
+            <DownloadButton
+                v-if="existsAuthenticationScript"
+                :context="context"
+                :project-manager-backend-service="projectManagerBackendService"
+                :module="Module.TOKEN_MANAGER_MODULE"
+                :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION"
+                text="Authentication script"
+            />
+          </div>
+        </div>
         <div class="documents"
-             v-if="project?.state === ProjectState.FINISHED && currentMenuStep==='Documents'">
+             v-if="project?.state === ProjectState.FINISHED && currentMenuStep === MenuStep.DOCUMENTS">
           <div class="box-header">Publications</div>
           <div style="padding: 2%">
             <DocumentsTable :context="context"
@@ -598,7 +628,7 @@
                           :is-file="false"/>
           </div>
         </div>
-        <div class="documents data-container mt-12" v-if="currentMenuStep==='Documents'" style="padding: 0">
+        <div class="documents data-container mt-12" v-if="currentMenuStep === MenuStep.DOCUMENTS" style="padding: 0">
           <div class="box-header"><span>Documents</span></div>
           <div style="padding: 2% 4rem">
             <DownloadFormTemplatePdfButtons :form-templates="formTemplates" :context="context"
@@ -716,11 +746,12 @@ import {
   EditProjectParam,
   Explanations,
   FeasibilityResult,
-  FORM_FIELD_PROPERTY_CHECK_BOX,
-  FORM_FIELD_PROPERTY_RADIO_BUTTON,
+  FixedFormFieldKey,
   FormDataType,
   FormField,
   FormFieldLayout,
+  FormFieldProperty,
+  FormFieldType,
   FormTemplate,
   FormTitle,
   getAllProjectTypes,
@@ -766,6 +797,12 @@ import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
 import {ActionFunction, Block, ProjectField, Section} from "@/services/utils";
+import {
+  buildFixedProjectFields,
+  buildVotumProjectFields,
+  FixedProjectFieldsContext
+} from "@/services/fixedProjectFields";
+import {ProjectViewMenuStep} from "@/services/projectViewMenuStep";
 import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
 import {PollingService} from "@/services/PollingService";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
@@ -808,6 +845,9 @@ export default defineComponent({
     },
     DialogStep() {
       return FixedDialogStep
+    },
+    MenuStep() {
+      return ProjectViewMenuStep
     },
     ProjectRole() {
       return ProjectRole
@@ -919,8 +959,10 @@ export default defineComponent({
       layouts: {} as Record<string, FormFieldLayout[]>,
       selectedForms: [] as FormTitle[],
       projectFields: [] as ProjectField[],
+      isScriptTabAvailable: false,
+      isDocumentsTabAvailable: false,
       groupedMissingFields: {} as Record<string, string[]>,
-      currentMenuStep: "Status",
+      currentMenuStep: ProjectViewMenuStep.STATUS,
       editMode: false,
       blockCollapse: new Map<string, boolean>()
     };
@@ -1291,6 +1333,7 @@ export default defineComponent({
       }
 
       const fieldToSend = this.formFields.find((field) =>
+          this.isDynamicFormField(field) &&
           field.block === block.label && field.blockInstance === block.instance
       );
       if (!fieldToSend) {
@@ -1302,7 +1345,8 @@ export default defineComponent({
 
     addFormFieldBlockInstance(formField: FormField) {
       const nextBlockInstance = this.formFields
-          .filter((field) => field.title === formField.title && field.block === formField.block)
+          .filter((field) => this.isDynamicFormField(field) &&
+              field.title === formField.title && field.block === formField.block)
           .map((field) => field.blockInstance)
           .filter((instance): instance is number => instance != null)
           .reduce((max, instance) => Math.max(max, instance), 0) + 1;
@@ -1323,6 +1367,7 @@ export default defineComponent({
 
     hasBlockInstance(block: BlockMetadata): boolean {
       return this.formFields.some((field) =>
+          this.isDynamicFormField(field) &&
           field.title === block?.formTitle &&
           field.block === block?.label &&
           field.blockInstance != null
@@ -1431,7 +1476,7 @@ export default defineComponent({
     fetchIfProjectHasAllMandatoryFields(): boolean {
       const baseFieldsValid = Boolean(
           this.project &&
-          this.project.label &&
+          (this.hasConfiguredInactiveFixedField(FixedFormFieldKey.PROJECT_TITLE) || this.project.label) &&
           this.project.query &&
           this.bridgeheads &&
           this.project.queryFormat &&
@@ -1449,7 +1494,8 @@ export default defineComponent({
     isApplicableMandatoryFormField(field: FormField): boolean {
       const belongsToExistingBlock = !field.block || field.blockInstance != null;
 
-      return Boolean(field.mandatory) &&
+      return this.isDynamicFormField(field) &&
+          Boolean(field.mandatory) &&
           belongsToExistingBlock &&
           this.selectedForms.some(form => form.title === field.title);
     },
@@ -1459,7 +1505,9 @@ export default defineComponent({
 
       if (this.project) {
         // ✅ project-level fields stay inline
-        result = this.addMissingField(result, 'title', this.project.label);
+        if (!this.hasConfiguredInactiveFixedField(FixedFormFieldKey.PROJECT_TITLE)) {
+          result = this.addMissingField(result, 'title', this.project.label);
+        }
         result = this.addMissingField(result, 'query', this.project.query);
         result = this.addMissingField(result, 'sites', this.bridgeheads);
         result = this.addMissingField(result, 'query format', this.project.queryFormat);
@@ -1593,6 +1641,8 @@ export default defineComponent({
           this.initializeData(Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, new Map(), 'currentUser'),
           this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment'),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_BEST_PROJECT_FORM_TEMPLATES_ACTION, new Map(), 'formTemplates'),
+          this.initializeScriptTabAvailability(),
+          this.initializeDocumentsTabAvailability(),
           this.initializeProjectFormsData(),
           this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, new Map(), 'exporterTemplateIds')
         ]);
@@ -1605,7 +1655,10 @@ export default defineComponent({
         await this.checkButtonVisibility()
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
-        this.project?.state === ProjectState.DRAFT && this.currentMenuStep === "Status" ? this.currentMenuStep = "Request" : {}
+        this.project?.state === ProjectState.DRAFT &&
+        this.currentMenuStep === ProjectViewMenuStep.STATUS
+            ? this.currentMenuStep = ProjectViewMenuStep.REQUEST
+            : {}
       }
     },
 
@@ -1638,6 +1691,48 @@ export default defineComponent({
         this.formFields = [];
         this.formTitles = [];
         this.layouts = {};
+      }
+    },
+
+    async initializeScriptTabAvailability(): Promise<void> {
+      const [canUploadScript, canDownloadScript] = await Promise.all([
+        this.projectManagerBackendService.isModuleActionActive(
+            Module.PROJECT_DOCUMENTS_MODULE, Action.UPLOAD_SCRIPT_ACTION),
+        this.projectManagerBackendService.isModuleActionActive(
+            Module.PROJECT_DOCUMENTS_MODULE, Action.DOWNLOAD_SCRIPT_ACTION)
+      ]);
+
+      // The backend action catalogue is context-aware and is the sole source
+      // of truth for whether the Script area belongs in this project view.
+      this.isScriptTabAvailable = canUploadScript || canDownloadScript;
+      if (!this.isScriptTabAvailable && this.currentMenuStep === ProjectViewMenuStep.SCRIPT) {
+        this.currentMenuStep = this.project?.state === ProjectState.DRAFT
+            ? ProjectViewMenuStep.REQUEST
+            : ProjectViewMenuStep.STATUS;
+      }
+    },
+
+    async initializeDocumentsTabAvailability(): Promise<void> {
+      const documentActions: Array<[Module, Action]> = [
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.UPLOAD_PUBLICATION_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.DOWNLOAD_PUBLICATION_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.UPLOAD_FINAL_REPORT_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.DOWNLOAD_FINAL_REPORT_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.UPLOAD_OTHER_DOCUMENT_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.DOWNLOAD_OTHER_DOCUMENT_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.ADD_PUBLICATION_URL_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.ADD_OTHER_DOCUMENT_URL_ACTION],
+        [Module.PROJECT_EDITION_MODULE, Action.DOWNLOAD_FORM_AS_PDF_ACTION]
+      ];
+      const activeActions = await Promise.all(documentActions.map(([module, action]) =>
+          this.projectManagerBackendService.isModuleActionActive(module, action)));
+
+      this.isDocumentsTabAvailable = activeActions.some(Boolean);
+      if ((!this.isDocumentsTabAvailable || this.project?.state === ProjectState.DRAFT) &&
+          this.currentMenuStep === ProjectViewMenuStep.DOCUMENTS) {
+        this.currentMenuStep = this.project?.state === ProjectState.DRAFT
+            ? ProjectViewMenuStep.REQUEST
+            : ProjectViewMenuStep.STATUS;
       }
     },
 
@@ -1727,10 +1822,10 @@ export default defineComponent({
     // overriding whatever the backend configured, so the two are never out
     // of sync with their rendering.
     normalizeMultipleForFieldProperty(field: FormField): FormField {
-      if (field.properties?.includes(FORM_FIELD_PROPERTY_CHECK_BOX)) {
+      if (field.properties?.includes(FormFieldProperty.CHECK_BOX)) {
         return {...field, multiple: true};
       }
-      if (field.properties?.includes(FORM_FIELD_PROPERTY_RADIO_BUTTON)) {
+      if (field.properties?.includes(FormFieldProperty.RADIO_BUTTON)) {
         return {...field, multiple: false};
       }
       return field;
@@ -1938,6 +2033,203 @@ export default defineComponent({
     fetchIfCanShowBridgeheadAdminButtons(): boolean {
       return (this.project && (this.project.state == ProjectState.DEVELOP || this.project.state == ProjectState.PILOT)) ? this.existInvitedUsers : true;
     },
+    isDynamicFormField(formField: FormField): boolean {
+      // Missing fieldType is the rolling-upgrade/default DYNAMIC case.
+      return formField.fieldType !== FormFieldType.FIXED;
+    },
+
+    isKnownFixedFormFieldKey(label: string): label is FixedFormFieldKey {
+      return Object.values(FixedFormFieldKey).includes(label as FixedFormFieldKey);
+    },
+
+    getConfiguredFixedField(key: FixedFormFieldKey): FormField | undefined {
+      const matches = this.formFields.filter((field) =>
+          field.fieldType === FormFieldType.FIXED && field.label === key);
+      return matches.length === 1 ? matches[0] : undefined;
+    },
+
+    hasConfiguredInactiveFixedField(key: FixedFormFieldKey): boolean {
+      return this.getConfiguredFixedField(key)?.active === false;
+    },
+
+    isFixedFieldConfigured(key: FixedFormFieldKey): boolean {
+      return this.getConfiguredFixedField(key) !== undefined;
+    },
+
+    getFixedFieldDialogStep(key: FixedFormFieldKey, defaultDialogStep: string): string {
+      return this.getConfiguredFixedField(key)?.title || defaultDialogStep;
+    },
+
+    isFixedFieldVisibleInCurrentStep(
+        key: FixedFormFieldKey, defaultDialogStep: string): boolean {
+      return !this.existsDraftDialog ||
+          this.isCurrentStep(this.getFixedFieldDialogStep(key, defaultDialogStep)) ||
+          this.isCurrentStep(FixedDialogStep.SUMMARY);
+    },
+
+    resolveConfiguredFixedFields(fixedFields: ProjectField[]): {
+      unconfiguredFixedFields: ProjectField[];
+      configuredFixedFields: ProjectField[];
+    } {
+      const metadataByLabel = new Map<string, FormField[]>();
+      this.formFields
+          .filter((field) => field.fieldType === FormFieldType.FIXED)
+          .forEach((field) => {
+            const entries = metadataByLabel.get(field.label) ?? [];
+            entries.push(field);
+            metadataByLabel.set(field.label, entries);
+          });
+
+      const nativeFieldsByKey = new Map<FixedFormFieldKey, ProjectField[]>();
+      fixedFields
+          .filter((field): field is ProjectField & {fixedFieldKey: FixedFormFieldKey} =>
+              field.fixedFieldKey != null)
+          .forEach((field) => {
+            const entries = nativeFieldsByKey.get(field.fixedFieldKey) ?? [];
+            entries.push(field);
+            nativeFieldsByKey.set(field.fixedFieldKey, entries);
+          });
+      const matchedKeys = new Set<FixedFormFieldKey>();
+      const configuredFixedFields: ProjectField[] = [];
+      const nativeOrderOverrides = new Map<ProjectField, ProjectField>();
+
+      metadataByLabel.forEach((metadataEntries, label) => {
+        if (!this.isKnownFixedFormFieldKey(label)) {
+          console.warn(`Ignoring unknown FIXED form-field key "${label}".`);
+          return;
+        }
+        if (metadataEntries.length !== 1) {
+          console.warn(`Ignoring duplicate FIXED form-field key "${label}".`);
+          return;
+        }
+
+        const metadata = metadataEntries[0];
+        const nativeFields = nativeFieldsByKey.get(label);
+        if (!nativeFields?.length) {
+          console.warn(`Ignoring FIXED form-field key "${label}" because no native field exists in this context.`);
+          return;
+        }
+
+        matchedKeys.add(label);
+        if (metadata.active === false) {
+          return;
+        }
+
+        const keepFixedFieldOrder = metadata.properties?.includes(
+            FormFieldProperty.KEEP_FIXED_FIELD_ORDER) ?? false;
+        nativeFields.forEach((nativeField) => {
+          const configuredField: ProjectField = {
+            ...nativeField,
+            // A metadata-only override can explicitly stay in the native fixed
+            // group. Keeping the native category also retains its dialog step;
+            // otherwise title/order move it into the configured group as before.
+            category: keepFixedFieldOrder ? nativeField.category : metadata.title,
+            configurationOrder: keepFixedFieldOrder
+                ? nativeField.configurationOrder
+                : metadata.order,
+            fieldKey: metadata.labelDisplayName?.trim()
+                ? metadata.labelDisplayName + (nativeField.fixedFieldDisplayNameSuffix ?? "")
+                : nativeField.fieldKey,
+            fieldDescription: metadata.labelDescription?.trim()
+                ? metadata.labelDescription
+                : nativeField.fieldDescription,
+            fieldShortDescription: metadata.labelShortDescription?.trim()
+                ? metadata.labelShortDescription
+                : nativeField.fieldShortDescription
+          };
+          if (keepFixedFieldOrder) {
+            nativeOrderOverrides.set(nativeField, configuredField);
+          } else {
+            configuredFixedFields.push(configuredField);
+          }
+        });
+      });
+
+      return {
+        // Iterate the native list itself so KEEP_FIXED_FIELD_ORDER replaces a
+        // field in place. A matched inactive or normally configured field has
+        // no in-place replacement and is therefore removed from this group.
+        unconfiguredFixedFields: fixedFields.flatMap((field) => {
+          if (field.fixedFieldKey == null || !matchedKeys.has(field.fixedFieldKey)) {
+            return [field];
+          }
+          const nativeOrderOverride = nativeOrderOverrides.get(field);
+          return nativeOrderOverride ? [nativeOrderOverride] : [];
+        }),
+        configuredFixedFields
+      };
+    },
+
+    sortConfiguredProjectFields(fields: ProjectField[]): ProjectField[] {
+      interface IndexedField {
+        field: ProjectField;
+        sourceIndex: number;
+      }
+
+      interface FieldOrderingUnit {
+        category: string;
+        configurationOrder: number;
+        sourceIndex: number;
+        fields: IndexedField[];
+      }
+
+      const units: FieldOrderingUnit[] = [];
+      const blockUnits = new Map<string, FieldOrderingUnit>();
+
+      fields.forEach((field, sourceIndex) => {
+        const configurationOrder = field.configurationOrder ?? Number.MAX_SAFE_INTEGER;
+        if (!field.block) {
+          units.push({
+            category: field.category,
+            configurationOrder,
+            sourceIndex,
+            fields: [{field, sourceIndex}]
+          });
+          return;
+        }
+
+        // A repeatable block is one ordering unit. Sorting every block field
+        // independently by configuration order would interleave instances as
+        // F1.1, F1.2, F2.1, F2.2 instead of keeping each instance together.
+        const blockKey = `${field.category}#${field.block.formTitle}#${field.block.label}`;
+        let unit = blockUnits.get(blockKey);
+        if (!unit) {
+          unit = {
+            category: field.category,
+            configurationOrder,
+            sourceIndex,
+            fields: []
+          };
+          blockUnits.set(blockKey, unit);
+          units.push(unit);
+        }
+        unit.configurationOrder = Math.min(unit.configurationOrder, configurationOrder);
+        unit.sourceIndex = Math.min(unit.sourceIndex, sourceIndex);
+        unit.fields.push({field, sourceIndex});
+      });
+
+      units.sort((first, second) => {
+        const categoryComparison =
+            this.getCategorySortValue(first.category) - this.getCategorySortValue(second.category);
+        if (categoryComparison !== 0) {
+          return categoryComparison;
+        }
+        return first.configurationOrder - second.configurationOrder ||
+            first.sourceIndex - second.sourceIndex;
+      });
+
+      return units.flatMap((unit) => unit.fields
+          .sort((first, second) => {
+            const firstInstance = first.field.block?.instance ?? Number.MAX_SAFE_INTEGER;
+            const secondInstance = second.field.block?.instance ?? Number.MAX_SAFE_INTEGER;
+            return firstInstance - secondInstance ||
+                (first.field.configurationOrder ?? Number.MAX_SAFE_INTEGER) -
+                (second.field.configurationOrder ?? Number.MAX_SAFE_INTEGER) ||
+                first.sourceIndex - second.sourceIndex;
+          })
+          .map(({field}) => field));
+    },
+
     // A multiple field (formField.multiple, ignored for BOOLEAN) arrives here
     // as several FormFields sharing the same title+label+blockInstance, one
     // per fieldInstance - mirroring how blocks arrive as several FormFields
@@ -1978,6 +2270,7 @@ export default defineComponent({
 
         return {
           fieldKey: formField.labelDisplayName ?? formField.label,
+          configurationOrder: formField.order,
           fieldValue: formField.value != null ? [formField.value] : [],
           editProjectParam: [EditProjectParam.FORM_FIELDS],
           mandatory: formField.mandatory,
@@ -2239,256 +2532,77 @@ export default defineComponent({
       return result;
     },
 
-    fetchProjectOutputFields(): ProjectField[] {
-      const outputs: ProjectOutput[] =
-          this.project?.outputs?.length
-              ? this.project.outputs
-              : [{projectType: ProjectType.EXPORT} as ProjectOutput];
-
-      return outputs.flatMap(exec => [
-        {
-          fieldKey: "Type",
-          fieldValue: exec.projectType ? [exec.projectType] : [],
-          editProjectParam: [EditProjectParam.PROJECT_TYPE],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.projectType'),
-          editMode: this.editMode,
-          possibleValues: this.projectTypes,
-          displayPossibleValue: (label: string) => {
-            return {name: label, description: ""}
-          },
-          mandatory: true,
-          category: FixedDialogStep.CUSTOM,
-          visibilityCondition:
-              this.isProjectManagerAdmin() &&
-              (!this.existsDraftDialog ||
-              this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY)),
-          extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.PROJECT_TYPE, exec),
-          deleteAction: Action.REMOVE_PROJECT_OUTPUT_ACTION,
-          deleteModule: Module.PROJECT_EDITION_MODULE
-        },
-        {
-          fieldKey: `Output Format (${exec.projectType})`,
-          fieldValue: exec.outputFormat ? [exec.outputFormat] : [],
-          editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.outputFormat'),
-          editMode: this.editMode,
-          possibleValues: this.outputFormats[exec.projectType] ?? [],
-          displayPossibleValue: (label: string) => {
-            return {name: label, description: ""}
-          },
-          mandatory: true,
-          category: FixedDialogStep.CUSTOM,
-          visibilityCondition:
-              this.isProjectManagerAdmin() &&
-              (!this.existsDraftDialog ||
-              this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY)),
-          extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.OUTPUT_FORMAT, exec)
-        },
-        {
-          fieldKey: `Template ID (${exec.projectType})`,
-          fieldValue: exec.templateId ? [exec.templateId] : [],
-          editProjectParam: [EditProjectParam.TEMPLATE_ID],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration(exec.projectType + '.templateId'),
-          editMode: this.editMode,
-          possibleValues: this.exporterTemplateIds[exec.projectType] ?? [],
-          displayPossibleValue: (label: string) => {
-            return {name: label, description: ""}
-          },
-          mandatory: true,
-          category: FixedDialogStep.CUSTOM,
-          visibilityCondition:
-              this.isProjectManagerAdmin() &&
-              (!this.existsDraftDialog ||
-              this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY)),
-          extraParams: this.fetchExtraParamsForProjectOutput(EditProjectParam.TEMPLATE_ID, exec)
-        }
-      ]);
-    },
-
     fetchProjectFields(): ProjectField[] {
-      const fixedFields: ProjectField[] = [
-        {
-          fieldKey: "Project Title",
-          fieldValue: this.project?.label ? [this.project.label] : [],
-          editProjectParam: [EditProjectParam.LABEL],
-          isEditable: true,
-          editMode: this.editMode,
-          mandatory: true,
-          category: FixedDialogStep.PROJECT,
-          visibilityCondition: !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.PROJECT) || this.isCurrentStep(FixedDialogStep.SUMMARY)
-        },
-        {
-          fieldKey: "Project Description",
-          fieldValue: this.project?.description ? [this.project.description] : [],
-          editProjectParam: [EditProjectParam.DESCRIPTION],
-          fieldDescription: "Briefly describe your project in a few words. What is the objective or aim of your project?",
-          type: FormDataType.LONG_STRING,
-          isEditable: true,
-          editMode: this.editMode,
-          mandatory: true,
-          category: FixedDialogStep.PROJECT,
-          visibilityCondition: !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.PROJECT) || this.isCurrentStep(FixedDialogStep.SUMMARY)
-        },
-        {
-          fieldKey: "DescriptionUpload",
-          fieldValue: [this.projectDescription?.label, this.projectDescription?.originalFilename],
-          isEditable: true,
-          editMode: this.editMode,
-          existFile: this.existsProjectDescription,
-          uploadAction: this.Action.UPLOAD_DESCRIPTION_ACTION,
-          downloadAction: this.Action.DOWNLOAD_DESCRIPTION_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          category: FixedDialogStep.PROJECT,
-          visibilityCondition: !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.PROJECT) || this.isCurrentStep(FixedDialogStep.SUMMARY)
-        },
-        {
-          fieldKey: "Queried Sites",
-          fieldDescription: "Sites identified via the Explorer as having samples or data matching your search criteria.",
-          fieldValue: [],
-          bridgeheads: {
-            selected: this.bridgeheads,
-            available: this.allBridgeheads,
-          },
-          editProjectParam: [EditProjectParam.BRIDGEHEADS],
-          isEditable: true,
-          editMode: this.editMode,
-          mandatory: true,
-          redirectUrl: this.project?.explorerUrl ?? undefined,
-          category: FixedDialogStep.PROJECT,
-          transformForSending: (humanReadable: string) => this.allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
-          visibilityCondition: !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.PROJECT) || this.isCurrentStep(FixedDialogStep.SUMMARY)
-        },
-        {
-          fieldKey: "Configuration",
-          fieldValue: this.currentProjectConfiguration,
-          editProjectParam: [EditProjectParam.PROJECT_CONFIGURATION],
-          isEditable: true,
-          editMode: this.editMode,
-          possibleValues: this.projectConfigurationLabels,
-          configurations: this.projectConfigurations,
-          configurationSelectionType: this.projectConfigurationSelectionType,
-          category: FixedDialogStep.SERVICES,
-          visibilityCondition:  !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SERVICES) || (this.isProjectManagerAdmin() && this.isCurrentStep(FixedDialogStep.SUMMARY)),
-          action: Action.SET_PROJECT_CONFIGURATION_ACTION
-        },
-        {
-          fieldKey: "Selected Cohort",
-          fieldDescription: "This query was automatically imported from your Explorer session. Use \"Edit in Explorer\" to adjust your search criteria.",
-          fieldValue: [this.project?.humanReadable ? this.project?.humanReadable : "", this.project?.query ? this.project?.query : "", this.project?.queryDetails ? this.project?.queryDetails : ""],
-          editProjectParam: [EditProjectParam.HUMAN_READABLE],
-          bridgeheads: {
-            selected: this.bridgeheads,
-            available: this.allBridgeheads,
-          },
-          isEditable: true,
-          editMode: this.editMode,
-          mandatory: true,
-          redirectUrl: this.project?.explorerUrl ?? undefined,
-          category: FixedDialogStep.QUERY,
-          visibilityCondition: !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.QUERY) || this.isCurrentStep(FixedDialogStep.SUMMARY)
-        },
-        {
-          fieldKey: "Query Format",
-          fieldValue: this.project?.queryFormat ? [this.project.queryFormat] : [],
-          editProjectParam: [EditProjectParam.QUERY_FORMAT],
-          isEditable: true,
-          editMode: this.editMode,
-          redirectUrl: this.project?.explorerUrl ?? undefined,
-          possibleValues: this.queryFormats,
-          displayPossibleValue: (label: string) => {
-            return {name: label, description: ""}
-          },
-          mandatory: true,
-          category: FixedDialogStep.QUERY,
-          visibilityCondition: this.isProjectManagerAdmin() && (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY))
-        },
-        {
-          fieldKey: "Additional filter criteria",
-          fieldDescription: "Please provide filter criteria that could not select in the Explorer, or further notes on the resources you want to request",
-          fieldValue: this.project?.cohortDefinition ? [this.project.cohortDefinition] : [],
-          editProjectParam: [EditProjectParam.COHORT_DEFINITION],
-          type: FormDataType.LONG_STRING,
-          isEditable: true,
-          editMode: this.editMode,
-          category: FixedDialogStep.QUERY,
-          visibilityCondition: !this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.QUERY) || this.isCurrentStep(FixedDialogStep.SUMMARY)
-        },
-        ...this.fetchProjectOutputFields(),
-        {
-          fieldKey: "Environment Variables",
-          fieldValue: this.project?.queryContext ? [this.project.queryContext] : [],
-          editProjectParam: [EditProjectParam.QUERY_CONTEXT],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration('queryContext'),
-          editMode: this.editMode,
-          category: FixedDialogStep.CUSTOM,
-          visibilityCondition: this.isProjectManagerAdmin() &&
-              (!this.existsDraftDialog || this.currentProjectConfiguration.includes(CUSTOM_PROJECT_CONFIGURATION) && this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY))
-        },
-        {
-          fieldKey: "Script",
-          fieldValue: [this.scriptDescription.label, this.scriptDescription.originalFilename],
-          isEditable: true,
-          editMode: this.editMode,
-          existFile: this.existsScript,
-          uploadAction: this.Action.UPLOAD_SCRIPT_ACTION,
-          downloadAction: this.Action.DOWNLOAD_SCRIPT_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          category: "Script",
-          visibilityCondition: !!this.dataShieldStatus && (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY))
-        },
-        {
-          fieldKey: "Authentication Script",
-          fieldValue: [],
-          isEditable: false,
-          editMode: this.editMode,
-          existFile: this.existsAuthenticationScript,
-          downloadAction: this.Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION,
-          downloadModule: this.Module.TOKEN_MANAGER_MODULE,
-          category: "Script",
-          visibilityCondition: !!this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && this.existsAuthenticationScript
-        }
-      ];
-      const votumFields: ProjectField[] = [
-        /*{
-          fieldKey: "Ethic vote",
-          fieldValue: [this.votumDescription.label, this.votumDescription.originalFilename],
-          isEditable: true,
-          editMode: this.editMode,
-          existFile: this.existsVotum,
-          uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
-          downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          category: "project",
-          visibilityCondition: true
-        },*/
-        {
-          fieldKey: "Ethic vote for all sites",
-          fieldValue: [this.votumForAllBridgeheadsDescription.label, this.votumForAllBridgeheadsDescription.originalFilename],
-          isEditable: true,
-          editMode: this.editMode,
-          existFile: this.existsVotumForAllBridgeheads,
-          uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
-          downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          category: "project",
-          visibilityCondition: true
-        }
-      ]
-      const dynamicFields = this.buildDynamicProjectFieldsFromFormFields(this.formFields);
+      const context: FixedProjectFieldsContext = {
+        project: this.project,
+        editMode: this.editMode,
+        existsDraftDialog: this.existsDraftDialog,
+        projectDescription: this.projectDescription,
+        existsProjectDescription: this.existsProjectDescription,
+        bridgeheads: this.bridgeheads,
+        allBridgeheads: this.allBridgeheads,
+        currentProjectConfiguration: this.currentProjectConfiguration,
+        projectConfigurationLabels: this.projectConfigurationLabels,
+        projectConfigurations: this.projectConfigurations,
+        projectConfigurationSelectionType: this.projectConfigurationSelectionType,
+        queryFormats: this.queryFormats,
+        projectTypes: this.projectTypes,
+        outputFormats: this.outputFormats,
+        exporterTemplateIds: this.exporterTemplateIds,
+        votumDescription: this.votumDescription,
+        existsVotum: this.existsVotum,
+        votumForAllBridgeheadsDescription: this.votumForAllBridgeheadsDescription,
+        existsVotumForAllBridgeheads: this.existsVotumForAllBridgeheads,
+        isProjectManagerAdmin: () => this.isProjectManagerAdmin(),
+        isFixedFieldConfigured: (key) => this.isFixedFieldConfigured(key),
+        getFixedFieldDialogStep: (key, defaultStep) =>
+            this.getFixedFieldDialogStep(key, defaultStep),
+        isFixedFieldVisibleInCurrentStep: (key, defaultStep) =>
+            this.isFixedFieldVisibleInCurrentStep(key, defaultStep),
+        isCurrentStep: (step) => this.isCurrentStep(step),
+        isNotIncludedInCurrentProjectConfiguration: (field) =>
+            this.isNotIncludedInCurrentProjectConfiguration(field),
+        fetchExtraParamsForProjectOutput: (editProjectParam, output) =>
+            this.fetchExtraParamsForProjectOutput(editProjectParam, output)
+      };
+      const fixedFields = buildFixedProjectFields(context);
+      const votumFields = buildVotumProjectFields(context);
+      const {unconfiguredFixedFields, configuredFixedFields} =
+          this.resolveConfiguredFixedFields([...fixedFields, ...votumFields]);
+      const voteKeys = new Set<FixedFormFieldKey>([
+        FixedFormFieldKey.ETHIC_VOTE,
+        FixedFormFieldKey.ETHIC_VOTE_FOR_ALL_SITES
+      ]);
+      const unconfiguredVoteFields = unconfiguredFixedFields.filter((field) =>
+          field.fixedFieldKey != null && voteKeys.has(field.fixedFieldKey));
+      const ordinaryUnconfiguredFixedFields = unconfiguredFixedFields.filter((field) =>
+          field.fixedFieldKey == null ||
+          !voteKeys.has(field.fixedFieldKey));
+      const dynamicFields = this.buildDynamicProjectFieldsFromFormFields(
+          this.formFields.filter((field) => this.isDynamicFormField(field)));
       const dynamicSelectedForms = this.buildDynamicProjectFieldsFromFormTitles(
           this.formTitles.filter(formTitle => {
             this.draftDialogStepper.hasCurrentStep(formTitle.title)
           }));
 
-      const showVoteUpload = dynamicFields.find((field) => field.fieldKey === "Ethics vote")?.fieldValue[0]
-      if (showVoteUpload === "true" && (this.isCurrentStep(FixedDialogStep.PROJECT) || !this.existsDraftDialog )) {
-        const index = dynamicFields.findIndex((field) => field.fieldKey === "Ethics vote")
+      const showVoteUpload = dynamicFields.find((field) =>
+          field.fieldKey === "Ethics vote")?.fieldValue[0] === "true";
+      const activeConfiguredFixedFields = configuredFixedFields.filter((field) =>
+          field.fixedFieldKey == null ||
+          (!voteKeys.has(field.fixedFieldKey) || showVoteUpload));
+      const configuredFields = this.sortConfiguredProjectFields([
+        ...activeConfiguredFixedFields,
+        ...dynamicFields
+      ]);
+
+      if (showVoteUpload) {
+        const index = configuredFields.findIndex((field) => field.fieldKey === "Ethics vote")
         if (index > -1) {
-          dynamicFields.splice(index+1, 0, ...votumFields)
+          configuredFields.splice(index + 1, 0, ...unconfiguredVoteFields)
         }
       }
 
-      return [...fixedFields, ...dynamicSelectedForms, ...dynamicFields].sort((a, b) =>
+      return [...ordinaryUnconfiguredFixedFields, ...dynamicSelectedForms, ...configuredFields].sort((a, b) =>
           this.getCategorySortValue(a.category) - this.getCategorySortValue(b.category))
     },
 
@@ -2728,12 +2842,21 @@ export default defineComponent({
       }
     },
 
-    getMenuSteps(): string[] {
-      if (this.project?.state !== ProjectState.DRAFT) {
-        return ["Status", "Request", "Documents"]
-      } else {
-        return ["Request", "Documents"]
+    getMenuSteps(): ProjectViewMenuStep[] {
+      const steps: ProjectViewMenuStep[] = this.project?.state !== ProjectState.DRAFT
+          ? [ProjectViewMenuStep.STATUS, ProjectViewMenuStep.REQUEST]
+          : [ProjectViewMenuStep.REQUEST];
+      if (this.isScriptTabAvailable) {
+        steps.splice(
+            steps.indexOf(ProjectViewMenuStep.REQUEST) + 1,
+            0,
+            ProjectViewMenuStep.SCRIPT
+        );
       }
+      if (this.project?.state !== ProjectState.DRAFT && this.isDocumentsTabAvailable) {
+        steps.push(ProjectViewMenuStep.DOCUMENTS);
+      }
+      return steps;
     },
 
     getDialogStep(stepId: string): DialogStep | undefined {
@@ -2781,7 +2904,7 @@ export default defineComponent({
       return minInstances ? counter <= minInstances : false
     },
 
-    isCurrentStep(step: FixedDialogStep): boolean {
+    isCurrentStep(step: string): boolean {
       return this.draftDialogStepper.currentStep?.id === step
     },
 

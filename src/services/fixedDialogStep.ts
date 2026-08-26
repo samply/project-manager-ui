@@ -1,4 +1,4 @@
-import {FormTitle} from "@/services/projectManagerBackendService";
+import type {FormTitle} from "@/services/projectManagerBackendService";
 
 export enum FixedDialogStep {
     SERVICES = "services",

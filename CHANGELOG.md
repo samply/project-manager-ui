@@ -137,6 +137,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Form title canonical order
 - Pre_info and post_info
 - Enum description
+- Override fixed form fields
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

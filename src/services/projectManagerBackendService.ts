@@ -14,16 +14,6 @@ const actionsPath = '/actions'
 export const CUSTOM_PROJECT_CONFIGURATION = 'CUSTOM';
 export const NOT_SELECTED_PROJECT_CONFIGURATION = 'NOT_SELECTED';
 
-// FormField.properties markers that switch an ENUM field's rendering away
-// from the default dropdown: FORM_FIELD_PROPERTY_RADIO_BUTTON renders
-// possibleValues as a radio group (single-choice); FORM_FIELD_PROPERTY_CHECK_BOX
-// renders them as a checkbox list manipulating a set of values (multi-choice).
-// ProjectView.addFormFields forces FormField.multiple to false/true to match
-// (RADIO_BUTTON/CHECK_BOX respectively), overriding whatever the backend sent,
-// so these markers and "multiple" can never disagree.
-export const FORM_FIELD_PROPERTY_RADIO_BUTTON = 'RADIO_BUTTON';
-export const FORM_FIELD_PROPERTY_CHECK_BOX = 'CHECK_BOX';
-
 export enum ProjectConfigurationSelectionType {
     SINGLE = "SINGLE",
     MULTIPLE = "MULTIPLE"
@@ -481,6 +471,51 @@ export enum FormDataType {
     ENUM = "ENUM"
 }
 
+// DYNAMIC is the backward-compatible default and represents a normal form
+// field whose value is handled by the dynamic form-field flow. FIXED is a
+// metadata-only reference to a field implemented by the frontend; it can
+// override that native field's display metadata, order and active state.
+export enum FormFieldType {
+    DYNAMIC = "DYNAMIC",
+    FIXED = "FIXED"
+}
+
+// Frontend-recognized FormField.properties values. Unknown property strings
+// remain safe to transport and are ignored by the frontend.
+export enum FormFieldProperty {
+    // Render an ENUM as a single-choice radio group instead of a dropdown.
+    RADIO_BUTTON = "RADIO_BUTTON",
+    // Render a multiple ENUM as one checkbox list.
+    CHECK_BOX = "CHECK_BOX",
+    // CSS layout markers used by paired value/unit fields.
+    CSS_UNIT_VALUE = "css-unit-value",
+    CSS_UNIT = "css-unit",
+    CSS_CHECKBOX = "css-checkbox",
+    // Apply FIXED display metadata/active state while retaining the native
+    // fixed-group position and dialog step.
+    KEEP_FIXED_FIELD_ORDER = "KEEP_FIXED_FIELD_ORDER"
+}
+
+// Stable frontend-owned identifiers accepted as labels of FIXED configuration
+// entries. They are deliberately separate from the visible/translatable field
+// captions used by ProjectField.fieldKey.
+export enum FixedFormFieldKey {
+    PROJECT_TITLE = "PROJECT_TITLE",
+    PROJECT_DESCRIPTION = "PROJECT_DESCRIPTION",
+    DESCRIPTION_UPLOAD = "DESCRIPTION_UPLOAD",
+    QUERIED_SITES = "QUERIED_SITES",
+    PROJECT_CONFIGURATION = "PROJECT_CONFIGURATION",
+    SELECTED_COHORT = "SELECTED_COHORT",
+    QUERY_FORMAT = "QUERY_FORMAT",
+    ADDITIONAL_FILTER_CRITERIA = "ADDITIONAL_FILTER_CRITERIA",
+    PROJECT_TYPE = "PROJECT_TYPE",
+    OUTPUT_FORMAT = "OUTPUT_FORMAT",
+    TEMPLATE_ID = "TEMPLATE_ID",
+    ENVIRONMENT_VARIABLES = "ENVIRONMENT_VARIABLES",
+    ETHIC_VOTE = "ETHIC_VOTE",
+    ETHIC_VOTE_FOR_ALL_SITES = "ETHIC_VOTE_FOR_ALL_SITES"
+}
+
 export interface FormTitle {
     title: string;
     titleDisplayName?: string;
@@ -492,6 +527,11 @@ export interface FormTitle {
 
 export interface FormField extends FormTitle {
     label: string;
+    // Missing means DYNAMIC for compatibility with older backend responses.
+    fieldType?: FormFieldType;
+    // The backend sends this only as false for an inactive FIXED entry.
+    // Missing means active/default and is not relevant for DYNAMIC fields.
+    active?: boolean;
     labelDisplayName?: string;
     labelDescription?: string;
     labelShortDescription?: string;

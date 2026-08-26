@@ -488,9 +488,9 @@ export enum FormFieldProperty {
     // Render a multiple ENUM as one checkbox list.
     CHECK_BOX = "CHECK_BOX",
     // CSS layout markers used by paired value/unit fields.
-    CSS_UNIT_VALUE = "css-unit-value",
-    CSS_UNIT = "css-unit",
-    CSS_CHECKBOX = "css-checkbox",
+    CSS_UNIT_VALUE = "CSS_UNIT_VALUE",
+    CSS_UNIT = "CSS_UNIT",
+    CSS_CHECKBOX = "CSS_CHECKBOX",
     // Apply FIXED display metadata/active state while retaining the native
     // fixed-group position and dialog step.
     KEEP_FIXED_FIELD_ORDER = "KEEP_FIXED_FIELD_ORDER"

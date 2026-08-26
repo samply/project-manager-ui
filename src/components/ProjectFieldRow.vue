@@ -731,12 +731,17 @@ export default class ProjectFieldRow extends Vue {
   }
 
   getCssProperty(): string {
-    const cssProperties: FormFieldProperty[] = [
-      FormFieldProperty.CSS_UNIT_VALUE,
-      FormFieldProperty.CSS_UNIT,
-      FormFieldProperty.CSS_CHECKBOX
-    ];
-    const cssClasses = cssProperties.filter((property) => this.properties?.includes(property));
+    // Configuration properties are uniform uppercase enum values. Translate
+    // them to the existing lowercase CSS class names only at the rendering
+    // boundary so the styling contract remains unchanged.
+    const cssClassByProperty = new Map<FormFieldProperty, string>([
+      [FormFieldProperty.CSS_UNIT_VALUE, "css-unit-value"],
+      [FormFieldProperty.CSS_UNIT, "css-unit"],
+      [FormFieldProperty.CSS_CHECKBOX, "css-checkbox"]
+    ]);
+    const cssClasses = Array.from(cssClassByProperty.entries())
+        .filter(([property]) => this.properties?.includes(property))
+        .map(([, cssClass]) => cssClass);
     return cssClasses && cssClasses?.length > 0 ? cssClasses.join(",")+' layout' : "";
   }
   getWidth(): string {

@@ -632,10 +632,25 @@ export default class ProjectFieldRow extends Vue {
   getEmptySummaryValue(emptyCollectionText = "Not provided"): string {
     return this.mandatory ? "Missing — required" : emptyCollectionText;
   }
-  getConfigurationSummaryValues(): string[] {
+  // Read-only summary rows for the Configuration field's option-list rendering.
+  // Keeps the raw key (needed as a stable :key and to look up the description
+  // alongside the label) rather than just the resolved label string.
+  get configurationSummaryEntries(): {key: string, label: string, description?: string}[] {
     return this.editedValue
         .filter(value => this.hasMeaningfulValue(value) && value !== NOT_SELECTED_PROJECT_CONFIGURATION)
-        .map(value => this.configurations?.get(value)?.project?.label ?? value);
+        .map(value => ({
+          key: value,
+          label: this.configurations?.get(value)?.project?.label ?? value,
+          description: this.configurations?.get(value)?.project?.description
+        }));
+  }
+
+  // Same intent as hasAnyOptionDescription, but for Configuration: its options
+  // come from the configurations map (project.description), not from
+  // displayPossibleValue - which Configuration never sets and which isSelection()
+  // based branches skip for it via their own "&& !isConfiguration()" guards.
+  get hasAnyConfigurationOptionDescription(): boolean {
+    return (this.possibleValues ?? []).some(value => !!this.configurations?.get(value)?.project?.description);
   }
   getQuerySummaryFallback(): string {
     return this.hasMeaningfulValue(this.editedValue[0])
@@ -1232,13 +1247,41 @@ export default class ProjectFieldRow extends Vue {
                 </button>
               </div>
             </div>
-            <div v-else-if="isConfiguration() && isReadOnlyView()" style="width: 100%;padding: 0 0.75rem">
-              <div v-if="getConfigurationSummaryValues().length === 0"
-                   class="summary-empty" :class="{ 'summary-missing': mandatory }">
-                {{ getEmptySummaryValue("No configuration selected") }}
+            <!--
+              Configuration outside the wizard's Services step (that step keeps
+              its own dedicated card UI, see the config-box <tr> above): a plain
+              option list, same visual family as CHECK_BOX/RADIO_BUTTON fixed
+              fields. Selection semantics stay exactly as before - clicking an
+              option calls setActiveSteps()+saveField(), same as the config-box
+              cards, NOT the multiple-field addInstance/removeInstanceByValue
+              flow (Configuration sends its value as a single, comma-joined
+              editProjectParam, not per-instance FormFields).
+            -->
+            <div v-else-if="isConfiguration()" style="width: 100%;">
+              <div v-if="!isReadOnlyView()" class="option-list" style="padding: 0 0.75rem; display:flex; flex-direction:column; gap:0.25rem;">
+                <div v-for="value in possibleValues" :key="value" class="form-check option-row">
+                  <input class="form-check-input" style="margin:0;"
+                         :type="isMultipleConfigurationSelection() ? 'checkbox' : 'radio'"
+                         :name="radioGroupName" :id="`${radioGroupName}-${value}`"
+                         :checked="isActiveStep(value)"
+                         @change="setActiveSteps(value); saveField()">
+                  <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
+                    <span :class="hasAnyConfigurationOptionDescription ? 'option-title' : 'option-title-plain'">{{ configurations?.get(value)?.project?.label ?? value }}</span>
+                    <span v-if="configurations?.get(value)?.project?.description"
+                          class="option-description"
+                          v-html="configurations?.get(value)?.project?.description"></span>
+                  </label>
+                </div>
               </div>
-              <div v-for="configuration in getConfigurationSummaryValues()" :key="configuration">
-                {{ configuration }}
+              <div v-else class="option-list option-readonly" style="padding: 0 0.75rem">
+                <div v-if="configurationSummaryEntries.length === 0"
+                     class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                  {{ getEmptySummaryValue("No configuration selected") }}
+                </div>
+                <div v-for="entry in configurationSummaryEntries" :key="entry.key">
+                  <div :class="hasAnyConfigurationOptionDescription ? 'option-title' : 'option-title-plain'">{{ entry.label }}</div>
+                  <div v-if="entry.description" class="option-description" v-html="entry.description"></div>
+                </div>
               </div>
             </div>
             <div v-else-if="isSelection() && isRadioButton() && !isConfiguration()" style="width: 100%;">

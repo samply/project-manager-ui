@@ -139,6 +139,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Enum description
 - Override fixed form fields
 - Missing fields representation for summary in view mode
+- Calender picker for form field of type date or timestamp
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

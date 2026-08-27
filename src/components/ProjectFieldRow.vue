@@ -659,8 +659,18 @@ export default class ProjectFieldRow extends Vue {
       ? this.fieldShortDescription ?? this.fieldDescription
       : this.fieldDescription;
   }
+  // Option lists already provide their own vertical separation from the
+  // header. Other value controls need a description-sized spacer when the
+  // optional field description is absent, so the title does not sit flush
+  // against the value.
+  needsHeaderValueSpacer(): boolean {
+    return !this.displayedFieldDescription &&
+      !(this.isSelection() && (this.isCheckBox() || this.isRadioButton()));
+  }
   getInputType(): string {
     if (this.type === FormDataType.INTEGER) return 'number'
+    if (this.type === FormDataType.DATE) return 'date'
+    if (this.type === FormDataType.TIMESTAMP) return 'datetime-local'
     if (this.type === FormDataType.STRING) return 'text'
     if (this.type === FormDataType.LONG_STRING) return 'longtext'
     return 'text'
@@ -869,7 +879,7 @@ export default class ProjectFieldRow extends Vue {
     <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo"/>
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }">
       <div style="display:flex" :style="{width: getWidth()}">
-        <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }">
+        <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'without-description': needsHeaderValueSpacer() }">
           <div style="display: flex;">
             <span class="input-field-title">{{ fieldKey }}<span v-if="mandatory" :style="!instances?.some(instance => instance.value) ? 'color: red' : ''">&nbsp*</span></span>
           </div>
@@ -1037,7 +1047,7 @@ export default class ProjectFieldRow extends Vue {
             @change="onBooleanValueChange"
             :disabled=" (isDraft() && isSummaryStep()) || (!isDraft() && !editMode)"
         />
-        <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }">
+        <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'without-description': needsHeaderValueSpacer() }">
           <div v-if="!isDescriptionUpload()" style="display: flex;">
             <span class="input-field-title">{{ fieldKey }}<span v-if="this.mandatory" :style="(!isBridgeheads() && !editedValue[0]) || (isBridgeheads() && editingBridgeheads?.length === 0) ? 'color: red' : ''">&nbsp*</span></span>
 
@@ -1536,6 +1546,12 @@ export default class ProjectFieldRow extends Vue {
 .input-field-title {
   font-weight: bold;
   color: #00489cf2;
+}
+
+/* Keep the value visually separated from a title when no description was
+ * configured. Selection option lists have equivalent spacing of their own. */
+.input-field-header.without-description {
+  padding-bottom: 0.75rem;
 }
 
 .input-field .form-control.white {

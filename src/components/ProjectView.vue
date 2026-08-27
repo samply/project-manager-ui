@@ -2579,8 +2579,8 @@ export default defineComponent({
       const {unconfiguredFixedFields, configuredFixedFields} =
           this.resolveConfiguredFixedFields([...fixedFields, ...votumFields]);
       const voteKeys = new Set<FixedFormFieldKey>([
-        FixedFormFieldKey.ETHIC_VOTE,
-        FixedFormFieldKey.ETHIC_VOTE_FOR_ALL_SITES
+        FixedFormFieldKey.ETHICS_VOTE,
+        FixedFormFieldKey.ETHICS_VOTE_FOR_ALL_SITES
       ]);
       const unconfiguredVoteFields = unconfiguredFixedFields.filter((field) =>
           field.fixedFieldKey != null && voteKeys.has(field.fixedFieldKey));

@@ -274,7 +274,7 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
 export function buildVotumProjectFields(context: FixedProjectFieldsContext): ProjectField[] {
     return [
         {
-            fixedFieldKey: FixedFormFieldKey.ETHIC_VOTE,
+            fixedFieldKey: FixedFormFieldKey.ETHICS_VOTE,
             fieldKey: "Ethics vote",
             fieldValue: [context.votumDescription.label, context.votumDescription.originalFilename],
             isEditable: true,
@@ -284,12 +284,12 @@ export function buildVotumProjectFields(context: FixedProjectFieldsContext): Pro
             downloadAction: Action.DOWNLOAD_VOTUM_ACTION,
             downloadModule: Module.PROJECT_DOCUMENTS_MODULE,
             category: context.getFixedFieldDialogStep(
-                FixedFormFieldKey.ETHIC_VOTE, FixedDialogStep.PROJECT),
+                FixedFormFieldKey.ETHICS_VOTE, FixedDialogStep.PROJECT),
             visibilityCondition: context.isFixedFieldVisibleInCurrentStep(
-                FixedFormFieldKey.ETHIC_VOTE, FixedDialogStep.PROJECT)
+                FixedFormFieldKey.ETHICS_VOTE, FixedDialogStep.PROJECT)
         },
         {
-            fixedFieldKey: FixedFormFieldKey.ETHIC_VOTE_FOR_ALL_SITES,
+            fixedFieldKey: FixedFormFieldKey.ETHICS_VOTE_FOR_ALL_SITES,
             fieldKey: "Ethics vote for all sites",
             fieldValue: [
                 context.votumForAllBridgeheadsDescription.label,
@@ -302,9 +302,9 @@ export function buildVotumProjectFields(context: FixedProjectFieldsContext): Pro
             downloadAction: Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
             downloadModule: Module.PROJECT_DOCUMENTS_MODULE,
             category: context.getFixedFieldDialogStep(
-                FixedFormFieldKey.ETHIC_VOTE_FOR_ALL_SITES, FixedDialogStep.PROJECT),
+                FixedFormFieldKey.ETHICS_VOTE_FOR_ALL_SITES, FixedDialogStep.PROJECT),
             visibilityCondition: context.isFixedFieldVisibleInCurrentStep(
-                FixedFormFieldKey.ETHIC_VOTE_FOR_ALL_SITES, FixedDialogStep.PROJECT)
+                FixedFormFieldKey.ETHICS_VOTE_FOR_ALL_SITES, FixedDialogStep.PROJECT)
         }
     ];
 }

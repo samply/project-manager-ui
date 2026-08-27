@@ -275,7 +275,7 @@ export function buildVotumProjectFields(context: FixedProjectFieldsContext): Pro
     return [
         {
             fixedFieldKey: FixedFormFieldKey.ETHIC_VOTE,
-            fieldKey: "Ethic vote",
+            fieldKey: "Ethics vote",
             fieldValue: [context.votumDescription.label, context.votumDescription.originalFilename],
             isEditable: true,
             editMode: context.editMode,
@@ -290,7 +290,7 @@ export function buildVotumProjectFields(context: FixedProjectFieldsContext): Pro
         },
         {
             fixedFieldKey: FixedFormFieldKey.ETHIC_VOTE_FOR_ALL_SITES,
-            fieldKey: "Ethic vote for all sites",
+            fieldKey: "Ethics vote for all sites",
             fieldValue: [
                 context.votumForAllBridgeheadsDescription.label,
                 context.votumForAllBridgeheadsDescription.originalFilename

@@ -380,7 +380,8 @@ export function hasValidOutputs(project?: Project): boolean {
     return (
         (project?.outputs?.length ?? 0) > 0 &&
         project!.outputs!.every(
-            o => o.templateId !== undefined && o.outputFormat !== undefined && o.projectType !== undefined
+            o => [o.templateId, o.outputFormat, o.projectType].every(
+                value => typeof value === 'string' && value.trim().length > 0)
         )
     );
 }

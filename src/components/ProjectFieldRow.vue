@@ -613,6 +613,41 @@ export default class ProjectFieldRow extends Vue {
   isSummaryStep(): boolean {
     return this.draftDialogCurrentStep?.id === this.dialogStep.SUMMARY
   }
+
+  // Read-only summaries previously reused empty controls or rendered only
+  // persisted instances, leaving unanswered fields as unexplained blank space
+  // (and making an unset optional boolean look like an explicit "No"). Keep
+  // irrelevant fields hidden, but render every relevant unanswered field with
+  // a clear, type-specific empty state; required answers use one shared error
+  // message. The helpers below centralize that policy for all rendering branches.
+  isReadOnlyView(): boolean {
+    return (!this.isDraft() || this.isSummaryStep()) && !this.editMode;
+  }
+  hasMeaningfulValue(value?: string): boolean {
+    return typeof value === "string" && value.trim().length > 0;
+  }
+  get nonEmptyInstances(): ProjectFieldInstance[] {
+    return (this.instances ?? []).filter(instance => this.hasMeaningfulValue(instance.value));
+  }
+  getEmptySummaryValue(emptyCollectionText = "Not provided"): string {
+    return this.mandatory ? "Missing — required" : emptyCollectionText;
+  }
+  getConfigurationSummaryValues(): string[] {
+    return this.editedValue
+        .filter(value => this.hasMeaningfulValue(value) && value !== NOT_SELECTED_PROJECT_CONFIGURATION)
+        .map(value => this.configurations?.get(value)?.project?.label ?? value);
+  }
+  getQuerySummaryFallback(): string {
+    return this.hasMeaningfulValue(this.editedValue[0])
+        ? this.editedValue[0]
+        : this.getEmptySummaryValue("No cohort selected");
+  }
+  getFileSummaryValue(): string {
+    if (!this.existsFile) {
+      return this.getEmptySummaryValue("No file uploaded");
+    }
+    return this.hasMeaningfulValue(this.fieldValue[1]) ? this.fieldValue[1] : "File uploaded";
+  }
   isBlock(): boolean {
     return !!this.block
   }
@@ -653,13 +688,8 @@ export default class ProjectFieldRow extends Vue {
 
   getBooleanValue(): string {
     if (this.editedValue[0] === "true") {return "Yes"}
-    else {
-      if (this.editedValue[0] === "false") {return "No"}
-      else {
-        if (this.mandatory) {return "not specified"}
-      }
-    }
-    return ""
+    if (this.editedValue[0] === "false") {return "No"}
+    return this.getEmptySummaryValue();
   }
   hasSection(): boolean {
     const groups = this.section?.fetchGroups();
@@ -883,7 +913,11 @@ export default class ProjectFieldRow extends Vue {
           -->
           <template v-else>
             <div class="option-list">
-              <div v-for="instance in instances" :key="instance.fieldInstance" class="option-readonly">
+              <div v-if="nonEmptyInstances.length === 0"
+                   class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                {{ getEmptySummaryValue("No options selected") }}
+              </div>
+              <div v-for="instance in nonEmptyInstances" :key="instance.fieldInstance" class="option-readonly">
                 <div :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{ displayPossibleValue(instance.value ?? '').name }}</div>
                 <div v-if="displayPossibleValue(instance.value ?? '').shortDescription ?? displayPossibleValue(instance.value ?? '').description"
                      class="option-description"
@@ -893,7 +927,11 @@ export default class ProjectFieldRow extends Vue {
           </template>
         </template>
         <template v-else>
-          <div v-for="instance in instances" :key="instance.fieldInstance">
+          <div v-if="isReadOnlyView() && nonEmptyInstances.length === 0"
+               class="summary-empty" :class="{ 'summary-missing': mandatory }">
+            {{ getEmptySummaryValue("No values provided") }}
+          </div>
+          <div v-for="instance in (isReadOnlyView() ? nonEmptyInstances : instances)" :key="instance.fieldInstance">
             <ProjectFieldRow
                 headless
                 :field-key="fieldKey"
@@ -992,7 +1030,7 @@ export default class ProjectFieldRow extends Vue {
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
       <div style="display:flex" :style="{width: getWidth()}">
         <input
-            v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory"
+            v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory && !isReadOnlyView()"
             type="checkbox"
             style="margin-right:20px"
             :checked="editedValue[0] === 'true'"
@@ -1011,9 +1049,17 @@ export default class ProjectFieldRow extends Vue {
           <div v-if="displayedFieldDescription" class="field-description" v-html="displayedFieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
         </div>
       </div>
-      <div v-if="!(isInputType(FormDataType.BOOLEAN) && !this.mandatory)" :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
+      <div v-if="!(isInputType(FormDataType.BOOLEAN) && !this.mandatory) || isReadOnlyView()" :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
         <div v-if="uploadAction && !isDescriptionUpload()" style="width:100%;padding: 0 0.75rem">
-          <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+          <div v-if="isReadOnlyView()" style="display:flex; align-items:center; gap:0.5rem"
+               :class="{ 'summary-empty': !existsFile, 'summary-missing': mandatory && !existsFile }">
+            <span>{{ getFileSummaryValue() }}</span>
+            <DownloadButton v-if="existsFile && downloadAction"
+                            :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="downloadModule ?? Module.PROJECT_DOCUMENTS_MODULE" :action="downloadAction"
+                            icon-class="bi bi-download" :filename="fieldValue[1]"/>
+          </div>
+          <UploadButton v-else :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
                         :download-action="downloadAction"
                         :visible-bridgeheads="visibleBridgeheads" :use-bridgehead-chooser="fieldKey === 'Ethic vote'"
@@ -1027,8 +1073,11 @@ export default class ProjectFieldRow extends Vue {
                 <option value=true>Yes</option>
                 <option value=false>No</option>
               </select>
-              <div v-if="(!isDraft() || isSummaryStep()) && !editMode && mandatory">
-                <div style="padding: 0 0.75rem">{{getBooleanValue()}}</div>
+              <div v-if="isReadOnlyView()">
+                <div style="padding: 0 0.75rem"
+                     :class="{ 'summary-empty': !hasMeaningfulValue(editedValue[0]), 'summary-missing': mandatory && !hasMeaningfulValue(editedValue[0]) }">
+                  {{getBooleanValue()}}
+                </div>
               </div>
             </div>
             <div v-else-if="isQuery()">
@@ -1041,6 +1090,10 @@ export default class ProjectFieldRow extends Vue {
                 <lens-query-explain-button
                     noQueryMessage="Empty Search."
                 ></lens-query-explain-button>
+              </div>
+              <div v-else-if="isReadOnlyView()" class="summary-value"
+                   :class="{ 'summary-empty': !hasMeaningfulValue(editedValue[0]), 'summary-missing': mandatory && !hasMeaningfulValue(editedValue[0]) }">
+                {{ getQuerySummaryFallback() }}
               </div>
 
               <!--<div style="display: flex;flex-wrap: wrap">
@@ -1097,7 +1150,15 @@ export default class ProjectFieldRow extends Vue {
             </div>
 
             <div v-else-if="isDescriptionUpload()" style="margin:1rem 0 0 1rem">
-              <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
+              <div v-if="isReadOnlyView()" style="display:flex; align-items:center; gap:0.5rem"
+                   :class="{ 'summary-empty': !existsFile, 'summary-missing': mandatory && !existsFile }">
+                <span>{{ getFileSummaryValue() }}</span>
+                <DownloadButton v-if="existsFile && downloadAction"
+                                :context="context" :project-manager-backend-service="projectManagerBackendService"
+                                :module="downloadModule ?? Module.PROJECT_DOCUMENTS_MODULE" :action="downloadAction"
+                                icon-class="bi bi-download" :filename="fieldValue[1]"/>
+              </div>
+              <UploadButton v-else :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
                             :download-action="downloadAction"
                             text="Upload project description" :call-refresh-context="exitAndCallRefreshContext" :is-file="true" :exists-file="existsFile"
@@ -1115,6 +1176,10 @@ export default class ProjectFieldRow extends Vue {
                         </button>
                       </span>
                     </span>
+              <span v-if="isReadOnlyView() && editingBridgeheads.length === 0"
+                    class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                {{ getEmptySummaryValue("No sites selected") }}
+              </span>
               <span v-if="areThereMoreBridgeheadsAvailableToAdd() && ((isDraft() && !isSummaryStep()) || editMode)">
                       <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
                       <span v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
@@ -1144,6 +1209,10 @@ export default class ProjectFieldRow extends Vue {
                             style="color: white; font-size: 18px" class="bi bi-x dktk-darkblue"></i></button>
                       </span>
                     </span>
+              <span v-if="isReadOnlyView() && !hasMeaningfulValue(editedValue[0])"
+                    class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                {{ getEmptySummaryValue("No environment variables configured") }}
+              </span>
               <button v-if="isDraft() && !isSummaryStep()" @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
               <div v-if="showInputs && isDraft() && !isSummaryStep()" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%; width:80%">
                 <input type="text" class="form-control" v-model="newKey" placeholder="Key">
@@ -1151,6 +1220,15 @@ export default class ProjectFieldRow extends Vue {
                 <button class="btn btn-primary" @click="addEnvVariable"><i style="font-size: 18px"
                                                                            class="bi bi-check"></i>
                 </button>
+              </div>
+            </div>
+            <div v-else-if="isConfiguration() && isReadOnlyView()" style="width: 100%;padding: 0 0.75rem">
+              <div v-if="getConfigurationSummaryValues().length === 0"
+                   class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                {{ getEmptySummaryValue("No configuration selected") }}
+              </div>
+              <div v-for="configuration in getConfigurationSummaryValues()" :key="configuration">
+                {{ configuration }}
               </div>
             </div>
             <div v-else-if="isSelection() && isRadioButton() && !isConfiguration()" style="width: 100%;">
@@ -1168,10 +1246,15 @@ export default class ProjectFieldRow extends Vue {
                 </div>
               </div>
               <div v-if="(!isDraft() || isSummaryStep()) && !editMode" style="padding: 0 0.75rem" class="option-list option-readonly">
-                <div :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{displayPossibleValue(editedValue[0]).name}}</div>
-                <div v-if="displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description"
-                     class="option-description"
-                     v-html="displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description"></div>
+                <template v-if="hasMeaningfulValue(editedValue[0])">
+                  <div :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{displayPossibleValue(editedValue[0]).name}}</div>
+                  <div v-if="displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description"
+                       class="option-description"
+                       v-html="displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description"></div>
+                </template>
+                <div v-else class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                  {{ getEmptySummaryValue() }}
+                </div>
               </div>
             </div>
             <div v-else-if="isSelection() && !isConfiguration()" style="width: 100%;">
@@ -1182,12 +1265,21 @@ export default class ProjectFieldRow extends Vue {
                 </option>
               </select>
               <div v-if="(!isDraft() || isSummaryStep()) && !editMode" style="padding: 0 0.75rem">
-                <div>{{displayPossibleValue(editedValue[0]).name}}</div>
-                <div style="font-size: 12px">{{displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description}}</div>
+                <template v-if="hasMeaningfulValue(editedValue[0])">
+                  <div>{{displayPossibleValue(editedValue[0]).name}}</div>
+                  <div style="font-size: 12px">{{displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description}}</div>
+                </template>
+                <div v-else class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                  {{ getEmptySummaryValue() }}
+                </div>
               </div>
             </div>
             <div v-else-if="isInputType(FormDataType.LONG_STRING)" style="width:100%">
-              <div class="grow-wrap" :data-replicated-value="editedValue[0]">
+              <div v-if="isReadOnlyView()" class="summary-value"
+                   :class="{ 'summary-empty': !hasMeaningfulValue(editedValue[0]), 'summary-missing': mandatory && !hasMeaningfulValue(editedValue[0]) }">
+                {{ hasMeaningfulValue(editedValue[0]) ? editedValue[0] : getEmptySummaryValue() }}
+              </div>
+              <div v-else class="grow-wrap" :data-replicated-value="editedValue[0]">
                 <textarea
                     type="text"
                     v-model="editedValue[0]"
@@ -1199,7 +1291,12 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else style="width:100%">
+              <div v-if="isReadOnlyView()" class="summary-value"
+                   :class="{ 'summary-empty': !hasMeaningfulValue(editedValue[0]), 'summary-missing': mandatory && !hasMeaningfulValue(editedValue[0]) }">
+                {{ hasMeaningfulValue(editedValue[0]) ? editedValue[0] : getEmptySummaryValue() }}
+              </div>
               <input
+                  v-else
                   :type="getInputType()"
                   v-model="editedValue[0]"
                   @change="onInputChange"
@@ -1221,6 +1318,22 @@ export default class ProjectFieldRow extends Vue {
 </template>
 
 <style scoped>
+
+.summary-value,
+.summary-empty {
+  padding: 0 0.75rem;
+  white-space: pre-wrap;
+}
+
+.summary-empty {
+  color: #5f6368;
+  font-style: italic;
+}
+
+.summary-missing {
+  color: #b42318;
+  font-weight: 600;
+}
 
 .truncate-15 {
   white-space: nowrap;

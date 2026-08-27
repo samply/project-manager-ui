@@ -1476,17 +1476,17 @@ export default defineComponent({
     fetchIfProjectHasAllMandatoryFields(): boolean {
       const baseFieldsValid = Boolean(
           this.project &&
-          (this.hasConfiguredInactiveFixedField(FixedFormFieldKey.PROJECT_TITLE) || this.project.label) &&
-          this.project.query &&
-          this.bridgeheads &&
-          this.project.queryFormat &&
+          (this.hasConfiguredInactiveFixedField(FixedFormFieldKey.PROJECT_TITLE) || this.hasMeaningfulValue(this.project.label)) &&
+          this.hasMeaningfulValue(this.project.query) &&
+          this.bridgeheads.length > 0 &&
+          this.hasMeaningfulValue(this.project.queryFormat) &&
           hasValidOutputs(this.project)
       );
 
-      // We assume that a boolean mandatory field not set is equal to false — so we ignore it.
+      // Every applicable mandatory dynamic field needs a persisted, non-blank value.
       const mandatoryFormFieldsValid = this.formFields
           ?.filter(field => this.isApplicableMandatoryFormField(field))
-          .every(field => field.value != null && field.value !== '');
+          .every(field => this.hasMeaningfulValue(field.value));
 
       return baseFieldsValid && mandatoryFormFieldsValid;
     },
@@ -1498,6 +1498,10 @@ export default defineComponent({
           Boolean(field.mandatory) &&
           belongsToExistingBlock &&
           this.selectedForms.some(form => form.title === field.title);
+    },
+
+    hasMeaningfulValue(value: unknown): boolean {
+      return typeof value === 'string' && value.trim().length > 0;
     },
 
     fetchTooltipTextForCreateButton() {
@@ -1528,7 +1532,7 @@ export default defineComponent({
 
         // 👇 group missing mandatory form fields
         this.groupedMissingFields = this.formFields
-            ?.filter(field => this.isApplicableMandatoryFormField(field) && (field.value == null || field.value === ''))
+            ?.filter(field => this.isApplicableMandatoryFormField(field) && !this.hasMeaningfulValue(field.value))
             .reduce((acc, field) => {
               const title = field.titleDisplayName ?? field.title;
               const label = field.labelDisplayName ?? field.label;
@@ -1565,7 +1569,12 @@ export default defineComponent({
     },
 
     addMissingField(result: string, field: string, value: any): string {
-      return (!value) ? result + ((result.length > 0) ? ', ' : '') + field : result;
+      const hasValue = Array.isArray(value)
+          ? value.length > 0
+          : typeof value === 'string'
+              ? this.hasMeaningfulValue(value)
+              : Boolean(value);
+      return (!hasValue) ? result + ((result.length > 0) ? ', ' : '') + field : result;
     },
 
     convertDate(date: Date) {

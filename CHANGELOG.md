@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-08-26]
+## [1.1.0 - 2026-08-27]
 ### Added
 - Dockerfile
 - Single Spa
@@ -138,6 +138,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Pre_info and post_info
 - Enum description
 - Override fixed form fields
+- Missing fields representation for summary in view mode
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

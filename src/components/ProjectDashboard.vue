@@ -11,8 +11,8 @@
         </div>-->
 
       </div>
-      <div v-if="projectStates.length > 2 || applicants.length > 1 || bridgeheads.length > 1" class="filter-box">
-        <select v-if="projectStates.length > 2" v-model="selectedState" class="form-select" @change="changeState()">
+      <div v-if="projectStates.length > 1 || applicants.length > 1 || bridgeheads.length > 1" class="filter-box">
+        <select v-if="projectStates.length > 1" v-model="selectedState" class="form-select" @change="changeState()">
           <option v-for="value in projectStates" :key="value" :value="value">{{ projectStateLabel[value] }}</option>
         </select>
         <select v-if="applicants.length > 1" v-model="selectedApplicant" class="form-select" @change="changeApplicant()">

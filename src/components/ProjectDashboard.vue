@@ -89,6 +89,7 @@ import {
   Action,
   Bridgehead,
   Module,
+  PmRequestParameter,
   Project,
   ProjectManagerBackendService,
   ProjectManagerContext,
@@ -196,19 +197,19 @@ export default defineComponent({
       try {
         const params = new Map<string, string>();
         if (this.selectedState) {
-          params.set('project-state', this.selectedState)
+          params.set(PmRequestParameter.PROJECT_STATE, this.selectedState)
         }
         if (this.selectedApplicant) {
-          params.set('project-creator', this.selectedApplicant)
+          params.set(PmRequestParameter.PROJECT_CREATOR, this.selectedApplicant)
         }
         if (this.selectedBridgehead) {
-          params.set('bridgehead', this.selectedBridgehead)
+          params.set(PmRequestParameter.BRIDGEHEAD, this.selectedBridgehead)
         }
-        params.set('page', (this.currentPage - 1).toString());
-        params.set('page-size', '10');
-        params.set('sort-by', this.sortBy);
-        params.set('sort-desc', this.sortDesc.toString());
-        params.set('site', Site.PROJECT_DASHBOARD_SITE);
+        params.set(PmRequestParameter.PAGE, (this.currentPage - 1).toString());
+        params.set(PmRequestParameter.PAGE_SIZE, '10');
+        params.set(PmRequestParameter.SORT_BY, this.sortBy);
+        params.set(PmRequestParameter.SORT_DESC, this.sortDesc.toString());
+        params.set(PmRequestParameter.SITE, Site.PROJECT_DASHBOARD_SITE);
         this.projectManagerBackendService.fetchData(
             Module.PROJECTS_MODULE,
             Action.FETCH_PROJECTS_ACTION,

@@ -193,7 +193,15 @@ export enum EditProjectParam {
 }
 
 export enum PmRequestParameter {
-    RESULTS_URL = "results-url"
+    RESULTS_URL = "results-url",
+    PROJECT_STATE = "project-state",
+    PROJECT_CREATOR = "project-creator",
+    BRIDGEHEAD = "bridgehead",
+    PAGE = "page",
+    PAGE_SIZE = "page-size",
+    SORT_BY = "sort-by",
+    SORT_DESC = "sort-desc",
+    SITE = "site"
 }
 
 export enum ProjectType {

@@ -173,7 +173,7 @@ export enum Action {
     DELETE_FORM_FIELD_VALUE_ACTION = "DELETE_FORM_FIELD_VALUE"
 }
 
-export enum EditProjectParam {
+export enum PmRequestParameter {
     PROJECT_CONFIGURATION = "project-configuration",
     QUERY_FORMAT = "query-format",
     BRIDGEHEADS = "bridgeheads",
@@ -189,10 +189,6 @@ export enum EditProjectParam {
     FORM_TEMPLATE = "form-template",
     FORM_TITLE = "form-title",
     COHORT_DEFINITION = "cohort-definition",
-    QUERY_DETAILS = "query-details"
-}
-
-export enum PmRequestParameter {
     RESULTS_URL = "results-url",
     PROJECT_STATE = "project-state",
     PROJECT_CREATOR = "project-creator",
@@ -201,7 +197,8 @@ export enum PmRequestParameter {
     PAGE_SIZE = "page-size",
     SORT_BY = "sort-by",
     SORT_DESC = "sort-desc",
-    SITE = "site"
+    SITE = "site",
+    QUERY_DETAILS = "query-details"
 }
 
 export enum ProjectType {

@@ -3,7 +3,7 @@ import {
     Action,
     Bridgehead,
     CUSTOM_PROJECT_CONFIGURATION,
-    EditProjectParam,
+    PmRequestParameter,
     FixedFormFieldKey,
     FormDataType,
     Module,
@@ -43,7 +43,7 @@ export interface FixedProjectFieldsContext {
     isCurrentStep: (step: string) => boolean;
     isNotIncludedInCurrentProjectConfiguration: (field: string) => boolean;
     fetchExtraParamsForProjectOutput: (
-        editProjectParam: EditProjectParam, output: ProjectOutput) => Map<string, string>;
+        editProjectParam: PmRequestParameter, output: ProjectOutput) => Map<string, string>;
 }
 
 function buildProjectOutputFields(context: FixedProjectFieldsContext): ProjectField[] {
@@ -56,7 +56,7 @@ function buildProjectOutputFields(context: FixedProjectFieldsContext): ProjectFi
             fixedFieldKey: FixedFormFieldKey.PROJECT_TYPE,
             fieldKey: "Type",
             fieldValue: output.projectType ? [output.projectType] : [],
-            editProjectParam: [EditProjectParam.PROJECT_TYPE],
+            editProjectParam: [PmRequestParameter.PROJECT_TYPE],
             isEditable: context.isNotIncludedInCurrentProjectConfiguration(
                 output.projectType + ".projectType"),
             editMode: context.editMode,
@@ -69,7 +69,7 @@ function buildProjectOutputFields(context: FixedProjectFieldsContext): ProjectFi
                 context.isFixedFieldVisibleInCurrentStep(
                     FixedFormFieldKey.PROJECT_TYPE, FixedDialogStep.CUSTOM),
             extraParams: context.fetchExtraParamsForProjectOutput(
-                EditProjectParam.PROJECT_TYPE, output),
+                PmRequestParameter.PROJECT_TYPE, output),
             deleteAction: Action.REMOVE_PROJECT_OUTPUT_ACTION,
             deleteModule: Module.PROJECT_EDITION_MODULE
         },
@@ -78,7 +78,7 @@ function buildProjectOutputFields(context: FixedProjectFieldsContext): ProjectFi
             fixedFieldDisplayNameSuffix: ` (${output.projectType})`,
             fieldKey: `Output Format (${output.projectType})`,
             fieldValue: output.outputFormat ? [output.outputFormat] : [],
-            editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
+            editProjectParam: [PmRequestParameter.OUTPUT_FORMAT],
             isEditable: context.isNotIncludedInCurrentProjectConfiguration(
                 output.projectType + ".outputFormat"),
             editMode: context.editMode,
@@ -91,14 +91,14 @@ function buildProjectOutputFields(context: FixedProjectFieldsContext): ProjectFi
                 context.isFixedFieldVisibleInCurrentStep(
                     FixedFormFieldKey.OUTPUT_FORMAT, FixedDialogStep.CUSTOM),
             extraParams: context.fetchExtraParamsForProjectOutput(
-                EditProjectParam.OUTPUT_FORMAT, output)
+                PmRequestParameter.OUTPUT_FORMAT, output)
         },
         {
             fixedFieldKey: FixedFormFieldKey.TEMPLATE_ID,
             fixedFieldDisplayNameSuffix: ` (${output.projectType})`,
             fieldKey: `Template ID (${output.projectType})`,
             fieldValue: output.templateId ? [output.templateId] : [],
-            editProjectParam: [EditProjectParam.TEMPLATE_ID],
+            editProjectParam: [PmRequestParameter.TEMPLATE_ID],
             isEditable: context.isNotIncludedInCurrentProjectConfiguration(
                 output.projectType + ".templateId"),
             editMode: context.editMode,
@@ -111,7 +111,7 @@ function buildProjectOutputFields(context: FixedProjectFieldsContext): ProjectFi
                 context.isFixedFieldVisibleInCurrentStep(
                     FixedFormFieldKey.TEMPLATE_ID, FixedDialogStep.CUSTOM),
             extraParams: context.fetchExtraParamsForProjectOutput(
-                EditProjectParam.TEMPLATE_ID, output)
+                PmRequestParameter.TEMPLATE_ID, output)
         }
     ]);
 }
@@ -122,7 +122,7 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
             fixedFieldKey: FixedFormFieldKey.PROJECT_TITLE,
             fieldKey: "Project Title",
             fieldValue: context.project?.label ? [context.project.label] : [],
-            editProjectParam: [EditProjectParam.LABEL],
+            editProjectParam: [PmRequestParameter.LABEL],
             isEditable: true,
             editMode: context.editMode,
             mandatory: true,
@@ -135,7 +135,7 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
             fixedFieldKey: FixedFormFieldKey.PROJECT_DESCRIPTION,
             fieldKey: "Project Description",
             fieldValue: context.project?.description ? [context.project.description] : [],
-            editProjectParam: [EditProjectParam.DESCRIPTION],
+            editProjectParam: [PmRequestParameter.DESCRIPTION],
             fieldDescription: "Briefly describe your project in a few words. What is the objective or aim of your project?",
             type: FormDataType.LONG_STRING,
             isEditable: true,
@@ -167,7 +167,7 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
             fieldDescription: "Sites identified via the Explorer as having samples or data matching your search criteria.",
             fieldValue: [],
             bridgeheads: {selected: context.bridgeheads, available: context.allBridgeheads},
-            editProjectParam: [EditProjectParam.BRIDGEHEADS],
+            editProjectParam: [PmRequestParameter.BRIDGEHEADS],
             isEditable: true,
             editMode: context.editMode,
             mandatory: true,
@@ -184,7 +184,7 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
             fixedFieldKey: FixedFormFieldKey.PROJECT_CONFIGURATION,
             fieldKey: "Configuration",
             fieldValue: context.currentProjectConfiguration,
-            editProjectParam: [EditProjectParam.PROJECT_CONFIGURATION],
+            editProjectParam: [PmRequestParameter.PROJECT_CONFIGURATION],
             isEditable: true,
             editMode: context.editMode,
             possibleValues: context.projectConfigurationLabels,
@@ -207,7 +207,7 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
                 context.project?.query ?? "",
                 context.project?.queryDetails ?? ""
             ],
-            editProjectParam: [EditProjectParam.HUMAN_READABLE],
+            editProjectParam: [PmRequestParameter.HUMAN_READABLE],
             bridgeheads: {selected: context.bridgeheads, available: context.allBridgeheads},
             isEditable: true,
             editMode: context.editMode,
@@ -222,7 +222,7 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
             fixedFieldKey: FixedFormFieldKey.QUERY_FORMAT,
             fieldKey: "Query Format",
             fieldValue: context.project?.queryFormat ? [context.project.queryFormat] : [],
-            editProjectParam: [EditProjectParam.QUERY_FORMAT],
+            editProjectParam: [PmRequestParameter.QUERY_FORMAT],
             isEditable: true,
             editMode: context.editMode,
             redirectUrl: context.project?.explorerUrl ?? undefined,
@@ -242,7 +242,7 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
             fieldKey: "Additional filter criteria",
             fieldDescription: "Please provide filter criteria that could not select in the Explorer, or further notes on the resources you want to request",
             fieldValue: context.project?.cohortDefinition ? [context.project.cohortDefinition] : [],
-            editProjectParam: [EditProjectParam.COHORT_DEFINITION],
+            editProjectParam: [PmRequestParameter.COHORT_DEFINITION],
             type: FormDataType.LONG_STRING,
             isEditable: true,
             editMode: context.editMode,
@@ -256,7 +256,7 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
             fixedFieldKey: FixedFormFieldKey.ENVIRONMENT_VARIABLES,
             fieldKey: "Environment Variables",
             fieldValue: context.project?.queryContext ? [context.project.queryContext] : [],
-            editProjectParam: [EditProjectParam.QUERY_CONTEXT],
+            editProjectParam: [PmRequestParameter.QUERY_CONTEXT],
             isEditable: context.isNotIncludedInCurrentProjectConfiguration("queryContext"),
             editMode: context.editMode,
             category: context.getFixedFieldDialogStep(

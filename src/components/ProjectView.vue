@@ -743,7 +743,7 @@ import {
   CUSTOM_PROJECT_CONFIGURATION,
   NOT_SELECTED_PROJECT_CONFIGURATION,
   DataShieldProjectStatus,
-  EditProjectParam,
+  PmRequestParameter,
   Explanations,
   FeasibilityResult,
   FixedFormFieldKey,
@@ -852,8 +852,8 @@ export default defineComponent({
     ProjectRole() {
       return ProjectRole
     },
-    EditProjectParam() {
-      return EditProjectParam
+    PmRequestParameter() {
+      return PmRequestParameter
     },
     Action() {
       return Action
@@ -1219,7 +1219,7 @@ export default defineComponent({
           block: block.block.label,
           blockInstance: block.block?.instance
         };
-        params.set(EditProjectParam.FORM_FIELD, JSON.stringify(formField));
+        params.set(PmRequestParameter.FORM_FIELD, JSON.stringify(formField));
         this.projectManagerBackendService
             .fetchData(Module.PROJECT_EDITION_MODULE, Action.DELETE_FORM_FIELD_BLOCK_ACTION, this.context, params)
             .then(() => this.refreshContext());
@@ -1358,7 +1358,7 @@ export default defineComponent({
       delete newFormField.value;
 
       const params = new Map<string, FormField[]>();
-      params.set(EditProjectParam.FORM_FIELDS, [newFormField]);
+      params.set(PmRequestParameter.FORM_FIELDS, [newFormField]);
 
       this.projectManagerBackendService
           .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_FORM_FIELDS_ACTION, this.context, params)
@@ -1809,7 +1809,7 @@ export default defineComponent({
       }
 
       const params = new Map<string, string>();
-      params.set(EditProjectParam.PROJECT_CONFIGURATION, availableConfigurations[0]);
+      params.set(PmRequestParameter.PROJECT_CONFIGURATION, availableConfigurations[0]);
       await this.projectManagerBackendService.fetchData(
           Module.PROJECT_EDITION_MODULE,
           Action.SET_PROJECT_CONFIGURATION_ACTION,
@@ -2281,7 +2281,7 @@ export default defineComponent({
           fieldKey: formField.labelDisplayName ?? formField.label,
           configurationOrder: formField.order,
           fieldValue: formField.value != null ? [formField.value] : [],
-          editProjectParam: [EditProjectParam.FORM_FIELDS],
+          editProjectParam: [PmRequestParameter.FORM_FIELDS],
           mandatory: formField.mandatory,
           fieldDescription: formField.labelDescription,
           fieldShortDescription: formField.labelShortDescription,
@@ -2345,7 +2345,7 @@ export default defineComponent({
       return formTitles.map((formTitle) => ({
         fieldKey: formTitle.titleDisplayName ?? formTitle.title,
         fieldValue: [this.selectedForms.some(f => f.title === formTitle.title) ? "true" : "false"],
-        editProjectParam: [EditProjectParam.FORM_TITLE],
+        editProjectParam: [PmRequestParameter.FORM_TITLE],
         mandatory: false,
         fieldDescription: formTitle.titleDescription,
         fieldShortDescription: formTitle.titleShortDescription,
@@ -2514,28 +2514,28 @@ export default defineComponent({
       }
     },
 
-    fetchExtraParamsForProjectOutput(currentEditProjectParam: EditProjectParam, output: ProjectOutput) {
+    fetchExtraParamsForProjectOutput(currentPmRequestParameter: PmRequestParameter, output: ProjectOutput) {
       let result = new Map<string, string>();
-      if (currentEditProjectParam === EditProjectParam.PROJECT_TYPE) {
+      if (currentPmRequestParameter === PmRequestParameter.PROJECT_TYPE) {
         if (output.outputFormat) {
-          result.set(EditProjectParam.OUTPUT_FORMAT, output.outputFormat);
+          result.set(PmRequestParameter.OUTPUT_FORMAT, output.outputFormat);
         }
         if (output.templateId) {
-          result.set(EditProjectParam.TEMPLATE_ID, output.templateId);
+          result.set(PmRequestParameter.TEMPLATE_ID, output.templateId);
         }
-      } else if (currentEditProjectParam === EditProjectParam.OUTPUT_FORMAT) {
+      } else if (currentPmRequestParameter === PmRequestParameter.OUTPUT_FORMAT) {
         if (output.projectType) {
-          result.set(EditProjectParam.PROJECT_TYPE, output.projectType);
+          result.set(PmRequestParameter.PROJECT_TYPE, output.projectType);
         }
         if (output.templateId) {
-          result.set(EditProjectParam.TEMPLATE_ID, output.templateId);
+          result.set(PmRequestParameter.TEMPLATE_ID, output.templateId);
         }
-      } else if (currentEditProjectParam === EditProjectParam.TEMPLATE_ID) {
+      } else if (currentPmRequestParameter === PmRequestParameter.TEMPLATE_ID) {
         if (output.projectType) {
-          result.set(EditProjectParam.PROJECT_TYPE, output.projectType);
+          result.set(PmRequestParameter.PROJECT_TYPE, output.projectType);
         }
         if (output.outputFormat) {
-          result.set(EditProjectParam.OUTPUT_FORMAT, output.outputFormat);
+          result.set(PmRequestParameter.OUTPUT_FORMAT, output.outputFormat);
         }
       }
       return result;
@@ -2643,7 +2643,7 @@ export default defineComponent({
                   withMessage: false,
                   cssClass: "btn btn-primary mr-2",
                   params: new Map<string, string>([
-                    [EditProjectParam.PROJECT_TYPE, projectTypesParam]
+                    [PmRequestParameter.PROJECT_TYPE, projectTypesParam]
                   ]),
                   visibilityCondition: this.canShowBridgeheadAdminButtons
                 }
@@ -2663,7 +2663,7 @@ export default defineComponent({
                   text: "Resend Export Files to Research Environment",
                   withMessage: false,
                   params: new Map<string, string>([
-                    [EditProjectParam.PROJECT_TYPE, ProjectType.RESEARCH_ENVIRONMENT]
+                    [PmRequestParameter.PROJECT_TYPE, ProjectType.RESEARCH_ENVIRONMENT]
                   ]),
                   cssClass: "btn btn-primary mr-2"
                 }

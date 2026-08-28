@@ -1,7 +1,7 @@
 import {
     Action,
     Bridgehead,
-    EditProjectParam,
+    PmRequestParameter,
     Explanations,
     FormDataType,
     FormField,
@@ -33,7 +33,7 @@ export interface ProjectField {
     // Position from the backend form configuration. Used only while composing
     // the configured group of DYNAMIC fields and customized FIXED fields.
     configurationOrder?: number
-    editProjectParam?: EditProjectParam[]
+    editProjectParam?: PmRequestParameter[]
     fieldValue: string[]
     // Present only for a multiple field (FormField.multiple): one entry per
     // saved value, sorted by fieldInstance. fieldValue above still reflects

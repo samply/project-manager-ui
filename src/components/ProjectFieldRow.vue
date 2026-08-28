@@ -4,7 +4,7 @@ import {
   Action,
   Bridgehead,
   configLabel,
-  EditProjectParam,
+  PmRequestParameter,
   Explanations,
   FormDataType,
   FormFieldProperty,
@@ -38,7 +38,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
   components: {ContextInfoBox, DownloadButton, UploadButton},
   props: {
     fieldKey: {type: String, required: true},
-    editProjectParam: {type: Array as PropType<EditProjectParam[]>, required: false, default: []},
+    editProjectParam: {type: Array as PropType<PmRequestParameter[]>, required: false, default: []},
     fieldValue: {type: Array as PropType<string[]>, required: true},
     fieldDescription: {type: String, required: false},
     fieldShortDescription: {type: String, required: false},
@@ -104,7 +104,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
 export default class ProjectFieldRow extends Vue {
   // Props
   readonly fieldKey!: string;
-  readonly editProjectParam!: EditProjectParam[];
+  readonly editProjectParam!: PmRequestParameter[];
   readonly fieldValue!: string[];
 
   readonly bridgeheads?: BridgeheadsProjectField;
@@ -291,7 +291,7 @@ export default class ProjectFieldRow extends Vue {
   // deleteField above: deleteField sends an array-shaped payload under the
   // plural editProjectParam entries - built for the save endpoint's
   // contract - but removeProjectFormFieldValue expects a single FormField
-  // under the singular EditProjectParam.FORM_FIELD, exactly like
+  // under the singular PmRequestParameter.FORM_FIELD, exactly like
   // ProjectView.vue's own deleteBlockInstance. transformForSending(...)
   // always returns an array (also built for the save contract), so it's
   // unwrapped to its one element here.
@@ -301,7 +301,7 @@ export default class ProjectFieldRow extends Vue {
     }
     const formField = (this.transformForSending(this.editedValue[0]) as unknown as any[])[0];
     const params = new Map<string, unknown>();
-    params.set(EditProjectParam.FORM_FIELD, JSON.stringify(formField));
+    params.set(PmRequestParameter.FORM_FIELD, JSON.stringify(formField));
 
     this.projectManagerBackendService
         .fetchData(this.deleteModule, this.deleteAction, this.context, params)
@@ -338,7 +338,7 @@ export default class ProjectFieldRow extends Vue {
   //
   // The delete/remove endpoints (removeProjectFormFieldValue and, mirroring
   // it, removeProjectFormFieldBlock) expect a SINGLE FormField under the
-  // singular EditProjectParam.FORM_FIELD - unlike the save endpoint, which
+  // singular PmRequestParameter.FORM_FIELD - unlike the save endpoint, which
   // takes a FormField[] under the plural FORM_FIELDS. transform(...) always
   // returns an array (built for the save contract), so it's unwrapped to
   // its one element here, matching how ProjectView.vue's own
@@ -350,7 +350,7 @@ export default class ProjectFieldRow extends Vue {
     }
     const formField = (this.buildInstanceTransform(instance.fieldInstance)(value) as any[])[0];
     const params = new Map<string, unknown>();
-    params.set(EditProjectParam.FORM_FIELD, JSON.stringify(formField));
+    params.set(PmRequestParameter.FORM_FIELD, JSON.stringify(formField));
 
     this.projectManagerBackendService
         .fetchData(Module.PROJECT_EDITION_MODULE, Action.DELETE_FORM_FIELD_VALUE_ACTION, this.context, params)
@@ -372,9 +372,9 @@ export default class ProjectFieldRow extends Vue {
     const params = new Map<string, string>();
 
     if (this.editProjectParam && this.editProjectParam.length > 0) {
-      if (this.includesEditProjectParam(EditProjectParam.PROJECT_TYPE) && this.tempFieldValue[0] === "DATASHIELD") {
-        params.set(EditProjectParam.OUTPUT_FORMAT, "OPAL");
-        params.set(EditProjectParam.TEMPLATE_ID, "opal-ccp");
+      if (this.includesPmRequestParameter(PmRequestParameter.PROJECT_TYPE) && this.tempFieldValue[0] === "DATASHIELD") {
+        params.set(PmRequestParameter.OUTPUT_FORMAT, "OPAL");
+        params.set(PmRequestParameter.TEMPLATE_ID, "opal-ccp");
       }
 
       if (this.isBridgeheads() && this.bridgeheads) {
@@ -413,7 +413,7 @@ export default class ProjectFieldRow extends Vue {
         : this.transformForSending(editedValue);
   }
 
-  includesEditProjectParam(param: EditProjectParam): boolean {
+  includesPmRequestParameter(param: PmRequestParameter): boolean {
     return this.editProjectParam && this.editProjectParam.includes(param);
   }
 
@@ -544,23 +544,23 @@ export default class ProjectFieldRow extends Vue {
   }
 
   isQuery(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.HUMAN_READABLE);
+    return this.includesPmRequestParameter(PmRequestParameter.HUMAN_READABLE);
   }
   isCohortDefinition(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.COHORT_DEFINITION)
+    return this.includesPmRequestParameter(PmRequestParameter.COHORT_DEFINITION)
   }
   isDescription(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.DESCRIPTION);
+    return this.includesPmRequestParameter(PmRequestParameter.DESCRIPTION);
   }
   isDescriptionUpload(): boolean {
     return this.fieldKey === "DescriptionUpload";
   }
   isBridgeheads(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.BRIDGEHEADS);
+    return this.includesPmRequestParameter(PmRequestParameter.BRIDGEHEADS);
   }
 
   isConfiguration(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.PROJECT_CONFIGURATION);
+    return this.includesPmRequestParameter(PmRequestParameter.PROJECT_CONFIGURATION);
   }
 
   isMultipleConfigurationSelection(): boolean {
@@ -568,11 +568,11 @@ export default class ProjectFieldRow extends Vue {
   }
 
   isConfigType(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.PROJECT_TYPE) && this.fieldKey === 'Type';
+    return this.includesPmRequestParameter(PmRequestParameter.PROJECT_TYPE) && this.fieldKey === 'Type';
   }
 
   isEnvironmentVariables(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.QUERY_CONTEXT);
+    return this.includesPmRequestParameter(PmRequestParameter.QUERY_CONTEXT);
   }
 
   isSelection(): boolean {
@@ -605,7 +605,7 @@ export default class ProjectFieldRow extends Vue {
   }
 
   isComments(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.FORM_FIELDS) && this.fieldKey === 'Comments';
+    return this.includesPmRequestParameter(PmRequestParameter.FORM_FIELDS) && this.fieldKey === 'Comments';
   }
   isDraft(): boolean {
     return this.draftDialogCurrentStep  !== undefined

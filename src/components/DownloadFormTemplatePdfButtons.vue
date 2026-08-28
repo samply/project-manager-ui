@@ -3,7 +3,7 @@ import {Options, Vue} from "vue-class-component";
 import DownloadButton from "./DownloadButton.vue";
 import {
   Action,
-  EditProjectParam,
+  PmRequestParameter,
   Module,
   ProjectManagerBackendService,
   ProjectManagerContext
@@ -19,8 +19,8 @@ export interface FormTemplate {
   name: "DownloadFormTemplatePdfButtons",
   components: {DownloadButton},
   computed: {
-    EditProjectParam() {
-      return EditProjectParam;
+    PmRequestParameter() {
+      return PmRequestParameter;
     }
   },
   props: {
@@ -38,7 +38,7 @@ export default class DownloadFormTemplatePdfButtons extends Vue {
   readonly action: Action = Action.DOWNLOAD_FORM_AS_PDF_ACTION;
 
   getParams(template: string): Map<string, unknown> {
-    return new Map([[EditProjectParam.FORM_TEMPLATE, template]]);
+    return new Map([[PmRequestParameter.FORM_TEMPLATE, template]]);
   }
 }
 </script>

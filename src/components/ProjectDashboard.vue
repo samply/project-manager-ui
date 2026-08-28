@@ -200,7 +200,7 @@ export default defineComponent({
           params.set(PmRequestParameter.PROJECT_STATE, this.selectedState)
         }
         if (this.selectedApplicant) {
-          params.set(PmRequestParameter.PROJECT_CREATOR, this.selectedApplicant)
+          params.set(PmRequestParameter.PROJECT_CREATOR_EMAIL, this.selectedApplicant)
         }
         if (this.selectedBridgehead) {
           params.set(PmRequestParameter.BRIDGEHEAD, this.selectedBridgehead)

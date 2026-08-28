@@ -191,7 +191,7 @@ export enum PmRequestParameter {
     COHORT_DEFINITION = "cohort-definition",
     RESULTS_URL = "results-url",
     PROJECT_STATE = "project-state",
-    PROJECT_CREATOR = "project-creator",
+    PROJECT_CREATOR_EMAIL = "project-creator-email",
     BRIDGEHEAD = "bridgehead",
     PAGE = "page",
     PAGE_SIZE = "page-size",

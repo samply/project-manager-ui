@@ -811,10 +811,10 @@ export default class ProjectFieldRow extends Vue {
         width = "54%"
       }
       if (this.properties?.includes(FormFieldProperty.CSS_ENUM)) {
-        width = "40%"
+        width = "100%"
       }
       if (this.properties?.includes(FormFieldProperty.CSS_ENUM_VALUE)) {
-        width = "60%"
+        width = "100%"
       }
       if (this.properties?.includes(FormFieldProperty.CSS_CHECKBOX)) {
         width = "100%"
@@ -1692,6 +1692,14 @@ export default class ProjectFieldRow extends Vue {
 }
 .layout > .input-field {
   padding: 1.5rem 0.5rem 1.5rem 4rem;
+}
+.css-enum > .input-field {
+  padding-left: 4rem;
+  padding-right: 0.5rem;
+}
+.css-enum-value > .input-field {
+  padding-left: 0.5rem;
+  padding-right: 4rem;
 }
 .input-field.sidewise.section {
   /*width:80%;*/

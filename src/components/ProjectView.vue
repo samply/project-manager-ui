@@ -3633,6 +3633,20 @@ export default defineComponent({
 }
 .project-field-grid {
   display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  box-sizing: border-box;
+  width: 100%;
+}
+.project-field-grid > .css-enum {
+  flex: 0 0 40%;
+  max-width: 40%;
+  min-width: 0;
+}
+.project-field-grid > .css-enum-value {
+  flex: 0 0 60%;
+  max-width: 60%;
+  min-width: 0;
 }
 
 .project-feasibility {

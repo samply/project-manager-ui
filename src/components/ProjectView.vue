@@ -3632,6 +3632,8 @@ export default defineComponent({
   font-weight: bold;
 }
 .project-field-grid {
+  /* A configured multi-field row is a single flex row. Individual property
+   * classes below determine each field's share of the available width. */
   display: flex;
   flex-wrap: nowrap;
   align-items: flex-start;
@@ -3639,11 +3641,13 @@ export default defineComponent({
   width: 100%;
 }
 .project-field-grid > .css-enum {
+  /* Selector portion of an enum-plus-text pair. */
   flex: 0 0 40%;
   max-width: 40%;
   min-width: 0;
 }
 .project-field-grid > .css-enum-value {
+  /* Free-text continuation portion of an enum-plus-text pair. */
   flex: 0 0 60%;
   max-width: 60%;
   min-width: 0;

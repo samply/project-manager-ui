@@ -811,9 +811,13 @@ export default class ProjectFieldRow extends Vue {
         width = "54%"
       }
       if (this.properties?.includes(FormFieldProperty.CSS_ENUM)) {
+        // The parent row owns the 40% column width; this wrapper must fill it
+        // rather than applying a second percentage inside that column.
         width = "100%"
       }
       if (this.properties?.includes(FormFieldProperty.CSS_ENUM_VALUE)) {
+        // The parent row owns the 60% column width; this wrapper fills the
+        // remaining column for the accompanying free-text value.
         width = "100%"
       }
       if (this.properties?.includes(FormFieldProperty.CSS_CHECKBOX)) {
@@ -1693,6 +1697,8 @@ export default class ProjectFieldRow extends Vue {
 .layout > .input-field {
   padding: 1.5rem 0.5rem 1.5rem 4rem;
 }
+/* Keep the outer form margins while bringing the two paired fields close
+ * together at their shared boundary. */
 .css-enum > .input-field {
   padding-left: 4rem;
   padding-right: 0.5rem;

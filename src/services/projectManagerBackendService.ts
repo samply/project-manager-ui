@@ -503,7 +503,11 @@ export enum FormFieldProperty {
     RADIO_BUTTON = "RADIO_BUTTON",
     // Render a multiple ENUM as one checkbox list.
     CHECK_BOX = "CHECK_BOX",
-    // CSS layout markers used by paired value/unit fields.
+    // Layout markers for two related fields rendered in one row. The root
+    // row assigns the configured proportions; the field itself fills its
+    // assigned column. CSS_ENUM is intended for the selector part of an
+    // enum-plus-text pair, while CSS_ENUM_VALUE is intended for its free-text
+    // continuation (for example, an "Other" explanation).
     CSS_UNIT_VALUE = "CSS_UNIT_VALUE",
     CSS_UNIT = "CSS_UNIT",
     CSS_ENUM = "CSS_ENUM",

@@ -13,6 +13,7 @@
       </div>
       <div v-if="projectStates.length > 1 || applicants.length > 1 || bridgeheads.length > 1" class="filter-box">
         <select v-if="projectStates.length > 1" v-model="selectedState" class="form-select" @change="changeState()">
+          <option value="">All Phases</option>
           <option v-for="value in projectStates" :key="value" :value="value">{{ projectStateLabel[value] }}</option>
         </select>
         <select v-if="applicants.length > 1" v-model="selectedApplicant" class="form-select" @change="changeApplicant()">
@@ -101,7 +102,6 @@ import {format} from "date-fns";
 import UserAndEmail from "@/components/UserAndEmail.vue";
 
 const ProjectStateLabel: Record<ProjectState, string> = {
-  ALL:"All Phases",
   APPROVAL: "Approval",
   ARCHIVED: "Archived",
   DEVELOP: "Develop",
@@ -115,7 +115,7 @@ const ProjectStateLabel: Record<ProjectState, string> = {
 export default defineComponent({
   computed: {
     projectStates(): ProjectState[] {
-      return [ProjectState.ALL, ...this.availableProjectStates]
+      return this.availableProjectStates
     },
 
     projectStateLabel(): Record<ProjectState, string> {
@@ -135,7 +135,7 @@ export default defineComponent({
       showNotification: false,
       currentPage: 1,
       totalPages: 1,
-      selectedState: ProjectState.ALL,
+      selectedState: "" as "" | ProjectState,
       availableProjectStates: [] as ProjectState[],
       isProjectManagerAdmin: false,
       applicants: [] as User[],
@@ -205,7 +205,7 @@ export default defineComponent({
     async fetchProjects() {
       try {
         const params = new Map<string, string>();
-        if (this.selectedState !== ProjectState.ALL) {
+        if (this.selectedState) {
           params.set('project-state', this.selectedState)
         }
         if (this.selectedApplicant) {
@@ -270,8 +270,8 @@ export default defineComponent({
             new Map()
         );
         this.availableProjectStates = Array.isArray(states) ? states : [];
-        if (!this.availableProjectStates.includes(this.selectedState)) {
-          this.selectedState = ProjectState.ALL;
+        if (this.selectedState && !this.availableProjectStates.includes(this.selectedState)) {
+          this.selectedState = "";
         }
       } catch (error) {
         console.error('Error loading notifications:', error);

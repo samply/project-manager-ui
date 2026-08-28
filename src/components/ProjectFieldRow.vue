@@ -792,6 +792,8 @@ export default class ProjectFieldRow extends Vue {
     const cssClassByProperty = new Map<FormFieldProperty, string>([
       [FormFieldProperty.CSS_UNIT_VALUE, "css-unit-value"],
       [FormFieldProperty.CSS_UNIT, "css-unit"],
+      [FormFieldProperty.CSS_ENUM, "css-enum"],
+      [FormFieldProperty.CSS_ENUM_VALUE, "css-enum-value"],
       [FormFieldProperty.CSS_CHECKBOX, "css-checkbox"]
     ]);
     const cssClasses = Array.from(cssClassByProperty.entries())
@@ -807,6 +809,12 @@ export default class ProjectFieldRow extends Vue {
       }
       if (this.properties?.includes(FormFieldProperty.CSS_UNIT_VALUE)) {
         width = "54%"
+      }
+      if (this.properties?.includes(FormFieldProperty.CSS_ENUM)) {
+        width = "40%"
+      }
+      if (this.properties?.includes(FormFieldProperty.CSS_ENUM_VALUE)) {
+        width = "60%"
       }
       if (this.properties?.includes(FormFieldProperty.CSS_CHECKBOX)) {
         width = "100%"

@@ -506,6 +506,8 @@ export enum FormFieldProperty {
     // CSS layout markers used by paired value/unit fields.
     CSS_UNIT_VALUE = "CSS_UNIT_VALUE",
     CSS_UNIT = "CSS_UNIT",
+    CSS_ENUM = "CSS_ENUM",
+    CSS_ENUM_VALUE = "CSS_ENUM_VALUE",
     CSS_CHECKBOX = "CSS_CHECKBOX",
     // Apply FIXED display metadata/active state while retaining the native
     // fixed-group position and dialog step.

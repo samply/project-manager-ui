@@ -14,7 +14,7 @@
       <div v-if="projectStates.length > 1 || applicants.length > 1 || bridgeheads.length > 1" class="filter-box">
         <select v-if="projectStates.length > 1" v-model="selectedState" class="form-select" @change="changeState()">
           <option value="">All Phases</option>
-          <option v-for="value in projectStates" :key="value" :value="value">{{ projectStateLabel[value] }}</option>
+          <option v-for="value in projectStates" :key="value" :value="value">{{ projectStateLabel(value) }}</option>
         </select>
         <select v-if="applicants.length > 1" v-model="selectedApplicant" class="form-select" @change="changeApplicant()">
           <option value="">All Applicants</option>
@@ -101,26 +101,12 @@ import NotificationBox from "@/components/Notification.vue";
 import {format} from "date-fns";
 import UserAndEmail from "@/components/UserAndEmail.vue";
 
-const ProjectStateLabel: Record<ProjectState, string> = {
-  APPROVAL: "Approval",
-  ARCHIVED: "Archived",
-  DEVELOP: "Develop",
-  DRAFT: "Draft",
-  FINAL: "Final",
-  FINISHED: "Finished",
-  PILOT: "Pilot",
-  REJECTED: "Rejected",
-  REVIEW: "Review"
-}
 export default defineComponent({
   computed: {
     projectStates(): ProjectState[] {
       return this.availableProjectStates
     },
 
-    projectStateLabel(): Record<ProjectState, string> {
-      return ProjectStateLabel
-    }
   },
   components: {UserAndEmail, NotificationBox},
 
@@ -189,6 +175,10 @@ export default defineComponent({
     },
     sortIcon(sortBy: ProjectSortField) {
       return this.sortBy === sortBy ? (this.sortDesc ? '▼' : '▲') : '';
+    },
+
+    projectStateLabel(state: ProjectState) {
+      return state.charAt(0) + state.slice(1).toLowerCase();
     },
 
     applicantLabel(applicant: User) {

@@ -451,6 +451,7 @@
                                 :section="item.section"
                                 :block="item.block"
                                 :call-refresh-context="refreshContext"
+                                :call-refresh-bridgeheads="refreshBridgeheadsAndContext"
                                 :extra-params="item.extraParams"
                                 :delete-action="item.deleteAction"
                                 :delete-module="item.deleteModule"
@@ -979,6 +980,8 @@ export default defineComponent({
       const visibleBridgeheadIds = new Set(newValue.map(bridgehead => bridgehead.bridgehead));
       const previousBridgeheadIds = new Set(oldValue.map(bridgehead => bridgehead.bridgehead));
 
+      // Feasibility requests are cost-bearing, so refresh only added bridgeheads
+      // and retain results for bridgeheads that are unchanged.
       previousBridgeheadIds.forEach(bridgehead => {
         if (!visibleBridgeheadIds.has(bridgehead)) this.feasibilityResults.delete(bridgehead);
       });

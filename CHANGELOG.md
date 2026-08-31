@@ -4,7 +4,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2026-08-28]
+
+## [1.1.0 - 2026-08-31]
 ### Added
 - Dockerfile
 - Single Spa
@@ -184,6 +185,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Render project fields on time
 - Add a project type as a parameter to the button for save query in bridgehead
 - Cache issue in browser
+- Refresh draft-project feasibility statistics after adding or removing bridgeheads without repeating feasibility requests for unchanged bridgeheads
 
 ### Changed
 - Notification only if the project manager admin

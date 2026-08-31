@@ -66,6 +66,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     isEditable: {type: Boolean, required: true},
     editMode: {type: Boolean, required: true},
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
+    callRefreshBridgeheads: {type: Function as unknown as () => () => void, required: true},
     uploadAction: {type: String as PropType<Action>, required: false},
     downloadAction: {type: String as PropType<Action>, required: false},
     downloadModule: {type: String as PropType<Module>, required: false},
@@ -120,6 +121,7 @@ export default class ProjectFieldRow extends Vue {
   // noinspection JSUnusedGlobalSymbols
   readonly isEditable!: boolean;
   readonly callRefreshContext!: () => void;
+  readonly callRefreshBridgeheads!: () => void;
 
   // For template:
 
@@ -400,7 +402,9 @@ export default class ProjectFieldRow extends Vue {
 
       this.projectManagerBackendService
           .fetchData(this.module, this.fetchAction(), this.context, params)
-          .then(() => this.callRefreshContext());
+          .then(() => this.isBridgeheads()
+              ? this.callRefreshBridgeheads()
+              : this.callRefreshContext());
     }
   }
 
@@ -978,6 +982,7 @@ export default class ProjectFieldRow extends Vue {
                 :is-editable="isEditable"
                 :edit-mode="editMode"
                 :call-refresh-context="callRefreshContext"
+                :call-refresh-bridgeheads="callRefreshBridgeheads"
                 :action="action"
                 :module="module"
                 :delete-action="Action.DELETE_FORM_FIELD_VALUE_ACTION"

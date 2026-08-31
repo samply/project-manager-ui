@@ -14,6 +14,7 @@ import {
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectRole,
+  ProjectState,
   NOT_SELECTED_PROJECT_CONFIGURATION
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
@@ -67,6 +68,8 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     editMode: {type: Boolean, required: true},
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
     callRefreshBridgeheads: {type: Function as unknown as () => () => void, required: true},
+    callQueryChanged: {type: Function as unknown as () => () => void, required: true},
+    projectState: {type: String as PropType<ProjectState>, required: false},
     uploadAction: {type: String as PropType<Action>, required: false},
     downloadAction: {type: String as PropType<Action>, required: false},
     downloadModule: {type: String as PropType<Module>, required: false},
@@ -122,6 +125,8 @@ export default class ProjectFieldRow extends Vue {
   readonly isEditable!: boolean;
   readonly callRefreshContext!: () => void;
   readonly callRefreshBridgeheads!: () => void;
+  readonly callQueryChanged!: () => void;
+  readonly projectState?: ProjectState;
 
   // For template:
 
@@ -192,6 +197,7 @@ export default class ProjectFieldRow extends Vue {
   // because they'd otherwise share the same name (e.g. the same fieldKey).
   radioGroupName = Math.random().toString(36).slice(2);
   showPseudocode: boolean = false
+  queryView: "pseudocode" | "query" = "pseudocode";
 
   mounted() {
     watch(
@@ -549,6 +555,25 @@ export default class ProjectFieldRow extends Vue {
 
   isQuery(): boolean {
     return this.includesPmRequestParameter(PmRequestParameter.HUMAN_READABLE);
+  }
+
+  canEditRealQuery(): boolean {
+    return this.isQuery() === true &&
+        this.isProjectManagerAdmin() === true &&
+        this.projectState === ProjectState.REVIEW;
+  }
+
+  saveRealQuery(): void {
+    if (!this.editMode || this.editedValue[1] === this.tempFieldValue[1]) return;
+
+    const params = new Map<string, string>();
+    params.set(PmRequestParameter.QUERY, this.editedValue[1] ?? "");
+    this.projectManagerBackendService
+        .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params)
+        .then(() => {
+          this.tempFieldValue[1] = this.editedValue[1];
+          this.callQueryChanged();
+        });
   }
   isCohortDefinition(): boolean {
     return this.includesPmRequestParameter(PmRequestParameter.COHORT_DEFINITION)
@@ -983,6 +1008,8 @@ export default class ProjectFieldRow extends Vue {
                 :edit-mode="editMode"
                 :call-refresh-context="callRefreshContext"
                 :call-refresh-bridgeheads="callRefreshBridgeheads"
+                :call-query-changed="callQueryChanged"
+                :project-state="projectState"
                 :action="action"
                 :module="module"
                 :delete-action="Action.DELETE_FORM_FIELD_VALUE_ACTION"
@@ -1151,44 +1178,114 @@ export default class ProjectFieldRow extends Vue {
               </div>-->
               <br/>
               <br/>
-              <div style="display: flex; justify-content: space-between">
-                <div style="margin-bottom: 10px">
-                  <span v-if="isProjectManagerAdmin()" class="query-link-button"
+              <template v-if="canEditRealQuery()">
+                <div class="query-view-switch" role="group" aria-label="Query representation">
+                  <button type="button"
+                          class="query-view-option"
+                          :class="{ active: queryView === 'pseudocode' }"
+                          :aria-pressed="queryView === 'pseudocode'"
+                          @click="queryView = 'pseudocode'">
+                    Pseudocode
+                  </button>
+                  <button type="button"
+                          class="query-view-option"
+                          :class="{ active: queryView === 'query' }"
+                          :aria-pressed="queryView === 'query'"
+                          @click="queryView = 'query'">
+                    Query
+                  </button>
+                </div>
+
+                <div v-if="queryView === 'pseudocode'"
+                     class="grow-wrap query-view-content"
+                     :data-replicated-value="editedValue[0]">
+                  <textarea
+                      v-model="editedValue[0]"
+                      @change="onInputChange"
+                      class="form-control auto-textarea"
+                      :class="editMode ? 'white' : 'grey'"
+                      :disabled="!editMode"
+                      aria-label="Pseudocode"
+                  ></textarea>
+                </div>
+
+                <div v-else class="query-view-content">
+                  <div class="query-controls query-view-actions">
+                    <span v-if="editedValue[1]"
+                          class="query-link-button"
                           data-toggle="tooltip"
-                          data-placement="top" :title='showPseudocode ? "Hide Pseudocode": "Show Pseudocode"'
-                          @click="showPseudocode = !showPseudocode"
-                    ><i :class="showPseudocode ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
-                    <span style="font-size: small; padding: 2px 0 0 5px">{{showPseudocode ? "Hide Pseudocode": "Show Pseudocode"}}</span>
-                  </span>
-                  <span v-if="isQuery() && isProjectManagerAdmin() && fieldValue[0]" class="query-link-button"
-                          data-toggle="tooltip"
-                          data-placement="top" title="Copy Query to Clipboard"
-                          @click="copyToClipboard(editedValue[1])"
-                    ><i :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"></i>
-                    <span style="font-size: small; padding: 2px 0 0 5px">Copy Query to Clipboard</span>
-                  </span>
-                  <button v-if="redirectUrl !== null && redirectUrl !== undefined"
+                          data-placement="top"
+                          title="Copy Query to Clipboard"
+                          @click="copyToClipboard(editedValue[1])">
+                      <i :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"></i>
+                      <span style="font-size: small; padding: 2px 0 0 5px">Copy Query to Clipboard</span>
+                    </span>
+                  </div>
+                  <div class="grow-wrap" :data-replicated-value="editedValue[1]">
+                    <textarea
+                        v-model="editedValue[1]"
+                        @change="saveRealQuery"
+                        class="form-control auto-textarea"
+                        :class="editMode ? 'white' : 'grey'"
+                        :disabled="!editMode"
+                        aria-label="Query"
+                    ></textarea>
+                  </div>
+                </div>
+                <div v-if="editMode && redirectUrl !== null && redirectUrl !== undefined"
+                     class="query-explorer-option query-view-content">
+                  <span>Or edit the query in Explorer:</span>
+                  <button type="button"
                           class="btn btn-query-link"
                           data-toggle="tooltip"
-                          data-placement="top" title="Return to the DKTK Explorer to edit the request."
+                          data-placement="top"
+                          title="Return to the DKTK Explorer to edit the request."
                           @click="redirectToURL">
                     <i class="bi bi-arrow-right-circle"></i>
                     <span>Edit in Explorer</span>
                   </button>
                 </div>
-              </div>
-              <Transition name="expand">
-              <div v-if="showPseudocode" class="grow-wrap" :data-replicated-value="editedValue[0]">
-                <textarea
-                  type="text"
-                  v-model="editedValue[0]"
-                  @change="onInputChange"
-                  class="form-control"
-                  :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
-                  :disabled="(!isDraft() || isSummaryStep()) && !editMode"
-                ></textarea>
-              </div>
-              </Transition>
+              </template>
+
+              <template v-else>
+                <div style="display: flex; justify-content: space-between">
+                  <div class="query-controls" style="margin-bottom: 10px">
+                    <span v-if="isProjectManagerAdmin()" class="query-link-button"
+                            data-toggle="tooltip"
+                            data-placement="top" :title='showPseudocode ? "Hide Pseudocode": "Show Pseudocode"'
+                            @click="showPseudocode = !showPseudocode"
+                      ><i :class="showPseudocode ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                      <span style="font-size: small; padding: 2px 0 0 5px">{{showPseudocode ? "Hide Pseudocode": "Show Pseudocode"}}</span>
+                    </span>
+                    <span v-if="isProjectManagerAdmin() && fieldValue[0]" class="query-link-button"
+                            data-toggle="tooltip"
+                            data-placement="top" title="Copy Query to Clipboard"
+                            @click="copyToClipboard(editedValue[1])"
+                      ><i :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"></i>
+                      <span style="font-size: small; padding: 2px 0 0 5px">Copy Query to Clipboard</span>
+                    </span>
+                    <button v-if="((isDraft() && !isSummaryStep()) || editMode) && redirectUrl !== null && redirectUrl !== undefined"
+                            class="btn btn-query-link"
+                            data-toggle="tooltip"
+                            data-placement="top" title="Return to the DKTK Explorer to edit the request."
+                            @click="redirectToURL">
+                      <i class="bi bi-arrow-right-circle"></i>
+                      <span>Edit in Explorer</span>
+                    </button>
+                  </div>
+                </div>
+                <Transition name="expand">
+                  <div v-if="showPseudocode" class="grow-wrap" :data-replicated-value="editedValue[0]">
+                    <textarea
+                        v-model="editedValue[0]"
+                        @change="onInputChange"
+                        class="form-control"
+                        :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
+                        :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+                    ></textarea>
+                  </div>
+                </Transition>
+              </template>
             </div>
 
             <div v-else-if="isDescriptionUpload()" style="margin:1rem 0 0 1rem">
@@ -1767,6 +1864,65 @@ export default class ProjectFieldRow extends Vue {
 .query-link-button:hover span {
   text-decoration: underline;
 }
+.query-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.query-view-switch {
+  width: fit-content;
+  display: flex;
+  padding: 3px;
+  margin-bottom: 0.75rem;
+  border: 1px solid #c2c6ca;
+  border-radius: 6px;
+  background-color: #f1f3f5;
+}
+.query-view-option {
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 600;
+}
+.query-view-option.active {
+  background-color: #fff;
+  color: #00489c;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.query-view-option:focus-visible {
+  outline: 2px solid #00489c;
+  outline-offset: 1px;
+}
+.query-view-actions {
+  min-height: 40px;
+  margin-bottom: 0.75rem;
+}
+.query-view-content {
+  width: calc(100% - 0.75rem);
+  min-width: 0;
+}
+.query-view-content .grow-wrap,
+.query-view-content textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.query-view-content .grow-wrap::after {
+  overflow-wrap: anywhere;
+}
+.query-explorer-option {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  color: #495057;
+  font-size: 14px;
+}
 .btn-query-link {
   background: #2655a2;
   border: none;
@@ -1785,6 +1941,12 @@ export default class ProjectFieldRow extends Vue {
   background: #1e4491;
   box-shadow: 0 2px 6px rgba(38, 85, 162, 0.38);
   color: white;
+}
+.btn-query-link:disabled {
+  background: #adb5bd;
+  border-color: #adb5bd;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 .grow-wrap {
   /* easy way to plop the elements on top of each other and have them both sized based on the tallest one's height */

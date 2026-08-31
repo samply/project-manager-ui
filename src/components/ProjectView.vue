@@ -452,6 +452,8 @@
                                 :block="item.block"
                                 :call-refresh-context="refreshContext"
                                 :call-refresh-bridgeheads="refreshBridgeheadsAndContext"
+                                :call-query-changed="queryChanged"
+                                :project-state="project?.state"
                                 :extra-params="item.extraParams"
                                 :delete-action="item.deleteAction"
                                 :delete-module="item.deleteModule"
@@ -1404,6 +1406,19 @@ export default defineComponent({
 
     refreshContext() {
       this.context = new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
+    },
+
+    queryChanged() {
+      // Feasibility results belong to the query, so none remain valid after
+      // the project-manager admin changes the real query. Bridgehead
+      // executions are intentionally untouched because editing is restricted
+      // to REVIEW, before the query is sent to the sites.
+      this.feasibilityResults.clear();
+      this.feasibilityErrors.clear();
+      this.visibleBridgeheads.forEach(bridgehead => {
+        void this.initializeFeasibilityResult(bridgehead).catch(() => undefined);
+      });
+      this.refreshContext();
     },
 
     redirectTo(site: string) {

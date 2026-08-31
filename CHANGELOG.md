@@ -186,6 +186,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add a project type as a parameter to the button for save query in bridgehead
 - Cache issue in browser
 - Refresh draft-project feasibility statistics after adding or removing bridgeheads without repeating feasibility requests for unchanged bridgeheads
+- Edit query
 
 ### Changed
 - Notification only if the project manager admin

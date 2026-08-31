@@ -181,6 +181,7 @@ export enum PmRequestParameter {
     DESCRIPTION = "description",
     OUTPUT_FORMAT = "output-format",
     TEMPLATE_ID = "template-id",
+    QUERY = "query",
     HUMAN_READABLE = "human-readable",
     PROJECT_TYPE = "project-type",
     QUERY_CONTEXT = "query-context",

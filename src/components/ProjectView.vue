@@ -2601,15 +2601,6 @@ export default defineComponent({
       const votumFields = buildVotumProjectFields(context);
       const {unconfiguredFixedFields, configuredFixedFields} =
           this.resolveConfiguredFixedFields([...fixedFields, ...votumFields]);
-      const voteKeys = new Set<FixedFormFieldKey>([
-        FixedFormFieldKey.ETHICS_VOTE,
-        FixedFormFieldKey.ETHICS_VOTE_FOR_ALL_SITES
-      ]);
-      const unconfiguredVoteFields = unconfiguredFixedFields.filter((field) =>
-          field.fixedFieldKey != null && voteKeys.has(field.fixedFieldKey));
-      const ordinaryUnconfiguredFixedFields = unconfiguredFixedFields.filter((field) =>
-          field.fixedFieldKey == null ||
-          !voteKeys.has(field.fixedFieldKey));
       const dynamicFields = this.buildDynamicProjectFieldsFromFormFields(
           this.formFields.filter((field) => this.isDynamicFormField(field)));
       const dynamicSelectedForms = this.buildDynamicProjectFieldsFromFormTitles(
@@ -2617,24 +2608,12 @@ export default defineComponent({
             this.draftDialogStepper.hasCurrentStep(formTitle.title)
           }));
 
-      const showVoteUpload = dynamicFields.find((field) =>
-          field.fieldKey === "Ethics vote")?.fieldValue[0] === "true";
-      const activeConfiguredFixedFields = configuredFixedFields.filter((field) =>
-          field.fixedFieldKey == null ||
-          (!voteKeys.has(field.fixedFieldKey) || showVoteUpload));
       const configuredFields = this.sortConfiguredProjectFields([
-        ...activeConfiguredFixedFields,
+        ...configuredFixedFields,
         ...dynamicFields
       ]);
 
-      if (showVoteUpload) {
-        const index = configuredFields.findIndex((field) => field.fieldKey === "Ethics vote")
-        if (index > -1) {
-          configuredFields.splice(index + 1, 0, ...unconfiguredVoteFields)
-        }
-      }
-
-      return [...ordinaryUnconfiguredFixedFields, ...dynamicSelectedForms, ...configuredFields].sort((a, b) =>
+      return [...unconfiguredFixedFields, ...dynamicSelectedForms, ...configuredFields].sort((a, b) =>
           this.getCategorySortValue(a.category) - this.getCategorySortValue(b.category))
     },
 

@@ -614,6 +614,10 @@ export default class ProjectFieldRow extends Vue {
   isRadioButton(): boolean {
     return this.properties?.includes(FormFieldProperty.RADIO_BUTTON) ?? false;
   }
+  isReadOnlyCssEnumLayout(): boolean {
+    return this.isReadOnlyView() &&
+        (this.properties?.includes(FormFieldProperty.CSS_ENUM) ?? false);
+  }
 
   // CHECK_BOX only really makes sense paired with multiple: true (see the
   // "multiple" template branch, which renders it as one checkbox list
@@ -863,6 +867,12 @@ export default class ProjectFieldRow extends Vue {
     }
     return width
   }
+  getHeaderWidth(): string {
+    const isSummaryLayout = !this.isDraft() || this.isSummaryStep();
+    return isSummaryLayout && this.properties?.includes(FormFieldProperty.CSS_ENUM)
+        ? "30%"
+        : this.getWidth();
+  }
 }
 
 </script>
@@ -933,8 +943,8 @@ export default class ProjectFieldRow extends Vue {
   -->
   <div v-else-if="multiple" :class="getCssProperty()">
     <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo"/>
-    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }">
-      <div style="display:flex" :style="{width: getWidth()}">
+    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'read-only-css-enum': isReadOnlyCssEnumLayout(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }">
+      <div style="display:flex" :style="{width: getHeaderWidth()}">
         <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'without-description': needsHeaderValueSpacer() }">
           <div style="display: flex;">
             <span class="input-field-title"><span v-html="fieldKey"></span><span v-if="mandatory" :style="!instances?.some(instance => instance.value) ? 'color: red' : ''">&nbsp*</span></span>
@@ -1096,8 +1106,8 @@ export default class ProjectFieldRow extends Vue {
   <div v-else :class="getCssProperty()">
 
     <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo"/>
-    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
-      <div style="display:flex" :style="{width: getWidth()}">
+    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'read-only-css-enum': isReadOnlyCssEnumLayout(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
+      <div style="display:flex" :style="{width: getHeaderWidth()}">
         <input
             v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory && !isReadOnlyView()"
             type="checkbox"
@@ -1412,14 +1422,16 @@ export default class ProjectFieldRow extends Vue {
                   </label>
                 </div>
               </div>
-              <div v-if="(!isDraft() || isSummaryStep()) && !editMode" style="padding: 0 0.75rem" class="option-list option-readonly">
+              <div v-if="(!isDraft() || isSummaryStep()) && !editMode"
+                   :class="hasMeaningfulValue(editedValue[0]) && hasAnyOptionDescription ? 'option-list option-readonly' : ''"
+                   :style="hasMeaningfulValue(editedValue[0]) && hasAnyOptionDescription ? 'padding: 0 0.75rem' : ''">
                 <template v-if="hasMeaningfulValue(editedValue[0])">
-                  <div :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{displayPossibleValue(editedValue[0]).name}}</div>
+                  <div :class="hasAnyOptionDescription ? 'option-title' : 'summary-value'">{{displayPossibleValue(editedValue[0]).name}}</div>
                   <div v-if="displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description"
                        class="option-description"
                        v-html="displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description"></div>
                 </template>
-                <div v-else class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                <div v-else class="summary-value summary-empty" :class="{ 'summary-missing': mandatory }">
                   {{ getEmptySummaryValue() }}
                 </div>
               </div>
@@ -1791,10 +1803,16 @@ export default class ProjectFieldRow extends Vue {
 .option-readonly:last-child {
   margin-bottom: 0;
 }
- .input-field.sidewise {
+.input-field.sidewise {
    display: flex;
    padding: 1rem 4rem;
    /*width: 85%;*/
+}
+.layout > .input-field.read-only-css-enum {
+  padding-right: 4rem;
+}
+.layout > .input-field.read-only-css-enum .selection-edit-fields.sidewise {
+  align-items: flex-start;
 }
 .layout > .input-field {
   padding: 1.5rem 0.5rem 1.5rem 4rem;

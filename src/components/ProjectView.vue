@@ -2099,6 +2099,11 @@ export default defineComponent({
       unconfiguredFixedFields: ProjectField[];
       configuredFixedFields: ProjectField[];
     } {
+      // FIXED configuration is metadata for an existing native frontend field.
+      // The UI applies active=false, display name/description overrides, order,
+      // and KEEP_FIXED_FIELD_ORDER. Conditional visibility is already resolved
+      // by the backend and arrives as active=false. Fixed fields do not use the
+      // dynamic value/persistence or condition-filtering path.
       const metadataByLabel = new Map<string, FormField[]>();
       this.formFields
           .filter((field) => field.fieldType === FormFieldType.FIXED)

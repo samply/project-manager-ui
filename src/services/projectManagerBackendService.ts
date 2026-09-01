@@ -491,7 +491,9 @@ export enum FormDataType {
 // DYNAMIC is the backward-compatible default and represents a normal form
 // field whose value is handled by the dynamic form-field flow. FIXED is a
 // metadata-only reference to a field implemented by the frontend; it can
-// override that native field's display metadata, order and active state.
+// override that native field's display metadata, order, KEEP_FIXED_FIELD_ORDER
+// placement and active state. A condition is evaluated by the backend and is
+// represented as active=false when it does not match.
 export enum FormFieldType {
     DYNAMIC = "DYNAMIC",
     FIXED = "FIXED"

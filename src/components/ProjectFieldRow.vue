@@ -43,6 +43,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     fieldValue: {type: Array as PropType<string[]>, required: true},
     fieldDescription: {type: String, required: false},
     fieldShortDescription: {type: String, required: false},
+    placeholder: {type: String, required: false},
     fieldPreInfo: {type: String, required: false},
     fieldPostInfo: {type: String, required: false},
     bridgeheads: {type: Object as PropType<BridgeheadsProjectField>, required: false},
@@ -136,6 +137,7 @@ export default class ProjectFieldRow extends Vue {
   readonly fieldDescription?: string;
   // noinspection JSUnusedGlobalSymbols
   readonly fieldShortDescription?: string;
+  readonly placeholder?: string;
   // Context information brackets this complete logical field. Recursive
   // headless rows for multiple values deliberately receive neither prop.
   readonly fieldPreInfo?: string;
@@ -917,6 +919,7 @@ export default class ProjectFieldRow extends Vue {
             class="form-control auto-textarea"
             :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
             :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+            :placeholder="placeholder"
         ></textarea>
       </div>
       <input
@@ -1012,6 +1015,7 @@ export default class ProjectFieldRow extends Vue {
                 headless
                 :field-key="fieldKey"
                 :field-value="[instance.value ?? '']"
+                :placeholder="placeholder"
                 :project-manager-backend-service="projectManagerBackendService"
                 :context="context"
                 :is-editable="isEditable"
@@ -1464,6 +1468,7 @@ export default class ProjectFieldRow extends Vue {
                     v-model="editedValue[0]"
                     @change="onInputChange"
                     class="form-control auto-textarea"
+                    :placeholder="placeholder"
                     :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
                     :disabled="(!isDraft() || isSummaryStep()) && !editMode"
                 ></textarea>
@@ -1480,6 +1485,7 @@ export default class ProjectFieldRow extends Vue {
                   v-model="editedValue[0]"
                   @change="onInputChange"
                   class="form-control"
+                  :placeholder="isInputType(FormDataType.STRING) ? placeholder : undefined"
                   :class="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration() ? 'grey' : 'white'"
                   :style="{width: getInputType()==='number' ? '100%' : '100%'}"
                   :disabled="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration()"

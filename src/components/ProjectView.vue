@@ -426,6 +426,7 @@
                                 :field-value="item.fieldValue"
                                 :field-description="item.fieldDescription"
                                 :field-short-description="item.fieldShortDescription"
+                                :placeholder="item.placeholder"
                                 :field-pre-info="isSummaryReview() ? undefined : item.fieldPreInfo"
                                 :field-post-info="isSummaryReview() ? undefined : item.fieldPostInfo"
                                 :bridgeheads="item.bridgeheads"
@@ -2162,7 +2163,10 @@ export default defineComponent({
                 : nativeField.fieldDescription,
             fieldShortDescription: metadata.labelShortDescription?.trim()
                 ? metadata.labelShortDescription
-                : nativeField.fieldShortDescription
+                : nativeField.fieldShortDescription,
+            placeholder: metadata.placeholder?.trim()
+                ? metadata.placeholder
+                : nativeField.placeholder
           };
           if (keepFixedFieldOrder) {
             nativeOrderOverrides.set(nativeField, configuredField);
@@ -2303,6 +2307,7 @@ export default defineComponent({
           mandatory: formField.mandatory,
           fieldDescription: formField.labelDescription,
           fieldShortDescription: formField.labelShortDescription,
+          placeholder: formField.placeholder,
           // The backend already applies project-state restrictions. Structural
           // visibility remains a UI concern, so every returned value is carried
           // with the logical field and rendered only when that field is visible.

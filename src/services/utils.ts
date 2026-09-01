@@ -48,6 +48,7 @@ export interface ProjectField {
     fieldShortDescription?: string
     fieldPreInfo?: string
     fieldPostInfo?: string
+    placeholder?: string
     bridgeheads?: BridgeheadsProjectField
     redirectUrl?: string
     isEditable: boolean

@@ -560,6 +560,7 @@ export interface FormField extends FormTitle {
     labelShortDescription?: string;
     labelPreInfo?: string;
     labelPostInfo?: string;
+    placeholder?: string;
     groups?: FormFieldGroup[];
     type?: FormDataType;
     allowedValues?: FormFieldValue[];

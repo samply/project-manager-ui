@@ -22,8 +22,8 @@ let config: FrontendConfig | null = null;
 let isLoading = false; // Track whether the config is being loaded
 
 
-const fetchJson = async <T>(url: string): Promise<T> => {
-    const response = await fetch(url);
+const fetchJson = async <T>(url: string, cache: RequestCache = 'default'): Promise<T> => {
+    const response = await fetch(url, {cache});
     if (!response.ok) {
         throw new Error(`Request failed for ${url} with status ${response.status}`);
     }
@@ -36,12 +36,13 @@ const loadConfig = async () => {
         try {
             // This must remain relative: config.json is needed before the
             // configured frontend URL is available.
-            const frontendConfig = await fetchJson<FrontendConfig>('config.json');
+            const frontendConfig = await fetchJson<FrontendConfig>('config.json', 'no-store');
 
             let backendConfig: Partial<FrontendConfig> = {};
             try {
                 backendConfig = await fetchJson<Partial<FrontendConfig>>(
-                    `${frontendConfig.VUE_APP_BACKEND_URL}${FRONTEND_VARIABLES_PATH}`
+                    `${frontendConfig.VUE_APP_BACKEND_URL}${FRONTEND_VARIABLES_PATH}`,
+                    'no-store'
                 );
             } catch (error) {
                 console.warn('Failed to load backend config:', error);

@@ -1058,29 +1058,48 @@ export default defineComponent({
 
     sortProjectFieldsByLayout(): ProjectField[][] {
       const projectFields = this.projectFields as ProjectField[];
-      const result = [];
-      let i = 0;
+      const result: ProjectField[][] = [];
+      const consumedFieldIndexes = new Set<number>();
 
-      while (i < projectFields.length) {
-        const groupIds = this.getFormFieldLayout(projectFields[i].category as string,projectFields[i].label as string)?.rows[0]?.fields
-        if (groupIds) {
-          const groupElements:ProjectField[] = [];
-
-          for (const id of groupIds) {
-            const elements = projectFields.filter((item) => item.label === id)
-            const element = elements.find(item => item.block?.instance === projectFields[i].block?.instance)
-            if (element) {
-              groupElements.push(element);
-            }
-          }
-
-          result.push(groupElements);
-          i += groupIds.length;
-        } else {
-          result.push([projectFields[i]]);
-          i++;
+      projectFields.forEach((currentField, currentIndex) => {
+        if (consumedFieldIndexes.has(currentIndex)) {
+          return;
         }
-      }
+
+        const layoutRow = this.getFormFieldLayout(
+            currentField.category,
+            currentField.label as string
+        )?.rows.find(row => row.fields.includes(currentField.label as string));
+
+        if (!layoutRow) {
+          result.push([currentField]);
+          consumedFieldIndexes.add(currentIndex);
+          return;
+        }
+
+        const groupElements: ProjectField[] = [];
+        layoutRow.fields.forEach((label) => {
+          const matchingIndex = projectFields.findIndex((candidate, candidateIndex) =>
+              !consumedFieldIndexes.has(candidateIndex) &&
+              candidate.category === currentField.category &&
+              candidate.label === label &&
+              candidate.block?.instance === currentField.block?.instance
+          );
+          if (matchingIndex !== -1) {
+            groupElements.push(projectFields[matchingIndex]);
+            consumedFieldIndexes.add(matchingIndex);
+          }
+        });
+
+        // A malformed/incomplete layout must never make the current field
+        // disappear. It is always present in a correctly matched row, but keep
+        // this fallback so rendering remains lossless when backend data drifts.
+        if (!consumedFieldIndexes.has(currentIndex)) {
+          groupElements.push(currentField);
+          consumedFieldIndexes.add(currentIndex);
+        }
+        result.push(groupElements);
+      });
       //console.log('original: ', projectFields)
       //console.log('test: ', result)
       return result

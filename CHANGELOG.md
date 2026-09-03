@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## [1.1.0 - 2026-09-02]
+## [1.1.0 - 2026-09-03]
 ### Added
 - Dockerfile
 - Single Spa
@@ -189,6 +189,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Cache issue in browser
 - Refresh draft-project feasibility statistics after adding or removing bridgeheads without repeating feasibility requests for unchanged bridgeheads
 - Edit query
+- Form fields being omitted when using multi-row field layouts
 
 ### Changed
 - Notification only if the project manager admin

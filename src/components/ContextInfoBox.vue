@@ -17,10 +17,10 @@ defineProps<{
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  margin: 0.75rem 1rem;
+  margin: 0.75rem 4rem;
   padding: 0.75rem 1rem;
   border: 1px solid #b8d6ee;
-  border-left: 4px solid #2672a8;
+  /*border-left: 4px solid #2672a8;*/
   border-radius: 6px;
   background: #f3f8fc;
   color: #17324d;

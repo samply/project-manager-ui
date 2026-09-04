@@ -1762,7 +1762,8 @@ export default class ProjectFieldRow extends Vue {
  * the first option either way.
  */
 .option-list {
-  margin-top: 1.1rem;
+  margin-bottom: 1.1rem;
+  padding: 0 0.75rem
 }
 .option-row {
   display: flex;

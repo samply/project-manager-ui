@@ -1109,7 +1109,7 @@ export default class ProjectFieldRow extends Vue {
 
   <div v-else :class="getCssProperty()">
 
-    <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo"/>
+    <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo" :is-block="isBlock()"/>
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'read-only-css-enum': isReadOnlyCssEnumLayout(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
       <div style="display:flex" :style="{width: getHeaderWidth()}">
         <input
@@ -1496,7 +1496,7 @@ export default class ProjectFieldRow extends Vue {
       </div>
 
     </div>
-    <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo"/>
+    <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo" :is-block="isBlock()"/>
   </div>
 
 

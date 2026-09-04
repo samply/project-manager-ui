@@ -28,7 +28,14 @@
       </thead>
       <tbody>
         <tr v-for="bridgehead in pagedBridgeheads" :key="bridgehead.bridgehead">
-          <td class="feasibility-bridgehead-name">{{ bridgehead.humanReadable }}</td>
+          <td class="feasibility-bridgehead-name">
+            <span>{{ bridgehead.humanReadable ?? bridgehead.bridgehead }}</span>
+            <button v-if="editable" type="button" class="btn btn-link feasibility-remove-button"
+                    title="Remove site" aria-label="Remove site"
+                    @click="removeBridgehead(bridgehead.bridgehead)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
           <td
               v-if="hasError(bridgehead.bridgehead)"
               :colspan="columns.length"
@@ -59,6 +66,29 @@
       <button type="button" class="btn btn-primary" :disabled="currentPage === totalPages" @click="nextPage">
         <i class="bi bi-play-fill" style="font-size: medium"></i>
       </button>
+    </div>
+    <div v-if="editable && availableBridgeheadsToAdd.length" class="feasibility-add-controls">
+      <button v-if="!showAddBridgehead" type="button" class="btn btn-secondary"
+              title="Add site" aria-label="Add site" @click="showAddBridgehead = true">
+        <i class="bi bi-plus"></i>
+      </button>
+      <template v-else>
+        <select v-model="newBridgeheadId" class="form-select" aria-label="Site to add">
+          <option disabled value="">Site</option>
+          <option v-for="bridgehead in availableBridgeheadsToAdd" :key="bridgehead.bridgehead"
+                  :value="bridgehead.bridgehead">
+            {{ bridgehead.humanReadable ?? bridgehead.bridgehead }}
+          </option>
+        </select>
+        <button type="button" class="btn btn-primary" :disabled="!newBridgeheadId"
+                title="Add site" aria-label="Add site" @click="addBridgehead">
+          <i class="bi bi-check"></i>
+        </button>
+        <button type="button" class="btn btn-primary" title="Cancel" aria-label="Cancel"
+                @click="cancelAddBridgehead">
+          <i class="bi bi-x"></i>
+        </button>
+      </template>
     </div>
   </div>
 </template>
@@ -108,6 +138,14 @@ export default defineComponent({
     pageSize: {
       type: Number,
       required: true
+    },
+    editable: {
+      type: Boolean,
+      default: false
+    },
+    availableBridgeheads: {
+      type: Array as PropType<Bridgehead[]>,
+      default: () => []
     }
   },
   data() {
@@ -115,7 +153,9 @@ export default defineComponent({
       currentPage: 1,
       // 'site' sorts by bridgehead name; any other value is a column label.
       sortKey: "site" as string,
-      sortDirection: "asc" as "asc" | "desc"
+      sortDirection: "asc" as "asc" | "desc",
+      showAddBridgehead: false,
+      newBridgeheadId: ""
     };
   },
   computed: {
@@ -208,6 +248,10 @@ export default defineComponent({
         map.set(bridgehead.bridgehead, values);
       });
       return map;
+    },
+    availableBridgeheadsToAdd(): Bridgehead[] {
+      const selectedIds = new Set(this.bridgeheads.map(bridgehead => bridgehead.bridgehead));
+      return this.availableBridgeheads.filter(bridgehead => !selectedIds.has(bridgehead.bridgehead));
     }
   },
   watch: {
@@ -244,6 +288,21 @@ export default defineComponent({
     sortIndicator(key: string): string {
       if (this.sortKey !== key) return "";
       return this.sortDirection === "asc" ? " ▲" : " ▼";
+    },
+    removeBridgehead(bridgeheadId: string) {
+      this.$emit('update-bridgeheads', this.bridgeheads.filter(bridgehead => bridgehead.bridgehead !== bridgeheadId));
+    },
+    addBridgehead() {
+      const bridgehead = this.availableBridgeheadsToAdd.find(candidate => candidate.bridgehead === this.newBridgeheadId);
+      if (!bridgehead) return;
+
+      this.$emit('update-bridgeheads', [...this.bridgeheads, bridgehead]);
+      this.newBridgeheadId = "";
+      this.showAddBridgehead = false;
+    },
+    cancelAddBridgehead() {
+      this.newBridgeheadId = "";
+      this.showAddBridgehead = false;
     }
   }
 });
@@ -284,6 +343,30 @@ export default defineComponent({
 .feasibility-bridgehead-name {
   font-weight: 600;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.feasibility-remove-button {
+  color: #64748b;
+  padding: 0 0 0 0.75rem;
+}
+
+.feasibility-remove-button:hover {
+  color: #b45353;
+}
+
+.feasibility-add-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.feasibility-add-controls select {
+  max-width: 24rem;
 }
 
 .feasibility-breakdown-label,
@@ -301,6 +384,7 @@ export default defineComponent({
 .pager {
   display: flex;
   justify-content: end;
+  margin-top: 4px;
 }
 
 .pager span {

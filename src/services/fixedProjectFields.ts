@@ -162,25 +162,6 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
                 FixedFormFieldKey.DESCRIPTION_UPLOAD, FixedDialogStep.PROJECT)
         },
         {
-            fixedFieldKey: FixedFormFieldKey.QUERIED_SITES,
-            fieldKey: "Queried Sites",
-            fieldDescription: "Sites identified via the Explorer as having samples or data matching your search criteria.",
-            fieldValue: [],
-            bridgeheads: {selected: context.bridgeheads, available: context.allBridgeheads},
-            editProjectParam: [PmRequestParameter.BRIDGEHEADS],
-            isEditable: true,
-            editMode: context.editMode,
-            mandatory: true,
-            redirectUrl: context.project?.explorerUrl ?? undefined,
-            category: context.getFixedFieldDialogStep(
-                FixedFormFieldKey.QUERIED_SITES, FixedDialogStep.PROJECT),
-            transformForSending: (humanReadable: string) =>
-                context.allBridgeheads.find(bridgehead =>
-                    bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
-            visibilityCondition: context.isFixedFieldVisibleInCurrentStep(
-                FixedFormFieldKey.QUERIED_SITES, FixedDialogStep.PROJECT)
-        },
-        {
             fixedFieldKey: FixedFormFieldKey.PROJECT_CONFIGURATION,
             fieldKey: "Configuration",
             fieldValue: context.currentProjectConfiguration,
@@ -217,6 +198,25 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
                 FixedFormFieldKey.SELECTED_COHORT, FixedDialogStep.QUERY),
             visibilityCondition: context.isFixedFieldVisibleInCurrentStep(
                 FixedFormFieldKey.SELECTED_COHORT, FixedDialogStep.QUERY)
+        },
+        {
+            fixedFieldKey: FixedFormFieldKey.QUERIED_SITES,
+            fieldKey: "Selected Sites",
+            fieldDescription: "Sites identified via the Explorer as having samples or data matching your search criteria.",
+            fieldValue: [],
+            bridgeheads: {selected: context.bridgeheads, available: context.allBridgeheads},
+            editProjectParam: [PmRequestParameter.BRIDGEHEADS],
+            isEditable: true,
+            editMode: context.editMode,
+            mandatory: true,
+            redirectUrl: context.project?.explorerUrl ?? undefined,
+            category: FixedDialogStep.QUERY,
+            transformForSending: (humanReadable: string) =>
+                context.allBridgeheads.find(bridgehead =>
+                    bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
+            visibilityCondition: !context.existsDraftDialog ||
+                context.isCurrentStep(FixedDialogStep.QUERY) ||
+                context.isCurrentStep(FixedDialogStep.SUMMARY)
         },
         {
             fixedFieldKey: FixedFormFieldKey.QUERY_FORMAT,

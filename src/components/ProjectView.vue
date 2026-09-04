@@ -420,8 +420,27 @@
 
                             <div :class="row.field.length > 1 ? 'project-field-grid' : ''">
                             <template v-for="item in row.field">
+                            <div
+                                v-if="row.shouldRenderRow && showProjectFeasibilityResults && item.fixedFieldKey === FixedFormFieldKey.QUERIED_SITES"
+                                class="project-feasibility"
+                            >
+                              <div class="project-feasibility-header">
+                                <span class="project-feasibility-title">{{ item.fieldKey }}</span>
+                                <div v-if="item.fieldDescription" class="project-feasibility-description"
+                                     v-html="item.fieldDescription"></div>
+                              </div>
+                              <FeasibilityTable
+                                  :bridgeheads="visibleBridgeheads"
+                                  :results="feasibilityResults"
+                                  :errors="feasibilityErrors"
+                                  :page-size="feasibilityPageSize"
+                                  :editable="canEditSelectedSites()"
+                                  :available-bridgeheads="allBridgeheads"
+                                  @update-bridgeheads="updateSelectedSites"
+                              />
+                            </div>
                             <ProjectFieldRow
-                                v-if="row.shouldRenderRow"
+                                v-else-if="row.shouldRenderRow"
                                 :field-key="item.fieldKey"
                                 :field-value="item.fieldValue"
                                 :field-description="item.fieldDescription"
@@ -467,21 +486,6 @@
                                 :build-instance-transform="item.buildInstanceTransform"
                                 :project-manager-backend-service="projectManagerBackendService"/>
                             </template>
-                            </div>
-                            <div
-                                v-if="showProjectFeasibilityResults && isSelectedCohortRow(row)"
-                                class="project-feasibility"
-                            >
-                              <div class="project-feasibility-header">
-                                <span class="project-feasibility-title">Statistics</span>
-                                <div class="project-feasibility-description">Per-site record counts, used to assess the feasibility of this query.</div>
-                              </div>
-                              <FeasibilityTable
-                                  :bridgeheads="visibleBridgeheads"
-                                  :results="feasibilityResults"
-                                  :errors="feasibilityErrors"
-                                  :page-size="feasibilityPageSize"
-                              />
                             </div>
                           </template>
                         </div>
@@ -858,6 +862,9 @@ export default defineComponent({
     },
     PmRequestParameter() {
       return PmRequestParameter
+    },
+    FixedFormFieldKey() {
+      return FixedFormFieldKey
     },
     Action() {
       return Action
@@ -1468,8 +1475,17 @@ export default defineComponent({
       }
     },
 
-    isSelectedCohortRow(row: ProjectFieldRenderItem): boolean {
-      return row.shouldRenderRow && row.field.some(field => field.fieldKey === "Selected Cohort");
+    canEditSelectedSites(): boolean {
+      return (this.existsDraftDialog && !this.isCurrentStep(FixedDialogStep.SUMMARY)) ||
+          (!this.existsDraftDialog && this.editMode);
+    },
+
+    updateSelectedSites(bridgeheads: Bridgehead[]): void {
+      const params = new Map<string, string>();
+      params.set(PmRequestParameter.BRIDGEHEADS, bridgeheads.map(bridgehead => bridgehead.bridgehead).join(','));
+      this.projectManagerBackendService
+          .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params)
+          .then(() => this.refreshBridgeheadsAndContext());
     },
 
     hasFeasibilityResult(result: FeasibilityResult | undefined): boolean {
@@ -2167,8 +2183,11 @@ export default defineComponent({
           return;
         }
 
-        const keepFixedFieldOrder = metadata.properties?.includes(
-            FormFieldProperty.KEEP_FIXED_FIELD_ORDER) ?? false;
+        // Selected sites belong to the Query step because they are part of
+        // the query/feasibility view. Older configurations may still define
+        // QUERIED_SITES in a Project form file, so retain its native placement.
+        const keepFixedFieldOrder = label === FixedFormFieldKey.QUERIED_SITES ||
+            (metadata.properties?.includes(FormFieldProperty.KEEP_FIXED_FIELD_ORDER) ?? false);
         nativeFields.forEach((nativeField) => {
           const configuredField: ProjectField = {
             ...nativeField,

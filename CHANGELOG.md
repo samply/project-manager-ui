@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## [1.1.0 - 2026-09-03]
+## [1.1.0 - 2026-09-04]
 ### Added
 - Dockerfile
 - Single Spa
@@ -198,3 +198,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Forms in custom or implicit
 - Redesign of draft formular
 - Custom configuration only visible for project manager admin
+- Bridgeheads in query form

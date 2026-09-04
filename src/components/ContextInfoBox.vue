@@ -1,11 +1,12 @@
 <script setup lang="ts">
 defineProps<{
   content: string;
+  isBlock?: boolean;
 }>();
 </script>
 
 <template>
-  <aside class="context-info-box" role="note" aria-label="Context information">
+  <aside class="context-info-box" role="note" aria-label="Context information" :style="isBlock ? 'margin: 0.75rem 1rem' : 'margin: 0.75rem 4rem'">
     <i class="bi bi-info-circle context-info-box-icon" aria-hidden="true"></i>
     <!-- Form configuration is trusted administrator-controlled HTML, like field descriptions. -->
     <div class="context-info-box-content" v-html="content"></div>
@@ -17,7 +18,6 @@ defineProps<{
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  margin: 0.75rem 4rem;
   padding: 0.75rem 1rem;
   border: 1px solid #b8d6ee;
   /*border-left: 4px solid #2672a8;*/

@@ -625,9 +625,13 @@ export type ActionMetadata = {
     path: string;
     method: HttpMethod;
     params: string [];
-    explanation: string;
-    priority: number;
+    explanation?: string;
+    successMessage?: string;
+    errorMessage?: string;
+    priority?: number;
 }
+
+export type ActionFeedbackMessages = Pick<ActionMetadata, 'successMessage' | 'errorMessage'>;
 
 export type Explanations = Map<string, { number: number, message: string }>
 
@@ -653,6 +657,8 @@ function jsonToActionMetadata(json: any): ActionMetadata | undefined {
         method: method,
         params: json.params || [],  // assuming params is an array, provide a default value if it's optional
         explanation: json.explanation,
+        successMessage: json.successMessage,
+        errorMessage: json.errorMessage,
         priority: json.priority
     };
 }
@@ -806,6 +812,22 @@ export class ProjectManagerBackendService {
     public async isModuleActionActive(module: Module, action: Action): Promise<boolean> {
         await this.initializedPromise;
         return this.getActionMetadata(module, action) !== undefined;
+    }
+
+    public async getActionFeedbackMessages(module: Module, action: Action): Promise<ActionFeedbackMessages> {
+        await this.initializedPromise;
+        const metadata = this.getActionMetadata(module, action);
+        return {
+            successMessage: metadata?.successMessage,
+            errorMessage: metadata?.errorMessage,
+        };
+    }
+
+    public async getDefaultErrorMessageForUserActions(): Promise<string | undefined> {
+        const config = await getConfig();
+        // This fallback is intentionally used only by user-action components;
+        // ordinary fetchData calls do not create feedback side effects.
+        return config.DEFAULT_ERROR_MESSAGE_FOR_USER_ACTIONS;
     }
 
     private getActionMetadata(module: Module, action: Action): ActionMetadata | undefined {

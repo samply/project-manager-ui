@@ -143,6 +143,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Calendar picker for form field of type date or timestamp
 - Filter applicants and bridgeheads
 - Cache config
+- German translations for action explanations and user-action feedback messages
+- Accessible success and error popups for configured action messages
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

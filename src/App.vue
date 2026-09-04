@@ -1,18 +1,21 @@
 <template>
   <div id="app">
-   <NavBar/>
+    <NavBar/>
+    <ActionFeedbackToast/>
     <router-view></router-view>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
- import NavBar from "@/components/NavBar.vue";
+import {defineComponent} from 'vue';
+import ActionFeedbackToast from '@/components/ActionFeedbackToast.vue';
+import NavBar from '@/components/NavBar.vue';
 
 export default defineComponent({
-  components:{
-  NavBar,
-  }
+  components: {
+    ActionFeedbackToast,
+    NavBar,
+  },
 });
 </script>
 

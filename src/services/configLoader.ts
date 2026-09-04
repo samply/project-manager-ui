@@ -15,6 +15,8 @@ export interface FrontendConfig {
     LOGO_HTML?: string;
     LOGO_CSS?: string;
     FEASIBILITY_PAGE_SIZE?: string;
+    /** Fallback feedback for failed actions initiated directly by the user. */
+    DEFAULT_ERROR_MESSAGE_FOR_USER_ACTIONS?: string;
     [key: string]: unknown;
 }
 

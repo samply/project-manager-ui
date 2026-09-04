@@ -8,6 +8,7 @@ import {
 } from "@/services/projectManagerBackendService";
 import {Options, Vue} from "vue-class-component";
 import {PropType, watch} from "vue";
+import store, {ActionFeedbackType} from '@/services/store';
 
 @Options({
   name: "ProjectManagerButton",
@@ -62,6 +63,7 @@ export default class ProjectManagerButton extends Vue {
   inputText = '';
   hideInput = true;
   checkboxChecked = !!this.action2;
+  isPending = false;
 
   mounted() {
     // Replace @Watch for 'visibility' and 'projectManagerBackendService'
@@ -88,9 +90,41 @@ export default class ProjectManagerButton extends Vue {
       this.doActionOnClick();
     } else {
       const actionToUse = this.checkboxChecked && this.action2 ? this.action2 : this.action;
+      const feedbackMessages = await this.projectManagerBackendService.getActionFeedbackMessages(
+          this.module, actionToUse
+      );
       this.params.set('message', this.inputText);
-      this.projectManagerBackendService.fetchData(this.module, actionToUse, this.context, this.params).then(() => this.callRefreshContext());
-      this.toggleVisibility();
+      this.isPending = true;
+      try {
+        await this.projectManagerBackendService.fetchData(
+            this.module, actionToUse, this.context, this.params
+        );
+      } catch (error) {
+        console.error(`Error calling action '${actionToUse}' of module '${this.module}':`, error);
+        // Use the deployment-provided fallback only for this direct user action.
+        this.showFeedback(
+            ActionFeedbackType.ERROR,
+            feedbackMessages.errorMessage || await this.projectManagerBackendService.getDefaultErrorMessageForUserActions()
+        );
+        this.isPending = false;
+        return;
+      }
+
+      this.showFeedback(ActionFeedbackType.SUCCESS, feedbackMessages.successMessage);
+      try {
+        await this.callRefreshContext();
+        this.toggleVisibility();
+      } catch (error) {
+        console.error(`Action '${actionToUse}' succeeded, but refreshing its context failed:`, error);
+      } finally {
+        this.isPending = false;
+      }
+    }
+  }
+
+  showFeedback(type: ActionFeedbackType, message?: string) {
+    if (message) {
+      store.commit('showActionFeedback', {type, message});
     }
   }
 
@@ -115,16 +149,22 @@ export default class ProjectManagerButton extends Vue {
              placeholder="optional message"/>
       <div :title="tooltipText">
         <button :class="[buttonClass, 'button-spacing', { 'hidden': !hideInput }]" @click="toggleVisibility"
-                :disabled="isDisabled">{{ text }}</button>
+                :disabled="isDisabled || isPending" :aria-busy="isPending">
+          <span v-if="isPending" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>{{ text }}
+        </button>
       </div>
       <button :class="[buttonClass, 'button-spacing', { 'hidden': hideInput }]" @click="handleButtonClick"
-              :disabled="isDisabled">Submit</button>
+              :disabled="isDisabled || isPending" :aria-busy="isPending">
+        <span v-if="isPending" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Submit
+      </button>
       <button v-if="!hideInput" :class="[buttonClass, 'button-spacing']" @click="handleCancelClick"
-              :disabled="isDisabled">Cancel</button>
+              :disabled="isDisabled || isPending">Cancel</button>
     </template>
     <template v-else>
       <div :title="tooltipText">
-        <button :class="buttonClass" @click="handleButtonClick" :disabled="isDisabled">{{ text }}</button>
+        <button :class="buttonClass" @click="handleButtonClick" :disabled="isDisabled || isPending" :aria-busy="isPending">
+          <span v-if="isPending" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>{{ text }}
+        </button>
       </div>
     </template>
     <label v-if="action2" class="pm-checkbox">

@@ -240,7 +240,7 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
         {
             fixedFieldKey: FixedFormFieldKey.ADDITIONAL_FILTER_CRITERIA,
             fieldKey: "Additional filter criteria",
-            fieldDescription: "Please provide filter criteria that could not select in the Explorer, or further notes on the resources you want to request",
+            fieldDescription: "Please provide filter criteria that could not be selected in the Explorer, or further notes on the resources you want to request",
             fieldValue: context.project?.cohortDefinition ? [context.project.cohortDefinition] : [],
             editProjectParam: [PmRequestParameter.COHORT_DEFINITION],
             type: FormDataType.LONG_STRING,

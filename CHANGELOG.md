@@ -179,6 +179,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Configuration editable in Review
 - Form field placeholder
 - Mandatory field marker
+- Description collapse rules
 
 ### Removed
 - Application Form

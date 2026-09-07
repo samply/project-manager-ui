@@ -451,6 +451,7 @@
                                 :field-value="item.fieldValue"
                                 :field-description="item.fieldDescription"
                                 :field-short-description="item.fieldShortDescription"
+                                :description-collapsed-lines="formFieldDescriptionCollapsedLines"
                                 :placeholder="item.placeholder"
                                 :field-pre-info="isSummaryReview() ? undefined : item.fieldPreInfo"
                                 :field-post-info="isSummaryReview() ? undefined : item.fieldPostInfo"
@@ -804,7 +805,7 @@ import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
 import FeasibilityTotals from "@/components/FeasibilityTotals.vue";
 import FeasibilityTable from "@/components/FeasibilityTable.vue";
 import MandatoryFieldMarker from "@/components/MandatoryFieldMarker.vue";
-import {getConfig} from "@/services/configLoader";
+import {DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES, getConfig} from "@/services/configLoader";
 import {DialogStep, DialogStepper, FixedDialogStep} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
@@ -920,6 +921,7 @@ export default defineComponent({
       feasibilityResults: new Map<string, FeasibilityResult>(),
       feasibilityErrors: new Set<string>(),
       feasibilityPageSize: 10,
+      formFieldDescriptionCollapsedLines: DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES,
       pollingService: null as PollingService | null,
       context: new ProjectManagerContext(this.projectCode, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
@@ -1061,6 +1063,7 @@ export default defineComponent({
     this.initializePollingService();
     this.pollingService?.execute();
     this.fetchFeasibilityPageSize();
+    this.fetchFormFieldDescriptionCollapsedLines();
   },
 
   beforeUnmount() {
@@ -1525,6 +1528,14 @@ export default defineComponent({
     async fetchFeasibilityPageSize() {
       const config = await getConfig();
       this.feasibilityPageSize = Number(config.FEASIBILITY_PAGE_SIZE ?? 10);
+    },
+
+    async fetchFormFieldDescriptionCollapsedLines() {
+      const config = await getConfig();
+      const configuredLines = Number(config.FORM_FIELD_DESCRIPTION_COLLAPSED_LINES);
+      this.formFieldDescriptionCollapsedLines = Number.isInteger(configuredLines) && configuredLines > 0
+          ? configuredLines
+          : DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES;
     },
 
     async fetchProject() {

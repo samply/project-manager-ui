@@ -1,6 +1,8 @@
 // configLoader.ts
 import {FRONTEND_VARIABLES_PATH} from "@/services/BridgeheadOverviewHeaders";
 
+export const DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES = 2;
+
 export interface FrontendConfig {
     VUE_APP_BACKEND_URL: string;
     VUE_APP_FRONTEND_URL: string;
@@ -15,6 +17,12 @@ export interface FrontendConfig {
     LOGO_HTML?: string;
     LOGO_CSS?: string;
     FEASIBILITY_PAGE_SIZE?: string;
+    /**
+     * Number of lines shown for a normal form-field description when the field
+     * value is rendered beside it. Overflowing descriptions can be expanded by
+     * the user. The UI defaults to two lines when this value is absent or invalid.
+     */
+    FORM_FIELD_DESCRIPTION_COLLAPSED_LINES?: string;
     /** Fallback feedback for failed actions initiated directly by the user. */
     DEFAULT_ERROR_MESSAGE_FOR_USER_ACTIONS?: string;
     [key: string]: unknown;

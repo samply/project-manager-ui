@@ -25,6 +25,7 @@ import type {DialogStep} from "@/services/fixedDialogStep";
 import {FixedDialogStep} from "@/services/fixedDialogStep";
 import type {Block, BridgeheadsProjectField, ProjectFieldInstance} from "@/services/utils";
 import {ActionFunction, Section, Utils} from "@/services/utils";
+import {DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES} from "@/services/configLoader";
 import {handleError, PropType, watch} from "vue";
 import "@samply/lens";
 import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
@@ -44,6 +45,11 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     fieldValue: {type: Array as PropType<string[]>, required: true},
     fieldDescription: {type: String, required: false},
     fieldShortDescription: {type: String, required: false},
+    descriptionCollapsedLines: {
+      type: Number,
+      required: false,
+      default: DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES
+    },
     placeholder: {type: String, required: false},
     fieldPreInfo: {type: String, required: false},
     fieldPostInfo: {type: String, required: false},
@@ -138,6 +144,7 @@ export default class ProjectFieldRow extends Vue {
   readonly fieldDescription?: string;
   // noinspection JSUnusedGlobalSymbols
   readonly fieldShortDescription?: string;
+  readonly descriptionCollapsedLines!: number;
   readonly placeholder?: string;
   // Context information brackets this complete logical field. Recursive
   // headless rows for multiple values deliberately receive neither prop.
@@ -201,8 +208,15 @@ export default class ProjectFieldRow extends Vue {
   radioGroupName = Math.random().toString(36).slice(2);
   showPseudocode: boolean = false
   queryView: "pseudocode" | "query" = "pseudocode";
+  descriptionExpanded = false;
+  descriptionOverflows = false;
+  descriptionResizeObserver?: ResizeObserver;
+  observedDescription?: HTMLElement;
 
   mounted() {
+    if (typeof ResizeObserver !== "undefined") {
+      this.descriptionResizeObserver = new ResizeObserver(() => this.refreshDescriptionOverflow());
+    }
     watch(
         () => this.projectManagerBackendService,
         () => {
@@ -228,6 +242,22 @@ export default class ProjectFieldRow extends Vue {
         },
         {immediate: true, deep: true}
     );
+    watch(
+        () => [
+          this.displayedFieldDescription,
+          this.descriptionCollapsedLines,
+          this.shouldCollapseFieldDescription
+        ],
+        () => {
+          this.descriptionExpanded = false;
+          this.$nextTick(() => this.observeDescription());
+        },
+        {immediate: true}
+    );
+  }
+
+  beforeUnmount() {
+    this.descriptionResizeObserver?.disconnect();
   }
 
   get dialogStep() {
@@ -710,6 +740,36 @@ export default class ProjectFieldRow extends Vue {
       ? this.fieldShortDescription ?? this.fieldDescription
       : this.fieldDescription;
   }
+  get shouldCollapseFieldDescription(): boolean {
+    const valueIsBesideDescription = !this.isDraft() || this.isSummaryStep() || this.isBlock();
+    const isUsingNormalDescription = this.fieldShortDescription == null && !!this.fieldDescription;
+    return valueIsBesideDescription && isUsingNormalDescription;
+  }
+  get descriptionClampStyle(): Record<string, string> {
+    return {
+      "--form-field-description-collapsed-lines": String(this.descriptionCollapsedLines)
+    };
+  }
+  observeDescription(): void {
+    const description = this.$refs.fieldDescription as HTMLElement | undefined;
+    if (description !== this.observedDescription) {
+      this.descriptionResizeObserver?.disconnect();
+      this.observedDescription = description;
+      if (description) this.descriptionResizeObserver?.observe(description);
+    }
+    this.refreshDescriptionOverflow();
+  }
+  refreshDescriptionOverflow(): void {
+    if (!this.shouldCollapseFieldDescription || this.descriptionExpanded) return;
+    const description = this.$refs.fieldDescription as HTMLElement | undefined;
+    this.descriptionOverflows = !!description && description.scrollHeight > description.clientHeight + 1;
+  }
+  toggleDescription(): void {
+    this.descriptionExpanded = !this.descriptionExpanded;
+    if (!this.descriptionExpanded) {
+      this.$nextTick(() => this.refreshDescriptionOverflow());
+    }
+  }
   // Option lists already provide their own vertical separation from the
   // header. Other value controls need a description-sized spacer when the
   // optional field description is absent, so the title does not sit flush
@@ -959,7 +1019,21 @@ export default class ProjectFieldRow extends Vue {
               />
             </span>
           </div>
-          <div v-if="displayedFieldDescription" class="field-description" v-html="displayedFieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
+          <div
+              v-if="displayedFieldDescription"
+              ref="fieldDescription"
+              class="field-description"
+              :class="{ 'field-description-collapsed': shouldCollapseFieldDescription && !descriptionExpanded }"
+              :style="descriptionClampStyle"
+              v-html="displayedFieldDescription"
+          ></div>
+          <button
+              v-if="shouldCollapseFieldDescription && (descriptionOverflows || descriptionExpanded)"
+              type="button"
+              class="field-description-toggle"
+              :aria-expanded="descriptionExpanded"
+              @click="toggleDescription"
+          >{{ descriptionExpanded ? 'Show less' : 'Show more' }}</button>
         </div>
       </div>
       <div :class="[getEditFieldCssClass(), { 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]"
@@ -1142,7 +1216,21 @@ export default class ProjectFieldRow extends Vue {
             <span v-if="this.downloadAction && todos?.get(this.downloadAction) && this.existsFile"
                   class="todo-circle-small">#{{ todos?.get(this.downloadAction)?.number }}</span>
           </div>
-          <div v-if="displayedFieldDescription" class="field-description" v-html="displayedFieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
+          <div
+              v-if="displayedFieldDescription"
+              ref="fieldDescription"
+              class="field-description"
+              :class="{ 'field-description-collapsed': shouldCollapseFieldDescription && !descriptionExpanded }"
+              :style="descriptionClampStyle"
+              v-html="displayedFieldDescription"
+          ></div>
+          <button
+              v-if="shouldCollapseFieldDescription && (descriptionOverflows || descriptionExpanded)"
+              type="button"
+              class="field-description-toggle"
+              :aria-expanded="descriptionExpanded"
+              @click="toggleDescription"
+          >{{ descriptionExpanded ? 'Show less' : 'Show more' }}</button>
         </div>
       </div>
       <div v-if="!(isInputType(FormDataType.BOOLEAN) && !this.mandatory) || isReadOnlyView()" :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
@@ -1881,12 +1969,21 @@ export default class ProjectFieldRow extends Vue {
   background-color: #00489c;
   border-color: #00489c;
 }
-.short-description {
+.field-description-collapsed {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--form-field-description-collapsed-lines);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  width: 90%;
-  height: 1.5rem;
+}
+.field-description-toggle {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #00489c;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
 }
 .query-link-button {
   background:none;

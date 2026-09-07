@@ -20,6 +20,7 @@ import {
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import ContextInfoBox from "@/components/ContextInfoBox.vue";
+import MandatoryFieldMarker from "@/components/MandatoryFieldMarker.vue";
 import type {DialogStep} from "@/services/fixedDialogStep";
 import {FixedDialogStep} from "@/services/fixedDialogStep";
 import type {Block, BridgeheadsProjectField, ProjectFieldInstance} from "@/services/utils";
@@ -36,7 +37,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
       return configLabel;
     }
   },
-  components: {ContextInfoBox, DownloadButton, UploadButton},
+  components: {ContextInfoBox, DownloadButton, MandatoryFieldMarker, UploadButton},
   props: {
     fieldKey: {type: String, required: true},
     editProjectParam: {type: Array as PropType<PmRequestParameter[]>, required: false, default: []},
@@ -950,7 +951,13 @@ export default class ProjectFieldRow extends Vue {
       <div style="display:flex" :style="{width: getHeaderWidth()}">
         <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'without-description': needsHeaderValueSpacer() }">
           <div style="display: flex;">
-            <span class="input-field-title"><span v-html="fieldKey"></span><span v-if="mandatory" :style="!instances?.some(instance => instance.value) ? 'color: red' : ''">&nbsp*</span></span>
+            <span class="input-field-title">
+              <span v-html="fieldKey"></span>
+              <MandatoryFieldMarker
+                  :mandatory="mandatory"
+                  :missing="!instances?.some(instance => instance.value)"
+              />
+            </span>
           </div>
           <div v-if="displayedFieldDescription" class="field-description" v-html="displayedFieldDescription" :class="{ 'short-description': !isDraft() || isSummaryStep() || isBlock() }"></div>
         </div>
@@ -1122,7 +1129,13 @@ export default class ProjectFieldRow extends Vue {
         />
         <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'without-description': needsHeaderValueSpacer() }">
           <div v-if="!isDescriptionUpload()" style="display: flex;">
-            <span class="input-field-title"><span v-html="fieldKey"></span><span v-if="this.mandatory" :style="(!isBridgeheads() && !editedValue[0]) || (isBridgeheads() && editingBridgeheads?.length === 0) ? 'color: red' : ''">&nbsp*</span></span>
+            <span class="input-field-title">
+              <span v-html="fieldKey"></span>
+              <MandatoryFieldMarker
+                  :mandatory="mandatory"
+                  :missing="(!isBridgeheads() && !editedValue[0]) || (isBridgeheads() && editingBridgeheads.length === 0)"
+              />
+            </span>
 
             <span v-if="this.uploadAction && todos?.get(this.uploadAction)"
                   class="todo-circle-small">#{{ todos?.get(this.uploadAction)?.number }}</span>

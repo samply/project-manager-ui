@@ -425,7 +425,13 @@
                                 class="project-feasibility"
                             >
                               <div class="project-feasibility-header">
-                                <span class="project-feasibility-title">{{ item.fieldKey }}</span>
+                                <span class="project-feasibility-title">
+                                  {{ item.fieldKey }}
+                                  <MandatoryFieldMarker
+                                      :mandatory="item.mandatory"
+                                      :missing="bridgeheads.length === 0"
+                                  />
+                                </span>
                                 <div v-if="item.fieldDescription" class="project-feasibility-description"
                                      v-html="item.fieldDescription"></div>
                               </div>
@@ -797,6 +803,7 @@ import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
 import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
 import FeasibilityTotals from "@/components/FeasibilityTotals.vue";
 import FeasibilityTable from "@/components/FeasibilityTable.vue";
+import MandatoryFieldMarker from "@/components/MandatoryFieldMarker.vue";
 import {getConfig} from "@/services/configLoader";
 import {DialogStep, DialogStepper, FixedDialogStep} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
@@ -886,6 +893,7 @@ export default defineComponent({
     }
   },
   components: {
+    MandatoryFieldMarker,
     FeasibilityTotals,
     FeasibilityTable,
     DownloadFormTemplatePdfButtons,
@@ -1528,11 +1536,15 @@ export default defineComponent({
     },
 
     fetchIfProjectHasAllMandatoryFields(): boolean {
+      const selectedSitesValid = this.isMandatoryFixedProjectFieldValid(
+          FixedFormFieldKey.QUERIED_SITES,
+          this.bridgeheads
+      );
       const baseFieldsValid = Boolean(
           this.project &&
           (this.hasConfiguredInactiveFixedField(FixedFormFieldKey.PROJECT_TITLE) || this.hasMeaningfulValue(this.project.label)) &&
           this.hasMeaningfulValue(this.project.query) &&
-          this.bridgeheads.length > 0 &&
+          selectedSitesValid &&
           this.hasMeaningfulValue(this.project.queryFormat) &&
           hasValidOutputs(this.project)
       );
@@ -1543,6 +1555,11 @@ export default defineComponent({
           .every(field => this.hasMeaningfulValue(field.value));
 
       return baseFieldsValid && mandatoryFormFieldsValid;
+    },
+
+    isMandatoryFixedProjectFieldValid(key: FixedFormFieldKey, value: unknown): boolean {
+      const field = this.projectFields.find(projectField => projectField.fixedFieldKey === key);
+      return !field?.mandatory || this.hasFieldValue(value);
     },
 
     isApplicableMandatoryFormField(field: FormField): boolean {
@@ -1567,7 +1584,9 @@ export default defineComponent({
           result = this.addMissingField(result, 'title', this.project.label);
         }
         result = this.addMissingField(result, 'query', this.project.query);
-        result = this.addMissingField(result, 'sites', this.bridgeheads);
+        if (!this.isMandatoryFixedProjectFieldValid(FixedFormFieldKey.QUERIED_SITES, this.bridgeheads)) {
+          result = this.addMissingField(result, 'sites', this.bridgeheads);
+        }
         result = this.addMissingField(result, 'query format', this.project.queryFormat);
 
         this.project?.outputs?.forEach(o => {
@@ -1623,12 +1642,15 @@ export default defineComponent({
     },
 
     addMissingField(result: string, field: string, value: any): string {
-      const hasValue = Array.isArray(value)
+      return (!this.hasFieldValue(value)) ? result + ((result.length > 0) ? ', ' : '') + field : result;
+    },
+
+    hasFieldValue(value: unknown): boolean {
+      return Array.isArray(value)
           ? value.length > 0
           : typeof value === 'string'
               ? this.hasMeaningfulValue(value)
               : Boolean(value);
-      return (!hasValue) ? result + ((result.length > 0) ? ', ' : '') + field : result;
     },
 
     convertDate(date: Date) {
@@ -1876,6 +1898,8 @@ export default defineComponent({
     updateProjectFields() {
       if (this.project) {
         this.projectFields = this.fetchProjectFields();
+        this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+        this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
       }
     },
 

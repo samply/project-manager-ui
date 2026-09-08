@@ -2233,18 +2233,14 @@ export default defineComponent({
             configurationOrder: keepFixedFieldOrder
                 ? nativeField.configurationOrder
                 : metadata.order,
-            fieldKey: metadata.labelDisplayName?.trim()
+            // Empty display metadata intentionally clears the native text.
+            // Only absent metadata should fall back to the native defaults.
+            fieldKey: metadata.labelDisplayName != null
                 ? metadata.labelDisplayName + (nativeField.fixedFieldDisplayNameSuffix ?? "")
                 : nativeField.fieldKey,
-            fieldDescription: metadata.labelDescription?.trim()
-                ? metadata.labelDescription
-                : nativeField.fieldDescription,
-            fieldShortDescription: metadata.labelShortDescription?.trim()
-                ? metadata.labelShortDescription
-                : nativeField.fieldShortDescription,
-            placeholder: metadata.placeholder?.trim()
-                ? metadata.placeholder
-                : nativeField.placeholder
+            fieldDescription: metadata.labelDescription ?? nativeField.fieldDescription,
+            fieldShortDescription: metadata.labelShortDescription ?? nativeField.fieldShortDescription,
+            placeholder: metadata.placeholder ?? nativeField.placeholder
           };
           if (keepFixedFieldOrder) {
             nativeOrderOverrides.set(nativeField, configuredField);

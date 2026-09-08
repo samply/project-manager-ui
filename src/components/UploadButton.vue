@@ -128,11 +128,11 @@ export default class UploadButton extends Vue {
       <div style="display: flex; width: 100%;">
         <div class="form-group" style="display:flex; width: 100%; flex-flow: column;">
           <div style="display: flex;flex-direction: row;align-items: baseline">
-          <label v-if="text?.trim()" for="labelInput" class="form-label font-weight-bold"><strong>{{ text }}: </strong></label>
+          <label v-if="text?.trim()" for="labelInput" class="upload-description">{{ text }}: </label>
           <template v-if="!text.toLowerCase().endsWith('url')">
-            <span v-if="!fileSelected && !existsFile" class="filename blue" @click="visible = !visible">no file selected</span>
+            <span v-if="!fileSelected && !existsFile" class="filename upload-description blue" @click="visible = !visible">no file selected</span>
             <span v-if="fileSelected || existsFile" data-toggle="tooltip" data-placement="top" :title="existsFile && !fileSelected ? fileName : file?.name"
-                  class="filename green" @click="visible = !visible">{{ existsFile && !fileSelected ? fileName : file?.name }}</span>
+                  class="filename upload-description green" @click="visible = !visible">{{ existsFile && !fileSelected ? fileName : file?.name }}</span>
             <DownloadButton v-if="existsFile && downloadAction"
                             :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="module" :action="downloadAction" icon-class="bi bi-download"
@@ -160,7 +160,7 @@ export default class UploadButton extends Vue {
                 <button style="display: flex; flex-flow: row;" @click="uploadFile"
                         class="btn btn-primary fileChooser dktk-darkblue" :disabled="!fileSelected">
                   <i class="bi bi-cloud-upload" style="font-size: medium"></i>
-                  <span style="font-size: small; padding: 2px 0 0 5px">Upload File</span>
+                  <span class="upload-description upload-button-text">Upload File</span>
                 </button>
               </div>
             </div>
@@ -176,7 +176,7 @@ export default class UploadButton extends Vue {
               <button style="display: flex; flex-flow: row;" @click="uploadFile" class="btn btn-primary fileChooser darkblue"
                       :disabled="url.length === 0">
                 <i class="bi bi-cloud-upload" style="font-size: medium"></i>
-                <span style="font-size: small; padding: 2px 0 0 5px">Upload File</span>
+                <span class="upload-description upload-button-text">Upload File</span>
               </button>
             </div>
           </div>
@@ -187,13 +187,22 @@ export default class UploadButton extends Vue {
 </template>
 
 <style scoped>
+.upload-description {
+  font-size: 12px;
+  font-weight: normal;
+  margin-bottom: 3px;
+}
+
+.upload-button-text {
+  padding: 2px 0 0 5px;
+}
+
 .filename {
   display: inline;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: calc(30 * 1ch);
-  font-size: small;
   cursor: pointer;
   padding-left: 5px;
 }

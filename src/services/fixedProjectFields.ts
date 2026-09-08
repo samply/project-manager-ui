@@ -149,6 +149,7 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
         {
             fixedFieldKey: FixedFormFieldKey.DESCRIPTION_UPLOAD,
             fieldKey: "DescriptionUpload",
+            projectDocument: context.projectDescription,
             fieldValue: [context.projectDescription?.label, context.projectDescription?.originalFilename],
             isEditable: true,
             editMode: context.editMode,
@@ -276,6 +277,7 @@ export function buildVotumProjectFields(context: FixedProjectFieldsContext): Pro
         {
             fixedFieldKey: FixedFormFieldKey.ETHICS_VOTE,
             fieldKey: "Ethics vote",
+            projectDocument: context.votumDescription,
             fieldValue: [context.votumDescription.label, context.votumDescription.originalFilename],
             isEditable: true,
             editMode: context.editMode,
@@ -291,6 +293,7 @@ export function buildVotumProjectFields(context: FixedProjectFieldsContext): Pro
         {
             fixedFieldKey: FixedFormFieldKey.ETHICS_VOTE_FOR_ALL_SITES,
             fieldKey: "Ethics vote for all sites",
+            projectDocument: context.votumForAllBridgeheadsDescription,
             fieldValue: [
                 context.votumForAllBridgeheadsDescription.label,
                 context.votumForAllBridgeheadsDescription.originalFilename

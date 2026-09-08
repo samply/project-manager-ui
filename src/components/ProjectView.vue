@@ -468,6 +468,7 @@
                                 :configurations="item.configurations"
                                 :configuration-selection-type="item.configurationSelectionType"
                                 :exists-file="item.existFile"
+                                :project-document="item.projectDocument"
                                 :upload-action="item.uploadAction"
                                 :download-action="item.downloadAction"
                                 :download-module="item.downloadModule"
@@ -603,7 +604,7 @@
                             :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
                             :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
                             :bridgeheads="visibleBridgeheads" icon-class="bi bi-download"
-                            text="Publications: "/>
+                            text="Publications: " :project-manager-admin="isProjectManagerAdmin()"/>
             <br/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
@@ -626,7 +627,7 @@
                             :download-action="Action.DOWNLOAD_FINAL_REPORT_ACTION"
                             :fetch-list-action="Action.FETCH_FINAL_REPORTS_ACTION"
                             :bridgeheads="visibleBridgeheads" icon-class="bi bi-download"
-                            text="Final Reports: "/>
+                            text="Final Reports: " :project-manager-admin="isProjectManagerAdmin()"/>
             <br/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
@@ -671,7 +672,7 @@
                             :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
                             :fetch-list-action="Action.FETCH_OTHER_DOCUMENTS_ACTION"
                             :bridgeheads="visibleBridgeheads" icon-class="bi bi-download"
-                            text="Other documents: "/>
+                            text="Other documents: " :project-manager-admin="isProjectManagerAdmin()"/>
           </div>
         </div>
       </div>
@@ -1720,12 +1721,16 @@ export default defineComponent({
             this.existsVotumForAllBridgeheads = result;
             if (this.existsVotumForAllBridgeheads) {
               await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION_ACTION, new Map(), 'votumForAllBridgeheadsDescription');
+            } else {
+              this.votumForAllBridgeheadsDescription = {} as ProjectDocument;
             }
           }),
           this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), async (result: boolean) => {
             this.existsScript = result;
             if (this.existsScript) {
               await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_SCRIPT_DESCRIPTION_ACTION, new Map(), 'scriptDescription');
+            } else {
+              this.scriptDescription = {} as ProjectDocument;
             }
           }),
           this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript'),

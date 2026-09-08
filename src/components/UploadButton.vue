@@ -6,15 +6,17 @@ import {
   Module,
   ProjectManagerBackendService,
   ProjectManagerContext,
+  ProjectDocument,
   UPLOAD_DOCUMENT_PARAM,
   UPLOAD_DOCUMENT_URL_PARAM
 } from "@/services/projectManagerBackendService";
 import {PropType, watch} from "vue";
 import DownloadButton from "@/components/DownloadButton.vue";
+import DocumentsTable from "@/components/DocumentsTable.vue";
 
 @Options({
   name: "UploadButton",
-  components: {DownloadButton},
+  components: {DownloadButton, DocumentsTable},
   props: {
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
     context: {type: Object as PropType<ProjectManagerContext>, required: true},
@@ -30,6 +32,8 @@ import DownloadButton from "@/components/DownloadButton.vue";
     visibleBridgeheads: {type: Array as PropType<Bridgehead[]>, default: () => []},
     existsFile: {type: Boolean, required: false},
     fileName: {type: String, required: false},
+    projectDocument: {type: Object as PropType<ProjectDocument>, required: false},
+    projectManagerAdmin: {type: Boolean, default: false},
 
   }
 })
@@ -48,6 +52,8 @@ export default class UploadButton extends Vue {
   readonly toggleInput?: boolean;
   readonly existsFile?: boolean;
   readonly fileName?: string;
+  readonly projectDocument?: ProjectDocument;
+  readonly projectManagerAdmin!: boolean;
 
   file: File | undefined = undefined;
   label = '';
@@ -123,17 +129,17 @@ export default class UploadButton extends Vue {
 </script>
 
 <template>
-  <div v-if="isActive" style="width: auto; margin-right: 2%">
-    <div class="row align-items-center" style="display: flex;width: 100%">
-      <div style="display: flex; width: 100%;">
-        <div class="form-group" style="display:flex; width: 100%; flex-flow: column;">
+  <div v-if="isActive" style="width: 100%; min-width: 0;">
+    <div class="row align-items-center g-0" style="display: flex;width: 100%; min-width: 0;">
+      <div style="display: flex; width: 100%; min-width: 0;">
+        <div class="form-group" style="display:flex; width: 100%; min-width: 0; flex-flow: column;">
           <div style="display: flex;flex-direction: row;align-items: baseline">
           <label v-if="text?.trim()" for="labelInput" class="upload-description">{{ text }}: </label>
           <template v-if="!text.toLowerCase().endsWith('url')">
-            <span v-if="!fileSelected && !existsFile" class="filename upload-description blue" @click="visible = !visible">no file selected</span>
-            <span v-if="fileSelected || existsFile" data-toggle="tooltip" data-placement="top" :title="existsFile && !fileSelected ? fileName : file?.name"
-                  class="filename upload-description green" @click="visible = !visible">{{ existsFile && !fileSelected ? fileName : file?.name }}</span>
-            <DownloadButton v-if="existsFile && downloadAction"
+            <span v-if="!fileSelected" class="filename upload-description blue" @click="visible = !visible">no file selected</span>
+            <span v-else data-toggle="tooltip" data-placement="top" :title="file?.name"
+                  class="filename upload-description green" @click="visible = !visible">{{ file?.name }}</span>
+            <DownloadButton v-if="existsFile && downloadAction && !projectDocument"
                             :context="context" :project-manager-backend-service="projectManagerBackendService"
                             :module="module" :action="downloadAction" icon-class="bi bi-download"
                             :filename="fileName"/>
@@ -180,6 +186,16 @@ export default class UploadButton extends Vue {
               </button>
             </div>
           </div>
+          <DocumentsTable
+              v-if="projectDocument && existsFile"
+              :context="context"
+              :project-manager-backend-service="projectManagerBackendService"
+              :download-action="downloadAction"
+              :documents="[projectDocument]"
+              :project-manager-admin="projectManagerAdmin"
+              :call-refresh-context="callRefreshContext"
+              :text="''"
+              :bridgeheads="[]"/>
         </div>
       </div>
     </div>

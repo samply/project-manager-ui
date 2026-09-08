@@ -79,6 +79,7 @@ export enum Action {
     UPLOAD_PUBLICATION_ACTION = "UPLOAD_PUBLICATION",
     UPLOAD_SCRIPT_ACTION = "UPLOAD_SCRIPT",
     UPLOAD_OTHER_DOCUMENT_ACTION = "UPLOAD_OTHER_DOCUMENT",
+    REMOVE_DOCUMENT_ACTION = "REMOVE_DOCUMENT",
     ADD_PUBLICATION_URL_ACTION = "ADD_PUBLICATION_URL",
     ADD_OTHER_DOCUMENT_URL_ACTION = "ADD_OTHER_DOCUMENT_URL",
     DOWNLOAD_DESCRIPTION_ACTION = "DOWNLOAD_DESCRIPTION",
@@ -403,6 +404,7 @@ export function hasValidOutputs(project?: Project): boolean {
 }
 
 export interface ProjectDocument {
+    id?: number;
     projectCode: string;
     originalFilename: string;
     url: string;
@@ -410,6 +412,7 @@ export interface ProjectDocument {
     bridgehead: string;
     humanReadableBridgehead: string | null;
     creatorEmail: string;
+    creatorName?: string;
     label: string;
     type: string;
 }

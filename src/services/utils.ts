@@ -8,6 +8,7 @@ import {
     FixedFormFieldKey,
     FormFieldGroup,
     Module,
+    ProjectDocument,
     ProjectAndForms,
     ProjectConfigurationSelectionType
 } from "@/services/projectManagerBackendService";
@@ -35,6 +36,7 @@ export interface ProjectField {
     configurationOrder?: number
     editProjectParam?: PmRequestParameter[]
     fieldValue: string[]
+    projectDocument?: ProjectDocument
     // Present only for a multiple field (FormField.multiple): one entry per
     // saved value, sorted by fieldInstance. fieldValue above still reflects
     // just the first one, for anything that doesn't know about "multiple".

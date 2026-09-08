@@ -13,6 +13,7 @@ import {
   ProjectConfigurationSelectionType,
   ProjectManagerBackendService,
   ProjectManagerContext,
+  ProjectDocument,
   ProjectRole,
   ProjectState,
   NOT_SELECTED_PROJECT_CONFIGURATION
@@ -85,6 +86,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     deleteModule: {type: String as PropType<Module>, required: false},
     todos: {type: Object as PropType<Explanations>, required: false},
     existsFile: {type: Boolean, required: false},
+    projectDocument: {type: Object as PropType<ProjectDocument>, required: false},
     mandatory: {type: Boolean, required: true, default: false},
     type: {type: String as PropType<FormDataType>, required: false},
     draftDialogCurrentStep: {type: Object as PropType<DialogStep>, required: false},
@@ -118,6 +120,7 @@ export default class ProjectFieldRow extends Vue {
   readonly fieldKey!: string;
   readonly editProjectParam!: PmRequestParameter[];
   readonly fieldValue!: string[];
+  readonly projectDocument?: ProjectDocument;
 
   readonly bridgeheads?: BridgeheadsProjectField;
   readonly projectManagerBackendService!: ProjectManagerBackendService;
@@ -1234,7 +1237,7 @@ export default class ProjectFieldRow extends Vue {
         </div>
       </div>
       <div v-if="!(isInputType(FormDataType.BOOLEAN) && !this.mandatory) || isReadOnlyView()" :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
-        <div v-if="uploadAction && !isDescriptionUpload()" style="width:100%;padding: 0 0.75rem">
+        <div v-if="uploadAction && !isDescriptionUpload()" style="width:100%;min-width:0">
           <div v-if="isReadOnlyView()" style="display:flex; align-items:center; gap:0.5rem"
                :class="{ 'summary-empty': !existsFile, 'summary-missing': mandatory && !existsFile }">
             <span>{{ getFileSummaryValue() }}</span>
@@ -1248,7 +1251,8 @@ export default class ProjectFieldRow extends Vue {
                         :download-action="downloadAction"
                         :visible-bridgeheads="visibleBridgeheads" :use-bridgehead-chooser="fieldKey === 'Ethic vote'"
                         :text="fieldKey?.trim() ? 'Upload ' + fieldKey : ''" :call-refresh-context="exitAndCallRefreshContext"
-                        :is-file="true" :toggle-input="fieldKey.startsWith('Ethic vote')" :file-name="fieldValue[1]" :exists-file="existsFile"/>
+                        :project-manager-admin="isProjectManagerAdmin()"
+                        :is-file="true" :toggle-input="fieldKey.startsWith('Ethic vote')" :file-name="fieldValue[1]" :exists-file="existsFile" :project-document="projectDocument"/>
         </div>
         <div v-else style="width:100%">
           <div>
@@ -1692,6 +1696,10 @@ export default class ProjectFieldRow extends Vue {
 .upload-edit-field {
   display: flex;
   flex-flow: row;
+  width: 100%;
+  min-width: 0;
+}
+.upload-edit-field.sidewise {
   width: 70%;
 }
 /*noinspection CssUnusedSymbol*/

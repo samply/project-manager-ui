@@ -128,7 +128,7 @@ export default class UploadButton extends Vue {
       <div style="display: flex; width: 100%;">
         <div class="form-group" style="display:flex; width: 100%; flex-flow: column;">
           <div style="display: flex;flex-direction: row;align-items: baseline">
-          <label for="labelInput" class="form-label font-weight-bold"><strong>{{ text }}: </strong></label>
+          <label v-if="text?.trim()" for="labelInput" class="form-label font-weight-bold"><strong>{{ text }}: </strong></label>
           <template v-if="!text.toLowerCase().endsWith('url')">
             <span v-if="!fileSelected && !existsFile" class="filename blue" @click="visible = !visible">no file selected</span>
             <span v-if="fileSelected || existsFile" data-toggle="tooltip" data-placement="top" :title="existsFile && !fileSelected ? fileName : file?.name"

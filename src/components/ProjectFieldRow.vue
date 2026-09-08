@@ -1247,7 +1247,7 @@ export default class ProjectFieldRow extends Vue {
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
                         :download-action="downloadAction"
                         :visible-bridgeheads="visibleBridgeheads" :use-bridgehead-chooser="fieldKey === 'Ethic vote'"
-                        :text="'Upload '+ fieldKey" :call-refresh-context="exitAndCallRefreshContext"
+                        :text="fieldKey?.trim() ? 'Upload ' + fieldKey : ''" :call-refresh-context="exitAndCallRefreshContext"
                         :is-file="true" :toggle-input="fieldKey.startsWith('Ethic vote')" :file-name="fieldValue[1]" :exists-file="existsFile"/>
         </div>
         <div v-else style="width:100%">

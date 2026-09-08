@@ -219,7 +219,7 @@
             </div>
             <!-- TODO: Restore creator access to this Actions box; see plans/plan-restore-project-actions-for-creators-2026-09-08.md. -->
             <div
-                v-if="!projectRoles.includes(ProjectRole.CREATOR) && isAnyButtonVisible && currentMenuStep === MenuStep.STATUS"
+                v-if="!(projectRoles.length === 1 && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep === MenuStep.STATUS"
                 class="project-actions">
               <div class="box-header"><span>Actions</span></div>
               <div style="padding:2%">

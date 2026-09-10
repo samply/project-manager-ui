@@ -2,6 +2,21 @@
 import {FRONTEND_VARIABLES_PATH} from "@/services/BridgeheadOverviewHeaders";
 
 export const DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES = 2;
+export const DISPLAY_FORMATS_PATH = '/frontend/display-formats';
+
+export enum DisplayFormatKey {
+    DATE_FORMAT = 'DATE_FORMAT',
+    LONG_DATE_FORMAT = 'LONG_DATE_FORMAT',
+    DATE_TIME_FORMAT = 'DATE_TIME_FORMAT',
+    DATE_TIME_WITH_SECONDS_FORMAT = 'DATE_TIME_WITH_SECONDS_FORMAT'
+}
+
+export interface DisplayFormatsConfig {
+    defaultLanguage: string;
+    defaultDateDisplayFormat: DisplayFormatKey;
+    defaultTimestampDisplayFormat: DisplayFormatKey;
+    formats: Record<DisplayFormatKey, Record<string, string>>;
+}
 
 export interface FrontendConfig {
     VUE_APP_BACKEND_URL: string;
@@ -26,10 +41,19 @@ export interface FrontendConfig {
     FORM_FIELD_DESCRIPTION_COLLAPSED_LINES?: string;
     /** Fallback feedback for failed actions initiated directly by the user. */
     DEFAULT_ERROR_MESSAGE_FOR_USER_ACTIONS?: string;
+    /** Display format key for the project dashboard's "created at" column. Falls back to DATE_TIME_FORMAT when absent/invalid. */
+    PROJECT_DASHBOARD_CREATED_AT_DISPLAY_FORMAT?: string;
+    /** Display format key for the project detail view's "created at" field. Falls back to DATE_TIME_FORMAT when absent/invalid. */
+    PROJECT_DETAIL_CREATED_AT_DISPLAY_FORMAT?: string;
+    /** Display format key for a document's "created at" column. Falls back to DATE_TIME_FORMAT when absent/invalid. */
+    DOCUMENT_CREATED_AT_DISPLAY_FORMAT?: string;
+    /** Display format key for a notification's timestamp. Falls back to DATE_TIME_WITH_SECONDS_FORMAT when absent/invalid. */
+    NOTIFICATION_TIMESTAMP_DISPLAY_FORMAT?: string;
     [key: string]: unknown;
 }
 
 let config: FrontendConfig | null = null;
+let displayFormatsConfig: DisplayFormatsConfig | null = null;
 let isLoading = false; // Track whether the config is being loaded
 
 
@@ -59,6 +83,11 @@ const loadConfig = async () => {
                 console.warn('Failed to load backend config:', error);
             }
 
+            displayFormatsConfig = await fetchJson<DisplayFormatsConfig>(
+                `${frontendConfig.VUE_APP_BACKEND_URL}${DISPLAY_FORMATS_PATH}`,
+                'no-store'
+            );
+
             config = {
                 ...frontendConfig,
                 ...backendConfig,
@@ -87,4 +116,14 @@ export const getConfig = async (): Promise<FrontendConfig> => {
     }
 
     return config;
+};
+
+export const getDisplayFormatsConfig = async (): Promise<DisplayFormatsConfig> => {
+    if (config === null) {
+        await loadConfig();
+    }
+    if (displayFormatsConfig === null) {
+        throw new Error('Display-format configuration loading failed');
+    }
+    return displayFormatsConfig;
 };

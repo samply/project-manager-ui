@@ -8,7 +8,8 @@ import {
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
 import {Options, Vue} from "vue-class-component";
-import {format} from "date-fns";
+import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
+import {getConfig} from "@/services/configLoader";
 import {PropType, watch} from "vue";
 
 @Options({
@@ -41,6 +42,7 @@ export default class NotificationBox extends Vue {
   totalPages = 1;
   notificationsPerPage = 8;
   pagedNotifications: Notification[] = [];
+  timestampDisplayFormat: DisplayFormatKey = DisplayFormatKey.DATE_TIME_WITH_SECONDS_FORMAT;
 
   mounted() {
     // Replace the old @Watch
@@ -52,10 +54,17 @@ export default class NotificationBox extends Vue {
         },
         {immediate: true, deep: true}
     );
+    this.fetchTimestampDisplayFormat();
   }
 
-  convertDate(date: Date) {
-    return format(date, 'yyyy-MM-dd HH:mm:ss')
+  async fetchTimestampDisplayFormat() {
+    const config = await getConfig();
+    this.timestampDisplayFormat = resolveDisplayFormatKey(
+        config.NOTIFICATION_TIMESTAMP_DISPLAY_FORMAT, DisplayFormatKey.DATE_TIME_WITH_SECONDS_FORMAT);
+  }
+
+  convertDate(date: string | Date) {
+    return formatDisplayDate(date, this.timestampDisplayFormat)
   }
 
   removeNotification(notificationId: number): void {

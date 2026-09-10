@@ -13,6 +13,8 @@ import {
     ProjectConfigurationSelectionType
 } from "@/services/projectManagerBackendService";
 
+import type {DisplayFormatKey} from '@/services/configLoader';
+
 export interface BridgeheadsProjectField {
     selected: Bridgehead[];
     available: Bridgehead[];
@@ -74,6 +76,7 @@ export interface ProjectField {
     category: string
     mandatory?: boolean
     type?: FormDataType
+    displayFormat?: DisplayFormatKey
     extraParams?: Map<string, unknown>,
     deleteAction?: Action,
     deleteModule?: Module,

@@ -99,7 +99,8 @@ import {
   User
 } from "@/services/projectManagerBackendService";
 import NotificationBox from "@/components/Notification.vue";
-import {format} from "date-fns";
+import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
+import {getConfig} from "@/services/configLoader";
 import UserAndEmail from "@/components/UserAndEmail.vue";
 
 export default defineComponent({
@@ -130,7 +131,8 @@ export default defineComponent({
       selectedApplicant: "",
       selectedBridgehead: "",
       sortBy: ProjectSortField.CREATED,
-      sortDesc: true
+      sortDesc: true,
+      createdAtDisplayFormat: DisplayFormatKey.DATE_TIME_FORMAT as DisplayFormatKey
     };
   },
   watch: {
@@ -147,9 +149,15 @@ export default defineComponent({
     }
   },
   async mounted() {
+    await this.fetchCreatedAtDisplayFormat();
     await this.initializeCurrentData();
   },
   methods: {
+    async fetchCreatedAtDisplayFormat() {
+      const config = await getConfig();
+      this.createdAtDisplayFormat = resolveDisplayFormatKey(
+          config.PROJECT_DASHBOARD_CREATED_AT_DISPLAY_FORMAT, DisplayFormatKey.DATE_TIME_FORMAT);
+    },
     toggleNotification() {
       this.showNotification = !this.showNotification;
     },
@@ -187,8 +195,8 @@ export default defineComponent({
       return name ? `${name} (${applicant.email})` : applicant.email;
     },
 
-    convertDate(date: Date) {
-      return format(date, 'yyyy-MM-dd HH:mm')
+    convertDate(date: string | Date) {
+      return formatDisplayDate(date, this.createdAtDisplayFormat)
     },
 
 

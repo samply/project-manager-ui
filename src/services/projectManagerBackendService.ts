@@ -1,7 +1,7 @@
 //projectManagerBackendService.ts
 import axios, {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
 import axiosRetry from "axios-retry";
-import {getConfig} from "@/services/configLoader";
+import {getConfig, DisplayFormatKey} from "@/services/configLoader";
 import {AuthService} from "@/services/auth";
 
 
@@ -244,10 +244,10 @@ export interface Project {
     code?: string;
     creatorEmail?: string;
     creatorName?: string;
-    createdAt?: Date;
-    expiresAt?: Date;
-    archivedAt?: Date;
-    modifiedAt?: Date;
+    createdAt?: string;
+    expiresAt?: string;
+    archivedAt?: string;
+    modifiedAt?: string;
     state?: ProjectState;
     query?: string;
     humanReadable?: string;
@@ -286,7 +286,7 @@ export function hasProjectType(project?: Project, type?: ProjectType): boolean {
 export interface Notification {
     id?: number;
     email?: string;
-    timestamp?: Date;
+    timestamp?: string;
     projectCode?: string;
     bridgehead?: string;
     humanReadableBridgehead?: string;
@@ -488,6 +488,7 @@ export enum FormDataType {
     LONG_STRING = "LONG_STRING",
     DATE = "DATE",
     TIMESTAMP = "TIMESTAMP",
+    LOCAL_DATE_TIME = "LOCAL_DATE_TIME",
     ENUM = "ENUM"
 }
 
@@ -568,6 +569,7 @@ export interface FormField extends FormTitle {
     placeholder?: string;
     groups?: FormFieldGroup[];
     type?: FormDataType;
+    displayFormat?: DisplayFormatKey;
     allowedValues?: FormFieldValue[];
     mandatory?: boolean;
     // Whether this field can hold several values of its own data type,

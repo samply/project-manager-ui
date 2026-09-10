@@ -477,6 +477,7 @@
                                 :visible-bridgeheads="visibleBridgeheads"
                                 :mandatory="item.mandatory"
                                 :type="item.type"
+                                :display-format="item.displayFormat"
                                 :section="item.section"
                                 :block="item.block"
                                 :call-refresh-context="refreshContext"
@@ -794,8 +795,9 @@ import {
   User,
   UserProjectState
 } from "@/services/projectManagerBackendService";
+import {fromFormControlValue} from "@/services/formValueCodec";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
-import {format} from "date-fns";
+import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
 import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
 import ContextInfoBox from "@/components/ContextInfoBox.vue";
 import NotificationBox from "@/components/Notification.vue";
@@ -924,6 +926,7 @@ export default defineComponent({
       feasibilityErrors: new Set<string>(),
       feasibilityPageSize: 10,
       formFieldDescriptionCollapsedLines: DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES,
+      createdAtDisplayFormat: DisplayFormatKey.DATE_TIME_FORMAT as DisplayFormatKey,
       pollingService: null as PollingService | null,
       context: new ProjectManagerContext(this.projectCode, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
@@ -1066,6 +1069,7 @@ export default defineComponent({
     this.pollingService?.execute();
     this.fetchFeasibilityPageSize();
     this.fetchFormFieldDescriptionCollapsedLines();
+    this.fetchCreatedAtDisplayFormat();
   },
 
   beforeUnmount() {
@@ -1532,6 +1536,12 @@ export default defineComponent({
       this.feasibilityPageSize = Number(config.FEASIBILITY_PAGE_SIZE ?? 10);
     },
 
+    async fetchCreatedAtDisplayFormat() {
+      const config = await getConfig();
+      this.createdAtDisplayFormat = resolveDisplayFormatKey(
+          config.PROJECT_DETAIL_CREATED_AT_DISPLAY_FORMAT, DisplayFormatKey.DATE_TIME_FORMAT);
+    },
+
     async fetchFormFieldDescriptionCollapsedLines() {
       const config = await getConfig();
       const configuredLines = Number(config.FORM_FIELD_DESCRIPTION_COLLAPSED_LINES);
@@ -1666,8 +1676,8 @@ export default defineComponent({
               : Boolean(value);
     },
 
-    convertDate(date: Date) {
-      return format(date, 'yyyy-MM-dd HH:mm')
+    convertDate(date: string | Date) {
+      return formatDisplayDate(date, this.createdAtDisplayFormat)
     },
 
     async initializeProjectRelatedData() {
@@ -2394,6 +2404,7 @@ export default defineComponent({
           fieldPreInfo: formField.labelPreInfo,
           fieldPostInfo: formField.labelPostInfo,
           type: formField.type,
+          displayFormat: formField.displayFormat,
           isEditable: true,
           editMode: this.editMode,
           possibleValues: formField.allowedValues?.map(value => value.label),
@@ -2438,7 +2449,11 @@ export default defineComponent({
                   .map(instance => ({fieldInstance: instance.fieldInstance ?? 1, value: instance.value}))
               : undefined,
           buildInstanceTransform: isMultiple
-              ? (fieldInstance: number) => this.buildTransformForSendingFormField({...formField, fieldInstance})
+              ? (fieldInstance: number) => this.buildTransformForSendingFormField({
+                ...formField,
+                fieldInstance,
+                value: instances.find(instance => instance.fieldInstance === fieldInstance)?.value
+              })
               : undefined
         };
       });
@@ -2476,7 +2491,7 @@ export default defineComponent({
         return [{
           title: formField.title,
           label: formField.label,
-          value: input,
+          value: fromFormControlValue(input, formField.type, formField.value),
           ...(formField.multiple ? {
             multiple: true,
             fieldInstance: formField.fieldInstance

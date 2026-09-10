@@ -181,6 +181,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Mandatory field marker
 - Description collapse rules
 - Favicon as backend environment variable
+- Configurable localized date and time display formats
 
 ### Removed
 - Application Form

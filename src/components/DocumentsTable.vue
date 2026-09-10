@@ -12,6 +12,8 @@ import DownloadButton from "@/components/DownloadButton.vue";
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import {PropType, watch} from "vue";
 import {AuthService} from "@/services/auth";
+import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
+import {getConfig} from "@/services/configLoader";
 
 @Options({
   name: "DocumentsTable",
@@ -50,13 +52,21 @@ export default class DocumentsTable extends Vue {
   Module = Module;
   projectDocuments: ProjectDocument[] = [];
   projectDocumentIds = new Set<string>();
+  createdAtDisplayFormat: DisplayFormatKey = DisplayFormatKey.DATE_TIME_FORMAT;
 
   get usesProvidedDocuments(): boolean {
     return this.documents !== undefined;
   }
 
+  async fetchCreatedAtDisplayFormat() {
+    const config = await getConfig();
+    this.createdAtDisplayFormat = resolveDisplayFormatKey(
+        config.DOCUMENT_CREATED_AT_DISPLAY_FORMAT, DisplayFormatKey.DATE_TIME_FORMAT);
+  }
+
   mounted() {
     this.updateCanDownload();
+    this.fetchCreatedAtDisplayFormat();
 
     watch(
         () => this.projectManagerBackendService,
@@ -138,6 +148,10 @@ export default class DocumentsTable extends Vue {
     return new ProjectManagerContext(this.context.projectCode, bridgehead);
   }
 
+  formatCreatedAt(createdAt: string): string {
+    return formatDisplayDate(createdAt, this.createdAtDisplayFormat);
+  }
+
 
 }
 </script>
@@ -164,7 +178,7 @@ export default class DocumentsTable extends Vue {
         <td>{{ projectDocument.label }}</td>
         <td>{{ projectDocument.originalFilename }}</td>
         <td><a :href="projectDocument.url">{{ projectDocument.url }}</a></td>
-        <td>{{ projectDocument.createdAt }}</td>
+        <td>{{ formatCreatedAt(projectDocument.createdAt) }}</td>
         <td v-if="projectDocument.bridgehead != 'NONE'">{{ projectDocument.humanReadableBridgehead }}</td>
         <td v-if="projectDocument.bridgehead === 'NONE'"></td>
         <td>

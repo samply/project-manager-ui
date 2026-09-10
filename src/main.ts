@@ -4,7 +4,8 @@ import App from './App.vue';
 import {createAppRouter} from './router';
 import store from './services/store';
 import type {Router} from "vue-router";
-import {getConfig} from "@/services/configLoader";
+import {getConfig, getDisplayFormatsConfig} from "@/services/configLoader";
+import {configureDisplayFormats} from "@/services/displayFormatService";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -70,6 +71,7 @@ const vueLifecycles = singleSpaVue({
 export const bootstrap = [
     async () => {
         const config = await getConfig();
+        configureDisplayFormats(await getDisplayFormatsConfig());
         setFavicon(config.FAVICON_URL);
         router = createAppRouter(config.VUE_APP_FRONTEND_URL, config.PAGE_TITLE ?? 'Data Request Tool');
 

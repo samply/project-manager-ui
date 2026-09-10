@@ -27,6 +27,13 @@ import {FixedDialogStep} from "@/services/fixedDialogStep";
 import type {Block, BridgeheadsProjectField, ProjectFieldInstance} from "@/services/utils";
 import {ActionFunction, Section, Utils} from "@/services/utils";
 import {DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES} from "@/services/configLoader";
+import type {DisplayFormatKey} from "@/services/configLoader";
+import {
+  formatDisplayDate,
+  getDefaultDateDisplayFormat,
+  getDefaultTimestampDisplayFormat
+} from "@/services/displayFormatService";
+import {isCanonicalTimestampValue, toFormControlValue} from "@/services/formValueCodec";
 import {handleError, PropType, watch} from "vue";
 import "@samply/lens";
 import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
@@ -89,6 +96,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     projectDocument: {type: Object as PropType<ProjectDocument>, required: false},
     mandatory: {type: Boolean, required: true, default: false},
     type: {type: String as PropType<FormDataType>, required: false},
+    displayFormat: {type: String as PropType<DisplayFormatKey>, required: false},
     draftDialogCurrentStep: {type: Object as PropType<DialogStep>, required: false},
     visibleBridgeheads: {type: Array as PropType<Bridgehead[]>, required: true},
     section: {type: Object as PropType<Section>, required: false},
@@ -149,6 +157,7 @@ export default class ProjectFieldRow extends Vue {
   readonly fieldShortDescription?: string;
   readonly descriptionCollapsedLines!: number;
   readonly placeholder?: string;
+  readonly displayFormat?: DisplayFormatKey;
   // Context information brackets this complete logical field. Recursive
   // headless rows for multiple values deliberately receive neither prop.
   readonly fieldPreInfo?: string;
@@ -230,7 +239,7 @@ export default class ProjectFieldRow extends Vue {
     watch(
         () => this.fieldValue,
         (newValue: string[]) => {
-          this.tempFieldValue = newValue;
+          this.tempFieldValue = newValue.map(value => toFormControlValue(value, this.type));
         },
         {immediate: true, deep: true}
     );
@@ -278,8 +287,8 @@ export default class ProjectFieldRow extends Vue {
         ? [...this.bridgeheads.selected]
         : [];
 
-    this.tempFieldValue = this.fieldValue.slice();
-    this.editedValue = this.fieldValue.slice();
+    this.tempFieldValue = this.fieldValue.map(value => toFormControlValue(value, this.type));
+    this.editedValue = this.tempFieldValue.slice();
     this.resetIsActionEnabled();
 
     this.possibleValues?.forEach(() => {
@@ -701,6 +710,28 @@ export default class ProjectFieldRow extends Vue {
   getEmptySummaryValue(emptyCollectionText = "Not provided"): string {
     return this.mandatory ? "Missing — required" : emptyCollectionText;
   }
+  getFormFieldSummaryValue(value?: string): string {
+    if (!this.hasMeaningfulValue(value)) {
+      return this.getEmptySummaryValue();
+    }
+
+    // DATE values are persisted independently of presentation configuration
+    // in the canonical ISO shape. Unknown legacy shapes remain visible as-is.
+    if (this.isInputType(FormDataType.DATE) && /^\d{4}-\d{2}-\d{2}$/.test(value!)) {
+      return formatDisplayDate(value, this.displayFormat ?? getDefaultDateDisplayFormat()) || value!;
+    }
+    if (this.isInputType(FormDataType.TIMESTAMP)) {
+      const canonicalValue = this.fieldValue[0];
+      return canonicalValue && isCanonicalTimestampValue(canonicalValue)
+          ? formatDisplayDate(canonicalValue, this.displayFormat ?? getDefaultTimestampDisplayFormat()) || canonicalValue
+          : value!;
+    }
+    if (this.isInputType(FormDataType.LOCAL_DATE_TIME)
+        && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value!)) {
+      return formatDisplayDate(value, this.displayFormat ?? getDefaultTimestampDisplayFormat()) || value!;
+    }
+    return value!;
+  }
   // Read-only summary rows for the Configuration field's option-list rendering.
   // Keeps the raw key (needed as a stable :key and to look up the description
   // alongside the label) rather than just the resolved label string.
@@ -785,6 +816,7 @@ export default class ProjectFieldRow extends Vue {
     if (this.type === FormDataType.INTEGER) return 'number'
     if (this.type === FormDataType.DATE) return 'date'
     if (this.type === FormDataType.TIMESTAMP) return 'datetime-local'
+    if (this.type === FormDataType.LOCAL_DATE_TIME) return 'datetime-local'
     if (this.type === FormDataType.STRING) return 'text'
     if (this.type === FormDataType.LONG_STRING) return 'longtext'
     return 'text'
@@ -986,6 +1018,9 @@ export default class ProjectFieldRow extends Vue {
             :placeholder="placeholder"
         ></textarea>
       </div>
+      <div v-else-if="isReadOnlyView()" class="summary-value">
+        {{ getFormFieldSummaryValue(editedValue[0]) }}
+      </div>
       <input
           v-else
           :type="getInputType()"
@@ -1114,6 +1149,7 @@ export default class ProjectFieldRow extends Vue {
                 :delete-module="Module.PROJECT_EDITION_MODULE"
                 :mandatory="false"
                 :type="type"
+                :display-format="displayFormat"
                 :possible-values="possibleValues"
                 :display-possible-value="displayPossibleValue"
                 :visible-bridgeheads="visibleBridgeheads"
@@ -1582,7 +1618,7 @@ export default class ProjectFieldRow extends Vue {
             <div v-else style="width:100%">
               <div v-if="isReadOnlyView()" class="summary-value"
                    :class="{ 'summary-empty': !hasMeaningfulValue(editedValue[0]), 'summary-missing': mandatory && !hasMeaningfulValue(editedValue[0]) }">
-                {{ hasMeaningfulValue(editedValue[0]) ? editedValue[0] : getEmptySummaryValue() }}
+                {{ getFormFieldSummaryValue(editedValue[0]) }}
               </div>
               <input
                   v-else

@@ -14,6 +14,18 @@ import {AuthService, finishLoginFlow, tryLoadUserFromStorage} from "@/services/a
 
 let router: Router | null = null;
 
+function setFavicon(faviconUrl?: string) {
+    if (!faviconUrl) return;
+
+    let favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!favicon) {
+        favicon = document.createElement('link');
+        favicon.rel = 'icon';
+        document.head.appendChild(favicon);
+    }
+    favicon.href = faviconUrl;
+}
+
 async function handleOidcRedirect(appRouter: Router) {
     const url = new URL(window.location.href);
 
@@ -58,6 +70,7 @@ const vueLifecycles = singleSpaVue({
 export const bootstrap = [
     async () => {
         const config = await getConfig();
+        setFavicon(config.FAVICON_URL);
         router = createAppRouter(config.VUE_APP_FRONTEND_URL, config.PAGE_TITLE ?? 'Data Request Tool');
 
         await handleOidcRedirect(router);

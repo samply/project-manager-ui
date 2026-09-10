@@ -11,6 +11,7 @@ export interface FrontendConfig {
     VUE_APP_LOGO_URL?: string;
     FRONTEND_NAME?: string;
     PAGE_TITLE?: string;
+    FAVICON_URL?: string;
     LOGO_TEXT?: string;
     LOGO_URL?: string;
     PROJECT_URL?: string;

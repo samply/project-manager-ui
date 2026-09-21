@@ -62,8 +62,12 @@ module.exports = {
         }
 
         // silentRenew belongs only to silent-renew.html.
+        // title: shown in the browser tab until the app boots and replaces it
+        // with the backend-configured PAGE_TITLE (see router/index.ts) - falls
+        // back to the package name ("project-manager-ui") otherwise.
         config.plugin('html').tap((args) => {
             args[0].chunks = ['app'];
+            args[0].title = 'Data Request';
             return args;
         });
 

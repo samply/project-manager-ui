@@ -11,11 +11,20 @@ export enum DisplayFormatKey {
     DATE_TIME_WITH_SECONDS_FORMAT = 'DATE_TIME_WITH_SECONDS_FORMAT'
 }
 
+export interface ResolvedDisplayFormat {
+    language: string;
+    pattern: string;
+}
+
+/**
+ * The backend already resolves each key to the pattern/language for the
+ * requested (or its own default) language - see DisplayFormatService.resolve.
+ * The frontend never chooses between languages itself.
+ */
 export interface DisplayFormatsConfig {
-    defaultLanguage: string;
     defaultDateDisplayFormat: DisplayFormatKey;
     defaultTimestampDisplayFormat: DisplayFormatKey;
-    formats: Record<DisplayFormatKey, Record<string, string>>;
+    formats: Record<DisplayFormatKey, ResolvedDisplayFormat>;
 }
 
 export interface FrontendConfig {

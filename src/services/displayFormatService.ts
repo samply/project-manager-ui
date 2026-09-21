@@ -20,14 +20,13 @@ const normalizeLanguage = (language?: string): string | undefined => {
     return normalized || undefined;
 };
 
-const hasRequiredConfiguration = (candidate: DisplayFormatsConfig): boolean => {
-    const defaultLanguage = normalizeLanguage(candidate?.defaultLanguage);
-    return !!defaultLanguage
-        && Object.values(DisplayFormatKey).includes(candidate?.defaultDateDisplayFormat)
-        && Object.values(DisplayFormatKey).includes(candidate?.defaultTimestampDisplayFormat)
-        && Object.values(DisplayFormatKey).every(key =>
-            !!candidate.formats?.[key]?.[defaultLanguage]);
-};
+// The backend already resolved every key to a (language, pattern) pair for
+// the requested - or its own default - language, so there's nothing left to
+// validate here beyond "every key is present".
+const hasRequiredConfiguration = (candidate: DisplayFormatsConfig): boolean =>
+    Object.values(DisplayFormatKey).includes(candidate?.defaultDateDisplayFormat)
+    && Object.values(DisplayFormatKey).includes(candidate?.defaultTimestampDisplayFormat)
+    && Object.values(DisplayFormatKey).every(key => !!candidate.formats?.[key]?.pattern);
 
 const requireConfig = (): DisplayFormatsConfig => {
     if (config === null) {
@@ -43,24 +42,6 @@ export const configureDisplayFormats = (candidate: DisplayFormatsConfig): void =
     config = candidate;
 };
 
-const resolvePattern = (key: DisplayFormatKey, language?: string): {language: string; pattern: string} => {
-    if (config === null) {
-        throw new Error('Display formats have not been configured');
-    }
-    const translations = config.formats[key];
-    const requested = normalizeLanguage(language);
-    const baseLanguage = requested?.split('-')[0];
-    const defaultLanguage = normalizeLanguage(config.defaultLanguage) ?? 'en';
-
-    if (requested && translations[requested]) {
-        return {language: requested, pattern: translations[requested]};
-    }
-    if (baseLanguage && translations[baseLanguage]) {
-        return {language: baseLanguage, pattern: translations[baseLanguage]};
-    }
-    return {language: defaultLanguage, pattern: translations[defaultLanguage]};
-};
-
 const resolveLocale = (language: string): Locale => {
     const normalized = normalizeLanguage(language) ?? 'en';
     return DATE_FNS_LOCALES[normalized]
@@ -73,15 +54,14 @@ const parseDate = (value: string | Date): Date =>
 
 export const formatDisplayDate = (
     value: string | Date | null | undefined,
-    key: DisplayFormatKey,
-    language?: string
+    key: DisplayFormatKey
 ): string => {
     if (value == null || value === '') return '';
 
     const date = parseDate(value);
     if (!isValid(date)) return '';
 
-    const resolved = resolvePattern(key, language);
+    const resolved = requireConfig().formats[key];
     return format(date, resolved.pattern, {locale: resolveLocale(resolved.language)});
 };
 

@@ -133,7 +133,7 @@
                           />
                         </div>
                         <div v-else class="states-circle-container">
-                          <div class="state_circle red"/>
+                          <div class="state_circle pending"/>
                         </div>
                       </div>
                     </td>

@@ -36,6 +36,10 @@
     background-color: red;
 }
 
+.pending {
+    background-color: #e0ab18;
+}
+
 .accepted-state {
     background-color: #009a00;
 }

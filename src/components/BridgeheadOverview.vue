@@ -18,7 +18,7 @@
           {{ getVotumStatus()[0] }}
           <div class="exist-small green"></div>
           / {{ getVotumStatus()[1] }}
-          <div class="exist-small red"></div>
+          <div class="exist-small pending"></div>
         </td>
         <td v-else-if="header === Header.TEILER" class="header-summary-cell status-cell">
           {{ fetchQueryStatusAll()[0] }}
@@ -89,7 +89,7 @@
               />
             </div>
             <div v-else class="states-circle-container">
-              <div class="state_circle red"></div>
+              <div class="state_circle pending"></div>
             </div>
           </div>
           <div v-else-if="header === Header.TEILER" class="states-circle-container">

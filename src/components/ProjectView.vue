@@ -217,7 +217,7 @@
                                     :activeBridgehead="activeBridgehead"/>
               </div>
             </div>
-            <!-- TODO: Restore creator access to this Actions box; see plans/plan-restore-project-actions-for-creators-2026-09-08.md. -->
+            <!-- TODO: Restore creator access to this Actions box; see plans/2026-09-08-plan-restore-project-actions-for-creators.md. -->
             <div
                 v-if="!(projectRoles.length === 1 && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep === MenuStep.STATUS"
                 class="project-actions">

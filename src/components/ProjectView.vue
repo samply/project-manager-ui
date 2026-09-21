@@ -29,7 +29,7 @@
             </div>
           </div>
           <div class="data-container mt-12" style="width:100%;height:auto">
-            <div v-if="project?.state !== ProjectState.DRAFT && currentMenuStep === MenuStep.STATUS"
+            <div v-if="project && project.state !== ProjectState.DRAFT && currentMenuStep === MenuStep.STATUS"
                  class="info-container">
               <div class="box-header"><span>Status</span></div>
 
@@ -1683,6 +1683,13 @@ export default defineComponent({
     async initializeProjectRelatedData() {
       if (this.project) {
         this.existsDraftDialog = (this.project.state === ProjectState.DRAFT && AuthService.getEmail() === this.project.creatorEmail);
+        // Jump straight to the Request tab for draft projects before any of the
+        // async initialization below runs (and before Vue re-renders), so the
+        // Status tab/phase-stepper never flashes on screen while a draft
+        // project is loading.
+        if (this.project.state === ProjectState.DRAFT && this.currentMenuStep === ProjectViewMenuStep.STATUS) {
+          this.currentMenuStep = ProjectViewMenuStep.REQUEST;
+        }
 
         // Resolve the configuration first. If the only predefined configuration
         // is assigned automatically, the refreshed context performs a clean initialization.
@@ -1767,10 +1774,6 @@ export default defineComponent({
         await this.checkButtonVisibility()
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
-        this.project?.state === ProjectState.DRAFT &&
-        this.currentMenuStep === ProjectViewMenuStep.STATUS
-            ? this.currentMenuStep = ProjectViewMenuStep.REQUEST
-            : {}
       }
     },
 
@@ -2949,7 +2952,12 @@ export default defineComponent({
     },
 
     getMenuSteps(): ProjectViewMenuStep[] {
-      const steps: ProjectViewMenuStep[] = this.project?.state !== ProjectState.DRAFT
+      // Before the project has loaded, its state is unknown - treat it the
+      // same as DRAFT (fewest tabs) rather than defaulting to non-draft, so
+      // the Status tab doesn't briefly appear for a project that turns out
+      // to be a draft.
+      const isNonDraft = !!this.project && this.project.state !== ProjectState.DRAFT;
+      const steps: ProjectViewMenuStep[] = isNonDraft
           ? [ProjectViewMenuStep.STATUS, ProjectViewMenuStep.REQUEST]
           : [ProjectViewMenuStep.REQUEST];
       if (this.isScriptTabAvailable) {
@@ -2959,7 +2967,7 @@ export default defineComponent({
             ProjectViewMenuStep.SCRIPT
         );
       }
-      if (this.project?.state !== ProjectState.DRAFT && this.isDocumentsTabAvailable) {
+      if (isNonDraft && this.isDocumentsTabAvailable) {
         steps.push(ProjectViewMenuStep.DOCUMENTS);
       }
       return steps;

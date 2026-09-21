@@ -385,7 +385,7 @@
                               class="btn btn-sm project-field-block-delete-button"
                               @click.stop="deleteBlockInstance(block)"
                               title="Delete block"
-                              style="color:red;">
+                              style="color:var(--status-danger-color);">
                             <i class="bi bi-trash"></i>
                           </button>
                         </div>
@@ -3641,11 +3641,11 @@ export default defineComponent({
 }
 
 .missing-fields, .missing-fields .stepper-step-header {
-  color: red;
+  color: var(--status-danger-color);
 }
 
 .missing-fields .step-circle {
-  background-color: red !important;
+  background-color: var(--status-danger-color) !important;
 }
 
 .form-switch {

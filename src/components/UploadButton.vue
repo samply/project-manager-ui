@@ -224,7 +224,7 @@ export default class UploadButton extends Vue {
 }
 
 .green {
-  color: #009a00;
+  color: var(--status-success-color);
   background-color: transparent;
 }
 .blue {

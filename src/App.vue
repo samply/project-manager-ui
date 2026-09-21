@@ -33,6 +33,11 @@ export default defineComponent({
 
 :root {
   background-color: #EEEEEE;
+  /* Shared, subdued status palette - used wherever red/green/yellow signal
+     success/warning/danger, so the meaning reads consistently across the app. */
+  --status-success-color: #3f8f45;
+  --status-warning-color: #e0ab18;
+  --status-danger-color: #c0504d;
 }
 *, *::before, *::after {
   box-sizing: border-box;

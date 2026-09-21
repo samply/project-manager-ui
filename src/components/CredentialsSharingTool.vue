@@ -384,7 +384,7 @@ export default class CredentialsSharingTool extends Vue {
 }
 
 p {
-  color: green;
+  color: var(--status-success-color);
   font-style: italic;
 }
 

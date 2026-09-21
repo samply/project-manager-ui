@@ -297,7 +297,7 @@ export default class UserInput extends Vue {
 }
 
 .error-message {
-  color: red;
+  color: var(--status-danger-color);
   font-size: 0.9em;
 }
 

@@ -22,6 +22,6 @@ export default defineComponent({
 
 <style scoped>
 .mandatory-field-marker.missing {
-  color: red;
+  color: var(--status-danger-color);
 }
 </style>

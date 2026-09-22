@@ -495,12 +495,7 @@ export default class BridgeheadOverview extends Vue {
 
 .timeline-row {
   padding: 12px 0 12px 8px;
-  border-bottom: 1px solid #d7e2ed;
   cursor: pointer;
-}
-
-.timeline-row:last-child {
-  border-bottom: none;
 }
 
 .timeline-row:hover {

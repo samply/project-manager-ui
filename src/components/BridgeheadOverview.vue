@@ -21,7 +21,16 @@
         <div class="steps-area" :style="stepsGridStyle">
           <div v-for="(step, index) in visibleSteps(site.steps)" :key="step.key" class="t-step">
             <div v-if="index > 0" class="t-line" :class="{ done: step.visual === 'done' }"></div>
-            <div class="t-node" :class="step.visual"
+            <!-- "Data export authorised" can be several project types at once - when
+                 they don't all share one state, show one small dot per group instead
+                 of a single node standing in for all of them. -->
+            <div v-if="step.subSteps && step.subSteps.length > 1" class="t-node-cluster"
+                 data-toggle="tooltip" data-placement="top" :title="step.tooltip ?? undefined">
+              <div v-for="subStep in step.subSteps" :key="subStep.label"
+                   class="t-node t-node-mini" :class="subStep.classification"
+                   :title="subStep.tooltip ?? undefined"></div>
+            </div>
+            <div v-else class="t-node" :class="step.visual"
                  data-toggle="tooltip" data-placement="top" :title="step.tooltip ?? undefined">
               <svg v-if="step.visual === 'done'" viewBox="0 0 16 16" width="8" height="8" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg>
               <svg v-else-if="step.visual === 'failed'" viewBox="0 0 16 16" width="7" height="7" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
@@ -92,12 +101,19 @@ interface TimelineStepDef {
   label: string;
 }
 
+interface TimelineSubStep {
+  label: string;
+  classification: PipelineClassification;
+  tooltip?: string;
+}
+
 interface ClassifiedTimelineStep {
   key: string;
   label: string;
   classification: PipelineClassification;
   tooltip?: string;
   downloadAction?: Action;
+  subSteps?: TimelineSubStep[];
 }
 
 interface TimelineStep {
@@ -106,6 +122,7 @@ interface TimelineStep {
   visual: PipelineStepVisual;
   tooltip?: string;
   downloadAction?: Action;
+  subSteps?: TimelineSubStep[];
 }
 
 interface SiteTimeline {
@@ -274,7 +291,17 @@ export default class BridgeheadOverview extends Vue {
       key: 'teiler',
       label: BridgeheadOverviewHeader.TEILER,
       classification: teilerClassification,
-      tooltip: teilerGroups.map(group => `${group.types.join(', ')}: ${describeQueryState(group.state)}`).join(' | ') || undefined
+      tooltip: teilerGroups.map(group => `${group.types.join(', ')}: ${describeQueryState(group.state)}`).join(' | ') || undefined,
+      // Only worth breaking out as a cluster of sub-dots when the project
+      // types don't all agree on one state - matches ProjectView.vue's
+      // pipeline treatment of the same fact.
+      subSteps: teilerGroups.length > 1
+          ? teilerGroups.map(group => ({
+            label: group.types.join(', '),
+            classification: classifyStateCircle(group.state),
+            tooltip: `${group.types.join(', ')}: ${describeQueryState(group.state)}`
+          }))
+          : undefined
     });
 
     if (hasProjectType(this.project, ProjectType.DATASHIELD)) {
@@ -580,6 +607,26 @@ export default class BridgeheadOverview extends Vue {
 }
 
 .t-node.future {
+  background: #e3e6ea;
+}
+
+.t-node-cluster {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  z-index: 1;
+}
+
+.t-node-mini {
+  width: 7px;
+  height: 7px;
+}
+
+.t-node-mini.grey {
   background: #e3e6ea;
 }
 

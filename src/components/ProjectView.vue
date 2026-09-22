@@ -90,7 +90,17 @@
                            class="pipeline-step" :class="step.visual">
                         <div v-if="index > 0" class="pipeline-line" :class="{ done: step.visual === 'done' }"></div>
                         <div v-if="step.visual === 'next'" class="pipeline-next-chip">Next</div>
-                        <div class="pipeline-node" :class="step.visual"
+                        <!-- A step's status is usually one fact, one node. "Data export
+                             authorised" can be several project types at once, though - when
+                             they don't all share one state, show one small dot per group
+                             instead of a single node standing in for all of them. -->
+                        <div v-if="step.subSteps && step.subSteps.length > 1" class="pipeline-node-cluster"
+                             data-toggle="tooltip" data-placement="top" :title="step.tooltip ?? undefined">
+                          <div v-for="subStep in step.subSteps" :key="subStep.label"
+                               class="pipeline-node pipeline-node-mini" :class="subStep.classification"
+                               :title="subStep.tooltip ?? undefined"></div>
+                        </div>
+                        <div v-else class="pipeline-node" :class="step.visual"
                              data-toggle="tooltip" data-placement="top" :title="step.tooltip ?? undefined">
                           <svg v-if="step.visual === 'done'" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg>
                           <svg v-else-if="step.visual === 'failed'" viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
@@ -770,12 +780,24 @@ type BlockMetadata = ProjectField["block"];
 // BridgeheadOverview.vue's per-site timelines). "next" vs. "future" only
 // distinguishes among grey (untouched) steps; done/failed/warning always
 // show as themselves.
+interface PipelineSubStep {
+  label: string;
+  classification: PipelineClassification;
+  tooltip?: string;
+}
+
 interface PipelineStep {
   key: string;
   label: string;
   visual: PipelineStepVisual;
   tooltip?: string;
   downloadAction?: Action;
+  // Only set (and only rendered as a cluster) when a step's status is
+  // actually a merge of several independent facts - today just "Data export
+  // authorised" when a project queries more than one project type and they
+  // don't all share the same state. Kept optional/rare rather than a field
+  // every step carries, since it doesn't apply anywhere else.
+  subSteps?: PipelineSubStep[];
 }
 
 export default defineComponent({
@@ -821,7 +843,7 @@ export default defineComponent({
       // assignPipelineVisuals() then does the shared
       // done/failed/warning/not_required -> next/future pass (see
       // pipelineStatus.ts for both).
-      const classifiedSteps: { key: string; label: string; classification: PipelineClassification; tooltip?: string; downloadAction?: Action }[] = [];
+      const classifiedSteps: { key: string; label: string; classification: PipelineClassification; tooltip?: string; downloadAction?: Action; subSteps?: PipelineSubStep[] }[] = [];
 
       // The ethics vote has no failure state, only "not required" vs.
       // "received" - classified separately from warning/amber (which is
@@ -851,7 +873,17 @@ export default defineComponent({
         key: 'teiler',
         label: BridgeheadOverviewHeader.TEILER,
         classification: teilerClassification,
-        tooltip: this.mergedQueryStates.map(group => `${group.types.join(', ')}: ${describeQueryState(group.state)}`).join(' | ') || undefined
+        tooltip: this.mergedQueryStates.map(group => `${group.types.join(', ')}: ${describeQueryState(group.state)}`).join(' | ') || undefined,
+        // Only worth breaking out as a cluster of sub-dots when the project
+        // types don't all agree on one state - a single shared state already
+        // reads fine as one node, matching the common case visually.
+        subSteps: this.mergedQueryStates.length > 1
+            ? this.mergedQueryStates.map(group => ({
+              label: group.types.join(', '),
+              classification: classifyStateCircle(group.state),
+              tooltip: `${group.types.join(', ')}: ${describeQueryState(group.state)}`
+            }))
+            : undefined
       });
 
       classifiedSteps.push({
@@ -906,7 +938,8 @@ export default defineComponent({
       });
 
       return assignPipelineVisuals(classifiedSteps).map(step => ({
-        key: step.key, label: step.label, visual: step.visual, tooltip: step.tooltip, downloadAction: step.downloadAction
+        key: step.key, label: step.label, visual: step.visual, tooltip: step.tooltip,
+        downloadAction: step.downloadAction, subSteps: step.subSteps
       }));
     },
     visiblePipelineSteps(): PipelineStep[] {
@@ -3359,6 +3392,23 @@ export default defineComponent({
   box-shadow: 0 0 0 4px #e9eef8;
 }
 .pipeline-node.future {
+  background: #e3e6ea;
+}
+.pipeline-node-cluster {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  z-index: 1;
+}
+.pipeline-node-mini {
+  width: 10px;
+  height: 10px;
+}
+.pipeline-node-mini.grey {
   background: #e3e6ea;
 }
 .pipeline-next-chip {

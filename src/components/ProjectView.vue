@@ -2014,15 +2014,13 @@ export default defineComponent({
     },
 
     applyProjectConfigurationVisibility(): void {
-      // Non-admin users do not need a service-selection step when the backend
-      // offers only CUSTOM and one predefined configuration. NOT_SELECTED is
-      // an internal state and is not counted as a selectable option.
+      // Count predefined options independently of CUSTOM: visibility filtering
+      // below removes CUSTOM from this map, and overlapping project refreshes
+      // can apply this method again before the configurations are reloaded.
       const predefinedConfigurations = Array.from(this.projectConfigurations.keys())
           .filter(configuration => configuration !== CUSTOM_PROJECT_CONFIGURATION &&
               configuration !== NOT_SELECTED_PROJECT_CONFIGURATION);
-      const hasOnlyOnePredefinedConfiguration =
-          predefinedConfigurations.length === 1 &&
-          this.projectConfigurations.has(CUSTOM_PROJECT_CONFIGURATION);
+      const hasOnlyOnePredefinedConfiguration = predefinedConfigurations.length === 1;
       if (!this.isProjectManagerAdmin() && hasOnlyOnePredefinedConfiguration) {
         this.draftDialogStepper.filterStep(FixedDialogStep.SERVICES);
       } else {

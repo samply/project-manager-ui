@@ -2,11 +2,11 @@
   <dl v-if="result.length" class="feasibility-totals">
     <template v-for="item in result" :key="item.label">
       <dt>{{ item.label }}</dt>
-      <dd>{{ item.value.toLocaleString() }}</dd>
+      <dd>{{ formatDisplayNumber(item.value) }}</dd>
       <template v-if="item.breakdown?.length">
         <template v-for="child in item.breakdown" :key="child.label">
           <dt class="feasibility-breakdown-label">{{ child.label }}</dt>
-          <dd class="feasibility-breakdown-value">{{ child.value.toLocaleString() }}</dd>
+          <dd class="feasibility-breakdown-value">{{ formatDisplayNumber(child.value) }}</dd>
         </template>
       </template>
     </template>
@@ -47,9 +47,11 @@
 
 import {defineComponent, PropType} from "vue";
 import {FeasibilityResult} from "@/services/projectManagerBackendService";
+import {formatDisplayNumber} from "@/services/displayFormatService";
 
 export default defineComponent({
   name: "FeasibilityTotals",
+  methods: {formatDisplayNumber},
   props: {
     result: {
       type: Array as PropType<FeasibilityResult>,

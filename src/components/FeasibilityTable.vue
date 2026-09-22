@@ -112,6 +112,7 @@
 // horizontally, the table scrolls; vertically, bridgeheads are paged.
 import {defineComponent, PropType} from "vue";
 import {Bridgehead, FeasibilityResult, hasFeasibilityResult} from "@/services/projectManagerBackendService";
+import {formatDisplayNumber} from "@/services/displayFormatService";
 
 interface FeasibilityColumn {
   label: string;
@@ -271,7 +272,7 @@ export default defineComponent({
     },
     cellText(bridgeheadId: string, label: string): string {
       const value = this.valuesByBridgehead.get(bridgeheadId)?.get(label);
-      return value !== undefined ? value.toLocaleString() : "-";
+      return value !== undefined ? formatDisplayNumber(value) : "-";
     },
     previousPage() {
       if (this.currentPage > 1) this.currentPage--;

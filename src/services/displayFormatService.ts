@@ -1,6 +1,7 @@
 import {format, isValid, parseISO} from 'date-fns';
 import type {Locale} from 'date-fns';
 import {de, enGB, enUS} from 'date-fns/locale';
+import {formatNumber} from '@/services/numberFormat';
 import {
     DisplayFormatKey,
     DisplayFormatsConfig
@@ -63,6 +64,15 @@ export const formatDisplayDate = (
 
     const resolved = requireConfig().formats[key];
     return format(date, resolved.pattern, {locale: resolveLocale(resolved.language)});
+};
+
+export const formatDisplayNumber = (value: string | number | null | undefined): string => {
+    const settings = requireConfig();
+    // Also supports older backends during a rolling upgrade.
+    const locale = settings.locale
+        ?? settings.numberFormat?.locale
+        ?? settings.formats[settings.defaultDateDisplayFormat].language;
+    return formatNumber(value, locale);
 };
 
 /** The display format key applied to a DATE field when it has no explicit display_format. */

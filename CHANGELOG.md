@@ -183,6 +183,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Favicon as backend environment variable
 - Configurable localized date and time display formats
 - Subtle colors
+- Uniform number format
 
 ### Removed
 - Application Form

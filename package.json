@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test:number-format": "node --test tests/numberFormat.test.cjs",
     "serve": "vue-cli-service serve",
     "serve-https": "vue-cli-service serve --https",
     "build": "vue-cli-service build",

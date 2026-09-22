@@ -22,6 +22,10 @@ export interface ResolvedDisplayFormat {
  * The frontend never chooses between languages itself.
  */
 export interface DisplayFormatsConfig {
+    /** Locale resolved by the backend for the requested language. */
+    locale?: string;
+    /** Compatibility field exposed by older backends. */
+    numberFormat?: {locale: string};
     defaultDateDisplayFormat: DisplayFormatKey;
     defaultTimestampDisplayFormat: DisplayFormatKey;
     formats: Record<DisplayFormatKey, ResolvedDisplayFormat>;

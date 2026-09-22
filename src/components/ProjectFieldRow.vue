@@ -30,6 +30,7 @@ import {DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES} from "@/services/configL
 import type {DisplayFormatKey} from "@/services/configLoader";
 import {
   formatDisplayDate,
+  formatDisplayNumber,
   getDefaultDateDisplayFormat,
   getDefaultTimestampDisplayFormat
 } from "@/services/displayFormatService";
@@ -713,6 +714,10 @@ export default class ProjectFieldRow extends Vue {
   getFormFieldSummaryValue(value?: string): string {
     if (!this.hasMeaningfulValue(value)) {
       return this.getEmptySummaryValue();
+    }
+
+    if (this.isInputType(FormDataType.INTEGER) || this.isInputType(FormDataType.DOUBLE)) {
+      return formatDisplayNumber(value);
     }
 
     // DATE values are persisted independently of presentation configuration

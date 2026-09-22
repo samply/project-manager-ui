@@ -57,6 +57,32 @@
             </td>
           </template>
         </tr>
+        <tr v-if="editable && availableBridgeheadsToAdd.length" class="feasibility-add-row">
+          <td :colspan="totalColumns">
+            <button v-if="!showAddBridgehead" type="button" class="add-row-trigger"
+                    title="Add site" aria-label="Add site" @click="showAddBridgehead = true">
+              <i class="bi bi-plus"></i>
+              <span>Add site</span>
+            </button>
+            <div v-else class="add-row-form">
+              <select v-model="newBridgeheadId" class="form-select" aria-label="Site to add">
+                <option disabled value="">Site</option>
+                <option v-for="bridgehead in availableBridgeheadsToAdd" :key="bridgehead.bridgehead"
+                        :value="bridgehead.bridgehead">
+                  {{ bridgehead.humanReadable ?? bridgehead.bridgehead }}
+                </option>
+              </select>
+              <button type="button" class="btn btn-primary" :disabled="!newBridgeheadId"
+                      title="Add site" aria-label="Add site" @click="addBridgehead">
+                <i class="bi bi-check"></i>
+              </button>
+              <button type="button" class="btn btn-primary" title="Cancel" aria-label="Cancel"
+                      @click="cancelAddBridgehead">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
       </tbody>
     </table>
     <div v-if="totalPages > 1" class="pager">
@@ -69,29 +95,6 @@
               aria-label="Next page">
         <i class="bi bi-play-fill"></i>
       </button>
-    </div>
-    <div v-if="editable && availableBridgeheadsToAdd.length" class="feasibility-add-controls">
-      <button v-if="!showAddBridgehead" type="button" class="btn btn-secondary"
-              title="Add site" aria-label="Add site" @click="showAddBridgehead = true">
-        <i class="bi bi-plus"></i>
-      </button>
-      <template v-else>
-        <select v-model="newBridgeheadId" class="form-select" aria-label="Site to add">
-          <option disabled value="">Site</option>
-          <option v-for="bridgehead in availableBridgeheadsToAdd" :key="bridgehead.bridgehead"
-                  :value="bridgehead.bridgehead">
-            {{ bridgehead.humanReadable ?? bridgehead.bridgehead }}
-          </option>
-        </select>
-        <button type="button" class="btn btn-primary" :disabled="!newBridgeheadId"
-                title="Add site" aria-label="Add site" @click="addBridgehead">
-          <i class="bi bi-check"></i>
-        </button>
-        <button type="button" class="btn btn-primary" title="Cancel" aria-label="Cancel"
-                @click="cancelAddBridgehead">
-          <i class="bi bi-x"></i>
-        </button>
-      </template>
     </div>
   </div>
 </template>
@@ -256,6 +259,12 @@ export default defineComponent({
     availableBridgeheadsToAdd(): Bridgehead[] {
       const selectedIds = new Set(this.bridgeheads.map(bridgehead => bridgehead.bridgehead));
       return this.availableBridgeheads.filter(bridgehead => !selectedIds.has(bridgehead.bridgehead));
+    },
+    // Site column plus the metric columns - or the single "Statistics"
+    // placeholder column shown when no metric columns are known yet - so the
+    // add-row spans the full width of whatever the table currently renders.
+    totalColumns(): number {
+      return 1 + Math.max(this.columns.length, 1);
     }
   },
   watch: {
@@ -389,14 +398,41 @@ export default defineComponent({
   color: var(--status-danger-color);
 }
 
-.feasibility-add-controls {
+.feasibility-add-row td {
+  padding: 0;
+  border-bottom: none;
+}
+
+.add-row-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  border-top: 1px dashed #d7e2ed;
+  color: #2655a2;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 14px 22px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.add-row-trigger:hover {
+  background: #e9eef8;
+}
+
+.add-row-form {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 0.75rem;
+  padding: 10px 22px;
+  border-top: 1px dashed #2655a2;
+  background: #e9eef8;
 }
 
-.feasibility-add-controls select {
+.add-row-form select {
   max-width: 24rem;
 }
 

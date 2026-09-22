@@ -33,7 +33,7 @@
             <button v-if="editable" type="button" class="btn btn-link feasibility-remove-button"
                     title="Remove site" aria-label="Remove site"
                     @click="removeBridgehead(bridgehead.bridgehead)">
-              <i class="bi bi-trash"></i>
+              <i class="bi bi-x-lg"></i>
             </button>
           </td>
           <td

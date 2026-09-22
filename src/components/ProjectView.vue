@@ -386,7 +386,7 @@
                               @click.stop="deleteBlockInstance(block)"
                               title="Delete block"
                               style="color:var(--status-danger-color);">
-                            <i class="bi bi-trash"></i>
+                            <i class="bi bi-x-lg"></i>
                           </button>
                         </div>
                         <div v-if="!isBlockCollapsed(block.block)" class="project-field-block-body">
@@ -534,7 +534,7 @@
                       :call-refresh-context="() => redirectTo('/')"
                       text="Delete Draft"
                       button-class="btn btn-delete-draft"
-                      icon-class="bi bi-trash"
+                      icon-class="bi bi-x-lg"
                       :with-message="true"
                       :project-manager-backend-service="projectManagerBackendService"/>
 

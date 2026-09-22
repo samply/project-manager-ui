@@ -195,7 +195,7 @@ export default class DocumentsTable extends Vue {
                   class="btn btn-link p-0 ms-2 document-remove-button" title="Remove document"
                   :disabled="removingDocumentIds.has(projectDocument.id)"
                   @click="removeDocument(projectDocument)">
-            <i class="bi bi-trash"></i>
+            <i class="bi bi-x-lg"></i>
           </button>
           </div>
         </td>

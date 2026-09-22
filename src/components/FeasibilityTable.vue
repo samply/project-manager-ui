@@ -4,12 +4,12 @@
       <thead>
         <tr>
           <th :rowspan="hasAnyBreakdown ? 2 : 1" class="feasibility-sortable" @click="sortBy('site')">
-            Site{{ sortIndicator('site') }}
+            <span class="th-label">Site<svg v-if="sortKey === 'site'" class="sort-caret" :class="{ desc: sortDirection === 'desc' }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
           </th>
           <template v-for="item in topLevelItems" :key="item.label">
             <th v-if="item.children.length" :colspan="item.children.length">{{ item.label }}</th>
             <th v-else :rowspan="hasAnyBreakdown ? 2 : 1" class="feasibility-sortable" @click="sortBy(item.label)">
-              {{ item.label }}{{ sortIndicator(item.label) }}
+              <span class="th-label">{{ item.label }}<svg v-if="sortKey === item.label" class="sort-caret" :class="{ desc: sortDirection === 'desc' }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
             </th>
           </template>
           <th v-if="!columns.length">Statistics</th>
@@ -22,7 +22,7 @@
                 class="feasibility-breakdown-label feasibility-sortable"
                 @click="sortBy(child)"
             >
-              {{ child }}{{ sortIndicator(child) }}
+              <span class="th-label">{{ child }}<svg v-if="sortKey === child" class="sort-caret" :class="{ desc: sortDirection === 'desc' }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
             </th>
           </template>
         </tr>
@@ -60,12 +60,14 @@
       </tbody>
     </table>
     <div v-if="totalPages > 1" class="pager">
-      <button type="button" class="btn btn-primary" :disabled="currentPage === 1" @click="previousPage" style="rotate: 180deg">
-        <i class="bi bi-play-fill" style="font-size: medium"></i>
+      <button type="button" class="pager-btn" :disabled="currentPage === 1" @click="previousPage"
+              style="rotate: 180deg" aria-label="Previous page">
+        <i class="bi bi-play-fill"></i>
       </button>
       <span>{{ currentPage }} / {{ totalPages }}</span>
-      <button type="button" class="btn btn-primary" :disabled="currentPage === totalPages" @click="nextPage">
-        <i class="bi bi-play-fill" style="font-size: medium"></i>
+      <button type="button" class="pager-btn" :disabled="currentPage === totalPages" @click="nextPage"
+              aria-label="Next page">
+        <i class="bi bi-play-fill"></i>
       </button>
     </div>
     <div v-if="editable && availableBridgeheadsToAdd.length" class="feasibility-add-controls">
@@ -286,10 +288,6 @@ export default defineComponent({
       }
       this.currentPage = 1;
     },
-    sortIndicator(key: string): string {
-      if (this.sortKey !== key) return "";
-      return this.sortDirection === "asc" ? " ▲" : " ▼";
-    },
     removeBridgehead(bridgeheadId: string) {
       this.$emit('update-bridgeheads', this.bridgeheads.filter(bridgehead => bridgehead.bridgehead !== bridgeheadId));
     },
@@ -318,27 +316,58 @@ export default defineComponent({
 .feasibility-table {
   width: 100%;
   border-collapse: collapse;
-}
-
-.feasibility-table th,
-.feasibility-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
+  font-size: 14px;
 }
 
 .feasibility-table th {
-  background-color: #f2f2f2;
+  background: #e9eef8;
+  color: #2655a2;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 12px 22px;
+  border-bottom: 1px solid #d7e2ed;
+  white-space: nowrap;
+}
+
+.feasibility-table td {
+  padding: 14px 22px;
+  border-bottom: 1px solid #d7e2ed;
+  vertical-align: middle;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.feasibility-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.feasibility-table tbody tr:hover td {
+  background: #e9eef8;
+}
+
+.th-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sort-caret {
+  width: 9px;
+  height: 9px;
+  opacity: .7;
+  transition: transform .15s ease-in-out;
+}
+
+.sort-caret.desc {
+  transform: rotate(180deg);
 }
 
 .feasibility-sortable {
   cursor: pointer;
   user-select: none;
-  white-space: nowrap;
-}
-
-.feasibility-sortable:hover {
-  background-color: #e9ecef;
 }
 
 .feasibility-bridgehead-name {
@@ -356,7 +385,7 @@ export default defineComponent({
 }
 
 .feasibility-remove-button:hover {
-  color: #b45353;
+  color: var(--status-danger-color);
 }
 
 .feasibility-add-controls {
@@ -384,25 +413,39 @@ export default defineComponent({
 
 .pager {
   display: flex;
-  justify-content: end;
-  margin-top: 4px;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .pager span {
-  display: flex;
-  border: 1px solid #cccccc;
-  border-radius: 5px;
-  padding: 0 10px 1px 10px;
-  background-color: white;
+  font-size: 13px;
+  color: #5b6b7c;
+  font-variant-numeric: tabular-nums;
+  padding: 0 6px;
 }
 
-.pager button {
-  padding-top: 3px;
-  padding-bottom: 3px;
-}
-
-.pager button, .pager span {
-  margin-left: 10px;
+.pager-btn {
+  border: 1px solid #d7e2ed;
+  background: #fff;
+  color: #5b6b7c;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.pager-btn:hover:not(:disabled) {
+  border-color: #2655a2;
+  color: #2655a2;
+}
+
+.pager-btn:disabled {
+  opacity: .4;
+  cursor: default;
 }
 </style>

@@ -389,78 +389,102 @@ export default class ResultsBox extends Vue {
   </div>
   <div>
     <br>
-    <table v-if="resultsToShow.length">
-      <thead>
-      <tr>
-        <th v-if="!projectResults">Site</th>
-        <th v-if="!projectResults">Bridgehead Admin</th>
-        <th v-if="projectResults && !isFinalUser()">Final User</th>
-        <th v-if="isFinalUser()">Final User / Bridgehead Admin</th>
-        <th>URL</th>
-        <th>User Access</th>
-        <th>Applicant Acceptance</th>
-        <th v-if="actionButtons.length > 0">Actions</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-for="result in resultsToShow" :key="result.bridgehead">
-        <td v-if="!projectResults">{{ result.humanReadableBridgehead }}</td>
-        <td>
-          <UserAndEmail
-              :first-name="result.firstName"
-              :last-name="result.lastName"
-              :email="result.email"
-          />
-        </td>
-        <td><a v-if="isUrl(result?.url)" :href="result.url" target="_blank">{{ result.url }}</a>
-          <div v-if="!isUrl(result?.url)">{{ result.url }}</div>
-        </td>
-        <td>
-          <div class="states-circle-container">
-            <div class="state_circle"
-                 :class="fetchUserAccess(result)?.toLowerCase()"
-                 :title="fetchUserAccess(result)"/>
-          </div>
-        </td>
-        <td>
-          <div class="states-circle-container">
-            <div class="state_circle" :class="fetchCreatorState(result)?.toLowerCase()"
-                 :title="fetchCreatorState(result)"/>
-          </div>
-        </td>
-        <td v-if="actionButtons.length > 0">
-          <div style="display: flex">
-            <ProjectManagerButton v-for="(button, index) in actionButtons" :key="index"
-                                  :module="button.module" :action="button.action"
-                                  :context="fetchButtonContext(result)" :call-refresh-context="this.callRefreshContext"
-                                  :text="button.text"
-                                  :button-class="button.cssClass" :with-message="button.withMessage"
-                                  :visibility="isButtonVisible(button, result)"
-                                  :project-manager-backend-service="projectManagerBackendService"/>
-          </div>
-        </td>
-      </tr>
-      </tbody>
-    </table>
+    <div v-if="resultsToShow.length" class="table-scroll">
+      <table class="results-table">
+        <thead>
+        <tr>
+          <th v-if="!projectResults">Site</th>
+          <th v-if="!projectResults">Bridgehead Admin</th>
+          <th v-if="projectResults && !isFinalUser()">Final User</th>
+          <th v-if="isFinalUser()">Final User / Bridgehead Admin</th>
+          <th>URL</th>
+          <th>User Access</th>
+          <th>Applicant Acceptance</th>
+          <th v-if="actionButtons.length > 0">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="result in resultsToShow" :key="result.bridgehead">
+          <td v-if="!projectResults">{{ result.humanReadableBridgehead }}</td>
+          <td>
+            <UserAndEmail
+                :first-name="result.firstName"
+                :last-name="result.lastName"
+                :email="result.email"
+            />
+          </td>
+          <td><a v-if="isUrl(result?.url)" :href="result.url" target="_blank">{{ result.url }}</a>
+            <div v-if="!isUrl(result?.url)">{{ result.url }}</div>
+          </td>
+          <td>
+            <div class="states-circle-container">
+              <div class="state_circle"
+                   :class="fetchUserAccess(result)?.toLowerCase()"
+                   :title="fetchUserAccess(result)"/>
+            </div>
+          </td>
+          <td>
+            <div class="states-circle-container">
+              <div class="state_circle" :class="fetchCreatorState(result)?.toLowerCase()"
+                   :title="fetchCreatorState(result)"/>
+            </div>
+          </td>
+          <td v-if="actionButtons.length > 0">
+            <div style="display: flex">
+              <ProjectManagerButton v-for="(button, index) in actionButtons" :key="index"
+                                    :module="button.module" :action="button.action"
+                                    :context="fetchButtonContext(result)" :call-refresh-context="this.callRefreshContext"
+                                    :text="button.text"
+                                    :button-class="button.cssClass" :with-message="button.withMessage"
+                                    :visibility="isButtonVisible(button, result)"
+                                    :project-manager-backend-service="projectManagerBackendService"/>
+            </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
     <!-- Show message if no results are available -->
     <p v-else>No results available</p>
   </div>
 </template>
 
 <style scoped>
-table {
+.table-scroll {
+  overflow-x: auto;
+}
+
+.results-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 14px;
 }
 
-th, td {
-  border: 1px solid #ccc;
-  padding: 8px;
+.results-table thead th {
+  background: #e9eef8;
+  color: #2655a2;
   text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 12px 22px;
+  border-bottom: 1px solid #d7e2ed;
+  white-space: nowrap;
 }
 
-th {
-  background-color: #f4f4f4;
+.results-table tbody td {
+  padding: 14px 22px;
+  border-bottom: 1px solid #d7e2ed;
+  vertical-align: middle;
+}
+
+.results-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.results-table tbody tr:hover td {
+  background: #e9eef8;
 }
 
 p {

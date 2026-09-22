@@ -3450,6 +3450,7 @@ export default defineComponent({
   background: #fff;
   border-radius: 6px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+  height: auto;
 }
 .vertical-stepper-box {
   width: 208px;

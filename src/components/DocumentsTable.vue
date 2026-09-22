@@ -160,49 +160,50 @@ export default class DocumentsTable extends Vue {
   <div v-if="projectDocuments && projectDocuments.length > 0" class="project-document-table">
     <span v-if="text"><strong>{{ text }}</strong></span>
     <br/>
-    <table>
-      <thead>
-      <tr>
-        <th>Label</th>
-        <th>Original Filename</th>
-        <th>URL</th>
-        <th>Created At</th>
-        <th>Site</th>
-        <th>Uploaded by</th>
-        <th>Type</th>
-        <th>Actions</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-for="(projectDocument, index) in projectDocuments" :key="index">
-        <td>{{ projectDocument.label }}</td>
-        <td>{{ projectDocument.originalFilename }}</td>
-        <td><a :href="projectDocument.url">{{ projectDocument.url }}</a></td>
-        <td>{{ formatCreatedAt(projectDocument.createdAt) }}</td>
-        <td v-if="projectDocument.bridgehead != 'NONE'">{{ projectDocument.humanReadableBridgehead }}</td>
-        <td v-if="projectDocument.bridgehead === 'NONE'"></td>
-        <td>
-          <UserAndEmail :first-name="projectDocument.creatorName" :email="projectDocument.creatorEmail"/>
-        </td>
-        <td>{{ projectDocument.type }}</td>
-        <td>
-          <div class="document-actions">
-          <DownloadButton v-if="canDownload && projectDocument.originalFilename"
-                          :context="context" :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="downloadAction" :icon-class="iconClass"
-                          :filename="projectDocument.originalFilename"/>
-          <button v-if="canRemoveDocument(projectDocument) && projectDocument.id != null" type="button"
-                  class="btn btn-link p-0 ms-2 document-remove-button" title="Remove document"
-                  :disabled="removingDocumentIds.has(projectDocument.id)"
-                  @click="removeDocument(projectDocument)">
-            <i class="bi bi-x-lg"></i>
-          </button>
-          </div>
-        </td>
-      </tr>
-      </tbody>
-    </table>
-    <br>
+    <div class="table-scroll">
+      <table class="documents-table">
+        <thead>
+        <tr>
+          <th>Label</th>
+          <th>Original Filename</th>
+          <th>URL</th>
+          <th>Created At</th>
+          <th>Site</th>
+          <th>Uploaded by</th>
+          <th>Type</th>
+          <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="(projectDocument, index) in projectDocuments" :key="index">
+          <td>{{ projectDocument.label }}</td>
+          <td>{{ projectDocument.originalFilename }}</td>
+          <td><a :href="projectDocument.url">{{ projectDocument.url }}</a></td>
+          <td class="created-cell">{{ formatCreatedAt(projectDocument.createdAt) }}</td>
+          <td v-if="projectDocument.bridgehead != 'NONE'">{{ projectDocument.humanReadableBridgehead }}</td>
+          <td v-if="projectDocument.bridgehead === 'NONE'"></td>
+          <td>
+            <UserAndEmail :first-name="projectDocument.creatorName" :email="projectDocument.creatorEmail"/>
+          </td>
+          <td>{{ projectDocument.type }}</td>
+          <td>
+            <div class="document-actions">
+            <DownloadButton v-if="canDownload && projectDocument.originalFilename"
+                            :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="downloadAction" :icon-class="iconClass"
+                            :filename="projectDocument.originalFilename"/>
+            <button v-if="canRemoveDocument(projectDocument) && projectDocument.id != null" type="button"
+                    class="btn btn-link p-0 ms-2 document-remove-button" title="Remove document"
+                    :disabled="removingDocumentIds.has(projectDocument.id)"
+                    @click="removeDocument(projectDocument)">
+              <i class="bi bi-x-lg"></i>
+            </button>
+            </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -211,19 +212,48 @@ export default class DocumentsTable extends Vue {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+}
+
+.table-scroll {
   overflow-x: auto;
 }
 
-table {
+.documents-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 14px;
 }
 
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
+.documents-table thead th {
+  background: #e9eef8;
+  color: #2655a2;
   text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 12px 22px;
+  border-bottom: 1px solid #d7e2ed;
   white-space: nowrap;
+}
+
+.documents-table tbody td {
+  padding: 14px 22px;
+  border-bottom: 1px solid #d7e2ed;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.documents-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.documents-table tbody tr:hover td {
+  background: #e9eef8;
+}
+
+.created-cell {
+  font-variant-numeric: tabular-nums;
 }
 
 .document-actions {
@@ -232,11 +262,7 @@ th, td {
 }
 
 .document-remove-button:hover:not(:disabled) {
-  color: #b45353;
-}
-
-th {
-  background-color: #f2f2f2;
+  color: var(--status-danger-color);
 }
 
 </style>

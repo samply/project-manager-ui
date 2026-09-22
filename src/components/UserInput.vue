@@ -169,7 +169,7 @@ export default class UserInput extends Vue {
 
   <div v-if="currentUsers.length > 0" class="button-group-box">
     <div class="button-group-label">Current users involved in this stage:</div>
-    <div style="margin: 10px 20px 10px 0">
+    <div style="margin: 10px 20px 10px 0" class="table-scroll">
       <table class="user-table">
         <thead>
         <tr>
@@ -233,19 +233,41 @@ export default class UserInput extends Vue {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Optional: Add box shadow for a raised effect */
 }
 
+.table-scroll {
+  overflow-x: auto;
+}
+
 .user-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 14px;
 }
 
-.user-table th, .user-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
+.user-table thead th {
+  background: #e9eef8;
+  color: #2655a2;
   text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 12px 22px;
+  border-bottom: 1px solid #d7e2ed;
+  white-space: nowrap;
 }
 
-.user-table th {
-  background-color: #f2f2f2;
+.user-table tbody td {
+  padding: 14px 22px;
+  border-bottom: 1px solid #d7e2ed;
+  vertical-align: middle;
+}
+
+.user-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.user-table tbody tr:hover td {
+  background: #e9eef8;
 }
 
 .button-group-box {

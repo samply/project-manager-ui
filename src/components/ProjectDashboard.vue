@@ -382,6 +382,7 @@ export default defineComponent({
 
 .table-box {
   margin: 0 -0.75rem;
+  overflow-x: auto;
 }
 
 .requests-table {

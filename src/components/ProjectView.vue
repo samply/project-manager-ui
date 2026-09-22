@@ -3265,10 +3265,12 @@ export default defineComponent({
 }
 
 .at-a-glance-strip {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1.4fr 1fr 1fr;
+  display: flex;
+  overflow-x: auto;
 }
 .glance-cell {
+  flex: 1;
+  min-width: 150px;
   padding: 16px 22px;
   border-right: 1px solid #d7e2ed;
 }

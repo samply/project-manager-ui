@@ -31,172 +31,91 @@
           <div class="data-container mt-12" style="width:100%;height:auto">
             <div v-if="project && project.state !== ProjectState.DRAFT && currentMenuStep === MenuStep.STATUS"
                  class="info-container">
-              <div class="box-header"><span>Status</span></div>
-
-              <div style="padding: 2%">
-                <div
-                    style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
-                  <div class="card"
-                       v-if="visibleBridgeheads && visibleBridgeheads.length === 1"
-                       style="padding: 3px 20px;height: fit-content">
-                    <div class="card-body" style="padding: 0 0;">
-                      <span style="padding: 0 0;">{{ context.bridgehead?.humanReadable }}</span>
-                      <BridgeheadContacts :contacts="context.bridgehead?.contacts ?? []" />
+              <!-- No panel title here: this whole area is the Status tab's content (already
+                   labeled by the tab itself), now split into its own "At a Glance" and "Status"
+                   cards below, each with their own header. A third "Status" label here would
+                   just repeat the tab name. -->
+              <div
+                  style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
+                <div class="card"
+                     v-if="visibleBridgeheads && visibleBridgeheads.length === 1"
+                     style="padding: 3px 20px;height: fit-content">
+                  <div class="card-body" style="padding: 0 0;">
+                    <span style="padding: 0 0;">{{ context.bridgehead?.humanReadable }}</span>
+                    <BridgeheadContacts :contacts="context.bridgehead?.contacts ?? []" />
+                  </div>
+                </div>
+              </div>
+              <div class="panel-card at-a-glance-card">
+                  <div class="panel-header">At a Glance</div>
+                  <div class="at-a-glance-strip">
+                    <div class="glance-cell">
+                      <span class="glance-label">Title</span>
+                      <a class="glance-title clickable" @click="currentMenuStep = MenuStep.REQUEST">{{ project ? project.label : '' }}</a>
+                    </div>
+                    <div class="glance-cell">
+                      <span class="glance-label">Request ID</span>
+                      <span class="glance-value muted">{{ project ? project.code : '' }}</span>
+                    </div>
+                    <div class="glance-cell">
+                      <span class="glance-label">Applicant</span>
+                      <span class="glance-value">
+                        <UserAndEmail
+                            :first-name="project?.creatorName"
+                            :email="project?.creatorEmail"
+                        />
+                      </span>
+                    </div>
+                    <div class="glance-cell">
+                      <span class="glance-label">Created at</span>
+                      <span class="glance-value muted">{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</span>
+                    </div>
+                    <div class="glance-cell">
+                      <span class="glance-label">Phase</span>
+                      <span v-if="project" class="phase-pill">{{ projectStateLabel(project.state) }}</span>
                     </div>
                   </div>
                 </div>
-                <table class="table table-bordered table-overview">
-                  <thead>
-                  <tr>
-                    <th class="status-table-header" scope="col">Title</th>
-                    <th class="status-table-header" scope="col">Request ID</th>
-                    <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
-                        scope="col">
-                      {{ BridgeheadOverviewHeader.VOTUM }}
-                    </th>
-                    <th
-                        v-if="visibleBridgeheads?.length === 1"
-                        class="status-table-header"
-                        scope="col"
-                    >
-                      {{ BridgeheadOverviewHeader.TEILER }}
-                    </th>
-                    <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
-                        scope="col">
-                      {{ BridgeheadOverviewHeader.USER_ACCESS }}
-                    </th>
-                    <th class="status-table-header"
-                        v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">
-                      DataSHIELD Status
-                    </th>
-                    <th class="status-table-header"
-                        v-if="visibleBridgeheads?.length == 1 && hasProjectType(project, ProjectType.RESEARCH_ENVIRONMENT)"
-                        scope="col">
-                      Files in Research Environment
-                    </th>
-                    <th v-if="visibleBridgeheads?.length == 1 && currentUser"
-                        class="status-table-header" scope="col">
-                      {{
-                        (hasProjectType(project, ProjectType.DATASHIELD) && project?.state != ProjectState.FINAL) ? 'Script' : 'Results'
-                      }}
-                      Acceptance
-                    </th>
-                    <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
-                        scope="col">
-                      {{ BridgeheadOverviewHeader.APPLICANT_RESULTS_ACCEPTANCE }}
-                    </th>
-                    <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
-                        scope="col">
-                      {{ BridgeheadOverviewHeader.REPORT_OR_PUBLICATION }}
-                    </th>
-                    <th class="status-table-header" scope="col">Applicant</th>
-                    <th class="status-table-header" scope="col">Created at</th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  <tr>
-                    <td class="clickable" @click="currentMenuStep = MenuStep.REQUEST">
-                      {{ project ? project.label : '' }}
-                    </td>
-                    <td>
-                      {{ project ? project.code : '' }}
-                    </td>
-                    <td v-if="visibleBridgeheads?.length == 1">
-                      <div>
-                        <div v-if="existsVotum" class="states-circle-container">
-                          <div class="state_circle green"></div>
-                          <DownloadButton
-                              :context="context"
-                              :project-manager-backend-service="projectManagerBackendService"
-                              icon-class="bi bi-download"
-                              button-class="download-button"
-                              :module="Module.PROJECT_DOCUMENTS_MODULE"
-                              :action="Action.DOWNLOAD_VOTUM_ACTION"
-                          />
+
+                <div class="panel-card status-pipeline-card" v-if="visibleBridgeheads?.length === 1 && activeBridgehead">
+                  <div class="panel-header">Status</div>
+                  <div class="pipeline-row" :ref="setPipelineRowRef">
+                    <button v-if="statusPipelineSteps.length > pipelineStepsShown" type="button"
+                            class="pipeline-arrow" :disabled="effectivePipelineScrollIndex === 0"
+                            aria-label="Show earlier steps" @click="scrollPipeline('left')">
+                      <i class="bi bi-caret-left-fill"></i>
+                    </button>
+                    <div class="pipeline">
+                      <div v-for="(step, index) in visiblePipelineSteps" :key="step.key"
+                           class="pipeline-step" :class="step.visual">
+                        <div v-if="index > 0" class="pipeline-line" :class="{ done: step.visual === 'done' }"></div>
+                        <div v-if="step.visual === 'next'" class="pipeline-next-chip">Next</div>
+                        <div class="pipeline-node" :class="step.visual"
+                             data-toggle="tooltip" data-placement="top" :title="step.tooltip ?? undefined">
+                          <svg v-if="step.visual === 'done'" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg>
+                          <svg v-else-if="step.visual === 'failed'" viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+                          <svg v-else-if="step.visual === 'warning'" viewBox="0 0 16 16" width="2" height="10" fill="#fff"><rect x="0" y="0" width="2" height="7"/><rect x="0" y="9" width="2" height="2"/></svg>
                         </div>
-                        <div v-else-if="existsVotumForAllBridgeheads"
-                             class="states-circle-container">
-                          <div class="state_circle green"></div>
-                          <DownloadButton
-                              :context="context"
-                              :project-manager-backend-service="projectManagerBackendService"
-                              icon-class="bi bi-download"
-                              button-class="download-button"
-                              :module="Module.PROJECT_DOCUMENTS_MODULE"
-                              :action="Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION"
-                          />
-                        </div>
-                        <div v-else class="states-circle-container">
-                          <div class="state_circle pending"/>
-                        </div>
+                        <div class="pipeline-label">{{ step.label }}</div>
+                        <DownloadButton
+                            v-if="step.downloadAction"
+                            :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            icon-class="bi bi-download"
+                            button-class="pipeline-download-button"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE"
+                            :action="step.downloadAction"
+                        />
                       </div>
-                    </td>
-                    <td v-if="visibleBridgeheads?.length === 1 && activeBridgehead">
-                      <div
-                          v-for="{ state, types } in mergedQueryStates "
-                          :key="state"
-                          class="state_circle"
-                          :class="state.toLowerCase()"
-                          data-toggle="tooltip"
-                          data-placement="top"
-                          :title="types.join(', ')"
-                      ></div>
-                    </td>
-                    <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
-                      <div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()"
-                           data-toggle="tooltip"
-                           data-placement="top" :title="activeBridgehead?.state ?? undefined"></div>
-                    </td>
-                    <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus">
-                      <div class="state_circle"
-                           :class="dataShieldStatus?.project_status.toLowerCase()"
-                           data-toggle="tooltip" data-placement="top"
-                           :title="dataShieldStatus?.project_status"></div>
-                    </td>
-                    <td v-if="visibleBridgeheads?.length == 1 && hasProjectType(project, ProjectType.RESEARCH_ENVIRONMENT)">
-                      {{ areExportFilesTransferredToResearchEnvironment }}
-                    </td>
-                    <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser">
-                      <div class="state_circle" :class="currentUser?.projectState.toLowerCase()"
-                           data-toggle="tooltip"
-                           data-placement="top" :title="currentUser.projectState"></div>
-                    </td>
-                    <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead">
-                      <div class="state_circle" :class="creatorAcceptance.toLowerCase()"
-                           data-toggle="tooltip"
-                           data-placement="top" :title="creatorAcceptance ?? undefined"></div>
-                    </td>
-                    <td v-if="visibleBridgeheads?.length == 1">
-                      <div>
-                        <div v-if="existsFinalReport || existsPublication" class="states-circle-container">
-                          <div class="state_circle green"></div>
-                          <DownloadButton
-                              :context="context"
-                              :project-manager-backend-service="projectManagerBackendService"
-                              icon-class="bi bi-download"
-                              button-class="download-button"
-                              :module="Module.PROJECT_DOCUMENTS_MODULE"
-                              :action="(existsPublication) ? Action.DOWNLOAD_PUBLICATION_ACTION : Action.DOWNLOAD_FINAL_REPORT_ACTION"
-                          />
-                        </div>
-                        <div v-else class="states-circle-container">
-                          <div class="state_circle created"/>
-                        </div>
-                      </div>
-                    </td>
-                    <td style="display:flex;">
-                      <UserAndEmail
-                          :first-name="project?.creatorName"
-                          :email="project?.creatorEmail"
-                      />
-                    </td>
-                    <td>{{
-                        project && project.createdAt ? convertDate(project.createdAt) : ''
-                      }}
-                    </td>
-                  </tr>
-                  </tbody>
-                </table>
+                    </div>
+                    <button v-if="statusPipelineSteps.length > pipelineStepsShown" type="button"
+                            class="pipeline-arrow"
+                            :disabled="effectivePipelineScrollIndex >= (statusPipelineSteps.length - pipelineStepsShown)"
+                            aria-label="Show later steps" @click="scrollPipeline('right')">
+                      <i class="bi bi-caret-right-fill"></i>
+                    </button>
+                  </div>
+                </div>
                 <br/>
                 <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
                                     :project-manager-backend-service="projectManagerBackendService"
@@ -208,7 +127,6 @@
                                     :existsFinalReport="existsFinalReport"
                                     :bridgeheads="visibleBridgeheads"
                                     :activeBridgehead="activeBridgehead"/>
-              </div>
             </div>
             <!-- TODO: Restore creator access to this Actions box; see plans/2026-09-08-plan-restore-project-actions-for-creators.md. -->
             <div
@@ -835,11 +753,23 @@ interface ProjectFieldRenderBlock {
 
 type BlockMetadata = ProjectField["block"];
 
+// The Status panel reads as a lifecycle pipeline rather than independent
+// facts: each step's own true color (done/failed/warning/grey) matches the
+// same state_circle.css classes used everywhere else in the app - see
+// statusPipelineSteps. "next" vs. "future" only distinguishes among grey
+// (untouched) steps; done/failed/warning always show as themselves.
+type PipelineStepVisual = 'done' | 'failed' | 'warning' | 'next' | 'future';
+
+interface PipelineStep {
+  key: string;
+  label: string;
+  visual: PipelineStepVisual;
+  tooltip?: string;
+  downloadAction?: Action;
+}
+
 export default defineComponent({
   computed: {
-    BridgeheadOverviewHeader() {
-      return BridgeheadOverviewHeader
-    },
     ProjectState() {
       return ProjectState
     },
@@ -864,11 +794,173 @@ export default defineComponent({
     Module() {
       return Module
     },
-    ProjectType() {
-      return ProjectType
-    },
     projectFieldRenderBlock(): ProjectFieldRenderBlock[] {
       return this.fetchProjectFieldRenderBlocks();
+    },
+    // Same underlying data and v-if conditions as the old single-row status
+    // table - see the Classification comment below for the color mapping.
+    statusPipelineSteps(): PipelineStep[] {
+      if (!this.activeBridgehead) return [];
+
+      // Same four colors state_circle.css already uses everywhere else in the
+      // app: grey (no data / not started yet), warning/amber (in progress,
+      // awaiting a decision or action), done/green, failed/red. Every field
+      // below is classified into these exact buckets - nothing here invents a
+      // new color rule, it mirrors the existing CSS classes.
+      type Classification = 'done' | 'failed' | 'warning' | 'grey';
+      const classifyStateCircle = (value?: string | null): Classification => {
+        const normalized = value?.toLowerCase();
+        if (!normalized) return 'grey';
+        if (['accepted', 'with_data', 'finished'].includes(normalized)) return 'done';
+        if (['rejected', 'error'].includes(normalized)) return 'failed';
+        if (['to_be_sent', 'to_be_sent_and_executed', 'sending', 'sending_and_executing',
+          'export_running_1', 'export_running_2', 'request_changes', 'not_found',
+          'inactive', 'expired'].includes(normalized)) return 'warning';
+        return 'grey';
+      };
+
+      const classifiedSteps: { key: string; label: string; classification: Classification; tooltip?: string; downloadAction?: Action }[] = [];
+
+      // The ethics vote has no failure state, only "not yet received" vs.
+      // "received" - and "not yet received" is shown amber, not grey, matching
+      // the `state_circle pending` treatment BridgeheadOverview.vue already
+      // uses for the same fact.
+      const votumDone = this.existsVotum || this.existsVotumForAllBridgeheads;
+      classifiedSteps.push({
+        key: 'votum',
+        label: BridgeheadOverviewHeader.VOTUM,
+        classification: votumDone ? 'done' : 'warning',
+        downloadAction: votumDone
+            ? (this.existsVotum ? Action.DOWNLOAD_VOTUM_ACTION : Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION)
+            : undefined
+      });
+
+      // A project can query several project types at once, each with its own
+      // state; one failure taints the step, "done" needs every type finished,
+      // any type actively in progress makes the whole step amber.
+      const teilerClassifications = this.mergedQueryStates.map(group => classifyStateCircle(group.state));
+      let teilerClassification: Classification;
+      if (teilerClassifications.includes('failed')) teilerClassification = 'failed';
+      else if (teilerClassifications.includes('warning')) teilerClassification = 'warning';
+      else if (teilerClassifications.length > 0 && teilerClassifications.every(c => c === 'done')) teilerClassification = 'done';
+      else teilerClassification = 'grey';
+      classifiedSteps.push({
+        key: 'teiler',
+        label: BridgeheadOverviewHeader.TEILER,
+        classification: teilerClassification,
+        tooltip: this.mergedQueryStates.map(group => `${group.types.join(', ')}: ${group.state}`).join(' | ') || undefined
+      });
+
+      classifiedSteps.push({
+        key: 'user_access',
+        label: BridgeheadOverviewHeader.USER_ACCESS,
+        classification: classifyStateCircle(this.activeBridgehead?.state),
+        tooltip: this.activeBridgehead?.state ?? undefined
+      });
+
+      if (this.dataShieldStatus) {
+        classifiedSteps.push({
+          key: 'datashield',
+          label: 'DataSHIELD Status',
+          classification: classifyStateCircle(this.dataShieldStatus.project_status),
+          tooltip: this.dataShieldStatus.project_status
+        });
+      }
+
+      if (hasProjectType(this.project, ProjectType.RESEARCH_ENVIRONMENT)) {
+        classifiedSteps.push({
+          key: 'research_environment_files',
+          label: 'Files in Research Environment',
+          classification: this.areExportFilesTransferredToResearchEnvironment ? 'done' : 'grey'
+        });
+      }
+
+      if (this.currentUser) {
+        classifiedSteps.push({
+          key: 'user_acceptance',
+          label: (hasProjectType(this.project, ProjectType.DATASHIELD) && this.project?.state !== ProjectState.FINAL)
+              ? 'Script Acceptance' : 'Results Acceptance',
+          classification: classifyStateCircle(this.currentUser.projectState),
+          tooltip: this.currentUser.projectState
+        });
+      }
+
+      classifiedSteps.push({
+        key: 'creator_acceptance',
+        label: BridgeheadOverviewHeader.APPLICANT_RESULTS_ACCEPTANCE,
+        classification: classifyStateCircle(this.creatorAcceptance),
+        tooltip: this.creatorAcceptance ?? undefined
+      });
+
+      const reportDone = this.existsFinalReport || this.existsPublication;
+      classifiedSteps.push({
+        key: 'report',
+        label: BridgeheadOverviewHeader.REPORT_OR_PUBLICATION,
+        classification: reportDone ? 'done' : 'grey',
+        downloadAction: reportDone
+            ? (this.existsPublication ? Action.DOWNLOAD_PUBLICATION_ACTION : Action.DOWNLOAD_FINAL_REPORT_ACTION)
+            : undefined
+      });
+
+      // "Next" only ever applies to a still-grey (truly untouched) step, and
+      // specifically the first grey step found after the last step that has
+      // any activity at all (done/failed/warning) - not simply the first grey
+      // step in list order, since steps don't always progress strictly
+      // left-to-right (e.g. several bridgeheads/types can advance out of
+      // sync). Every other grey step is "future".
+      let lastActiveIndex = -1;
+      classifiedSteps.forEach((step, index) => {
+        if (step.classification !== 'grey') lastActiveIndex = index;
+      });
+      let nextIndex = -1;
+      for (let i = lastActiveIndex + 1; i < classifiedSteps.length; i++) {
+        if (classifiedSteps[i].classification === 'grey') {
+          nextIndex = i;
+          break;
+        }
+      }
+
+      return classifiedSteps.map((step, index) => {
+        let visual: PipelineStepVisual;
+        if (step.classification === 'done') visual = 'done';
+        else if (step.classification === 'failed') visual = 'failed';
+        else if (step.classification === 'warning') visual = 'warning';
+        else visual = index === nextIndex ? 'next' : 'future';
+        return {key: step.key, label: step.label, visual, tooltip: step.tooltip, downloadAction: step.downloadAction};
+      });
+    },
+    visiblePipelineSteps(): PipelineStep[] {
+      const start = this.effectivePipelineScrollIndex;
+      return this.statusPipelineSteps.slice(start, start + this.pipelineStepsShown);
+    },
+    // pipelineScrollIndex is null until the user clicks an arrow - until then,
+    // the window auto-centers on the "Next" step, so overflow never hides the
+    // one thing the user actually needs to see (see the plan's scrolling decision).
+    effectivePipelineScrollIndex(): number {
+      const steps = this.statusPipelineSteps;
+      const maxStart = Math.max(0, steps.length - this.pipelineStepsShown);
+      if (this.pipelineScrollIndex !== null) {
+        return Math.min(this.pipelineScrollIndex, maxStart);
+      }
+      const nextIndex = steps.findIndex(step => step.visual === 'next');
+      if (nextIndex === -1) return 0;
+      const centered = nextIndex - Math.floor((this.pipelineStepsShown - 1) / 2);
+      return Math.min(Math.max(centered, 0), maxStart);
+    },
+    // How many pipeline steps fit the "Status" card's current width, so the
+    // arrows only appear when steps would actually overflow - mirrors
+    // .pipeline-row/.pipeline-step's own CSS constants (kept in sync there).
+    pipelineStepsShown(): number {
+      const totalSteps = this.statusPipelineSteps.length;
+      if (totalSteps === 0) return 0;
+      if (this.pipelineRowWidth === 0) return Math.min(totalSteps, 5); // not measured yet
+      const STEP_MIN_WIDTH = 84; // .pipeline-step's min-width
+      const ROW_HORIZONTAL_PADDING = 40; // .pipeline-row's own 20px left/right padding
+      const ARROWS_RESERVED_WIDTH = 72; // 2 * 30px arrow buttons + 2 * 6px row gap
+      const availableForSteps = this.pipelineRowWidth - ROW_HORIZONTAL_PADDING;
+      if (totalSteps * STEP_MIN_WIDTH <= availableForSteps) return totalSteps;
+      const availableWithArrows = availableForSteps - ARROWS_RESERVED_WIDTH;
+      return Math.max(1, Math.floor(availableWithArrows / STEP_MIN_WIDTH));
     }
   },
   props: {
@@ -927,6 +1019,10 @@ export default defineComponent({
       showRightPanel: false,
       existsVotum: false,
       mergedQueryStates: [] as { state: string; types: ProjectType[] }[],
+      pipelineScrollIndex: null as number | null,
+      pipelineRowWidth: 0,
+      pipelineResizeObserver: undefined as ResizeObserver | undefined,
+      observedPipelineRow: undefined as HTMLElement | undefined,
       existsProjectDescription: false,
       existsVotumForAllBridgeheads: false,
       existsAuthenticationScript: false,
@@ -980,6 +1076,7 @@ export default defineComponent({
       );
       this.context = new ProjectManagerContext(this.projectCode, newValue);
       this.creatorAcceptance = (this.project?.creatorState) ? this.project.creatorState : UserProjectState.CREATED;
+      this.pipelineScrollIndex = null;
     },
     visibleBridgeheads(newValue: Bridgehead[], oldValue: Bridgehead[]) {
       const visibleBridgeheadIds = new Set(newValue.map(bridgehead => bridgehead.bridgehead));
@@ -1046,21 +1143,63 @@ export default defineComponent({
     }
   },
 
+  created() {
+    // Created here (not mounted()) so the observer already exists by the time
+    // setPipelineRowRef can first fire - the "Status" card only appears once
+    // project data has loaded asynchronously, which is always after created().
+    if (typeof ResizeObserver !== 'undefined') {
+      this.pipelineResizeObserver = new ResizeObserver(() => this.updatePipelineRowWidth());
+    }
+  },
+
   mounted() {
     this.initializePollingService();
     this.pollingService?.execute();
     this.fetchFeasibilityPageSize();
     this.fetchFormFieldDescriptionCollapsedLines();
     this.fetchCreatedAtDisplayFormat();
+    // Backstop alongside the ResizeObserver above: a plain window resize
+    // (dragging the browser narrower/wider) always changes the row's width
+    // too, so this re-measures independently of whether the observer is
+    // currently attached to anything.
+    window.addEventListener('resize', this.updatePipelineRowWidth);
   },
 
   beforeUnmount() {
     this.pollingService?.stop();
+    this.pipelineResizeObserver?.disconnect();
+    window.removeEventListener('resize', this.updatePipelineRowWidth);
   },
 
   methods: {
     hasProjectType,
     getMergedQueryStates,
+
+    updatePipelineRowWidth() {
+      this.pipelineRowWidth = this.observedPipelineRow ? this.observedPipelineRow.clientWidth : 0;
+    },
+
+    // Bound as a Vue function :ref on .pipeline-row, so it fires exactly when
+    // that element (which only exists while the "Status" card's v-if is true)
+    // is inserted or removed - more reliable than guessing which data change
+    // (bridgehead switch, tab switch, initial async load, ...) should trigger
+    // a re-measure, since this fires for all of them automatically.
+    setPipelineRowRef(el: Element | null) {
+      const htmlEl = (el as HTMLElement | null) ?? undefined;
+      if (htmlEl === this.observedPipelineRow) return;
+      this.pipelineResizeObserver?.disconnect();
+      this.observedPipelineRow = htmlEl;
+      if (htmlEl) this.pipelineResizeObserver?.observe(htmlEl);
+      this.updatePipelineRowWidth();
+    },
+
+    scrollPipeline(direction: 'left' | 'right') {
+      const maxStart = Math.max(0, this.statusPipelineSteps.length - this.pipelineStepsShown);
+      const current = this.effectivePipelineScrollIndex;
+      this.pipelineScrollIndex = direction === 'left'
+          ? Math.max(0, current - 1)
+          : Math.min(maxStart, current + 1);
+    },
 
     sortProjectFieldsByLayout(): ProjectField[][] {
       const projectFields = this.projectFields as ProjectField[];
@@ -1690,6 +1829,10 @@ export default defineComponent({
 
     convertDate(date: string | Date) {
       return formatDisplayDate(date, this.createdAtDisplayFormat)
+    },
+
+    projectStateLabel(state: ProjectState) {
+      return state.charAt(0) + state.slice(1).toLowerCase();
     },
 
     async initializeProjectRelatedData() {
@@ -3094,13 +3237,199 @@ export default defineComponent({
 .info-container {
   display: flex;
   flex-direction: column;
-  background-color: white;
-  /*border-radius: 10px;
-  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
-  0 1px 1px 0 rgba(0, 0, 0, 0.14),
-  0 1px 3px 0 rgba(0, 0, 0, 0.12);
-*/
   margin-bottom: 1.5%;
+}
+
+/*
+ * "At a Glance" + "Status" panels (2026-09-22): see
+ * project-manager-ui/plans/2026-09-21-plan-unify-table-design.md, Step 3.
+ * Each is its own rounded/shadowed panel-card (deliberately not Bootstrap's
+ * .card, which the bridgehead-info card above already uses with its own
+ * defaults) with a dark-blue header matching .box-header's #2655a2.
+ */
+.panel-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(31, 42, 55, .08);
+  overflow: hidden;
+}
+.at-a-glance-card {
+  margin-bottom: 16px;
+}
+.panel-card .panel-header {
+  padding: 14px 22px;
+  background: #2655a2;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.at-a-glance-strip {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.4fr 1fr 1fr;
+}
+.glance-cell {
+  padding: 16px 22px;
+  border-right: 1px solid #d7e2ed;
+}
+.glance-cell:last-child {
+  border-right: none;
+}
+.glance-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #5b6b7c;
+  margin-bottom: 4px;
+}
+.glance-value {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.glance-value.muted {
+  color: #5b6b7c;
+}
+.glance-title {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #1f2a37;
+  text-decoration: none;
+}
+.glance-title:hover {
+  color: #2655a2;
+  text-decoration: underline;
+}
+.phase-pill {
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  background: #dce9f4;
+  color: #2655a2;
+  white-space: nowrap;
+}
+
+/* Status pipeline: sequential milestones (done -> next -> future), not
+   independent facts - a flat grid loses that sense of order/progress. */
+.pipeline-row {
+  display: flex;
+  align-items: center;
+  padding: 22px 20px;
+  gap: 6px;
+}
+.pipeline {
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+.pipeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 84px;
+  position: relative;
+}
+.pipeline-line {
+  position: absolute;
+  top: 13px;
+  left: -50%;
+  width: 100%;
+  height: 2px;
+  background: #e3e6ea;
+  z-index: 0;
+}
+.pipeline-line.done {
+  background: #3f8f45;
+}
+.pipeline-node {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-sizing: border-box;
+}
+.pipeline-node.done {
+  background: #3f8f45;
+}
+.pipeline-node.failed {
+  background: #c0504d;
+}
+.pipeline-node.warning {
+  background: #e0ab18;
+}
+.pipeline-node.next {
+  background: #fff;
+  border: 2px solid #2655a2;
+  box-shadow: 0 0 0 4px #e9eef8;
+}
+.pipeline-node.future {
+  background: #e3e6ea;
+}
+.pipeline-next-chip {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #2655a2;
+  background: #dce9f4;
+  padding: 1px 7px;
+  border-radius: 999px;
+  margin-bottom: 5px;
+}
+.pipeline-label {
+  margin-top: 9px;
+  font-size: 10.5px;
+  text-align: center;
+  color: #5b6b7c;
+  line-height: 1.35;
+  max-width: 92px;
+}
+.pipeline-step.next .pipeline-label {
+  color: #2655a2;
+  font-weight: 700;
+}
+.pipeline-arrow {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid #d7e2ed;
+  background: #fff;
+  color: #5b6b7c;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.pipeline-arrow:hover:not(:disabled) {
+  border-color: #2655a2;
+  color: #2655a2;
+}
+.pipeline-arrow:disabled {
+  opacity: .4;
+  cursor: default;
+}
+.pipeline-step :deep(.pipeline-download-button) {
+  margin-top: 4px;
+  padding: 0 !important;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  color: #5b6b7c !important;
+}
+.pipeline-step :deep(.pipeline-download-button:hover) {
+  color: #2655a2 !important;
 }
 
 .data-container {
@@ -3549,11 +3878,6 @@ export default defineComponent({
   display: flex;
 }
 
-.status-table-header {
-  background-color: #f2f2f2;
-  vertical-align: middle;
-}
-
 .button-group-box {
   border: 1px solid lightgrey;
   border-radius: 5px;
@@ -3582,14 +3906,6 @@ export default defineComponent({
   top: -9px;
 }
 
-.table-overview td {
-  vertical-align: middle;
-}
-
-.state_circle {
-  margin: 10px auto;
-}
-
 .notification-tab {
   padding: 5px 8% 5px 8%;
   background-color: #e8f8fd;
@@ -3602,11 +3918,6 @@ export default defineComponent({
 .notification-tab.active {
   font-weight: bold;
   background-color: white;
-}
-
-.states-circle-container {
-  display: flex;
-  justify-content: center;
 }
 
 .project-field-header {

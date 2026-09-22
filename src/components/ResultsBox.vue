@@ -13,16 +13,16 @@ import {
   User
 } from "@/services/projectManagerBackendService";
 import CredentialsSharingTool from "@/components/CredentialsSharingTool.vue";
-import "@/assets/styles/state-circle.css"
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
+import StatusDot from "@/components/StatusDot.vue";
 import {EmailRole} from "@/services/emailRole";
 import {PropType, watch} from "vue";
 
 
 @Options({
   name: "ResultsBox",
-  components: {ProjectManagerButton, UserAndEmail, CredentialsSharingTool},
+  components: {ProjectManagerButton, UserAndEmail, CredentialsSharingTool, StatusDot},
   props: {
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
     context: {type: Object as PropType<ProjectManagerContext>, required: true},
@@ -418,15 +418,12 @@ export default class ResultsBox extends Vue {
           </td>
           <td>
             <div class="states-circle-container">
-              <div class="state_circle"
-                   :class="fetchUserAccess(result)?.toLowerCase()"
-                   :title="fetchUserAccess(result)"/>
+              <StatusDot :state="fetchUserAccess(result)" :title="fetchUserAccess(result)" />
             </div>
           </td>
           <td>
             <div class="states-circle-container">
-              <div class="state_circle" :class="fetchCreatorState(result)?.toLowerCase()"
-                   :title="fetchCreatorState(result)"/>
+              <StatusDot :state="fetchCreatorState(result)" :title="fetchCreatorState(result)" />
             </div>
           </td>
           <td v-if="actionButtons.length > 0">

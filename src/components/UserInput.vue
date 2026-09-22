@@ -10,13 +10,13 @@ import {
   ProjectManagerContext,
   User
 } from "@/services/projectManagerBackendService";
-import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
+import StatusDot from "@/components/StatusDot.vue";
 import {PropType, watch} from "vue";
 
 @Options({
   name: "UserInput",
-  components: {UserAndEmail},
+  components: {UserAndEmail, StatusDot},
   props: {
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
     projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
@@ -191,7 +191,7 @@ export default class UserInput extends Vue {
           <!-- Display user's state in the second column -->
           <td>
             <div class="states-circle-container">
-              <div class="state_circle" :class="user?.projectState.toLowerCase()"/>
+              <StatusDot :state="user?.projectState" :title="user?.projectState" />
             </div>
           </td>
         </tr>
@@ -311,11 +311,6 @@ export default class UserInput extends Vue {
 .states-circle-container {
   display: flex;
   justify-content: center;
-}
-
-.state_circle {
-  width: 20px;
-  height: 20px;
 }
 
 .error-message {

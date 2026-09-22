@@ -1,6 +1,6 @@
 <template>
-  <div v-if="columns.length" class="feasibility-table-wrapper">
-    <table class="feasibility-table">
+  <div class="feasibility-table-wrapper">
+    <table v-if="bridgeheads.length" class="feasibility-table">
       <thead>
         <tr>
           <th :rowspan="hasAnyBreakdown ? 2 : 1" class="feasibility-sortable" @click="sortBy('site')">
@@ -12,6 +12,7 @@
               {{ item.label }}{{ sortIndicator(item.label) }}
             </th>
           </template>
+          <th v-if="!columns.length">Statistics</th>
         </tr>
         <tr v-if="hasAnyBreakdown">
           <template v-for="item in topLevelItems" :key="item.label">
@@ -38,14 +39,14 @@
           </td>
           <td
               v-if="hasError(bridgehead.bridgehead)"
-              :colspan="columns.length"
+              :colspan="Math.max(columns.length, 1)"
               class="feasibility-error-cell"
           >
             Oops! Something went wrong...
           </td>
           <td
               v-else-if="isLoading(bridgehead.bridgehead)"
-              :colspan="columns.length"
+              :colspan="Math.max(columns.length, 1)"
               class="feasibility-loading"
           >
             loading...

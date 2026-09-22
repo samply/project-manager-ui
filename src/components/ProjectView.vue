@@ -415,7 +415,7 @@
                             <div :class="row.field.length > 1 ? 'project-field-grid' : ''">
                             <template v-for="item in row.field">
                             <div
-                                v-if="row.shouldRenderRow && showProjectFeasibilityResults && item.fixedFieldKey === FixedFormFieldKey.QUERIED_SITES"
+                                v-if="row.shouldRenderRow && feasibilityEnabled && item.fixedFieldKey === FixedFormFieldKey.QUERIED_SITES"
                                 class="project-feasibility"
                             >
                               <div class="project-feasibility-header">
@@ -767,7 +767,6 @@ import {
   FormTitle,
   getAllProjectTypes,
   getMergedQueryStates,
-  hasFeasibilityResult,
   hasProjectType,
   hasValidOutputs,
   isQueryOnTheWay,
@@ -838,11 +837,6 @@ type BlockMetadata = ProjectField["block"];
 
 export default defineComponent({
   computed: {
-    showProjectFeasibilityResults(): boolean {
-      return this.visibleBridgeheads.some(bridgehead =>
-          hasFeasibilityResult(this.feasibilityResults.get(bridgehead.bridgehead))
-      );
-    },
     BridgeheadOverviewHeader() {
       return BridgeheadOverviewHeader
     },
@@ -907,6 +901,7 @@ export default defineComponent({
       activeBridgeheadIndex: 0,
       bridgeheads: [] as Bridgehead[],
       visibleBridgeheads: [] as Bridgehead[],
+      feasibilityEnabled: false,
       feasibilityResults: new Map<string, FeasibilityResult>(),
       feasibilityErrors: new Set<string>(),
       feasibilityPageSize: 10,
@@ -995,6 +990,8 @@ export default defineComponent({
       previousBridgeheadIds.forEach(bridgehead => {
         if (!visibleBridgeheadIds.has(bridgehead)) this.feasibilityResults.delete(bridgehead);
       });
+
+      if (!this.feasibilityEnabled) return;
 
       newValue
           .filter(bridgehead => !previousBridgeheadIds.has(bridgehead.bridgehead))
@@ -1444,9 +1441,11 @@ export default defineComponent({
       // to REVIEW, before the query is sent to the sites.
       this.feasibilityResults.clear();
       this.feasibilityErrors.clear();
-      this.visibleBridgeheads.forEach(bridgehead => {
-        void this.initializeFeasibilityResult(bridgehead).catch(() => undefined);
-      });
+      if (this.feasibilityEnabled) {
+        this.visibleBridgeheads.forEach(bridgehead => {
+          void this.initializeFeasibilityResult(bridgehead).catch(() => undefined);
+        });
+      }
       this.refreshContext();
     },
 
@@ -1490,11 +1489,39 @@ export default defineComponent({
           .then(() => this.refreshBridgeheadsAndContext());
     },
 
-    hasFeasibilityResult(result: FeasibilityResult | undefined): boolean {
-      return hasFeasibilityResult(result);
+    async initializeFeasibilityAvailability(): Promise<void> {
+      const wasEnabled = this.feasibilityEnabled;
+      const availabilityActionActive = await this.projectManagerBackendService.isModuleActionActive(
+          Module.PROJECT_BRIDGEHEAD_MODULE,
+          Action.IS_FEASIBILITY_ENABLED_ACTION
+      );
+      const fetchActionActive = await this.projectManagerBackendService.isModuleActionActive(
+          Module.PROJECT_BRIDGEHEAD_MODULE,
+          Action.FETCH_FEASIBILITY_ACTION
+      );
+      const backendEnabled = availabilityActionActive && Boolean(
+          await this.projectManagerBackendService.fetchData(
+              Module.PROJECT_BRIDGEHEAD_MODULE,
+              Action.IS_FEASIBILITY_ENABLED_ACTION,
+              this.context,
+              new Map()
+          )
+      );
+      this.feasibilityEnabled = backendEnabled && fetchActionActive;
+
+      if (!this.feasibilityEnabled) {
+        this.feasibilityResults.clear();
+        this.feasibilityErrors.clear();
+      } else if (!wasEnabled) {
+        this.visibleBridgeheads.forEach(bridgehead => {
+          void this.initializeFeasibilityResult(bridgehead).catch(() => undefined);
+        });
+      }
     },
 
-    initializeFeasibilityResult(bridgehead: Bridgehead) {
+    initializeFeasibilityResult(bridgehead: Bridgehead): Promise<void> {
+      if (!this.feasibilityEnabled) return Promise.resolve();
+
       const bridgeheadId = bridgehead.bridgehead;
       const bridgeheadContext = new ProjectManagerContext(this.projectCode, bridgehead);
       this.feasibilityErrors.delete(bridgeheadId);
@@ -1687,6 +1714,8 @@ export default defineComponent({
           this.refreshContext();
           return;
         }
+
+        await this.initializeFeasibilityAvailability();
 
         await Promise.all([
           this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), async (result: Bridgehead[]) => {

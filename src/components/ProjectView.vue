@@ -50,9 +50,6 @@
                   <tr>
                     <th class="status-table-header" scope="col">Title</th>
                     <th class="status-table-header" scope="col">Request ID</th>
-                    <th v-if="singleBridgeheadFeasibilityResult" class="status-table-header" scope="col">
-                      Statistics
-                    </th>
                     <th v-if="visibleBridgeheads?.length == 1" class="status-table-header"
                         scope="col">
                       {{ BridgeheadOverviewHeader.VOTUM }}
@@ -103,9 +100,6 @@
                     </td>
                     <td>
                       {{ project ? project.code : '' }}
-                    </td>
-                    <td v-if="singleBridgeheadFeasibilityResult">
-                      <FeasibilityTotals :result="singleBridgeheadFeasibilityResult"/>
                     </td>
                     <td v-if="visibleBridgeheads?.length == 1">
                       <div>
@@ -206,7 +200,6 @@
                 <br/>
                 <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
                                     :project-manager-backend-service="projectManagerBackendService"
-                                    :feasibility-results="feasibilityResults"
                                     :call-update-active-bridgehead="updateActiveBridgehead"
                                     :context="context"
                                     :project="project"
@@ -806,7 +799,6 @@ import UploadButton from "@/components/UploadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
 import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
-import FeasibilityTotals from "@/components/FeasibilityTotals.vue";
 import FeasibilityTable from "@/components/FeasibilityTable.vue";
 import MandatoryFieldMarker from "@/components/MandatoryFieldMarker.vue";
 import {DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES, getConfig} from "@/services/configLoader";
@@ -846,12 +838,6 @@ type BlockMetadata = ProjectField["block"];
 
 export default defineComponent({
   computed: {
-    singleBridgeheadFeasibilityResult(): FeasibilityResult | undefined {
-      if (this.visibleBridgeheads.length !== 1) return undefined;
-
-      const result = this.feasibilityResults.get(this.visibleBridgeheads[0].bridgehead);
-      return hasFeasibilityResult(result) ? result : undefined;
-    },
     showProjectFeasibilityResults(): boolean {
       return this.visibleBridgeheads.some(bridgehead =>
           hasFeasibilityResult(this.feasibilityResults.get(bridgehead.bridgehead))
@@ -899,7 +885,6 @@ export default defineComponent({
   },
   components: {
     MandatoryFieldMarker,
-    FeasibilityTotals,
     FeasibilityTable,
     DownloadFormTemplatePdfButtons,
     DownloadButton,

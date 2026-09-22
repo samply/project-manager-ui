@@ -150,23 +150,6 @@
 
 
       </tr>
-      <tr v-if="feasibilityResultCount">
-        <td class="header-cell">Statistics</td>
-        <td class="header-summary-cell">
-          {{ feasibilityResultCount }} / {{ bridgeheads.length }} sites
-        </td>
-        <td
-            v-for="bridgehead in bridgeheads.slice(scrollIndex, scrollIndex + numberBridgeheadShown)"
-            :key="bridgehead.bridgehead"
-            class="data-cell"
-            :class="{ 'selected': selectedBridgehead === bridgehead.bridgehead }"
-        >
-          <FeasibilityTotals
-              v-if="getFeasibilityResult(bridgehead)"
-              :result="getFeasibilityResult(bridgehead)!"
-          />
-        </td>
-      </tr>
       </tbody>
     </table>
     <button v-if="bridgeheads.length > numberBridgeheadShown" title="right"
@@ -183,10 +166,8 @@ import {
   Action,
   Bridgehead,
   DataShieldProjectStatus,
-  FeasibilityResult,
   getAllProjectTypes,
   getMergedQueryStates,
-  hasFeasibilityResult,
   hasProjectType,
   Module,
   Project,
@@ -201,7 +182,6 @@ import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
 import '@/assets/styles/state-circle.css'
 import {PropType, watch} from "vue";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
-import FeasibilityTotals from "@/components/FeasibilityTotals.vue";
 
 @Options({
   name: "BridgeheadOverview",
@@ -210,7 +190,7 @@ import FeasibilityTotals from "@/components/FeasibilityTotals.vue";
       return BridgeheadOverview
     }
   },
-  components: {DownloadButton, FeasibilityTotals, BridgeheadContacts},
+  components: {DownloadButton, BridgeheadContacts},
   props: {
     context: {
       type: Object as PropType<ProjectManagerContext>,
@@ -240,10 +220,6 @@ import FeasibilityTotals from "@/components/FeasibilityTotals.vue";
       type: Boolean,
       required: true
     },
-    feasibilityResults: {
-      type: Map as PropType<Map<string, FeasibilityResult>>,
-      required: true
-    },
     callUpdateActiveBridgehead: {
       type: Function as PropType<(param: Bridgehead) => void>,
       required: true
@@ -260,7 +236,6 @@ export default class BridgeheadOverview extends Vue {
   readonly existsVotumForAllBridgeheads!: boolean;
   readonly existsFinalReport!: boolean;
   readonly existsPublication!: boolean;
-  readonly feasibilityResults!: Map<string, FeasibilityResult>;
   readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
 
   Module = Module;
@@ -280,15 +255,6 @@ export default class BridgeheadOverview extends Vue {
   selectedBridgehead: string | null = null;
   scrollIndex = 0;
   numberBridgeheadShown = 4;
-
-  get feasibilityResultCount(): number {
-    return Array.from(this.feasibilityResults.values()).filter(hasFeasibilityResult).length;
-  }
-
-  getFeasibilityResult(bridgehead: Bridgehead): FeasibilityResult | undefined {
-    const result = this.feasibilityResults.get(bridgehead.bridgehead);
-    return hasFeasibilityResult(result) ? result : undefined;
-  }
 
   mounted() {
     // Replace the old @Watch

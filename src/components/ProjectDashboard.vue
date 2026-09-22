@@ -2,15 +2,8 @@
   <div class="main-menu"></div>
   <div style="display: flex; min-height: 100vh;">
     <div class="container custom-width-projects">
-      <div class="row">
-        <div class="box-header"><span>Requests</span></div>
-        <!--<div class="col-md-4 text-end" v-if="isProjectManagerAdmin">
-          <button @click="toggleNotification" class="btn btn-dark notification-button"
-                  style="padding-right:2%; background:none; border:none; color:#007bff"><i style="font-size: x-large" class="bi bi-chat-right-text-fill"></i>
-          </button>
-        </div>-->
-
-      </div>
+      <!-- TODO: restore a notification-toggle entry point in the header when isProjectManagerAdmin is true. -->
+      <div class="box-header"><span>Requests</span></div>
       <div v-if="projectStates.length > 1 || applicants.length > 1 || bridgeheads.length > 1" class="filter-box">
         <select v-if="projectStates.length > 1" v-model="selectedState" class="form-select" @change="changeState()">
           <option value="">All Phases</option>
@@ -30,14 +23,23 @@
         </select>
       </div>
       <div class="table-box">
-        <table class="table table-bordered table-striped table-hover">
+        <table class="requests-table">
           <thead>
           <tr>
-            <th scope="col" @click="toggleSort(ProjectSortField.TITLE)">Title <span v-if="sortBy === ProjectSortField.TITLE">{{ sortIcon(ProjectSortField.TITLE) }}</span></th>
-            <th scope="col" @click="toggleSort(ProjectSortField.REQUEST_ID)">Request ID <span v-if="sortBy === ProjectSortField.REQUEST_ID">{{ sortIcon(ProjectSortField.REQUEST_ID) }}</span></th>
-            <th scope="col" @click="toggleSort(ProjectSortField.PROJECT_CREATOR)">Applicant <span v-if="sortBy === ProjectSortField.PROJECT_CREATOR">{{ sortIcon(ProjectSortField.PROJECT_CREATOR) }}</span></th>
-            <th scope="col" @click="toggleSort(ProjectSortField.CREATED)">Created on <span v-if="sortBy === ProjectSortField.CREATED">{{ sortIcon(ProjectSortField.CREATED) }}</span></th>
-            <th scope="col" @click="toggleSort(ProjectSortField.STATUS)">Phase <span v-if="sortBy === ProjectSortField.STATUS">{{ sortIcon(ProjectSortField.STATUS) }}</span>
+            <th scope="col" @click="toggleSort(ProjectSortField.TITLE)" :class="{ active: sortBy === ProjectSortField.TITLE }">
+              <span class="th-label">Title<svg v-if="sortBy === ProjectSortField.TITLE" class="sort-caret" :class="{ desc: sortDesc }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
+            </th>
+            <th scope="col" @click="toggleSort(ProjectSortField.REQUEST_ID)" :class="{ active: sortBy === ProjectSortField.REQUEST_ID }">
+              <span class="th-label">Request ID<svg v-if="sortBy === ProjectSortField.REQUEST_ID" class="sort-caret" :class="{ desc: sortDesc }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
+            </th>
+            <th scope="col" @click="toggleSort(ProjectSortField.PROJECT_CREATOR)" :class="{ active: sortBy === ProjectSortField.PROJECT_CREATOR }">
+              <span class="th-label">Applicant<svg v-if="sortBy === ProjectSortField.PROJECT_CREATOR" class="sort-caret" :class="{ desc: sortDesc }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
+            </th>
+            <th scope="col" @click="toggleSort(ProjectSortField.CREATED)" :class="{ active: sortBy === ProjectSortField.CREATED }">
+              <span class="th-label">Created on<svg v-if="sortBy === ProjectSortField.CREATED" class="sort-caret" :class="{ desc: sortDesc }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
+            </th>
+            <th scope="col" @click="toggleSort(ProjectSortField.STATUS)" :class="{ active: sortBy === ProjectSortField.STATUS }">
+              <span class="th-label">Phase<svg v-if="sortBy === ProjectSortField.STATUS" class="sort-caret" :class="{ desc: sortDesc }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
             </th>
           </tr>
           </thead>
@@ -53,24 +55,24 @@
                   :email="project?.creatorEmail"
               />
             </td>
-            <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
-            <td>{{ project.state }}</td>
+            <td class="created-cell">{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
+            <td><span class="phase-pill">{{ projectStateLabel(project.state) }}</span></td>
           </tr>
           </tbody>
         </table>
         <div class="pager">
-          <button @click="firstPage" class="btn btn-primary">
-            <i class="bi bi-skip-start-fill" style="font-size: medium"></i>
+          <button @click="firstPage" class="pager-btn" aria-label="First page">
+            <i class="bi bi-skip-start-fill"></i>
           </button>
-          <button @click="previousPage" class="btn btn-primary" style="rotate: 180deg">
-            <i class="bi bi-play-fill" style="font-size: medium"></i>
+          <button @click="previousPage" class="pager-btn" style="rotate: 180deg" aria-label="Previous page">
+            <i class="bi bi-play-fill"></i>
           </button>
           <span>{{ currentPage }} / {{ totalPages }}</span>
-          <button @click="nextPage" class="btn btn-primary">
-            <i class="bi bi-play-fill" style="font-size: medium"></i>
+          <button @click="nextPage" class="pager-btn" aria-label="Next page">
+            <i class="bi bi-play-fill"></i>
           </button>
-          <button @click="lastPage" class="btn btn-primary">
-            <i class="bi bi-skip-end-fill" style="font-size: medium"></i>
+          <button @click="lastPage" class="pager-btn" aria-label="Last page">
+            <i class="bi bi-skip-end-fill"></i>
           </button>
         </div>
       </div>
@@ -182,10 +184,6 @@ export default defineComponent({
       this.currentPage = 1;
       this.fetchProjects();
     },
-    sortIcon(sortBy: ProjectSortField) {
-      return this.sortBy === sortBy ? (this.sortDesc ? '▼' : '▲') : '';
-    },
-
     projectStateLabel(state: ProjectState) {
       return state.charAt(0) + state.slice(1).toLowerCase();
     },
@@ -332,36 +330,43 @@ export default defineComponent({
 </script>
 
 <style scoped>
+/*
+ * Table design unification (2026-09-22): see
+ * project-manager-ui/plans/2026-09-21-plan-unify-table-design.md.
+ * Panel header now reuses ProjectView.vue's .box-header blue (#2655a2)
+ * instead of this component's own light gradient. Column header tint and
+ * the "brand" accent used throughout are derived from that same blue,
+ * rather than introducing a second, slightly different one.
+ */
 .custom-width-projects {
   flex: 1;
   margin-top: 2%;
-  /*border-radius: 10px !important;
+  border-radius: 10px !important;
   box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
   0 1px 1px 0 rgba(0, 0, 0, 0.14),
-  0 1px 3px 0 rgba(0, 0, 0, 0.12);*/
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  overflow: hidden;
 
   background-color: white;
   height: 100%;
 }
-table {
-  border-color: rgba(0,72,156,.95);
-}
-thead > tr > th {
-  background-color: rgba(0,72,156,.95)!important;
-  color: white;
-}
+/* .custom-width-projects is still a Bootstrap .container, which adds its
+   own 0.75rem side padding/gutter. Cancel just that gutter here so the
+   header/filters/table reach the card's rounded edges flush, without
+   touching the container's own width-capping/centering behavior. */
 .box-header {
-  padding: 10px 30px 10px 2%;
-  color: rgb(0, 56, 124);;
-  font-size: large;
-  font-weight: bold;
-  background-image: linear-gradient(to right, #e1edf5, #bed7e9);
+  margin: 0 -0.75rem;
+  padding: 17px 28px;
+  color: #fff;
+  font-size: 19px;
+  font-weight: 600;
+  background-color: #2655a2;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 .box-header span {
-  font-size: 16pt;
+  font-size: inherit;
 }
 
 .custom-width-notifications h2 {
@@ -374,63 +379,132 @@ thead > tr > th {
   display: flex;
   padding-left: 60%;
 }
-.pager {
-  display: flex;
-  justify-content: end;
-}
-
-.pager span {
-  display: flex;
-  border: 1px solid #cccccc;
-  border-radius: 5px;
-  padding: 0 10px 1px 10px;
-  background-color: white;
-}
-
-.pager button {
-  padding-top: 3px;
-  padding-bottom: 3px;
-}
-
-.pager button, .pager span {
-  margin-left: 10px;
-  align-items: center;
-}
 
 .table-box {
-  margin: 3% 2% 5% 2%;
+  margin: 0 -0.75rem;
 }
 
-th {
-  background-color: #95c8dc !important;
+.requests-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.requests-table thead th {
+  background: #e9eef8;
+  color: #2655a2;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 12px 22px;
+  border-bottom: 1px solid #d7e2ed;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+.requests-table thead th .th-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.requests-table thead th .sort-caret {
+  width: 9px;
+  height: 9px;
+  opacity: .7;
+  transition: transform .15s ease-in-out;
+}
+.requests-table thead th .sort-caret.desc {
+  transform: rotate(180deg);
+}
+.requests-table thead th.active {
+  color: #2655a2;
+}
+.requests-table tbody td {
+  padding: 14px 22px;
+  border-bottom: 1px solid #d7e2ed;
   vertical-align: middle;
+}
+.requests-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.requests-table tbody tr:hover td {
+  background: #e9eef8;
+}
+.created-cell {
+  font-variant-numeric: tabular-nums;
+  color: #5b6b7c;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.phase-pill {
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  background: #dce9f4;
+  color: #2655a2;
+  white-space: nowrap;
+}
+
+.pager {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 22px;
+  border-top: 1px solid #d7e2ed;
+}
+.pager span {
+  font-size: 13px;
+  color: #5b6b7c;
+  font-variant-numeric: tabular-nums;
+  padding: 0 6px;
+}
+.pager-btn {
+  border: 1px solid #d7e2ed;
+  background: #fff;
+  color: #5b6b7c;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.pager-btn:hover {
+  border-color: #2655a2;
+  color: #2655a2;
 }
 
 .form-select {
-  /*background-color: transparent;
-  border: none;*/
   width:20%;
   cursor: pointer;
-  /*color: white;*/
 }
 
 .form-select option:hover {
-  color: rgba(0,72,156,.95);
+  color: #2655a2;
 }
 .label-link {
   text-decoration: none;
-  color: rgb(51,142,195);
+  color: #2655a2;
+  font-weight: 600;
 }
 .label-link:hover {
   text-decoration: underline;
 }
 
 .filter-box {
-  background-color: #f1f1f1;
-  margin: 2%;
-  padding:2%;
+  background-color: #e9eef8;
+  margin: 0 -0.75rem;
+  padding: 14px 22px;
   display: flex;
   flex-direction: row;
+  border-bottom: 1px solid #d7e2ed;
 }
 .filter-box select {
   margin-right:2%

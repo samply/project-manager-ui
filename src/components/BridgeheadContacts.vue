@@ -1,33 +1,41 @@
 <template>
   <div v-if="contacts?.length" class="bridgehead-contacts" @click.stop>
     <button
+        ref="triggerRef"
         type="button"
         class="btn btn-link bridgehead-contacts-button"
         title="Contact information"
         aria-label="Contact information"
         :aria-expanded="open"
-        @click.stop="open = !open"
+        @click.stop="toggle"
     >
       <i class="bi bi-person-vcard"></i>
     </button>
-    <div v-if="open" class="bridgehead-contacts-popover" role="dialog" aria-label="Contact information">
-      <div v-for="(contact, index) in contacts" :key="`${contact.emailAddress ?? 'contact'}-${index}`"
-           class="bridgehead-contact">
-        <div class="bridgehead-contact-name">{{ contact.name }}</div>
-        <div v-if="contact.description" class="bridgehead-contact-description">
-          {{ contact.description }}
+    <!-- Teleported to <body> so it isn't clipped by an ancestor's
+         overflow:hidden (e.g. the rounded-corner .panel-card it can sit
+         inside) - positioned via JS-computed fixed coordinates instead of
+         being absolutely positioned relative to a parent that might clip it. -->
+    <Teleport to="body">
+      <div v-if="open" class="bridgehead-contacts-popover" role="dialog" aria-label="Contact information"
+           :style="popoverStyle" @click.stop>
+        <div v-for="(contact, index) in contacts" :key="`${contact.emailAddress ?? 'contact'}-${index}`"
+             class="bridgehead-contact">
+          <div class="bridgehead-contact-name">{{ contact.name }}</div>
+          <div v-if="contact.description" class="bridgehead-contact-description">
+            {{ contact.description }}
+          </div>
+          <div v-if="contact.emailAddress" class="bridgehead-contact-email">
+            <a :href="`mailto:${contact.emailAddress}`" @click.stop>{{ contact.emailAddress }}</a>
+            <button type="button" class="btn btn-link bridgehead-contact-copy"
+                    title="Copy email address" aria-label="Copy email address"
+                    @click.stop="copyEmail(contact.emailAddress)">
+              <i class="bi" :class="copiedEmail === contact.emailAddress ? 'bi-check' : 'bi-clipboard'"></i>
+            </button>
+          </div>
+          <hr v-if="index < contacts.length - 1"/>
         </div>
-        <div v-if="contact.emailAddress" class="bridgehead-contact-email">
-          <a :href="`mailto:${contact.emailAddress}`" @click.stop>{{ contact.emailAddress }}</a>
-          <button type="button" class="btn btn-link bridgehead-contact-copy"
-                  title="Copy email address" aria-label="Copy email address"
-                  @click.stop="copyEmail(contact.emailAddress)">
-            <i class="bi" :class="copiedEmail === contact.emailAddress ? 'bi-check' : 'bi-clipboard'"></i>
-          </button>
-        </div>
-        <hr v-if="index < contacts.length - 1"/>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
@@ -50,13 +58,41 @@ export default class BridgeheadContacts extends Vue {
 
   open = false;
   copiedEmail: string | null = null;
+  popoverStyle: Record<string, string> = {};
 
   mounted() {
     document.addEventListener("click", this.closePopover);
+    // Fixed positioning is relative to the viewport, not the trigger button,
+    // so a scroll/resize would leave the popover visually detached from it -
+    // simplest fix is to just close it, matching how most popovers behave.
+    window.addEventListener("scroll", this.closePopover, true);
+    window.addEventListener("resize", this.closePopover);
   }
 
   beforeUnmount() {
     document.removeEventListener("click", this.closePopover);
+    window.removeEventListener("scroll", this.closePopover, true);
+    window.removeEventListener("resize", this.closePopover);
+  }
+
+  toggle() {
+    if (this.open) {
+      this.closePopover();
+      return;
+    }
+    const trigger = this.$refs.triggerRef as HTMLElement | undefined;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    // Right-aligned to the button, same as the old `right: 0` within a
+    // relatively-positioned parent - just computed in viewport coordinates
+    // now that the popover is teleported out to <body>.
+    this.popoverStyle = {
+      position: 'fixed',
+      top: `${rect.bottom + 6}px`,
+      left: `${rect.right}px`,
+      transform: 'translateX(-100%)'
+    };
+    this.open = true;
   }
 
   closePopover() {
@@ -97,10 +133,9 @@ export default class BridgeheadContacts extends Vue {
 }
 
 .bridgehead-contacts-popover {
-  position: absolute;
+  /* position/top/left come from :style (popoverStyle), computed from the
+     trigger button's actual screen position - see toggle(). */
   z-index: 1050;
-  top: calc(100% + 0.35rem);
-  right: 0;
   min-width: 18rem;
   max-width: min(28rem, 80vw);
   padding: 0.75rem;

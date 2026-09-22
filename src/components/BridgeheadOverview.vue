@@ -1,162 +1,59 @@
 <template>
-  <div class="table-container">
-    <button v-if="bridgeheads.length > numberBridgeheadShown" title="left"
-            @click="scrollBridgehead('left')"
-            class="btn btn-primary bridgehead-arrow">
+  <div class="timeline-outer">
+    <button v-if="needsArrows" type="button" class="timeline-arrow" aria-label="Show earlier steps"
+            :disabled="effectiveTimelineScrollIndex === 0" @click="scrollTimeline('left')">
       <i class="bi bi-caret-left-fill"></i>
     </button>
-    <table class="bridgehead-table">
-      <tbody>
-      <tr v-for="(header, index) in headers" :key="index">
-        <!-- Header in the first column -->
-        <td class="header-cell">{{ header }}</td>
-        <td v-if="header === Header.SITES" class="header-summary-cell"
-            style="border-top: 1px solid #dddddd">
-          {{ bridgeheads.length }}
-        </td>
-        <td v-else-if="header === Header.VOTUM" class="header-summary-cell status-cell">
-          {{ getVotumStatus()[0] }}
-          <div class="exist-small green"></div>
-          / {{ getVotumStatus()[1] }}
-          <div class="exist-small pending"></div>
-        </td>
-        <td v-else-if="header === Header.TEILER" class="header-summary-cell status-cell">
-          {{ fetchQueryStatusAll()[0] }}
-          <div class="exist-small green"></div>
-          / {{ fetchQueryStatusAll()[1] }}
-          <div class="exist-small red"></div>
-        </td>
-        <td v-if="header === DATASHIELD_STATUS_HEADER " class="header-summary-cell status-cell">
-          {{ getDatashieldStatus()[0] }}
-          <div class="exist-small green"></div>
-          / {{ getDatashieldStatus()[1] }}
-          <div class="exist-small red"></div>
-        </td>
-        <td v-else-if="header === Header.USER_ACCESS" class="header-summary-cell status-cell">
-          {{ getBridgeheadStatus()[0] }}
-          <div class="exist-small green"></div>
-          / {{ getBridgeheadStatus()[1] }}
-          <div class="exist-small red"></div>
-        </td>
-        <td v-else-if="header === Header.APPLICANT_RESULTS_ACCEPTANCE"
-            class="header-summary-cell status-cell">
-          {{ getCreatorStatus()[0] }}
-          <div class="exist-small green"></div>
-          / {{ getCreatorStatus()[1] }}
-          <div class="exist-small red"></div>
-        </td>
-        <td v-else-if="header === Header.REPORT_OR_PUBLICATION"
-            class="header-summary-cell status-cell">
-          {{ getCreatorStatus()[0] }}
-          <div class="exist-small green"></div>
-          / {{ getCreatorStatus()[1] }}
-          <div class="exist-small red"></div>
-        </td>
-        <!-- Data for each bridgehead in subsequent columns -->
-        <td
-            v-for="(bridgehead, bridgeheadIndex) in bridgeheads.slice(scrollIndex, scrollIndex + numberBridgeheadShown)"
-            :key="bridgehead.bridgehead"
-            class="data-cell"
-            :class="{ 'selected': selectedBridgehead === bridgehead.bridgehead }"
-        >
-          <div v-if="header === Header.SITES" style="font-weight: bold; text-align: center"
-               @click="selectBridgehead(bridgehead)">
-            {{ bridgehead.humanReadable }}
-            <BridgeheadContacts :contacts="bridgehead.contacts ?? []" />
-          </div>
-          <div v-else-if="header === Header.VOTUM">
-            <div v-if="existsVotums.length > 0 && existsVotums[scrollIndex + bridgeheadIndex]"
-                 class="states-circle-container">
-              <div class="state_circle green"></div>
-              <DownloadButton
-                  :context="fetchContext(bridgehead)"
-                  :project-manager-backend-service="projectManagerBackendService"
-                  icon-class="bi bi-download"
-                  button-class="download-button no-y-padding"
-                  :module="Module.PROJECT_DOCUMENTS_MODULE"
-                  :action="Action.DOWNLOAD_VOTUM_ACTION"
-              />
+    <div class="timeline-body">
+      <div class="timeline-header-row">
+        <div class="site-col-spacer"></div>
+        <div class="steps-area" :ref="setTimelineStepsRef" :style="stepsGridStyle">
+          <span v-for="step in visibleStepDefs" :key="step.key" class="col-label">{{ step.label }}</span>
+        </div>
+      </div>
+      <div v-for="site in siteTimelines" :key="site.bridgehead.bridgehead"
+           class="timeline-row" :class="{ selected: selectedBridgehead === site.bridgehead.bridgehead }"
+           @click="selectBridgehead(site.bridgehead)">
+        <div class="site-name">
+          <span>{{ site.bridgehead.humanReadable ?? site.bridgehead.bridgehead }}</span>
+          <BridgeheadContacts :contacts="site.bridgehead.contacts ?? []" />
+        </div>
+        <div class="steps-area" :style="stepsGridStyle">
+          <div v-for="(step, index) in visibleSteps(site.steps)" :key="step.key" class="t-step">
+            <div v-if="index > 0" class="t-line" :class="{ done: step.visual === 'done' }"></div>
+            <div class="t-node" :class="step.visual"
+                 data-toggle="tooltip" data-placement="top" :title="step.tooltip ?? undefined">
+              <svg v-if="step.visual === 'done'" viewBox="0 0 16 16" width="8" height="8" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg>
+              <svg v-else-if="step.visual === 'failed'" viewBox="0 0 16 16" width="7" height="7" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+              <svg v-else-if="step.visual === 'warning'" viewBox="0 0 16 16" width="2" height="8" fill="#fff"><rect x="0" y="0" width="2" height="6"/><rect x="0" y="7" width="2" height="2"/></svg>
+              <svg v-else-if="step.visual === 'not_required'" viewBox="0 0 16 16" width="8" height="8" fill="#fff"><rect x="3" y="7" width="10" height="2" rx="1"/></svg>
             </div>
-            <div v-else-if="existsVotumForAllBridgeheads" class="states-circle-container">
-              <div class="state_circle green"></div>
-              <DownloadButton
-                  :context="fetchContext(bridgehead)"
-                  :project-manager-backend-service="projectManagerBackendService"
-                  icon-class="bi bi-download"
-                  button-class="download-button no-y-padding"
-                  :module="Module.PROJECT_DOCUMENTS_MODULE"
-                  :action="Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION"
-              />
-            </div>
-            <div v-else class="states-circle-container">
-              <div class="state_circle pending"></div>
-            </div>
+            <DownloadButton
+                v-if="step.downloadAction"
+                :context="fetchContext(site.bridgehead)"
+                :project-manager-backend-service="projectManagerBackendService"
+                icon-class="bi bi-download"
+                button-class="timeline-download-button"
+                :module="Module.PROJECT_DOCUMENTS_MODULE"
+                :action="step.downloadAction"
+            />
           </div>
-          <div v-else-if="header === Header.TEILER" class="states-circle-container">
-            <template
-                v-for="(group) in getMergedQueryStates(bridgehead, getAllProjectTypes(project))"
-                :key="i">
-              <div
-                  class="state_circle"
-                  :class="group.state.toLowerCase()"
-                  data-toggle="tooltip"
-                  data-placement="top"
-                  :title="group.types.join(', ')"
-              />
-            </template>
-          </div>
-          <div v-else-if="header === Header.USER_ACCESS" class="states-circle-container">
-            <div class="state_circle" :class="bridgehead?.state?.toLowerCase()"
-                 data-toggle="tooltip"
-                 data-placement="top" :title="bridgehead?.state ?? undefined"/>
-          </div>
-          <div v-else-if="header === Header.APPLICANT_RESULTS_ACCEPTANCE"
-               class="states-circle-container">
-            <div class="state_circle"
-                 :class="getCreatorStatusForBridgehead(bridgehead)?.toLowerCase()"
-                 data-toggle="tooltip" data-placement="top"
-                 :title="getCreatorStatusForBridgehead(bridgehead) ?? undefined"/>
-          </div>
-          <div v-else-if="header === 'DataSHIELD Status'">
-            <div v-if="dataShieldStatusArray[scrollIndex + bridgeheadIndex]" class="states-circle-container">
-              <div class="state_circle"
-                   :class="dataShieldStatusArray[scrollIndex + bridgeheadIndex]?.project_status?.toLowerCase()"
-                   data-toggle="tooltip" data-placement="top"
-                   :title="dataShieldStatusArray[scrollIndex + bridgeheadIndex]?.project_status">
-              </div>
-            </div>
-            <div v-else></div>
-          </div>
-          <div v-else-if="header === Header.REPORT_OR_PUBLICATION">
-            <div v-if="existsFinalReport || existsPublication"
-                 class="states-circle-container">
-              <div class="state_circle green"></div>
-              <DownloadButton
-                  :context="fetchContext(bridgehead)"
-                  :project-manager-backend-service="projectManagerBackendService"
-                  icon-class="bi bi-download"
-                  button-class="download-button no-y-padding"
-                  :module="Module.PROJECT_DOCUMENTS_MODULE"
-                  :action="(existsPublication) ? Action.DOWNLOAD_PUBLICATION_ACTION : Action.DOWNLOAD_FINAL_REPORT_ACTION"
-              />
-            </div>
-            <div v-else class="states-circle-container">
-              <div class="state_circle created"></div>
-            </div>
-          </div>
-
-
-        </td>
-
-
-      </tr>
-      </tbody>
-    </table>
-    <button v-if="bridgeheads.length > numberBridgeheadShown" title="right"
-            @click="scrollBridgehead('right')"
-            class="btn btn-primary bridgehead-arrow">
+        </div>
+      </div>
+    </div>
+    <button v-if="needsArrows" type="button" class="timeline-arrow" aria-label="Show later steps"
+            :disabled="effectiveTimelineScrollIndex >= (stepDefs.length - timelineStepsShown)"
+            @click="scrollTimeline('right')">
       <i class="bi bi-caret-right-fill"></i>
     </button>
+  </div>
+  <div class="legend">
+    <span class="legend-item"><span class="t-node done"></span> Done</span>
+    <span class="legend-item"><span class="t-node warning"></span> In progress</span>
+    <span class="legend-item"><span class="t-node failed"></span> Failed / rejected</span>
+    <span class="legend-item"><span class="t-node not_required"></span> Not required</span>
+    <span class="legend-item"><span class="t-node next"></span> Next</span>
+    <span class="legend-item"><span class="t-node future"></span> Not started</span>
   </div>
 </template>
 
@@ -171,7 +68,6 @@ import {
   hasProjectType,
   Module,
   Project,
-  ProjectBridgeheadState,
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectType,
@@ -182,14 +78,48 @@ import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
 import '@/assets/styles/state-circle.css'
 import {PropType, watch} from "vue";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
+import {
+  assignPipelineVisuals,
+  classifyStateCircle,
+  describeCreatorStatus,
+  describeQueryState,
+  PipelineClassification,
+  PipelineStepVisual
+} from "@/services/pipelineStatus";
 
+interface TimelineStepDef {
+  key: string;
+  label: string;
+}
+
+interface ClassifiedTimelineStep {
+  key: string;
+  label: string;
+  classification: PipelineClassification;
+  tooltip?: string;
+  downloadAction?: Action;
+}
+
+interface TimelineStep {
+  key: string;
+  label: string;
+  visual: PipelineStepVisual;
+  tooltip?: string;
+  downloadAction?: Action;
+}
+
+interface SiteTimeline {
+  bridgehead: Bridgehead;
+  steps: TimelineStep[];
+}
+
+// This is the same lifecycle-pipeline concept as ProjectView.vue's
+// single-bridgehead Status card (see pipelineStatus.ts), rendered once per
+// site instead of once for the whole request, so progress across sites can
+// be compared at a glance - see
+// project-manager-ui/plans/2026-09-21-plan-unify-table-design.md, Step 5.
 @Options({
   name: "BridgeheadOverview",
-  computed: {
-    BridgeheadOverview() {
-      return BridgeheadOverview
-    }
-  },
   components: {DownloadButton, BridgeheadContacts},
   props: {
     context: {
@@ -224,7 +154,6 @@ import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
       type: Function as PropType<(param: Bridgehead) => void>,
       required: true
     }
-
   }
 })
 export default class BridgeheadOverview extends Vue {
@@ -243,72 +172,236 @@ export default class BridgeheadOverview extends Vue {
 
   DATASHIELD_STATUS_HEADER = 'DataSHIELD Status';
 
-  Header = BridgeheadOverviewHeader;
-  getMergedQueryStates = getMergedQueryStates;
-  getAllProjectTypes = getAllProjectTypes;
-
-  headers: string[] = [];
-
   // noinspection SpellCheckingInspection
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
   selectedBridgehead: string | null = null;
-  scrollIndex = 0;
-  numberBridgeheadShown = 4;
 
-  mounted() {
-    // Replace the old @Watch
+  timelineScrollIndex: number | null = null;
+  timelineRowWidth = 0;
+  timelineResizeObserver?: ResizeObserver;
+  observedTimelineStepsArea?: HTMLElement;
+
+  async created() {
+    // Created here (not mounted()) so the observer already exists by the
+    // time setTimelineStepsRef can first fire.
+    if (typeof ResizeObserver !== 'undefined') {
+      this.timelineResizeObserver = new ResizeObserver(() => this.updateTimelineRowWidth());
+    }
     watch(() => this.projectManagerBackendService,
         () => {
           this.updateBridgeheadExtraInfo();
         },
         {immediate: true, deep: true}
     );
-  }
-
-  async created() {
+    watch(() => this.bridgeheads,
+        () => {
+          this.timelineScrollIndex = null;
+        }
+    );
     await this.updateBridgeheadExtraInfo();
     this.selectedBridgehead = this.context.bridgehead?.bridgehead ?? this.bridgeheads[0]?.bridgehead ?? null;
   }
 
-  buildHeaders(): void {
-    this.headers = [];
-    Object.values(this.Header).forEach(header => {
-      // TEILER is now always a single header — no per-type expansion
-      this.headers.push(header);
-    });
+  mounted() {
+    window.addEventListener('resize', this.updateTimelineRowWidth);
   }
 
-  fetchQueryStatusAll(): number[] {
-    if (!this.bridgeheads) return [0, 0];
-    const types = getAllProjectTypes(this.project);
-    const executions = this.bridgeheads
-    .flatMap(b => b.executions ?? [])
-    .filter(e => types.includes(e.projectType));
-    const finished = executions.filter(e => e.queryState === 'FINISHED').length;
-    const notFinished = executions.length - finished;
-    return [finished, notFinished];
+  beforeUnmount() {
+    this.timelineResizeObserver?.disconnect();
+    window.removeEventListener('resize', this.updateTimelineRowWidth);
   }
 
-  async updateBridgeheadExtraInfo() {
-    this.existsVotums = await this.fetchExistsVotums();
-    this.buildHeaders();
+  // The step sequence is fixed and shared by every site's row so columns
+  // stay aligned; DataSHIELD only appears when the project actually uses it.
+  // Order preserved from the original table (DataSHIELD before "Data
+  // accessible") - not necessarily the same order as ProjectView.vue's
+  // single-bridgehead pipeline, which is a separate pre-existing difference,
+  // not something introduced here.
+  get stepDefs(): TimelineStepDef[] {
+    const defs: TimelineStepDef[] = [
+      {key: 'votum', label: BridgeheadOverviewHeader.VOTUM},
+      {key: 'teiler', label: BridgeheadOverviewHeader.TEILER}
+    ];
     if (hasProjectType(this.project, ProjectType.DATASHIELD)) {
-      if (!this.headers.includes(this.DATASHIELD_STATUS_HEADER)) {
-        const userAccessIndex = this.headers.indexOf(this.Header.USER_ACCESS);
-        if (userAccessIndex !== -1) {
-          this.headers.splice(userAccessIndex, 0, this.DATASHIELD_STATUS_HEADER);
-        } else {
-          // If Header.USER_ACCESS is not found, append the header as a fallback
-          this.headers.push(this.DATASHIELD_STATUS_HEADER);
-        }
-      }
-      this.dataShieldStatusArray = await this.fetchDataShieldStates();
+      defs.push({key: 'datashield', label: this.DATASHIELD_STATUS_HEADER});
     }
+    defs.push({key: 'user_access', label: BridgeheadOverviewHeader.USER_ACCESS});
+    defs.push({key: 'creator_acceptance', label: BridgeheadOverviewHeader.APPLICANT_RESULTS_ACCEPTANCE});
+    defs.push({key: 'report', label: BridgeheadOverviewHeader.REPORT_OR_PUBLICATION});
+    return defs;
+  }
+
+  get siteTimelines(): SiteTimeline[] {
+    return this.bridgeheads.map((bridgehead, index) => ({
+      bridgehead,
+      steps: assignPipelineVisuals(this.buildSiteSteps(bridgehead, index))
+    }));
+  }
+
+  buildSiteSteps(bridgehead: Bridgehead, bridgeheadIndex: number): ClassifiedTimelineStep[] {
+    const steps: ClassifiedTimelineStep[] = [];
+
+    // Same fact ProjectView.vue's pipeline shows for the active bridgehead,
+    // here per site: no failure state, only "not received" - which per the
+    // real workflow means no ethics vote is required for that site, not
+    // that one is awaiting review. Classified separately from warning/amber
+    // (reserved exclusively for "actively in progress" elsewhere in this row,
+    // e.g. Data export authorised) since the two mean opposite things.
+    const hasOwnVotum = this.existsVotums.length > 0 && this.existsVotums[bridgeheadIndex];
+    const votumDone = hasOwnVotum || this.existsVotumForAllBridgeheads;
+    steps.push({
+      key: 'votum',
+      label: BridgeheadOverviewHeader.VOTUM,
+      classification: votumDone ? 'done' : 'not_required',
+      tooltip: votumDone ? undefined : 'No ethics vote required',
+      downloadAction: votumDone
+          ? (hasOwnVotum ? Action.DOWNLOAD_VOTUM_ACTION : Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION)
+          : undefined
+    });
+
+    // A project can query several project types at once for the same site,
+    // each with its own state; one failure taints the step, "done" needs
+    // every type finished, any type actively in progress makes it amber.
+    const teilerGroups = getMergedQueryStates(bridgehead, getAllProjectTypes(this.project));
+    const teilerClassifications = teilerGroups.map(group => classifyStateCircle(group.state));
+    let teilerClassification: PipelineClassification;
+    if (teilerClassifications.includes('failed')) teilerClassification = 'failed';
+    else if (teilerClassifications.includes('warning')) teilerClassification = 'warning';
+    else if (teilerClassifications.length > 0 && teilerClassifications.every(c => c === 'done')) teilerClassification = 'done';
+    else teilerClassification = 'grey';
+    steps.push({
+      key: 'teiler',
+      label: BridgeheadOverviewHeader.TEILER,
+      classification: teilerClassification,
+      tooltip: teilerGroups.map(group => `${group.types.join(', ')}: ${describeQueryState(group.state)}`).join(' | ') || undefined
+    });
+
+    if (hasProjectType(this.project, ProjectType.DATASHIELD)) {
+      const status = this.dataShieldStatusArray[bridgeheadIndex];
+      steps.push({
+        key: 'datashield',
+        label: this.DATASHIELD_STATUS_HEADER,
+        classification: classifyStateCircle(status?.project_status),
+        tooltip: status?.project_status
+      });
+    }
+
+    steps.push({
+      key: 'user_access',
+      label: BridgeheadOverviewHeader.USER_ACCESS,
+      classification: classifyStateCircle(bridgehead?.state),
+      tooltip: bridgehead?.state ?? undefined
+    });
+
+    const creatorStatus = this.getCreatorStatusForBridgehead(bridgehead);
+    steps.push({
+      key: 'creator_acceptance',
+      label: BridgeheadOverviewHeader.APPLICANT_RESULTS_ACCEPTANCE,
+      classification: classifyStateCircle(creatorStatus),
+      tooltip: creatorStatus ? describeCreatorStatus(creatorStatus) : undefined
+    });
+
+    // Whether a final report/publication exists is a project-wide fact, not
+    // a per-site one - same value and download action on every row, exactly
+    // matching the original table's behavior for this column.
+    const reportDone = this.existsFinalReport || this.existsPublication;
+    steps.push({
+      key: 'report',
+      label: BridgeheadOverviewHeader.REPORT_OR_PUBLICATION,
+      classification: reportDone ? 'done' : 'grey',
+      downloadAction: reportDone
+          ? (this.existsPublication ? Action.DOWNLOAD_PUBLICATION_ACTION : Action.DOWNLOAD_FINAL_REPORT_ACTION)
+          : undefined
+    });
+
+    return steps;
+  }
+
+  // How many step columns fit the grid's current width, so the shared
+  // arrows only appear when columns would actually overflow - mirrors
+  // ProjectView.vue's pipelineStepsShown/.pipeline-step's min-width.
+  get timelineStepsShown(): number {
+    const totalSteps = this.stepDefs.length;
+    if (totalSteps === 0) return 0;
+    if (this.timelineRowWidth === 0) return totalSteps; // not measured yet
+    const STEP_MIN_WIDTH = 84;
+    if (totalSteps * STEP_MIN_WIDTH <= this.timelineRowWidth) return totalSteps;
+    return Math.max(1, Math.floor(this.timelineRowWidth / STEP_MIN_WIDTH));
+  }
+
+  get needsArrows(): boolean {
+    return this.stepDefs.length > this.timelineStepsShown;
+  }
+
+  get stepsGridStyle(): Record<string, string> {
+    return {gridTemplateColumns: `repeat(${Math.max(this.timelineStepsShown, 1)}, minmax(84px, 1fr))`};
+  }
+
+  // The step columns are shared by every row, so there's no single site's
+  // "next" step to center on - instead, center on the step right after the
+  // last non-grey step of whichever site has made the most progress (the
+  // one closest to needing attention next).
+  get sharedNextIndex(): number {
+    const indexes = this.siteTimelines
+        .map(site => site.steps.findIndex(step => step.visual === 'next'))
+        .filter(index => index !== -1);
+    return indexes.length ? Math.max(...indexes) : 0;
+  }
+
+  get effectiveTimelineScrollIndex(): number {
+    const totalSteps = this.stepDefs.length;
+    const maxStart = Math.max(0, totalSteps - this.timelineStepsShown);
+    if (this.timelineScrollIndex !== null) {
+      return Math.min(this.timelineScrollIndex, maxStart);
+    }
+    const centered = this.sharedNextIndex - Math.floor((this.timelineStepsShown - 1) / 2);
+    return Math.min(Math.max(centered, 0), maxStart);
+  }
+
+  get visibleStepDefs(): TimelineStepDef[] {
+    const start = this.effectiveTimelineScrollIndex;
+    return this.stepDefs.slice(start, start + this.timelineStepsShown);
+  }
+
+  visibleSteps(steps: TimelineStep[]): TimelineStep[] {
+    const start = this.effectiveTimelineScrollIndex;
+    return steps.slice(start, start + this.timelineStepsShown);
+  }
+
+  scrollTimeline(direction: 'left' | 'right') {
+    const maxStart = Math.max(0, this.stepDefs.length - this.timelineStepsShown);
+    const current = this.effectiveTimelineScrollIndex;
+    this.timelineScrollIndex = direction === 'left'
+        ? Math.max(0, current - 1)
+        : Math.min(maxStart, current + 1);
+  }
+
+  updateTimelineRowWidth() {
+    this.timelineRowWidth = this.observedTimelineStepsArea ? this.observedTimelineStepsArea.clientWidth : 0;
+  }
+
+  // Bound as a Vue function :ref on the header row's .steps-area - every
+  // row's .steps-area shares the same width (both are flex:1 siblings of the
+  // same fixed-width site-name column), so measuring just this one is enough.
+  setTimelineStepsRef(el: Element | null) {
+    const htmlEl = (el as HTMLElement | null) ?? undefined;
+    if (htmlEl === this.observedTimelineStepsArea) return;
+    this.timelineResizeObserver?.disconnect();
+    this.observedTimelineStepsArea = htmlEl;
+    if (htmlEl) this.timelineResizeObserver?.observe(htmlEl);
+    this.updateTimelineRowWidth();
   }
 
   fetchContext(bridgehead: Bridgehead) {
     return new ProjectManagerContext(this.context.projectCode, bridgehead);
+  }
+
+  async updateBridgeheadExtraInfo() {
+    this.existsVotums = await this.fetchExistsVotums();
+    if (hasProjectType(this.project, ProjectType.DATASHIELD)) {
+      this.dataShieldStatusArray = await this.fetchDataShieldStates();
+    }
   }
 
   // noinspection SpellCheckingInspection
@@ -340,142 +433,213 @@ export default class BridgeheadOverview extends Vue {
     this.callUpdateActiveBridgehead(bridgehead);
   }
 
-  scrollBridgehead(direction: string) {
-    if (direction === "left") {
-      if (this.scrollIndex > 0) {
-        this.scrollIndex--;
-      }
-    }
-    if (direction === "right") {
-      if (this.scrollIndex < (this.bridgeheads.length - this.numberBridgeheadShown)) {
-        this.scrollIndex++;
-      }
-    }
-  }
-
-  getVotumStatus(): number[] {
-    const hasVotum = this.existsVotums.filter((votum) => votum);
-    const noVotum = this.existsVotums.filter((votum) => !votum);
-    if (this.existsVotumForAllBridgeheads) {
-      if (hasVotum.length == 0) {
-        return [1, 0];
-      } else {
-        return [hasVotum.length, 0];
-      }
-    }
-    return [hasVotum.length, noVotum.length]
-  }
-
-  getBridgeheadStatus(): number[] {
-    const isAccepted = this.bridgeheads.filter((bridgehead) => bridgehead.state === ProjectBridgeheadState.ACCEPTED);
-    const notAccepted = this.bridgeheads.filter((bridgehead) => bridgehead.state !== ProjectBridgeheadState.ACCEPTED);
-    return [isAccepted.length, notAccepted.length]
-  }
-
-  getDatashieldStatus(): number[] {
-    const withData = this.dataShieldStatusArray.filter((datashield) => datashield.project_status === 'WITH_DATA');
-    const withoutData = this.dataShieldStatusArray.filter((datashield) => datashield.project_status !== 'WITH_DATA');
-    return [withData.length, withoutData.length]
-  }
-
-  getCreatorStatus(): number[] {
-    if (this.project?.creatorState === UserProjectState.ACCEPTED && this.project?.resultsUrl) {
-      return [1, 0];
-    }
-    if (this.project?.creatorState === UserProjectState.REJECTED && this.project?.resultsUrl) {
-      return [0, 1];
-    }
-    const isFinished = this.bridgeheads.filter((bridgehead) => this.isBridgeheadAcceptedByCreator(bridgehead));
-    const notFinished = this.bridgeheads.filter((bridgehead) => !this.isBridgeheadAcceptedByCreator(bridgehead));
-    return [isFinished.length, notFinished.length]
-  }
-
-  isBridgeheadAcceptedByCreator(bridgehead: Bridgehead): boolean {
-    return bridgehead?.state === 'ACCEPTED' && bridgehead?.creatorState === 'ACCEPTED';
-  }
-
   getCreatorStatusForBridgehead(bridgehead: Bridgehead): string | null | undefined {
     if (this.project?.creatorState === UserProjectState.ACCEPTED || this.project?.creatorState === UserProjectState.REJECTED) {
       return this.project?.creatorState;
     }
-    return (bridgehead?.state === 'ACCEPTED') ? bridgehead?.creatorState : ProjectBridgeheadState.CREATED;
+    return (bridgehead?.state === 'ACCEPTED') ? bridgehead?.creatorState : undefined;
   }
 
 }
 </script>
 
 <style scoped>
-.table-container {
-  margin-bottom: 2em;
+.timeline-outer {
   display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 22px 4px;
 }
 
-.bridgehead-table {
-  border-collapse: collapse;
-  width: 100%;
+.timeline-body {
+  flex: 1;
+  min-width: 0;
 }
 
-.header-cell {
-  background-color: #f2f2f2;
-  border-top: 1px solid #dddddd;
-  border-left: 1px solid #dddddd;
-  border-bottom: 1px solid #dddddd;
-  padding: 4px; /* Reduce the padding size */
-  font-size: 14px; /* Reduce the font size */
-  text-align: left;
-  width: min-content;
-  font-weight: bold;
-}
-
-.header-summary-cell {
-  background-color: #f2f2f2;
-  border-bottom: 1px solid #dddddd;
-  padding: 7px; /* Reduce the padding size */
-  font-size: 14px; /* Reduce the font size */
-  text-align: center;
-  width: 12%;
-}
-
-.data-cell {
-  border: 1px solid #dddddd;
-  padding: 4px; /* Reduce the padding size */
-  font-size: 14px; /* Reduce the font size */
-  vertical-align: top;
-  cursor: pointer;
-  width: min-content;
-}
-
-.status-cell {
+.timeline-header-row, .timeline-row {
   display: flex;
-  justify-content: center;
   align-items: center;
-  width: 100%;
 }
 
-.exist-small {
+.timeline-header-row {
+  padding: 6px 0 10px 8px;
+  border-bottom: 1px solid #d7e2ed;
+}
+
+.timeline-row {
+  padding: 12px 0 12px 8px;
+  border-bottom: 1px solid #d7e2ed;
+  cursor: pointer;
+}
+
+.timeline-row:last-child {
+  border-bottom: none;
+}
+
+.timeline-row:hover {
+  background: #f4f7fb;
+}
+
+.timeline-row.selected {
+  box-shadow: inset 4px 0 0 #2655a2;
+}
+
+.timeline-row.selected .site-name {
+  color: #2655a2;
+}
+
+.site-col-spacer, .site-name {
+  width: 190px;
+  flex-shrink: 0;
+  padding-right: 12px;
+}
+
+.site-name {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2a37;
+}
+
+.steps-area {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.col-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #5b6b7c;
+  text-align: center;
+  line-height: 1.3;
+  padding: 0 4px;
+}
+
+.t-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.t-line {
+  position: absolute;
+  top: 9px;
+  left: -50%;
+  width: 100%;
+  height: 2px;
+  background: #e3e6ea;
+  z-index: 0;
+}
+
+.t-step:first-child .t-line {
+  display: none;
+}
+
+.t-line.done {
+  background: #3f8f45;
+}
+
+.t-node {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.t-node.done {
+  background: #3f8f45;
+}
+
+.t-node.failed {
+  background: #c0504d;
+}
+
+.t-node.warning {
+  background: #e0ab18;
+}
+
+.t-node.not_required {
+  background: #7a8699;
+}
+
+.t-node.next {
+  background: #fff;
+  border: 2px solid #2655a2;
+  box-shadow: 0 0 0 3px #e9eef8;
+}
+
+.t-node.future {
+  background: #e3e6ea;
+}
+
+.t-step :deep(.timeline-download-button) {
+  margin-top: 2px;
+  padding: 0 !important;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  color: #5b6b7c !important;
+}
+
+.t-step :deep(.timeline-download-button:hover) {
+  color: #2655a2 !important;
+}
+
+.timeline-arrow {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-top: 2px;
+  border-radius: 7px;
+  border: 1px solid #d7e2ed;
+  background: #fff;
+  color: #5b6b7c;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.timeline-arrow:hover:not(:disabled) {
+  border-color: #2655a2;
+  color: #2655a2;
+}
+
+.timeline-arrow:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 12px 22px 16px;
+  border-top: 1px solid #d7e2ed;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #5b6b7c;
+}
+
+.legend-item .t-node {
+  position: static;
   width: 12px;
   height: 12px;
-  border-radius: 50%;
-  margin: 0 5px;
-}
-
-.bridgehead-arrow {
-  background: none;
-  border: none;
-  color: #007bff;
-  padding: 0;
-}
-
-.bridgehead-arrow i {
-  font-size: xx-large;
-}
-
-.selected {
-  background-color: lightblue;
-}
-
-.states-circle-container {
-  display: flex;
-  justify-content: center;
 }
 </style>

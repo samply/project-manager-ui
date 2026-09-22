@@ -95,6 +95,7 @@
                           <svg v-if="step.visual === 'done'" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg>
                           <svg v-else-if="step.visual === 'failed'" viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
                           <svg v-else-if="step.visual === 'warning'" viewBox="0 0 16 16" width="2" height="10" fill="#fff"><rect x="0" y="0" width="2" height="7"/><rect x="0" y="9" width="2" height="2"/></svg>
+                          <svg v-else-if="step.visual === 'not_required'" viewBox="0 0 16 16" width="10" height="10" fill="#fff"><rect x="3" y="7" width="10" height="2" rx="1"/></svg>
                         </div>
                         <div class="pipeline-label">{{ step.label }}</div>
                         <DownloadButton
@@ -116,17 +117,18 @@
                     </button>
                   </div>
                 </div>
-                <br/>
-                <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
-                                    :project-manager-backend-service="projectManagerBackendService"
-                                    :call-update-active-bridgehead="updateActiveBridgehead"
-                                    :context="context"
-                                    :project="project"
-                                    :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
-                                    :exists-publication="existsPublication"
-                                    :existsFinalReport="existsFinalReport"
-                                    :bridgeheads="visibleBridgeheads"
-                                    :activeBridgehead="activeBridgehead"/>
+                <div class="panel-card" v-if="visibleBridgeheads.length > 1">
+                  <div class="panel-header">Status</div>
+                  <BridgeheadOverview :project-manager-backend-service="projectManagerBackendService"
+                                      :call-update-active-bridgehead="updateActiveBridgehead"
+                                      :context="context"
+                                      :project="project"
+                                      :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
+                                      :exists-publication="existsPublication"
+                                      :existsFinalReport="existsFinalReport"
+                                      :bridgeheads="visibleBridgeheads"
+                                      :activeBridgehead="activeBridgehead"/>
+                </div>
             </div>
             <!-- TODO: Restore creator access to this Actions box; see plans/2026-09-08-plan-restore-project-actions-for-creators.md. -->
             <div
@@ -735,6 +737,14 @@ import {ProjectViewMenuStep} from "@/services/projectViewMenuStep";
 import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
 import {PollingService} from "@/services/PollingService";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
+import {
+  assignPipelineVisuals,
+  classifyStateCircle,
+  describeCreatorStatus,
+  describeQueryState,
+  PipelineClassification,
+  PipelineStepVisual
+} from "@/services/pipelineStatus";
 
 interface ProjectFieldRenderItem {
   key: string;
@@ -756,10 +766,10 @@ type BlockMetadata = ProjectField["block"];
 // The Status panel reads as a lifecycle pipeline rather than independent
 // facts: each step's own true color (done/failed/warning/grey) matches the
 // same state_circle.css classes used everywhere else in the app - see
-// statusPipelineSteps. "next" vs. "future" only distinguishes among grey
-// (untouched) steps; done/failed/warning always show as themselves.
-type PipelineStepVisual = 'done' | 'failed' | 'warning' | 'next' | 'future';
-
+// statusPipelineSteps and pipelineStatus.ts (shared with
+// BridgeheadOverview.vue's per-site timelines). "next" vs. "future" only
+// distinguishes among grey (untouched) steps; done/failed/warning always
+// show as themselves.
 interface PipelineStep {
   key: string;
   label: string;
@@ -802,34 +812,27 @@ export default defineComponent({
     statusPipelineSteps(): PipelineStep[] {
       if (!this.activeBridgehead) return [];
 
-      // Same four colors state_circle.css already uses everywhere else in the
-      // app: grey (no data / not started yet), warning/amber (in progress,
-      // awaiting a decision or action), done/green, failed/red. Every field
-      // below is classified into these exact buckets - nothing here invents a
-      // new color rule, it mirrors the existing CSS classes.
-      type Classification = 'done' | 'failed' | 'warning' | 'grey';
-      const classifyStateCircle = (value?: string | null): Classification => {
-        const normalized = value?.toLowerCase();
-        if (!normalized) return 'grey';
-        if (['accepted', 'with_data', 'finished'].includes(normalized)) return 'done';
-        if (['rejected', 'error'].includes(normalized)) return 'failed';
-        if (['to_be_sent', 'to_be_sent_and_executed', 'sending', 'sending_and_executing',
-          'export_running_1', 'export_running_2', 'request_changes', 'not_found',
-          'inactive', 'expired'].includes(normalized)) return 'warning';
-        return 'grey';
-      };
+      // Five colors: grey (not started yet), warning/amber (actively in
+      // progress - never anything else), not_required/slate (this step
+      // doesn't apply here), done/green, failed/red. Every field is
+      // classified into these exact buckets via the shared
+      // classifyStateCircle() for raw backend states - nothing here invents
+      // a new color rule, it mirrors the existing state_circle.css classes.
+      // assignPipelineVisuals() then does the shared
+      // done/failed/warning/not_required -> next/future pass (see
+      // pipelineStatus.ts for both).
+      const classifiedSteps: { key: string; label: string; classification: PipelineClassification; tooltip?: string; downloadAction?: Action }[] = [];
 
-      const classifiedSteps: { key: string; label: string; classification: Classification; tooltip?: string; downloadAction?: Action }[] = [];
-
-      // The ethics vote has no failure state, only "not yet received" vs.
-      // "received" - and "not yet received" is shown amber, not grey, matching
-      // the `state_circle pending` treatment BridgeheadOverview.vue already
-      // uses for the same fact.
+      // The ethics vote has no failure state, only "not required" vs.
+      // "received" - classified separately from warning/amber (which is
+      // reserved for "actively in progress") since these mean opposite
+      // things: nothing to do here vs. something's happening, check on it.
       const votumDone = this.existsVotum || this.existsVotumForAllBridgeheads;
       classifiedSteps.push({
         key: 'votum',
         label: BridgeheadOverviewHeader.VOTUM,
-        classification: votumDone ? 'done' : 'warning',
+        classification: votumDone ? 'done' : 'not_required',
+        tooltip: votumDone ? undefined : 'No ethics vote required',
         downloadAction: votumDone
             ? (this.existsVotum ? Action.DOWNLOAD_VOTUM_ACTION : Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION)
             : undefined
@@ -839,7 +842,7 @@ export default defineComponent({
       // state; one failure taints the step, "done" needs every type finished,
       // any type actively in progress makes the whole step amber.
       const teilerClassifications = this.mergedQueryStates.map(group => classifyStateCircle(group.state));
-      let teilerClassification: Classification;
+      let teilerClassification: PipelineClassification;
       if (teilerClassifications.includes('failed')) teilerClassification = 'failed';
       else if (teilerClassifications.includes('warning')) teilerClassification = 'warning';
       else if (teilerClassifications.length > 0 && teilerClassifications.every(c => c === 'done')) teilerClassification = 'done';
@@ -848,7 +851,7 @@ export default defineComponent({
         key: 'teiler',
         label: BridgeheadOverviewHeader.TEILER,
         classification: teilerClassification,
-        tooltip: this.mergedQueryStates.map(group => `${group.types.join(', ')}: ${group.state}`).join(' | ') || undefined
+        tooltip: this.mergedQueryStates.map(group => `${group.types.join(', ')}: ${describeQueryState(group.state)}`).join(' | ') || undefined
       });
 
       classifiedSteps.push({
@@ -889,7 +892,7 @@ export default defineComponent({
         key: 'creator_acceptance',
         label: BridgeheadOverviewHeader.APPLICANT_RESULTS_ACCEPTANCE,
         classification: classifyStateCircle(this.creatorAcceptance),
-        tooltip: this.creatorAcceptance ?? undefined
+        tooltip: this.creatorAcceptance ? describeCreatorStatus(this.creatorAcceptance) : undefined
       });
 
       const reportDone = this.existsFinalReport || this.existsPublication;
@@ -902,32 +905,9 @@ export default defineComponent({
             : undefined
       });
 
-      // "Next" only ever applies to a still-grey (truly untouched) step, and
-      // specifically the first grey step found after the last step that has
-      // any activity at all (done/failed/warning) - not simply the first grey
-      // step in list order, since steps don't always progress strictly
-      // left-to-right (e.g. several bridgeheads/types can advance out of
-      // sync). Every other grey step is "future".
-      let lastActiveIndex = -1;
-      classifiedSteps.forEach((step, index) => {
-        if (step.classification !== 'grey') lastActiveIndex = index;
-      });
-      let nextIndex = -1;
-      for (let i = lastActiveIndex + 1; i < classifiedSteps.length; i++) {
-        if (classifiedSteps[i].classification === 'grey') {
-          nextIndex = i;
-          break;
-        }
-      }
-
-      return classifiedSteps.map((step, index) => {
-        let visual: PipelineStepVisual;
-        if (step.classification === 'done') visual = 'done';
-        else if (step.classification === 'failed') visual = 'failed';
-        else if (step.classification === 'warning') visual = 'warning';
-        else visual = index === nextIndex ? 'next' : 'future';
-        return {key: step.key, label: step.label, visual, tooltip: step.tooltip, downloadAction: step.downloadAction};
-      });
+      return assignPipelineVisuals(classifiedSteps).map(step => ({
+        key: step.key, label: step.label, visual: step.visual, tooltip: step.tooltip, downloadAction: step.downloadAction
+      }));
     },
     visiblePipelineSteps(): PipelineStep[] {
       const start = this.effectivePipelineScrollIndex;
@@ -3369,6 +3349,9 @@ export default defineComponent({
 }
 .pipeline-node.warning {
   background: #e0ab18;
+}
+.pipeline-node.not_required {
+  background: #7a8699;
 }
 .pipeline-node.next {
   background: #fff;

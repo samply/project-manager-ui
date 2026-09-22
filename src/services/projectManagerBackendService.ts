@@ -225,6 +225,13 @@ export enum ProjectState {
     ARCHIVED = "ARCHIVED"
 }
 
+// "DRAFT" -> "Draft". Shared so ProjectDashboard.vue's filter dropdown and
+// Phase column, and ProjectView.vue/PhasePill.vue's "At a Glance" Phase
+// cell, can't drift apart on the wording.
+export function projectStateLabel(state: ProjectState): string {
+    return state.charAt(0) + state.slice(1).toLowerCase();
+}
+
 export enum ProjectSortField {
     TITLE = "title",
     REQUEST_ID = "request-id",

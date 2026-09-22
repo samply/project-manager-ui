@@ -56,7 +56,7 @@
               />
             </td>
             <td class="created-cell">{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
-            <td><span class="phase-pill">{{ projectStateLabel(project.state) }}</span></td>
+            <td><PhasePill :state="project.state" /></td>
           </tr>
           </tbody>
         </table>
@@ -97,10 +97,12 @@ import {
   ProjectManagerContext,
   ProjectSortField,
   ProjectState,
+  projectStateLabel,
   Site,
   User
 } from "@/services/projectManagerBackendService";
 import NotificationBox from "@/components/Notification.vue";
+import PhasePill from "@/components/PhasePill.vue";
 import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
 import {getConfig} from "@/services/configLoader";
 import UserAndEmail from "@/components/UserAndEmail.vue";
@@ -112,7 +114,7 @@ export default defineComponent({
     },
 
   },
-  components: {UserAndEmail, NotificationBox},
+  components: {UserAndEmail, NotificationBox, PhasePill},
 
   data() {
     return {
@@ -184,9 +186,7 @@ export default defineComponent({
       this.currentPage = 1;
       this.fetchProjects();
     },
-    projectStateLabel(state: ProjectState) {
-      return state.charAt(0) + state.slice(1).toLowerCase();
-    },
+    projectStateLabel,
 
     applicantLabel(applicant: User) {
       const name = [applicant.firstName, applicant.lastName].filter(Boolean).join(' ');
@@ -436,18 +436,6 @@ export default defineComponent({
   font-variant-numeric: tabular-nums;
   color: #5b6b7c;
   font-size: 13px;
-  white-space: nowrap;
-}
-.phase-pill {
-  display: inline-block;
-  padding: 3px 11px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: .03em;
-  text-transform: uppercase;
-  background: #dce9f4;
-  color: #2655a2;
   white-space: nowrap;
 }
 

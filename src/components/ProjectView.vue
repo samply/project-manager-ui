@@ -72,7 +72,7 @@
                     </div>
                     <div class="glance-cell">
                       <span class="glance-label">Phase</span>
-                      <span v-if="project" class="phase-pill">{{ projectStateLabel(project.state) }}</span>
+                      <PhasePill v-if="project" :state="project.state" />
                     </div>
                   </div>
                 </div>
@@ -730,6 +730,7 @@ import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
 import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
 import FeasibilityTable from "@/components/FeasibilityTable.vue";
 import MandatoryFieldMarker from "@/components/MandatoryFieldMarker.vue";
+import PhasePill from "@/components/PhasePill.vue";
 import {DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES, getConfig} from "@/services/configLoader";
 import {DialogStep, DialogStepper, FixedDialogStep} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
@@ -997,7 +998,8 @@ export default defineComponent({
     NotificationBox,
     ContextInfoBox,
     ProjectFieldRow,
-    ProjectManagerButton
+    ProjectManagerButton,
+    PhasePill
   },
 
   data() {
@@ -1842,10 +1844,6 @@ export default defineComponent({
 
     convertDate(date: string | Date) {
       return formatDisplayDate(date, this.createdAtDisplayFormat)
-    },
-
-    projectStateLabel(state: ProjectState) {
-      return state.charAt(0) + state.slice(1).toLowerCase();
     },
 
     async initializeProjectRelatedData() {
@@ -3316,18 +3314,6 @@ export default defineComponent({
 .glance-title:hover {
   color: #2655a2;
   text-decoration: underline;
-}
-.phase-pill {
-  display: inline-block;
-  padding: 3px 11px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: .03em;
-  text-transform: uppercase;
-  background: #dce9f4;
-  color: #2655a2;
-  white-space: nowrap;
 }
 
 /* Status pipeline: sequential milestones (done -> next -> future), not

@@ -1238,7 +1238,7 @@ export default class ProjectFieldRow extends Vue {
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'read-only-css-enum': isReadOnlyCssEnumLayout(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
       <div style="display:flex" :style="{width: getHeaderWidth()}">
         <input
-            v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory && !isReadOnlyView()"
+            v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory && !isBlock() && !isReadOnlyView()"
             type="checkbox"
             style="margin-right:20px"
             :checked="editedValue[0] === 'true'"
@@ -1277,7 +1277,7 @@ export default class ProjectFieldRow extends Vue {
           >{{ descriptionExpanded ? 'Show less' : 'Show more' }}</button>
         </div>
       </div>
-      <div v-if="!(isInputType(FormDataType.BOOLEAN) && !this.mandatory) || isReadOnlyView()" :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
+      <div v-if="!(isInputType(FormDataType.BOOLEAN) && !this.mandatory) || isBlock() || isReadOnlyView()" :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
         <div v-if="uploadAction && !isDescriptionUpload()" style="width:100%;min-width:0">
           <div v-if="isReadOnlyView()" style="display:flex; align-items:center; gap:0.5rem"
                :class="{ 'summary-empty': !existsFile, 'summary-missing': mandatory && !existsFile }">
@@ -1298,6 +1298,13 @@ export default class ProjectFieldRow extends Vue {
         <div v-else style="width:100%">
           <div>
             <div v-if="isInputType(FormDataType.BOOLEAN)" style="width: 70%;">
+              <input
+                  v-if="!this.mandatory && isBlock() && !isReadOnlyView()"
+                  type="checkbox"
+                  :checked="editedValue[0] === 'true'"
+                  @change="onBooleanValueChange"
+                  :disabled="(isDraft() && isSummaryStep()) || (!isDraft() && !editMode)"
+              />
               <select v-if="((isDraft() && !isSummaryStep()) || editMode) && mandatory" v-model="editedValue[0]" @change="saveField()" class="form-select" style="width: fit-content;">
                 <option value=true>Yes</option>
                 <option value=false>No</option>

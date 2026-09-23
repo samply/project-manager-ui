@@ -483,19 +483,14 @@ export default class ProjectFieldRow extends Vue {
 
 
   redirectToURL() {
-   let bridgeheads:string[] = []
-    let query = "";
+    if (!this.redirectUrl) return;
 
-    if (this.bridgeheads?.selected?.length) {
-      bridgeheads = this.bridgeheads.selected.map((bridgehead) => bridgehead.bridgehead)
-    }
-    if (this.editedValue[2]) {
-      query = this.editedValue[2]
-    }
-    if (this.redirectUrl) {
-      const projectCode = new URLSearchParams(this.redirectUrl).get("project-code")
-      window.location.href = this.redirectUrl.split('?')[0] + '?query=' + query + '&datarequests='+Utils.encodeBase64(JSON.stringify(bridgeheads)) + '&project-code=' + projectCode;
-    }
+    const url = new URL(this.redirectUrl);
+    const bridgeheads = this.bridgeheads?.selected?.map(bridgehead => bridgehead.bridgehead) ?? [];
+    const query = this.editedValue[2] || url.searchParams.get("query");
+    if (query) url.searchParams.set("query", query);
+    url.searchParams.set("datarequests", Utils.encodeBase64(JSON.stringify(bridgeheads)));
+    window.location.href = url.toString();
   }
 
   showInputFields() {

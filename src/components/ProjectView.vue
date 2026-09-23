@@ -2170,7 +2170,10 @@ export default defineComponent({
     },
 
     async initializeProjectConfigurations(): Promise<void> {
-      this.projectConfigurations = new Map();
+      // Keep the loaded configurations until the replacement arrives. Project
+      // refreshes overlap (e.g. saving a form field twice in a row); clearing
+      // the map here let an earlier refresh run applyProjectConfigurationVisibility
+      // against an empty map, briefly showing the Services step.
       await this.initializeDataInCallback(
           Module.PROJECT_EDITION_MODULE,
           Action.FETCH_PROJECT_CONFIGURATIONS_ACTION,

@@ -774,6 +774,30 @@ export default class ProjectFieldRow extends Vue {
       ? this.fieldShortDescription ?? this.fieldDescription
       : this.fieldDescription;
   }
+  // A whitespace-only title/description counts as absent, same as an empty one.
+  get hasFieldTitle(): boolean {
+    return !!this.fieldKey?.trim();
+  }
+  get hasDisplayedFieldDescription(): boolean {
+    return !!this.displayedFieldDescription?.trim();
+  }
+  // Read-only view of a field without title or description (e.g. declaration
+  // checkboxes whose option text is the whole statement): the header column
+  // would render as empty space, so the value takes the whole row instead.
+  // Layout (CSS_*) fields are excluded - they are paired side by side, and
+  // dropping one header would misalign its value with its partner's.
+  // Todo badges also live in the header, so a field showing one keeps it.
+  isHeaderlessReadOnlyView(): boolean {
+    return this.isReadOnlyView() &&
+        !this.hasFieldTitle &&
+        !this.hasDisplayedFieldDescription &&
+        !this.getCssProperty() &&
+        !(this.uploadAction && this.todos?.get(this.uploadAction)) &&
+        !(this.downloadAction && this.todos?.get(this.downloadAction) && this.existsFile);
+  }
+  isInstanceSelected(value: string): boolean {
+    return this.instances?.some(instance => instance.value === value) ?? false;
+  }
   get shouldCollapseFieldDescription(): boolean {
     const valueIsBesideDescription = !this.isDraft() || this.isSummaryStep() || this.isBlock();
     const isUsingNormalDescription = this.fieldShortDescription == null && !!this.fieldDescription;
@@ -809,7 +833,7 @@ export default class ProjectFieldRow extends Vue {
   // optional field description is absent, so the title does not sit flush
   // against the value.
   needsHeaderValueSpacer(): boolean {
-    return !this.displayedFieldDescription &&
+    return !this.hasDisplayedFieldDescription &&
       !(this.isSelection() && (this.isCheckBox() || this.isRadioButton()));
   }
   getInputType(): string {
@@ -1047,7 +1071,7 @@ export default class ProjectFieldRow extends Vue {
   <div v-else-if="multiple" :class="getCssProperty()">
     <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo"/>
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'read-only-css-enum': isReadOnlyCssEnumLayout(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }">
-      <div style="display:flex" :style="{width: getHeaderWidth()}">
+      <div v-if="!isHeaderlessReadOnlyView()" style="display:flex" :style="{width: getHeaderWidth()}">
         <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'without-description': needsHeaderValueSpacer() }">
           <div style="display: flex;">
             <span class="input-field-title">
@@ -1059,7 +1083,7 @@ export default class ProjectFieldRow extends Vue {
             </span>
           </div>
           <div
-              v-if="displayedFieldDescription"
+              v-if="hasDisplayedFieldDescription"
               ref="fieldDescription"
               class="field-description"
               :class="{ 'field-description-collapsed': shouldCollapseFieldDescription && !descriptionExpanded }"
@@ -1075,7 +1099,7 @@ export default class ProjectFieldRow extends Vue {
           >{{ descriptionExpanded ? 'Show less' : 'Show more' }}</button>
         </div>
       </div>
-      <div :class="[getEditFieldCssClass(), { 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]"
+      <div :class="[getEditFieldCssClass(), { 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'full-row': isHeaderlessReadOnlyView() }]"
            style="flex-direction: column; align-items: stretch; gap: 0.25rem;">
         <!--
           CHECK_BOX: one checkbox list directly manipulating the instance
@@ -1103,6 +1127,30 @@ export default class ProjectFieldRow extends Vue {
                         class="option-description"
                         v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></span>
                 </label>
+              </div>
+            </div>
+          </template>
+          <!--
+            Read-only/Summary without a field title: the option texts are the
+            only thing identifying the field (e.g. declaration checkboxes), so
+            every option is listed with its checked state - otherwise an
+            unchecked one would just read "No options selected" with nothing
+            saying what wasn't confirmed.
+          -->
+          <template v-else-if="!hasFieldTitle">
+            <div class="option-list">
+              <div v-for="value in possibleValues" :key="value" class="option-readonly option-status-row">
+                <i v-if="isInstanceSelected(value)" class="bi bi-check-lg option-status-checked"
+                   role="img" aria-label="Selected"></i>
+                <i v-else class="bi bi-x-lg option-status-unchecked" :class="{ 'summary-missing': mandatory }"
+                   role="img" aria-label="Not selected"></i>
+                <div>
+                  <div :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'"
+                       v-html="displayPossibleValue(value).name"></div>
+                  <div v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
+                       class="option-description"
+                       v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></div>
+                </div>
               </div>
             </div>
           </template>
@@ -1234,7 +1282,7 @@ export default class ProjectFieldRow extends Vue {
 
     <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo" :is-block="isBlock()"/>
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'read-only-css-enum': isReadOnlyCssEnumLayout(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
-      <div style="display:flex" :style="{width: getHeaderWidth()}">
+      <div v-if="!isHeaderlessReadOnlyView()" style="display:flex" :style="{width: getHeaderWidth()}">
         <input
             v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory && !isBlock() && !isReadOnlyView()"
             type="checkbox"
@@ -1259,7 +1307,7 @@ export default class ProjectFieldRow extends Vue {
                   class="todo-circle-small">#{{ todos?.get(this.downloadAction)?.number }}</span>
           </div>
           <div
-              v-if="displayedFieldDescription"
+              v-if="hasDisplayedFieldDescription"
               ref="fieldDescription"
               class="field-description"
               :class="{ 'field-description-collapsed': shouldCollapseFieldDescription && !descriptionExpanded }"
@@ -1275,7 +1323,7 @@ export default class ProjectFieldRow extends Vue {
           >{{ descriptionExpanded ? 'Show less' : 'Show more' }}</button>
         </div>
       </div>
-      <div v-if="!(isInputType(FormDataType.BOOLEAN) && !this.mandatory) || isBlock() || isReadOnlyView()" :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock() }]">
+      <div v-if="!(isInputType(FormDataType.BOOLEAN) && !this.mandatory) || isBlock() || isReadOnlyView()" :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'full-row': isHeaderlessReadOnlyView() }]">
         <div v-if="uploadAction && !isDescriptionUpload()" style="width:100%;min-width:0">
           <div v-if="isReadOnlyView()" style="display:flex; align-items:center; gap:0.5rem"
                :class="{ 'summary-empty': !existsFile, 'summary-missing': mandatory && !existsFile }">
@@ -1966,6 +2014,26 @@ export default class ProjectFieldRow extends Vue {
 }
 .option-readonly:last-child {
   margin-bottom: 0;
+}
+.option-status-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.option-status-checked {
+  color: #00489c;
+}
+.option-status-unchecked {
+  color: #5f6368;
+}
+.option-status-unchecked.summary-missing {
+  color: #b42318;
+}
+/* No header column rendered (see isHeaderlessReadOnlyView): the value takes
+ * the whole row instead of the 70% sidewise column. Three classes so it
+ * outranks every "*-edit-field(s).sidewise" width rule. */
+.input-field > .full-row.sidewise {
+  width: 100%;
 }
 .input-field.sidewise {
    display: flex;

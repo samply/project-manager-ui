@@ -996,7 +996,8 @@ export default class ProjectFieldRow extends Vue {
                  :name="radioGroupName" :id="`${radioGroupName}-${value}`" :value="value"
                  v-model="editedValue[0]" @change="onInputChange">
           <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
-            <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{ displayPossibleValue(value).name }}</span>
+            <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'"
+                  v-html="displayPossibleValue(value).name"></span>
             <span v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
                   class="option-description"
                   v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></span>
@@ -1101,7 +1102,8 @@ export default class ProjectFieldRow extends Vue {
                        :checked="instances?.some(instance => instance.value === value)"
                        @change="toggleCheckboxValue(value, ($event.target as HTMLInputElement).checked)">
                 <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
-                  <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{ displayPossibleValue(value).name }}</span>
+                  <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'"
+                        v-html="displayPossibleValue(value).name"></span>
                   <span v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
                         class="option-description"
                         v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></span>
@@ -1121,7 +1123,8 @@ export default class ProjectFieldRow extends Vue {
                 {{ getEmptySummaryValue("No options selected") }}
               </div>
               <div v-for="instance in nonEmptyInstances" :key="instance.fieldInstance" class="option-readonly">
-                <div :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{ displayPossibleValue(instance.value ?? '').name }}</div>
+                <div :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'"
+                     v-html="displayPossibleValue(instance.value ?? '').name"></div>
                 <div v-if="displayPossibleValue(instance.value ?? '').shortDescription ?? displayPossibleValue(instance.value ?? '').description"
                      class="option-description"
                      v-html="displayPossibleValue(instance.value ?? '').shortDescription ?? displayPossibleValue(instance.value ?? '').description"></div>
@@ -1572,7 +1575,8 @@ export default class ProjectFieldRow extends Vue {
                          :name="radioGroupName" :id="`${radioGroupName}-${value}`" :value="value"
                          v-model="editedValue[0]" @change="onInputChange">
                   <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
-                    <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'">{{ displayPossibleValue(value).name }}</span>
+                    <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'"
+                          v-html="displayPossibleValue(value).name"></span>
                     <span v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
                           class="option-description"
                           v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></span>
@@ -1583,7 +1587,8 @@ export default class ProjectFieldRow extends Vue {
                    :class="hasMeaningfulValue(editedValue[0]) && hasAnyOptionDescription ? 'option-list option-readonly' : ''"
                    :style="hasMeaningfulValue(editedValue[0]) && hasAnyOptionDescription ? 'padding: 0 0.75rem' : ''">
                 <template v-if="hasMeaningfulValue(editedValue[0])">
-                  <div :class="hasAnyOptionDescription ? 'option-title' : 'summary-value'">{{displayPossibleValue(editedValue[0]).name}}</div>
+                  <div :class="hasAnyOptionDescription ? 'option-title' : 'summary-value'"
+                       v-html="displayPossibleValue(editedValue[0]).name"></div>
                   <div v-if="displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description"
                        class="option-description"
                        v-html="displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description"></div>

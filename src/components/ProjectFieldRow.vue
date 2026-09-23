@@ -487,10 +487,36 @@ export default class ProjectFieldRow extends Vue {
 
     const url = new URL(this.redirectUrl);
     const bridgeheads = this.bridgeheads?.selected?.map(bridgehead => bridgehead.bridgehead) ?? [];
-    const query = this.editedValue[2] || url.searchParams.get("query");
+    const query = this.toLensUrlQuery(this.editedValue[2])
+        ?? this.toLensUrlQuery(url.searchParams.get("query"));
+    // An unparseable query would only make the Explorer show an error.
     if (query) url.searchParams.set("query", query);
+    else url.searchParams.delete("query");
     url.searchParams.set("datarequests", Utils.encodeBase64(JSON.stringify(bridgeheads)));
     window.location.href = url.toString();
+  }
+
+  // Lens (since 0.6.8) reads the "query" URL parameter as plain JSON, while the
+  // query details are stored base64-encoded (and older explorers also put base64
+  // into the explorer URL). Accepts both and returns the JSON, or undefined if
+  // the value is neither.
+  toLensUrlQuery(value?: string | null): string | undefined {
+    if (!value) return undefined;
+    const asJson = (candidate: string) => {
+      try {
+        JSON.parse(candidate);
+        return candidate;
+      } catch {
+        return undefined;
+      }
+    };
+    const json = asJson(value);
+    if (json) return json;
+    try {
+      return asJson(Utils.decodeBase64(value));
+    } catch {
+      return undefined;
+    }
   }
 
   showInputFields() {

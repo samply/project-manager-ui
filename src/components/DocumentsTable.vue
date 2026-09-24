@@ -1,5 +1,6 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
+import '@/assets/styles/table.css'
 import {
   Action,
   Bridgehead,
@@ -161,7 +162,7 @@ export default class DocumentsTable extends Vue {
     <span v-if="text"><strong>{{ text }}</strong></span>
     <br/>
     <div class="table-scroll">
-      <table class="documents-table">
+      <table class="pm-table documents-table">
         <thead>
         <tr>
           <th>Label</th>
@@ -218,38 +219,8 @@ export default class DocumentsTable extends Vue {
   overflow-x: auto;
 }
 
-.documents-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.documents-table thead th {
-  background: #e9eef8;
-  color: #2655a2;
-  text-align: left;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  padding: 12px 22px;
-  border-bottom: 1px solid #d7e2ed;
-  white-space: nowrap;
-}
-
 .documents-table tbody td {
-  padding: 14px 22px;
-  border-bottom: 1px solid #d7e2ed;
-  vertical-align: middle;
   white-space: nowrap;
-}
-
-.documents-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.documents-table tbody tr:hover td {
-  background: #e9eef8;
 }
 
 .created-cell {

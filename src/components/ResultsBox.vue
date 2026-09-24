@@ -1,5 +1,6 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
+import '@/assets/styles/table.css'
 import {PmRequestParameter, Project, UserProjectState} from "@/services/projectManagerBackendService";
 import {
   Action,
@@ -390,7 +391,7 @@ export default class ResultsBox extends Vue {
   <div>
     <br>
     <div v-if="resultsToShow.length" class="table-scroll">
-      <table class="results-table">
+      <table class="pm-table">
         <thead>
         <tr>
           <th v-if="!projectResults">Site</th>
@@ -449,39 +450,6 @@ export default class ResultsBox extends Vue {
 <style scoped>
 .table-scroll {
   overflow-x: auto;
-}
-
-.results-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.results-table thead th {
-  background: #e9eef8;
-  color: #2655a2;
-  text-align: left;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  padding: 12px 22px;
-  border-bottom: 1px solid #d7e2ed;
-  white-space: nowrap;
-}
-
-.results-table tbody td {
-  padding: 14px 22px;
-  border-bottom: 1px solid #d7e2ed;
-  vertical-align: middle;
-}
-
-.results-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.results-table tbody tr:hover td {
-  background: #e9eef8;
 }
 
 p {

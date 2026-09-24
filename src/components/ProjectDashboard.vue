@@ -23,7 +23,7 @@
         </select>
       </div>
       <div class="table-box">
-        <table class="requests-table">
+        <table class="pm-table requests-table">
           <thead>
           <tr>
             <th scope="col" @click="toggleSort(ProjectSortField.TITLE)" :class="{ active: sortBy === ProjectSortField.TITLE }">
@@ -87,6 +87,7 @@
 
 <script lang="ts">
 import {defineComponent} from 'vue';
+import '@/assets/styles/table.css'
 import {
   Action,
   Bridgehead,
@@ -385,52 +386,10 @@ export default defineComponent({
   overflow-x: auto;
 }
 
-.requests-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
+/* Every column of the requests table is sortable */
 .requests-table thead th {
-  background: #e9eef8;
-  color: #2655a2;
-  text-align: left;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  padding: 12px 22px;
-  border-bottom: 1px solid #d7e2ed;
   cursor: pointer;
-  white-space: nowrap;
   user-select: none;
-}
-.requests-table thead th .th-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.requests-table thead th .sort-caret {
-  width: 9px;
-  height: 9px;
-  opacity: .7;
-  transition: transform .15s ease-in-out;
-}
-.requests-table thead th .sort-caret.desc {
-  transform: rotate(180deg);
-}
-.requests-table thead th.active {
-  color: #2655a2;
-}
-.requests-table tbody td {
-  padding: 14px 22px;
-  border-bottom: 1px solid #d7e2ed;
-  vertical-align: middle;
-}
-.requests-table tbody tr:last-child td {
-  border-bottom: none;
-}
-.requests-table tbody tr:hover td {
-  background: #e9eef8;
 }
 .created-cell {
   font-variant-numeric: tabular-nums;

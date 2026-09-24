@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## [1.1.0 - 2026-09-21]
+## [1.1.0 - 2026-09-24]
 ### Added
 - Dockerfile
 - Single Spa
@@ -145,6 +145,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Cache config
 - German translations for action explanations and user-action feedback messages
 - Accessible success and error popups for configured action messages
+- Common table format
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

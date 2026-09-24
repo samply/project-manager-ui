@@ -1,14 +1,14 @@
 <template>
   <div class="feasibility-table-wrapper">
-    <table v-if="bridgeheads.length" class="feasibility-table">
+    <table v-if="bridgeheads.length" class="pm-table feasibility-table">
       <thead>
         <tr>
-          <th :rowspan="hasAnyBreakdown ? 2 : 1" class="feasibility-sortable" @click="sortBy('site')">
+          <th :rowspan="hasAnyBreakdown ? 2 : 1" class="pm-table-sortable" @click="sortBy('site')">
             <span class="th-label">Site<svg v-if="sortKey === 'site'" class="sort-caret" :class="{ desc: sortDirection === 'desc' }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
           </th>
           <template v-for="item in topLevelItems" :key="item.label">
             <th v-if="item.children.length" :colspan="item.children.length">{{ item.label }}</th>
-            <th v-else :rowspan="hasAnyBreakdown ? 2 : 1" class="feasibility-sortable" @click="sortBy(item.label)">
+            <th v-else :rowspan="hasAnyBreakdown ? 2 : 1" class="pm-table-sortable" @click="sortBy(item.label)">
               <span class="th-label">{{ item.label }}<svg v-if="sortKey === item.label" class="sort-caret" :class="{ desc: sortDirection === 'desc' }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
             </th>
           </template>
@@ -19,7 +19,7 @@
             <th
                 v-for="child in item.children"
                 :key="child"
-                class="feasibility-breakdown-label feasibility-sortable"
+                class="feasibility-breakdown-label pm-table-sortable"
                 @click="sortBy(child)"
             >
               <span class="th-label">{{ child }}<svg v-if="sortKey === child" class="sort-caret" :class="{ desc: sortDirection === 'desc' }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
@@ -116,6 +116,7 @@
 import {defineComponent, PropType} from "vue";
 import {Bridgehead, FeasibilityResult, hasFeasibilityResult} from "@/services/projectManagerBackendService";
 import {formatDisplayNumber} from "@/services/displayFormatService";
+import '@/assets/styles/table.css'
 
 interface FeasibilityColumn {
   label: string;
@@ -323,61 +324,9 @@ export default defineComponent({
   overflow-x: auto;
 }
 
-.feasibility-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.feasibility-table th {
-  background: #e9eef8;
-  color: #2655a2;
-  text-align: left;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  padding: 12px 22px;
-  border-bottom: 1px solid #d7e2ed;
-  white-space: nowrap;
-}
-
 .feasibility-table td {
-  padding: 14px 22px;
-  border-bottom: 1px solid #d7e2ed;
-  vertical-align: middle;
   text-align: left;
   font-variant-numeric: tabular-nums;
-}
-
-.feasibility-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.feasibility-table tbody tr:hover td {
-  background: #e9eef8;
-}
-
-.th-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.sort-caret {
-  width: 9px;
-  height: 9px;
-  opacity: .7;
-  transition: transform .15s ease-in-out;
-}
-
-.sort-caret.desc {
-  transform: rotate(180deg);
-}
-
-.feasibility-sortable {
-  cursor: pointer;
-  user-select: none;
 }
 
 .feasibility-bridgehead-name {
@@ -398,9 +347,9 @@ export default defineComponent({
   color: var(--status-danger-color);
 }
 
+/* Keeps the line below it (from .pm-table), so the add row closes the table */
 .feasibility-add-row td {
   padding: 0;
-  border-bottom: none;
 }
 
 .add-row-trigger {

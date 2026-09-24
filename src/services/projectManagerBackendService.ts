@@ -7,6 +7,8 @@ import {AuthService} from "@/services/auth";
 
 const bridgeheadParam = 'bridgehead'
 const projectCodeParam = 'project-code'
+/** Marker the backend adds to a redirect URL: the success message of this action is shown once in the target page. */
+export const ACTION_FEEDBACK_PARAM = 'action-feedback'
 const siteParam = 'site'
 
 const actionsPath = '/actions'
@@ -101,6 +103,7 @@ export enum Action {
     FETCH_PROJECT_BRIDGEHEADS_ACTION = "FETCH_PROJECT_BRIDGEHEADS",
     FETCH_PROJECT_TYPES_ACTION = "FETCH_PROJECT_TYPES",
     FETCH_PROJECTS_ACTION = "FETCH_PROJECTS",
+    CREATE_QUERY_AND_DESIGN_PROJECT_ACTION = "CREATE_QUERY_AND_DESIGN_PROJECT",
     FETCH_PROJECT_CREATORS_ACTION = "FETCH_PROJECT_CREATORS",
     FETCH_PUBLICATIONS_ACTION = "FETCH_PUBLICATIONS",
     FETCH_OTHER_DOCUMENTS_ACTION = "FETCH_OTHER_DOCUMENTS",
@@ -642,6 +645,8 @@ export type ActionMetadata = {
     successMessage?: string;
     errorMessage?: string;
     priority?: number;
+    /** The endpoint needs a site: it cannot be called in a context without one (a project without sites). */
+    bridgeheadRequired?: boolean;
 }
 
 export type ActionFeedbackMessages = Pick<ActionMetadata, 'successMessage' | 'errorMessage'>;
@@ -672,7 +677,8 @@ function jsonToActionMetadata(json: any): ActionMetadata | undefined {
         explanation: json.explanation,
         successMessage: json.successMessage,
         errorMessage: json.errorMessage,
-        priority: json.priority
+        priority: json.priority,
+        bridgeheadRequired: json.bridgeheadRequired === true
     };
 }
 
@@ -822,7 +828,21 @@ export class ProjectManagerBackendService {
         return resultMap;
     }
 
-    public async isModuleActionActive(module: Module, action: Action): Promise<boolean> {
+    /**
+     * The action can be used in this context: it is allowed for the user and project, and if its endpoint needs a
+     * site, the context has one (not the case for a project without sites). Use this one by default.
+     */
+    public async isModuleActionActive(module: Module, action: Action, context: ProjectManagerContext): Promise<boolean> {
+        await this.initializedPromise;
+        const metadata = this.getActionMetadata(module, action);
+        return metadata !== undefined && (!metadata.bridgeheadRequired || context.bridgehead !== undefined);
+    }
+
+    /**
+     * Only whether the action is allowed for the user and project, regardless of the context it would be called with.
+     * For decisions made before a site exists, e.g. whether feasibility can be shown at all.
+     */
+    public async isModuleActionAllowed(module: Module, action: Action): Promise<boolean> {
         await this.initializedPromise;
         return this.getActionMetadata(module, action) !== undefined;
     }
@@ -834,6 +854,18 @@ export class ProjectManagerBackendService {
             successMessage: metadata?.successMessage,
             errorMessage: metadata?.errorMessage,
         };
+    }
+
+    /** Messages of an action given only by its name (e.g. from a URL), in whichever module of this site it is. */
+    public async getActionFeedbackMessagesOfAction(action: string): Promise<ActionFeedbackMessages> {
+        await this.initializedPromise;
+        for (const actions of this.activeModuleActionsMetadata?.values() ?? []) {
+            const metadata = actions.get(action as Action);
+            if (metadata) {
+                return {successMessage: metadata.successMessage, errorMessage: metadata.errorMessage};
+            }
+        }
+        return {};
     }
 
     public async getDefaultErrorMessageForUserActions(): Promise<string | undefined> {
@@ -879,39 +911,50 @@ export class ProjectManagerBackendService {
         }
     }
 
+    /**
+     * Calls a backend action. Empty values in params are not sent, unless sendEmptyStrings is true:
+     * then an empty string is sent as a value (e.g. an intentionally empty query).
+     */
     public async fetchData(
         module: Module,
         action: Action,
         context: ProjectManagerContext,
-        params: Map<string, unknown>
+        params: Map<string, unknown>,
+        sendEmptyStrings = false
     ) {
-        return (await this.fetchHttpResponse(module, action, context, params)).data;
+        return (await this.fetchHttpResponse(module, action, context, params, sendEmptyStrings)).data;
     }
 
     public async fetchHttpResponse(
         module: Module,
         action: Action,
         context: ProjectManagerContext,
-        params: Map<string, unknown>
+        params: Map<string, unknown>,
+        sendEmptyStrings = false
     ): Promise<AxiosResponse> {
         await this.initializedPromise;
         const actionMetadata = this.getActionMetadata(module, action);
         if (!actionMetadata) {
             throw new Error(`Action ${action} for module ${module} is not active`);
         }
-        return this.doHttpRequest(actionMetadata.method, actionMetadata.path, this.buildHttpParams(context, params, actionMetadata));
+        if (actionMetadata.bridgeheadRequired && !context.bridgehead) {
+            throw new Error(`Action ${action} for module ${module} needs a site`);
+        }
+        return this.doHttpRequest(actionMetadata.method, actionMetadata.path,
+            this.buildHttpParams(context, params, actionMetadata, sendEmptyStrings));
     }
 
     private buildHttpParams(
         context: ProjectManagerContext,
         params: Map<string, unknown>,
-        actionMetadata: ActionMetadata
+        actionMetadata: ActionMetadata,
+        sendEmptyStrings = false
     ): Map<string, unknown> {
         const httpParams = new Map<string, unknown>();
         this.addContextToMap(httpParams, context);
         for (const param of actionMetadata.params) {
             const value = params.get(param);
-            if (value) httpParams.set(param, value);
+            if (value || (sendEmptyStrings && value === '')) httpParams.set(param, value);
         }
         return httpParams;
     }

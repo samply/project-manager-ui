@@ -126,10 +126,10 @@ export default class ResultsBox extends Vue {
   resetCanSend() {
     this.canSendProjectResults = false;
     this.canSendProjectBridgeheadResults = false;
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_RESULTS_URL_ACTION).then(condition => {
+    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_RESULTS_URL_ACTION, this.context).then(condition => {
       this.canSendProjectResults = condition;
     });
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION).then(condition => {
+    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION, this.context).then(condition => {
       this.canSendProjectBridgeheadResults = condition;
     });
   }
@@ -142,12 +142,12 @@ export default class ResultsBox extends Vue {
     this.canAcceptProjectResults = false;
     this.canAcceptProjectBridgeheadResults = false;
     if (this.areThereFinalUsers()) { // It makes only sense if there are final users
-      this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ACCEPT_PROJECT_RESULTS_URL_ACTION).then(condition => {
+      this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ACCEPT_PROJECT_RESULTS_URL_ACTION, this.context).then(condition => {
         this.canAcceptProjectResults = condition;
         this.updateActionButtons();
       });
     }
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ACCEPT_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION).then(condition => {
+    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ACCEPT_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION, this.context).then(condition => {
       this.canAcceptProjectBridgeheadResults = condition;
       this.updateActionButtons();
     });
@@ -157,7 +157,7 @@ export default class ResultsBox extends Vue {
     this.projectResults = undefined;
     this.projectBridgeheadResults = undefined;
     if (this.areThereFinalUsers()) { // It makes only sense if there are final users
-      this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_RESULTS_ACTION).then(condition => {
+      this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_RESULTS_ACTION, this.context).then(condition => {
         if (condition) {
           this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_RESULTS_ACTION, this.context, new Map()).then(results => {
             if (results) {
@@ -168,7 +168,7 @@ export default class ResultsBox extends Vue {
         }
       });
     }
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_BRIDGEHEAD_RESULTS_ACTION).then(condition => {
+    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_BRIDGEHEAD_RESULTS_ACTION, this.context).then(condition => {
       if (condition) {
         this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_BRIDGEHEAD_RESULTS_ACTION, this.context, new Map()).then(results => {
           if (results) {
@@ -178,7 +178,7 @@ export default class ResultsBox extends Vue {
         });
       }
     });
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_BRIDGEHEAD_RESULTS_FOR_OWN_BRIDGEHEAD_ACTION).then(condition => {
+    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_BRIDGEHEAD_RESULTS_FOR_OWN_BRIDGEHEAD_ACTION, this.context).then(condition => {
       if (condition) {
         this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_BRIDGEHEAD_RESULTS_FOR_OWN_BRIDGEHEAD_ACTION, this.context, new Map()).then(results => {
           if (results) {

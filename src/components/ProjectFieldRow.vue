@@ -85,7 +85,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     editMode: {type: Boolean, required: true},
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
     callRefreshBridgeheads: {type: Function as unknown as () => () => void, required: true},
-    callQueryChanged: {type: Function as unknown as () => () => void, required: true},
+    callQueryChanged: {type: Function as unknown as () => (query?: string) => void, required: true},
     projectState: {type: String as PropType<ProjectState>, required: false},
     uploadAction: {type: String as PropType<Action>, required: false},
     downloadAction: {type: String as PropType<Action>, required: false},
@@ -145,7 +145,7 @@ export default class ProjectFieldRow extends Vue {
   readonly isEditable!: boolean;
   readonly callRefreshContext!: () => void;
   readonly callRefreshBridgeheads!: () => void;
-  readonly callQueryChanged!: () => void;
+  readonly callQueryChanged!: (query?: string) => void;
   readonly projectState?: ProjectState;
 
   // For template:
@@ -307,7 +307,7 @@ export default class ProjectFieldRow extends Vue {
     const action = this.fetchAction();
     const module = this.uploadAction ? Module.PROJECT_DOCUMENTS_MODULE : this.module;
     this.projectManagerBackendService
-        .isModuleActionActive(module, action)
+        .isModuleActionActive(module, action, this.context)
         .then((isActive) => (this.isActionEnabled = isActive));
   }
 
@@ -452,8 +452,9 @@ export default class ProjectFieldRow extends Vue {
         })
       }
 
+      // Sites are sent even when empty: removing the last site sends an empty list
       this.projectManagerBackendService
-          .fetchData(this.module, this.fetchAction(), this.context, params)
+          .fetchData(this.module, this.fetchAction(), this.context, params, this.isBridgeheads())
           .then(() => this.isBridgeheads()
               ? this.callRefreshBridgeheads()
               : this.callRefreshContext());
@@ -625,13 +626,19 @@ export default class ProjectFieldRow extends Vue {
   }
 
   canEditRealQuery(): boolean {
-    return this.isQuery() === true &&
-        this.isProjectManagerAdmin() === true &&
-        this.projectState === ProjectState.REVIEW;
+    return this.isQuery() === true && (
+        (this.isProjectManagerAdmin() === true && this.projectState === ProjectState.REVIEW) ||
+        // A query without explorer (e.g. a request created from the dashboard) can only be defined here
+        (this.isCreator() && !this.redirectUrl && this.isDraft()));
+  }
+
+  // Admins edit in edit mode; the creator of a draft edits while filling in the form (not in the summary)
+  isRealQueryEditable(): boolean {
+    return this.editMode || (this.isDraft() && !this.isSummaryStep());
   }
 
   saveRealQuery(): void {
-    if (!this.editMode || this.editedValue[1] === this.tempFieldValue[1]) return;
+    if (!this.isRealQueryEditable() || this.editedValue[1] === this.tempFieldValue[1]) return;
 
     const params = new Map<string, string>();
     params.set(PmRequestParameter.QUERY, this.editedValue[1] ?? "");
@@ -639,7 +646,7 @@ export default class ProjectFieldRow extends Vue {
         .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params)
         .then(() => {
           this.tempFieldValue[1] = this.editedValue[1];
-          this.callQueryChanged();
+          this.callQueryChanged(this.editedValue[1]);
         });
   }
   isCohortDefinition(): boolean {
@@ -794,6 +801,9 @@ export default class ProjectFieldRow extends Vue {
   }
   isProjectManagerAdmin(){
     return this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN);
+  }
+  isCreator(): boolean {
+    return this.projectRoles?.includes(ProjectRole.CREATOR) === true;
   }
   get displayedFieldDescription(): string | undefined {
     return !this.isDraft() || this.isSummaryStep() || this.isBlock()
@@ -1442,8 +1452,8 @@ export default class ProjectFieldRow extends Vue {
                       v-model="editedValue[0]"
                       @change="onInputChange"
                       class="form-control auto-textarea"
-                      :class="editMode ? 'white' : 'grey'"
-                      :disabled="!editMode"
+                      :class="isRealQueryEditable() ? 'white' : 'grey'"
+                      :disabled="!isRealQueryEditable()"
                       aria-label="Pseudocode"
                   ></textarea>
                 </div>
@@ -1465,13 +1475,13 @@ export default class ProjectFieldRow extends Vue {
                         v-model="editedValue[1]"
                         @change="saveRealQuery"
                         class="form-control auto-textarea"
-                        :class="editMode ? 'white' : 'grey'"
-                        :disabled="!editMode"
+                        :class="isRealQueryEditable() ? 'white' : 'grey'"
+                        :disabled="!isRealQueryEditable()"
                         aria-label="Query"
                     ></textarea>
                   </div>
                 </div>
-                <div v-if="editMode && redirectUrl !== null && redirectUrl !== undefined"
+                <div v-if="editMode && redirectUrl"
                      class="query-explorer-option query-view-content">
                   <span>Or edit the query in Explorer:</span>
                   <button type="button"
@@ -1503,7 +1513,7 @@ export default class ProjectFieldRow extends Vue {
                       ><i :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"></i>
                       <span style="font-size: small; padding: 2px 0 0 5px">Copy Query to Clipboard</span>
                     </span>
-                    <button v-if="((isDraft() && !isSummaryStep()) || editMode) && redirectUrl !== null && redirectUrl !== undefined"
+                    <button v-if="((isDraft() && !isSummaryStep()) || editMode) && redirectUrl"
                             class="btn btn-query-link"
                             data-toggle="tooltip"
                             data-placement="top" title="Return to the DKTK Explorer to edit the request."

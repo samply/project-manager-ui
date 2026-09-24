@@ -1,6 +1,6 @@
 <template>
   <div class="feasibility-table-wrapper">
-    <table v-if="bridgeheads.length" class="pm-table feasibility-table">
+    <table class="pm-table feasibility-table">
       <thead>
         <tr>
           <th :rowspan="hasAnyBreakdown ? 2 : 1" class="pm-table-sortable" @click="sortBy('site')">
@@ -55,6 +55,7 @@
             <td v-for="column in columns" :key="column.label" :class="{ 'feasibility-breakdown-value': column.depth > 0 }">
               {{ cellText(bridgehead.bridgehead, column.label) }}
             </td>
+            <td v-if="!columns.length">-</td>
           </template>
         </tr>
         <tr v-if="editable && availableBridgeheadsToAdd.length" class="feasibility-add-row">
@@ -150,6 +151,11 @@ export default defineComponent({
     editable: {
       type: Boolean,
       default: false
+    },
+    // Without a query (e.g. a request created from the dashboard) there is nothing to count: show "-", not "loading..."
+    hasQuery: {
+      type: Boolean,
+      default: true
     },
     availableBridgeheads: {
       type: Array as PropType<Bridgehead[]>,
@@ -278,7 +284,7 @@ export default defineComponent({
       return this.errors.has(bridgeheadId);
     },
     isLoading(bridgeheadId: string): boolean {
-      return !hasFeasibilityResult(this.results.get(bridgeheadId));
+      return this.hasQuery && !hasFeasibilityResult(this.results.get(bridgeheadId));
     },
     cellText(bridgeheadId: string, label: string): string {
       const value = this.valuesByBridgehead.get(bridgeheadId)?.get(label);

@@ -82,7 +82,8 @@ export default class ProjectManagerButton extends Vue {
 
   updateIsActive() {
     this.inputText = '';
-    this.projectManagerBackendService.isModuleActionActive(this.module, this.action).then(result => this.isActive = result && this.visibility)
+    this.projectManagerBackendService.isModuleActionActive(this.module, this.action, this.context)
+        .then(result => this.isActive = result && this.visibility)
   }
 
   async handleButtonClick() {

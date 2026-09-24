@@ -37,7 +37,7 @@ export default class MailingBlackList extends Vue {
 
   updateIsActive() {
     this.projectManagerBackendService
-        .isModuleActionActive(Module.USER_MODULE, Action.FETCH_MAILING_BLACK_LIST_ACTION)
+        .isModuleActionActive(Module.USER_MODULE, Action.FETCH_MAILING_BLACK_LIST_ACTION, this.createContext())
         .then(isActive => {
           this.isActive = isActive;
           if (isActive) {

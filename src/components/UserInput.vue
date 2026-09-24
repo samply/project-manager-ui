@@ -66,7 +66,7 @@ export default class UserInput extends Vue {
   }
 
   updateIsActive() {
-    this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, this.fetchAction()).then(isActive => {
+    this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, this.fetchAction(), this.context).then(isActive => {
       this.isActive = isActive;
     });
   }

@@ -112,13 +112,13 @@ export default class DocumentsTable extends Vue {
   }
 
   updateCanDownload() {
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE, this.downloadAction).then(result => {
+    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE, this.downloadAction, this.context).then(result => {
       this.canDownload = result;
       if (this.canDownload && !this.usesProvidedDocuments) {
         this.fetchProjectDocuments();
       }
     })
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE, Action.REMOVE_DOCUMENT_ACTION)
+    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE, Action.REMOVE_DOCUMENT_ACTION, this.context)
         .then(result => this.canRemove = result);
   }
 

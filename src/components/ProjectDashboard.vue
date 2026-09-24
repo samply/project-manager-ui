@@ -3,7 +3,14 @@
   <div style="display: flex; min-height: 100vh;">
     <div class="container custom-width-projects">
       <!-- TODO: restore a notification-toggle entry point in the header when isProjectManagerAdmin is true. -->
-      <div class="box-header"><span>Requests</span></div>
+      <div class="box-header">
+        <span>Requests</span>
+        <button v-if="canCreateRequest" type="button" class="btn btn-outline-light create-request-button"
+                :disabled="isCreatingRequest" :aria-busy="isCreatingRequest" @click="createRequest">
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>
+          <span>{{ isCreatingRequest ? 'Creating…' : 'Create request' }}</span>
+        </button>
+      </div>
       <div v-if="projectStates.length > 1 || applicants.length > 1 || bridgeheads.length > 1" class="filter-box">
         <select v-if="projectStates.length > 1" v-model="selectedState" class="form-select" @change="changeState()">
           <option value="">All Phases</option>
@@ -107,6 +114,7 @@ import PhasePill from "@/components/PhasePill.vue";
 import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
 import {getConfig} from "@/services/configLoader";
 import UserAndEmail from "@/components/UserAndEmail.vue";
+import store, {ActionFeedbackType} from "@/services/store";
 
 export default defineComponent({
   computed: {
@@ -137,7 +145,9 @@ export default defineComponent({
       selectedBridgehead: "",
       sortBy: ProjectSortField.CREATED,
       sortDesc: true,
-      createdAtDisplayFormat: DisplayFormatKey.DATE_TIME_FORMAT as DisplayFormatKey
+      createdAtDisplayFormat: DisplayFormatKey.DATE_TIME_FORMAT as DisplayFormatKey,
+      canCreateRequest: false,
+      isCreatingRequest: false
     };
   },
   watch: {
@@ -146,6 +156,7 @@ export default defineComponent({
       this.fetchFilterOptions();
       this.fetchProjects();
       this.fetchIfIsProjectManagerAdmin();
+      this.updateCanCreateRequest();
     },
     projects() {
       if (this.isProjectManagerAdmin) {
@@ -156,6 +167,7 @@ export default defineComponent({
   async mounted() {
     await this.fetchCreatedAtDisplayFormat();
     await this.initializeCurrentData();
+    await this.updateCanCreateRequest();
   },
   methods: {
     async fetchCreatedAtDisplayFormat() {
@@ -163,6 +175,49 @@ export default defineComponent({
       this.createdAtDisplayFormat = resolveDisplayFormatKey(
           config.PROJECT_DASHBOARD_CREATED_AT_DISPLAY_FORMAT, DisplayFormatKey.DATE_TIME_FORMAT);
     },
+    // The button needs the frontend variable CREATE_REQUEST_ENABLED and the permission to create requests
+    async updateCanCreateRequest() {
+      const config = await getConfig();
+      this.canCreateRequest = config.CREATE_REQUEST_ENABLED === 'true' &&
+          await this.projectManagerBackendService.isModuleActionActive(
+              Module.PROJECTS_MODULE, Action.CREATE_QUERY_AND_DESIGN_PROJECT_ACTION, this.context);
+    },
+
+    // Creates a draft request with an empty query (in the configured format) and no sites, like the explorer does
+    // with its query and sites. The creator defines the query in the project view afterwards.
+    async createRequest() {
+      const config = await getConfig();
+      const feedbackMessages = await this.projectManagerBackendService.getActionFeedbackMessages(
+          Module.PROJECTS_MODULE, Action.CREATE_QUERY_AND_DESIGN_PROJECT_ACTION);
+      const params = new Map<string, string>();
+      // The backend needs a query together with its format: the query is intentionally empty
+      params.set(PmRequestParameter.QUERY, '');
+      params.set(PmRequestParameter.QUERY_FORMAT, config.CREATE_REQUEST_DEFAULT_QUERY_FORMAT ?? '');
+      this.isCreatingRequest = true;
+      try {
+        // Same response as for the explorer: one entry whose value is the project view URL
+        const response: Record<string, string> = await this.projectManagerBackendService.fetchData(
+            Module.PROJECTS_MODULE, Action.CREATE_QUERY_AND_DESIGN_PROJECT_ACTION, this.context, params, true);
+        const projectViewUrl = Object.values(response ?? {})[0] ?? '';
+        const query = Object.fromEntries(new URL(projectViewUrl, window.location.href).searchParams);
+        if (!query['project-code']) {
+          throw new Error(`No project code in ${projectViewUrl}`);
+        }
+        // Like the explorer, follow the returned URL: its action-feedback marker makes the project view show the
+        // success message. Staying in the single-page app avoids reloading it.
+        await this.$router.push({name: 'ProjectView', query});
+      } catch (error) {
+        console.error('Error creating request:', error);
+        const message = feedbackMessages.errorMessage ||
+            await this.projectManagerBackendService.getDefaultErrorMessageForUserActions();
+        if (message) {
+          store.commit('showActionFeedback', {type: ActionFeedbackType.ERROR, message});
+        }
+      } finally {
+        this.isCreatingRequest = false;
+      }
+    },
+
     toggleNotification() {
       this.showNotification = !this.showNotification;
     },
@@ -368,6 +423,14 @@ export default defineComponent({
 }
 .box-header span {
   font-size: inherit;
+}
+.create-request-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 14px;
 }
 
 .custom-width-notifications h2 {

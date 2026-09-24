@@ -62,6 +62,13 @@ export interface FrontendConfig {
     DOCUMENT_CREATED_AT_DISPLAY_FORMAT?: string;
     /** Display format key for a notification's timestamp. Falls back to DATE_TIME_WITH_SECONDS_FORMAT when absent/invalid. */
     NOTIFICATION_TIMESTAMP_DISPLAY_FORMAT?: string;
+    /** "true" shows the "Create request" button in the dashboard. Hidden when absent or any other value. */
+    CREATE_REQUEST_ENABLED?: string;
+    /**
+     * Query format (e.g. AST_DATA) of the empty query of a request created with the dashboard's
+     * "Create request" button. The creator can change it afterwards in the project view.
+     */
+    CREATE_REQUEST_DEFAULT_QUERY_FORMAT?: string;
     [key: string]: unknown;
 }
 

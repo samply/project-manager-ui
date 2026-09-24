@@ -80,7 +80,7 @@ export default class UploadButton extends Vue {
   }
 
   updateIsActive() {
-    this.projectManagerBackendService.isModuleActionActive(this.module, this.uploadAction).then(result => this.isActive = result)
+    this.projectManagerBackendService.isModuleActionActive(this.module, this.uploadAction, this.context).then(result => this.isActive = result)
     this.selectedBridgehead = this.context.bridgehead?.bridgehead
   }
 

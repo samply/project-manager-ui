@@ -56,7 +56,7 @@ export default class DownloadButton extends Vue {
 
   updateIsActive() {
     this.projectManagerBackendService
-        .isModuleActionActive(this.module, this.action)
+        .isModuleActionActive(this.module, this.action, this.context)
         .then(result => this.isActive = result);
   }
 

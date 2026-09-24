@@ -183,7 +183,9 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
         {
             fixedFieldKey: FixedFormFieldKey.SELECTED_COHORT,
             fieldKey: "Selected Cohort",
-            fieldDescription: "This query was automatically imported from your Explorer session. Use \"Edit in Explorer\" to adjust your search criteria.",
+            fieldDescription: context.project?.explorerUrl
+                ? "This query was automatically imported from your Explorer session. Use \"Edit in Explorer\" to adjust your search criteria."
+                : "Enter the query of your request.",
             fieldValue: [
                 context.project?.humanReadable ?? "",
                 context.project?.query ?? "",
@@ -232,11 +234,14 @@ export function buildFixedProjectFields(context: FixedProjectFieldsContext): Pro
             mandatory: true,
             category: context.getFixedFieldDialogStep(
                 FixedFormFieldKey.QUERY_FORMAT, FixedDialogStep.QUERY),
-            visibilityCondition: context.isProjectManagerAdmin() &&
+            visibilityCondition: (context.isProjectManagerAdmin() &&
                 (context.isFixedFieldConfigured(FixedFormFieldKey.QUERY_FORMAT)
                     ? context.isFixedFieldVisibleInCurrentStep(
                         FixedFormFieldKey.QUERY_FORMAT, FixedDialogStep.QUERY)
-                    : (!context.existsDraftDialog || context.isCurrentStep(FixedDialogStep.SUMMARY)))
+                    : (!context.existsDraftDialog || context.isCurrentStep(FixedDialogStep.SUMMARY)))) ||
+                // Without explorer, the creator of the draft defines the query and therefore its format
+                (context.existsDraftDialog && !context.project?.explorerUrl &&
+                    context.isFixedFieldVisibleInCurrentStep(FixedFormFieldKey.QUERY_FORMAT, FixedDialogStep.QUERY))
         },
         {
             fixedFieldKey: FixedFormFieldKey.ADDITIONAL_FILTER_CRITERIA,

@@ -365,6 +365,7 @@
                                   :errors="feasibilityErrors"
                                   :page-size="feasibilityPageSize"
                                   :editable="canEditSelectedSites()"
+                                  :has-query="!project || Boolean(project.query)"
                                   :available-bridgeheads="allBridgeheads"
                                   @update-bridgeheads="updateSelectedSites"
                               />
@@ -718,6 +719,8 @@ import {
   UserProjectState
 } from "@/services/projectManagerBackendService";
 import {fromFormControlValue} from "@/services/formValueCodec";
+import {ACTION_FEEDBACK_PARAM} from "@/services/projectManagerBackendService";
+import store, {ActionFeedbackType} from "@/services/store";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
 import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
@@ -1588,11 +1591,14 @@ export default defineComponent({
       this.context = new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
     },
 
-    queryChanged() {
+    queryChanged(query?: string) {
       // Feasibility results belong to the query, so none remain valid after
-      // the project-manager admin changes the real query. Bridgehead
-      // executions are intentionally untouched because editing is restricted
-      // to REVIEW, before the query is sent to the sites.
+      // the query changes (by the project-manager admin in REVIEW, or by the
+      // creator of a draft without explorer). Bridgehead executions are
+      // intentionally untouched because the query is not sent to the sites yet.
+      if (query !== undefined && this.project) {
+        this.project.query = query;
+      }
       this.feasibilityResults.clear();
       this.feasibilityErrors.clear();
       if (this.feasibilityEnabled) {
@@ -1624,6 +1630,11 @@ export default defineComponent({
           this.activeBridgehead = bridgeheads.find(
               (bridgehead: Bridgehead) => bridgehead.bridgehead === activeBridgeheadId
           ) ?? bridgeheads[0];
+          // The project is loaded when the active site changes (see the watchers). A project without sites
+          // (e.g. created from the dashboard) has no active site, so load it here the first time.
+          if (!this.activeBridgehead && !this.project) {
+            this.refreshContext();
+          }
         });
       } catch (error) {
         console.error('Error loading BridgeheadList:', error);
@@ -1638,8 +1649,9 @@ export default defineComponent({
     updateSelectedSites(bridgeheads: Bridgehead[]): void {
       const params = new Map<string, string>();
       params.set(PmRequestParameter.BRIDGEHEADS, bridgeheads.map(bridgehead => bridgehead.bridgehead).join(','));
+      // Sent even when empty: removing the last site sends an empty list
       this.projectManagerBackendService
-          .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params)
+          .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params, true)
           .then(() => this.refreshBridgeheadsAndContext());
     },
 
@@ -1647,9 +1659,9 @@ export default defineComponent({
       const wasEnabled = this.feasibilityEnabled;
       const availabilityActionActive = await this.projectManagerBackendService.isModuleActionActive(
           Module.PROJECT_BRIDGEHEAD_MODULE,
-          Action.IS_FEASIBILITY_ENABLED_ACTION
-      );
-      const fetchActionActive = await this.projectManagerBackendService.isModuleActionActive(
+          Action.IS_FEASIBILITY_ENABLED_ACTION, this.context);
+      // Allowed, not callable: this is decided before any site exists; each site is then fetched with its own context
+      const fetchActionActive = await this.projectManagerBackendService.isModuleActionAllowed(
           Module.PROJECT_BRIDGEHEAD_MODULE,
           Action.FETCH_FEASIBILITY_ACTION
       );
@@ -1674,7 +1686,8 @@ export default defineComponent({
     },
 
     initializeFeasibilityResult(bridgehead: Bridgehead): Promise<void> {
-      if (!this.feasibilityEnabled) return Promise.resolve();
+      // A loaded project with an empty query (created from the dashboard) has nothing to count yet
+      if (!this.feasibilityEnabled || (this.project && !this.project.query)) return Promise.resolve();
 
       const bridgeheadId = bridgehead.bridgehead;
       const bridgeheadContext = new ProjectManagerContext(this.projectCode, bridgehead);
@@ -1942,6 +1955,22 @@ export default defineComponent({
         await this.checkButtonVisibility()
         this.explanations = this.projectManagerBackendService.fetchExplanations();
         this.extendedExplanations = this.fetchExtendedExplanations();
+        await this.showActionFeedbackFromUrl();
+      }
+    },
+
+    // After a redirect (from the explorer, the dashboard or another client), the backend marks the URL with the
+    // action that led here. Its success message is shown once, and the marker is removed so that a reload or a
+    // copied link does not show it again.
+    async showActionFeedbackFromUrl() {
+      const action = this.$route.query[ACTION_FEEDBACK_PARAM];
+      if (typeof action !== 'string') return;
+      const query = {...this.$route.query};
+      delete query[ACTION_FEEDBACK_PARAM];
+      await this.$router.replace({query});
+      const {successMessage} = await this.projectManagerBackendService.getActionFeedbackMessagesOfAction(action);
+      if (successMessage) {
+        store.commit('showActionFeedback', {type: ActionFeedbackType.SUCCESS, message: successMessage});
       }
     },
 
@@ -1980,9 +2009,9 @@ export default defineComponent({
     async initializeScriptTabAvailability(): Promise<void> {
       const [canUploadScript, canDownloadScript] = await Promise.all([
         this.projectManagerBackendService.isModuleActionActive(
-            Module.PROJECT_DOCUMENTS_MODULE, Action.UPLOAD_SCRIPT_ACTION),
+            Module.PROJECT_DOCUMENTS_MODULE, Action.UPLOAD_SCRIPT_ACTION, this.context),
         this.projectManagerBackendService.isModuleActionActive(
-            Module.PROJECT_DOCUMENTS_MODULE, Action.DOWNLOAD_SCRIPT_ACTION)
+            Module.PROJECT_DOCUMENTS_MODULE, Action.DOWNLOAD_SCRIPT_ACTION, this.context)
       ]);
 
       // The backend action catalogue is context-aware and is the sole source
@@ -2008,7 +2037,7 @@ export default defineComponent({
         [Module.PROJECT_EDITION_MODULE, Action.DOWNLOAD_FORM_AS_PDF_ACTION]
       ];
       const activeActions = await Promise.all(documentActions.map(([module, action]) =>
-          this.projectManagerBackendService.isModuleActionActive(module, action)));
+          this.projectManagerBackendService.isModuleActionActive(module, action, this.context)));
 
       this.isDocumentsTabAvailable = activeActions.some(Boolean);
       if ((!this.isDocumentsTabAvailable || this.project?.state === ProjectState.DRAFT) &&
@@ -2296,9 +2325,10 @@ export default defineComponent({
         callback: (result: any) => Promise<any>,
         context?: ProjectManagerContext) {
       try {
-        const condition = await this.projectManagerBackendService.isModuleActionActive(module, action);
+        const requestContext = context ?? this.context;
+        // Skips actions that are not allowed, or that need a site when the context has none (project without sites)
+        const condition = await this.projectManagerBackendService.isModuleActionActive(module, action, requestContext);
         if (condition) {
-          const requestContext = context ?? this.context;
           const result = await this.projectManagerBackendService.fetchData(module, action, requestContext, params);
           await callback(result); // Await the callback to handle any async operations inside it
         }
@@ -3100,7 +3130,7 @@ export default defineComponent({
             const statusArray = await Promise.all(
                 buttonGroup.button.map(async (button) => {
                   const visibility1 = button.visibilityCondition !== undefined ? button.visibilityCondition : true;
-                  const visibility2 = await this.projectManagerBackendService.isModuleActionActive(button.module, button.action);
+                  const visibility2 = await this.projectManagerBackendService.isModuleActionActive(button.module, button.action, this.context);
                   // Check if a button is visible and the flag hasn't been set to true yet
                   if (visibility1 && visibility2 && !this.isAnyButtonVisible) {
                     this.isAnyButtonVisible = true; // Set the flag to true immediately if a visible button is found

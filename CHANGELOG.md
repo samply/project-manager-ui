@@ -146,6 +146,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - German translations for action explanations and user-action feedback messages
 - Accessible success and error popups for configured action messages
 - Common table format
+- Create request button in the dashboard
+- Creator edits the query of a draft without explorer
+- Success message after a redirect (action feedback marker)
+- Projects without sites: isModuleActionActive also checks that an action needing a site has one (isModuleActionAllowed: permission only); the last site can be removed
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

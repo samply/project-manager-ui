@@ -447,7 +447,7 @@ export default class BridgeheadOverview extends Vue {
   }
 
   async fetchDataShieldState(bridgehead: Bridgehead): Promise<DataShieldProjectStatus> {
-    return this.projectManagerBackendService.isModuleActionActive(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION).then(condition =>
+    return this.projectManagerBackendService.isModuleActionActive(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, this.fetchContext(bridgehead)).then(condition =>
         (condition) ? this.projectManagerBackendService.fetchData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, this.fetchContext(bridgehead), new Map()) : {
           project_id: this.context.projectCode,
           bk: bridgehead.bridgehead,

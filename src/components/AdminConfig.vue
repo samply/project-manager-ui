@@ -38,7 +38,7 @@ export default defineComponent({
   methods: {
     async fetchProjectRoles() {
       try {
-        this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, Action.FETCH_MAILING_BLACK_LIST_ACTION).then(condition => {
+        this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, Action.FETCH_MAILING_BLACK_LIST_ACTION, this.context).then(condition => {
           //this.isProjectManagerAdmin = false;
           console.log(condition)
           if (condition) {

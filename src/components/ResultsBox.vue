@@ -291,7 +291,7 @@ export default class ResultsBox extends Vue {
 </script>
 
 <template>
-  <div v-if="canSendProjectResults || canSendProjectBridgeheadResults">
+  <div v-if="canSendProjectResults || canSendProjectBridgeheadResults" class="results-sender">
     <!-- Text field for user input -->
     <div v-if="projectResults?.finalUserState !== 'ACCEPTED' && projectResults?.bridgeheadAdminState !== 'ACCEPTED'">
       <p>Please review and accept the results in the 'Actions' section. Once accepted, we recommend securing the results
@@ -386,10 +386,8 @@ export default class ResultsBox extends Vue {
         />
       </div>
     </div>
-    <br>
   </div>
   <div>
-    <br>
     <div v-if="resultsToShow.length" class="table-scroll">
       <table class="pm-table">
         <thead>
@@ -524,6 +522,10 @@ p {
 
 .read-more-link:hover {
   color: #0056b3;
+}
+
+.results-sender {
+  margin-bottom: var(--space-5);
 }
 
 .results-url-sender {

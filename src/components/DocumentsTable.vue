@@ -159,8 +159,7 @@ export default class DocumentsTable extends Vue {
 
 <template>
   <div v-if="projectDocuments && projectDocuments.length > 0" class="project-document-table">
-    <span v-if="text"><strong>{{ text }}</strong></span>
-    <br/>
+    <div v-if="text" class="documents-table-label"><strong>{{ text }}</strong></div>
     <div class="table-scroll">
       <table class="pm-table documents-table">
         <thead>
@@ -213,6 +212,10 @@ export default class DocumentsTable extends Vue {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+}
+
+.documents-table-label {
+  margin-bottom: var(--space-2);
 }
 
 .table-scroll {

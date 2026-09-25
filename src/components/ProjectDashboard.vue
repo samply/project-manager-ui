@@ -396,7 +396,7 @@ export default defineComponent({
  */
 .custom-width-projects {
   flex: 1;
-  margin-top: 2%;
+  margin-top: var(--page-top);
   border-radius: 10px !important;
   box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
   0 1px 1px 0 rgba(0, 0, 0, 0.14),

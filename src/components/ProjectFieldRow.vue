@@ -792,7 +792,8 @@ export default class ProjectFieldRow extends Vue {
   }
   getFileSummaryValue(): string {
     if (!this.existsFile) {
-      return this.getEmptySummaryValue("No file uploaded");
+      // The description upload has no title of its own: say which file.
+      return this.getEmptySummaryValue(this.isDescriptionUpload() ? "No description file uploaded" : "No file uploaded");
     }
     return this.hasMeaningfulValue(this.fieldValue[1]) ? this.fieldValue[1] : "File uploaded";
   }
@@ -864,13 +865,19 @@ export default class ProjectFieldRow extends Vue {
       this.$nextTick(() => this.refreshDescriptionOverflow());
     }
   }
-  // Option lists already provide their own vertical separation from the
-  // header. Other value controls need a description-sized spacer when the
-  // optional field description is absent, so the title does not sit flush
-  // against the value.
-  needsHeaderValueSpacer(): boolean {
-    return !this.hasDisplayedFieldDescription &&
-      !(this.isSelection() && (this.isCheckBox() || this.isRadioButton()));
+  // The header (title + description) sits above the value while filling in
+  // the draft, and beside it everywhere else. Only the stacked layout needs
+  // a gap between the two - the same gap whether or not a description is
+  // shown and whatever the control is.
+  hasValueBelowHeader(): boolean {
+    return this.isDraft() && !this.isSummaryStep() && !this.isBlock() &&
+      !this.isOptionalBooleanInHeader() && !this.isDescriptionUpload() &&
+      (this.hasFieldTitle || this.hasDisplayedFieldDescription);
+  }
+  // An optional BOOLEAN being filled in is a checkbox inside its own header,
+  // with no value column: a single checkbox line.
+  isOptionalBooleanInHeader(): boolean {
+    return this.isInputType(FormDataType.BOOLEAN) && !this.mandatory && !this.isBlock() && !this.isReadOnlyView();
   }
   getInputType(): string {
     if (this.type === FormDataType.INTEGER) return 'number'
@@ -912,8 +919,10 @@ export default class ProjectFieldRow extends Vue {
     return !!(groups && groups.length > 0);
   }
 
+  // Title beside the value (summary, review, blocks): the narrow title column,
+  // so every value starts on the same line - optional BOOLEANs included.
   hasShortTitle(): boolean {
-    return (!this.isInputType(FormDataType.BOOLEAN) && (!this.isDraft() || this.isSummaryStep())) || this.isBlock() || (this.isInputType(FormDataType.BOOLEAN) && (!this.isDraft() || this.isSummaryStep()) && this.mandatory)
+    return !this.isDraft() || this.isSummaryStep() || this.isBlock()
   }
   onBooleanValueChange(_event: Event) {
     const input = _event.target as HTMLInputElement;
@@ -993,7 +1002,9 @@ export default class ProjectFieldRow extends Vue {
     return cssClasses && cssClasses?.length > 0 ? cssClasses.join(",")+' layout' : "";
   }
   getWidth(): string {
-    let width = "80%"
+    // Title and description stacked above the value (draft): as wide as the
+    // value, so a description wraps at the input's right edge, not earlier.
+    let width = "100%"
     if (this.getCssProperty().includes("layout")) {
       if (this.properties?.includes(FormFieldProperty.CSS_UNIT)) {
         width = "30%"
@@ -1017,7 +1028,10 @@ export default class ProjectFieldRow extends Vue {
     } else {
       if (this.hasShortTitle()) {
         if (this.hasSection()) {
-          width = "28%"
+          // A section's fields are indented 10px (.input-field.section), so
+          // their title column is 30% of a 10px narrower row: 7px less keeps
+          // the value column on the same line as everywhere else.
+          width = "calc(30% - 7px)"
         } else {
           width = "30%"
         }
@@ -1027,7 +1041,10 @@ export default class ProjectFieldRow extends Vue {
   }
   getHeaderWidth(): string {
     const isSummaryLayout = !this.isDraft() || this.isSummaryStep();
-    return isSummaryLayout && this.properties?.includes(FormFieldProperty.CSS_ENUM)
+    // Both members of an enum-plus-text pair are separate rows in the summary
+    // (ProjectView.isStackedPairRow): the ordinary 30% title column.
+    return isSummaryLayout && (this.properties?.includes(FormFieldProperty.CSS_ENUM) ||
+        this.properties?.includes(FormFieldProperty.CSS_ENUM_VALUE))
         ? "30%"
         : this.getWidth();
   }
@@ -1105,11 +1122,13 @@ export default class ProjectFieldRow extends Vue {
     recursive instance per value (see above) plus a button to add another.
   -->
   <div v-else-if="multiple" :class="getCssProperty()">
-    <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo"/>
+    <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo" attach="next"/>
     <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'read-only-css-enum': isReadOnlyCssEnumLayout(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }">
       <div v-if="!isHeaderlessReadOnlyView()" style="display:flex" :style="{width: getHeaderWidth()}">
-        <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'without-description': needsHeaderValueSpacer() }">
-          <div style="display: flex;">
+        <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'with-value-below': hasValueBelowHeader() }">
+          <!-- No title (e.g. a declaration checkbox): no empty line holding only
+               the mandatory marker - the marker moves to the option text. -->
+          <div v-if="hasFieldTitle" style="display: flex;">
             <span class="input-field-title">
               <span v-html="fieldKey"></span>
               <MandatoryFieldMarker
@@ -1157,8 +1176,15 @@ export default class ProjectFieldRow extends Vue {
                        :checked="instances?.some(instance => instance.value === value)"
                        @change="toggleCheckboxValue(value, ($event.target as HTMLInputElement).checked)">
                 <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
-                  <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'"
-                        v-html="displayPossibleValue(value).name"></span>
+                  <span>
+                    <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'"
+                          v-html="displayPossibleValue(value).name"></span>
+                    <MandatoryFieldMarker
+                        v-if="!hasFieldTitle"
+                        :mandatory="mandatory"
+                        :missing="!instances?.some(instance => instance.value)"
+                    />
+                  </span>
                   <span v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
                         class="option-description"
                         v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></span>
@@ -1253,13 +1279,13 @@ export default class ProjectFieldRow extends Vue {
         </template>
       </div>
     </div>
-    <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo"/>
+    <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo" attach="previous"/>
   </div>
 
   <tr v-else-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep && draftDialogCurrentStep.id === dialogStep.SERVICES"
       class="config-box-row">
     <td colspan="3" style="display: block;width:100%">
-      <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo"/>
+      <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo" attach="next"/>
       <div>
         <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
              :class="{ 'active': isActiveStep(step) }">
@@ -1281,11 +1307,11 @@ export default class ProjectFieldRow extends Vue {
                 <div class="config-box-header">{{ configurations?.get(step)?.project?.label }}</div>
                 <div class="config-box-body">
                   <div v-if="configurations" style="display: flex;flex-direction: column;width:100%">
-                    <div style="margin-bottom:2%;text-align:left;">
+                    <div style="text-align:left;">
                       {{ configurations?.get(step)?.project?.description }}
                     </div>
                     <div v-if="!configurations?.get(step)?.project?.isCustomConfigSelected"
-                         style="text-align: right;margin-bottom:2%">
+                         style="text-align: right">
                       <!--<button @click.stop="showDetails[index]=!showDetails[index]"
                               style="background: none; border:none; color: #007bff;">
                         <span v-if="!showDetails[index]">show details</span>
@@ -1309,25 +1335,25 @@ export default class ProjectFieldRow extends Vue {
           </div>
         </div>
       </div>
-      <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo"/>
+      <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo" attach="previous"/>
     </td>
   </tr>
 
 
-  <div v-else :class="getCssProperty()">
+  <div v-else :class="[getCssProperty(), { 'optional-boolean-field': isOptionalBooleanInHeader() }]">
 
-    <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo" :is-block="isBlock()"/>
-    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'read-only-css-enum': isReadOnlyCssEnumLayout(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
+    <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo" attach="next" :is-block="isBlock()"/>
+    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'read-only-css-enum': isReadOnlyCssEnumLayout(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep(), 'description-upload': isDescriptionUpload() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
       <div v-if="!isHeaderlessReadOnlyView()" style="display:flex" :style="{width: getHeaderWidth()}">
         <input
             v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory && !isBlock() && !isReadOnlyView()"
             type="checkbox"
-            style="margin-right:20px"
+            class="optional-boolean-checkbox"
             :checked="editedValue[0] === 'true'"
             @change="onBooleanValueChange"
             :disabled=" (isDraft() && isSummaryStep()) || (!isDraft() && !editMode)"
         />
-        <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'without-description': needsHeaderValueSpacer() }">
+        <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'with-value-below': hasValueBelowHeader() }">
           <div v-if="!isDescriptionUpload()" style="display: flex;">
             <span class="input-field-title">
               <span v-html="fieldKey"></span>
@@ -1399,7 +1425,7 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else-if="isQuery()">
-              <div  v-if="editedValue[2]" style="display: flex">
+              <div  v-if="editedValue[2]" class="query-search-bar">
                 <lens-search-bar
                     placeholderText=""
                     readOnly="true"
@@ -1409,7 +1435,7 @@ export default class ProjectFieldRow extends Vue {
                     noQueryMessage="Empty Search."
                 ></lens-query-explain-button>
               </div>
-              <div v-else-if="isReadOnlyView()" class="summary-value"
+              <div v-else-if="isReadOnlyView()" class="summary-value query-search-bar"
                    :class="{ 'summary-empty': !hasMeaningfulValue(editedValue[0]), 'summary-missing': mandatory && !hasMeaningfulValue(editedValue[0]) }">
                 {{ getQuerySummaryFallback() }}
               </div>
@@ -1425,8 +1451,6 @@ export default class ProjectFieldRow extends Vue {
                       noQueryMessage="Empty Search."
                   ></lens-query-explain-button>
               </div>-->
-              <br/>
-              <br/>
               <template v-if="canEditRealQuery()">
                 <div class="query-view-switch" role="group" aria-label="Query representation">
                   <button type="button"
@@ -1498,7 +1522,7 @@ export default class ProjectFieldRow extends Vue {
 
               <template v-else>
                 <div style="display: flex; justify-content: space-between">
-                  <div class="query-controls" style="margin-bottom: 10px">
+                  <div class="query-controls" :style="showPseudocode ? 'margin-bottom: var(--space-3)' : ''">
                     <span v-if="isProjectManagerAdmin()" class="query-link-button"
                             data-toggle="tooltip"
                             data-placement="top" :title='showPseudocode ? "Hide Pseudocode": "Show Pseudocode"'
@@ -1537,7 +1561,7 @@ export default class ProjectFieldRow extends Vue {
               </template>
             </div>
 
-            <div v-else-if="isDescriptionUpload()" style="margin:1rem 0 0 1rem">
+            <div v-else-if="isDescriptionUpload()" :style="isReadOnlyView() ? '' : 'margin-left:1rem'">
               <div v-if="isReadOnlyView()" style="display:flex; align-items:center; gap:0.5rem"
                    :class="{ 'summary-empty': !existsFile, 'summary-missing': mandatory && !existsFile }">
                 <span>{{ getFileSummaryValue() }}</span>
@@ -1684,7 +1708,7 @@ export default class ProjectFieldRow extends Vue {
                   <!--<span style="font-size: smaller"> {{displayPossibleValue(value).description}}</span>-->
                 </option>
               </select>
-              <div v-if="(!isDraft() || isSummaryStep()) && !editMode" style="padding: 0 0.75rem">
+              <div v-if="(!isDraft() || isSummaryStep()) && !editMode" :style="hasMeaningfulValue(editedValue[0]) ? 'padding: 0 0.75rem' : ''">
                 <template v-if="hasMeaningfulValue(editedValue[0])">
                   <div>{{displayPossibleValue(editedValue[0]).name}}</div>
                   <div style="font-size: 12px">{{displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description}}</div>
@@ -1733,7 +1757,7 @@ export default class ProjectFieldRow extends Vue {
       </div>
 
     </div>
-    <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo" :is-block="isBlock()"/>
+    <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo" attach="previous" :is-block="isBlock()"/>
   </div>
 
 
@@ -1793,6 +1817,13 @@ export default class ProjectFieldRow extends Vue {
 /*noinspection CssUnusedSymbol*/
 .description-edit-field.sidewise {
   width: 70%;
+}
+/* Beside its header (summary, review), a value starts on the title's line
+ * instead of being centred against a tall title + description. */
+.query-edit-field.sidewise,
+.description-edit-field.sidewise,
+.selection-edit-fields.sidewise {
+  align-items: flex-start;
 }
 /*noinspection CssUnusedSymbol*/
 .bridgeheads-edit-field {
@@ -1887,11 +1918,21 @@ export default class ProjectFieldRow extends Vue {
 .config-box {
   /*width: fit-content;
   /*text-align: center;*/
-  margin: 20px 30px;
+  /* One resource per card, spaced like the options of one question but
+   * with room for the card outline. Same type sizes as field titles and
+   * option descriptions. */
+  margin: 0 var(--form-inset) var(--space-3);
+  padding: var(--space-3) var(--space-4);
   /*border: 1px solid #0000001E;*/
   border-radius: 10px;
   min-width: 250px;
-  font-size: 20px;
+  font-size: 14px;
+}
+.config-box:last-child {
+  margin-bottom: 0;
+}
+.config-box .form-check {
+  margin: 0.15rem var(--space-3) 0 0;
 }
 
 .config-box.active, .config-box:hover {
@@ -1903,7 +1944,7 @@ export default class ProjectFieldRow extends Vue {
 .config-box-header {
   /*background-color: #95c8dc;*/
   color: #00489c;
-  padding: 10px;
+  font-size: 16px;
   border-radius: 10px 10px 0 0;
   /*display: flex;
   justify-content: center;
@@ -1915,7 +1956,6 @@ export default class ProjectFieldRow extends Vue {
   color: #00489c;
   /*background-color: #007bff;*/
   font-weight: bold;
-  font-size: 19px;
 }
 
 .config-box:hover .config-box-header {
@@ -1924,19 +1964,22 @@ export default class ProjectFieldRow extends Vue {
 }
 
 .config-box-body {
-  padding: 10px;
+  padding: var(--space-1) 0 0;
   height: 100%;
   display: flex;
   /*justify-content: center;
   align-items: center;*/
   background-color: white;
   border-radius: 0 0 10px 10px;
-  font-size: 18px;
+  font-size: 13px;
 }
 
 .config-box-row {
   border: 1px solid white;
   background-color: white;
+}
+.config-box-row > td {
+  padding: calc(var(--field-gap) / 2) 0;
 }
 
 .config-box-row:hover > * {
@@ -1951,11 +1994,11 @@ export default class ProjectFieldRow extends Vue {
 .field-description {
   font-size: 12px;
   font-weight: normal;
-  margin-bottom: 3px;
 }
 
+/* Half a field gap on each side: two neighbouring fields add up to one gap. */
 .input-field {
-  padding: 1.5rem 4rem;
+  padding: calc(var(--field-gap) / 2) var(--form-inset);
   border-radius: 10px;
 }
 
@@ -1964,10 +2007,10 @@ export default class ProjectFieldRow extends Vue {
   color: #00489cf2;
 }
 
-/* Keep the value visually separated from a title when no description was
- * configured. Selection option lists have equivalent spacing of their own. */
-.input-field-header.without-description {
-  padding-bottom: 0.75rem;
+/* Header stacked above its value (draft): one gap between them, whether the
+ * header ends with the title or the description and whatever the control. */
+.input-field-header.with-value-below {
+  padding-bottom: var(--header-gap);
 }
 
 .input-field .form-control.white {
@@ -1997,21 +2040,27 @@ export default class ProjectFieldRow extends Vue {
  */
 /*
  * Wraps every CHECK_BOX/RADIO_BUTTON option list (and the single-value
- * RADIO_BUTTON read-only row). Always adds one description-line's worth of
- * gap below the field header, whether or not that header actually rendered
- * a description - so the title/description block never sits flush against
- * the first option either way.
+ * RADIO_BUTTON read-only row). No vertical margin: the gap to the header
+ * comes from .with-value-below, the gap to the next field from .input-field.
  */
 .option-list {
-  margin-bottom: 1.1rem;
   padding: 0 0.75rem
 }
 .option-row {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  margin: 0 0 0.35rem 0;
+  margin: 0 0 var(--option-gap) 0;
   padding: 0;
+}
+.option-row:last-child {
+  margin-bottom: 0;
+}
+/* The list already insets its content; an empty-value text inside it must
+ * not add its own inset on top. */
+.option-list > .summary-empty {
+  padding-left: 0;
+  padding-right: 0;
 }
 .option-row .form-check-input {
   margin-top: 0.2rem;
@@ -2043,10 +2092,7 @@ export default class ProjectFieldRow extends Vue {
   margin-top: 1px;
 }
 .option-readonly {
-  /* margin-bottom only - an element combining this with .option-list (the
-     single-value RADIO_BUTTON read-only row) must keep .option-list's
-     margin-top, not have it zeroed out by a margin shorthand here. */
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--option-gap);
 }
 .option-readonly:last-child {
   margin-bottom: 0;
@@ -2073,27 +2119,31 @@ export default class ProjectFieldRow extends Vue {
 }
 .input-field.sidewise {
    display: flex;
-   padding: 1rem 4rem;
+   padding: calc(var(--field-gap-summary) / 2) var(--form-inset);
    /*width: 85%;*/
 }
 .layout > .input-field.read-only-css-enum {
-  padding-right: 4rem;
+  padding-right: var(--form-inset);
 }
 .layout > .input-field.read-only-css-enum .selection-edit-fields.sidewise {
   align-items: flex-start;
 }
 .layout > .input-field {
-  padding: 1.5rem 0.5rem 1.5rem 4rem;
+  padding: calc(var(--field-gap) / 2) 0.5rem calc(var(--field-gap) / 2) var(--form-inset);
+}
+.layout > .input-field.sidewise {
+  padding-top: calc(var(--field-gap-summary) / 2);
+  padding-bottom: calc(var(--field-gap-summary) / 2);
 }
 /* Keep the outer form margins while bringing the two paired fields close
  * together at their shared boundary. */
-.css-enum > .input-field {
-  padding-left: 4rem;
+.project-field-grid > .css-enum > .input-field {
+  padding-left: var(--form-inset);
   padding-right: 0.5rem;
 }
-.css-enum-value > .input-field {
+.project-field-grid > .css-enum-value > .input-field {
   padding-left: 0.5rem;
-  padding-right: 4rem;
+  padding-right: var(--form-inset);
 }
 .input-field.sidewise.section {
   /*width:80%;*/
@@ -2105,9 +2155,21 @@ export default class ProjectFieldRow extends Vue {
 .input-field.section {
   margin-left: 10px;
 }
+/* The project description's upload belongs to the description field above
+ * it: no gap of its own on that side. */
+.input-field.description-upload {
+  padding-top: 0;
+}
+/* Checkbox of an optional BOOLEAN: lined up with the title's first line and
+ * as close to it as the checkbox of an option row. */
+.optional-boolean-checkbox {
+  align-self: flex-start;
+  flex-shrink: 0;
+  margin: 0.3rem 0.5rem 0 0;
+}
 .input-field.block {
   display: flex;
-  padding: 1rem;
+  padding: calc(var(--field-gap-summary) / 2) var(--space-4);
 }
  .input-field-header.sidewise {
    width: 100%;
@@ -2169,7 +2231,7 @@ export default class ProjectFieldRow extends Vue {
   width: fit-content;
   display: flex;
   padding: 3px;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
   border: 1px solid #c2c6ca;
   border-radius: 6px;
   background-color: #f1f3f5;
@@ -2194,7 +2256,16 @@ export default class ProjectFieldRow extends Vue {
 }
 .query-view-actions {
   min-height: 40px;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
+}
+/* What stands above the Pseudocode/Query switch: the read-only lens search
+ * bar or the summary fallback text. */
+.query-search-bar {
+  display: flex;
+  margin-bottom: var(--space-4);
+}
+.summary-value.query-search-bar {
+  display: block;
 }
 .query-view-content {
   width: calc(100% - 0.75rem);
@@ -2214,7 +2285,7 @@ export default class ProjectFieldRow extends Vue {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
   color: #495057;
   font-size: 14px;
 }

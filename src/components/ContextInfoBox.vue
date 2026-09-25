@@ -2,11 +2,14 @@
 defineProps<{
   content: string;
   isBlock?: boolean;
+  // A field's own pre/post info: keep it closer to that field than to the
+  // neighbouring one.
+  attach?: 'next' | 'previous';
 }>();
 </script>
 
 <template>
-  <aside class="context-info-box" role="note" aria-label="Context information" :style="isBlock ? 'margin: 0.75rem 1rem' : 'margin: 0.75rem 4rem'">
+  <aside class="context-info-box" role="note" aria-label="Context information" :class="{ 'in-block': isBlock, 'attach-next': attach === 'next', 'attach-previous': attach === 'previous' }">
     <i class="bi bi-info-circle context-info-box-icon" aria-hidden="true"></i>
     <!-- Form configuration is trusted administrator-controlled HTML, like field descriptions. -->
     <div class="context-info-box-content" v-html="content"></div>
@@ -14,7 +17,10 @@ defineProps<{
 </template>
 
 <style scoped>
+/* No vertical margin of its own: the neighbouring fields' half gaps space it,
+ * like any other field. */
 .context-info-box {
+  margin: 0 var(--form-inset);
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
@@ -26,6 +32,24 @@ defineProps<{
   color: #17324d;
   font-size: 0.9rem;
   line-height: 1.45;
+}
+
+.context-info-box.attach-next {
+  margin-top: calc(var(--field-gap) / 2);
+}
+
+.context-info-box.attach-previous {
+  margin-bottom: calc(var(--field-gap) / 2);
+}
+
+/* Two boxes in a row (e.g. a block's and a step's post-info). */
+.context-info-box + .context-info-box {
+  margin-top: var(--space-3);
+}
+
+.context-info-box.in-block {
+  margin-left: var(--space-4);
+  margin-right: var(--space-4);
 }
 
 .context-info-box-icon {

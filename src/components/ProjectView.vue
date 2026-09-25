@@ -35,10 +35,9 @@
                    labeled by the tab itself), now split into its own "At a Glance" and "Status"
                    cards below, each with their own header. A third "Status" label here would
                    just repeat the tab name. -->
-              <div
-                  style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
+              <div v-if="visibleBridgeheads && visibleBridgeheads.length === 1"
+                  style="display:flex; flex-flow:row; justify-content: center; margin-bottom: var(--space-4);">
                 <div class="card"
-                     v-if="visibleBridgeheads && visibleBridgeheads.length === 1"
                      style="padding: 3px 20px;height: fit-content">
                   <div class="card-body" style="padding: 0 0;">
                     <span style="padding: 0 0;">{{ context.bridgehead?.humanReadable }}</span>
@@ -143,9 +142,9 @@
             <!-- TODO: Restore creator access to this Actions box; see plans/2026-09-08-plan-restore-project-actions-for-creators.md. -->
             <div
                 v-if="!(projectRoles.length === 1 && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep === MenuStep.STATUS"
-                class="project-actions">
-              <div class="box-header"><span>Actions</span></div>
-              <div style="padding:2%">
+                class="project-actions status-panel">
+              <div class="panel-header">Actions</div>
+              <div class="panel-body">
                 <!-- Project State Module: Creator View -->
                 <!-- Project State Module: PM-ADMIN View -->
                 <template v-for="(buttonGroup, index) in actionButtons" :key="index">
@@ -158,7 +157,7 @@
                         :key="index3" class="todo-circle-small">#{{ explanationNumber }}</span>
                   </span>
                     </div>
-                    <div style="display: flex">
+                    <div class="button-group-buttons">
                       <ProjectManagerButton v-for="(button, index2) in buttonGroup.button"
                                             :key="index2"
                                             :module="button.module" :action="button.action"
@@ -187,10 +186,10 @@
                 />
               </div>
             </div>
-            <div class="documents"
+            <div class="documents status-panel"
                  v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) && currentMenuStep === MenuStep.STATUS">
-              <div class="box-header"><span>Results</span></div>
-              <div style="padding: 2%">
+              <div class="panel-header">Results</div>
+              <div class="panel-body">
                 <ResultsBox :call-refresh-context="refreshContext"
                             :project-manager-backend-service="projectManagerBackendService"
                             :current-users="currentUsers"
@@ -250,7 +249,8 @@
                       }}
                     </div>
                   </div>
-                <div id="draft-dialog-box" class="draft-dialog-content">
+                <div id="draft-dialog-box" class="draft-dialog-content"
+                     :class="{ 'summary-layout': (!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY)) && !editMode, 'edit-layout': editMode }">
                   <div v-if="!existsDraftDialog" class="form-switch-box">
                     <div class="form-check form-switch">
                       <input class="form-check-input" type="checkbox" role="switch"
@@ -342,7 +342,7 @@
 
 
 
-                            <div :class="row.field.length > 1 ? 'project-field-grid' : ''">
+                            <div :class="[row.field.length > 1 && !isStackedPairRow(row) ? 'project-field-grid' : '', optionalBooleanRunClasses.get(row.key) ?? '']">
                             <template v-for="item in row.field">
                             <div
                                 v-if="row.shouldRenderRow && feasibilityEnabled && item.fixedFieldKey === FixedFormFieldKey.QUERIED_SITES"
@@ -493,7 +493,7 @@
         </div>
         <div v-if="currentMenuStep === MenuStep.SCRIPT" class="data-container mt-12 non-draft">
           <div class="box-header"><span>Script</span></div>
-          <div style="padding: 2% 4rem">
+          <div class="panel-body panel-stack">
             <UploadButton
                 :context="context"
                 :project-manager-backend-service="projectManagerBackendService"
@@ -524,21 +524,19 @@
         <div class="documents"
              v-if="project?.state === ProjectState.FINISHED && currentMenuStep === MenuStep.DOCUMENTS">
           <div class="box-header">Publications</div>
-          <div style="padding: 2%">
+          <div class="panel-body panel-stack">
             <DocumentsTable :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
                             :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
                             :bridgeheads="visibleBridgeheads" icon-class="bi bi-download"
                             text="Publications: " :project-manager-admin="isProjectManagerAdmin()"/>
-            <br/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE"
                           :upload-action="Action.UPLOAD_PUBLICATION_ACTION"
                           text="Upload publication" :call-refresh-context="refreshContext"
                           :is-file="true"/>
-            <br/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE"
@@ -547,21 +545,19 @@
                           :is-file="false"/>
           </div>
           <div class="box-header">Final Reports</div>
-          <div style="padding: 2%">
+          <div class="panel-body panel-stack">
             <DocumentsTable :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_FINAL_REPORT_ACTION"
                             :fetch-list-action="Action.FETCH_FINAL_REPORTS_ACTION"
                             :bridgeheads="visibleBridgeheads" icon-class="bi bi-download"
                             text="Final Reports: " :project-manager-admin="isProjectManagerAdmin()"/>
-            <br/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE"
                           :upload-action="Action.UPLOAD_FINAL_REPORT_ACTION"
                           text="Upload final report" :call-refresh-context="refreshContext"
                           :is-file="true"/>
-            <br/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
                           :module="Module.PROJECT_DOCUMENTS_MODULE"
@@ -572,11 +568,11 @@
         </div>
         <div class="documents data-container mt-12" v-if="currentMenuStep === MenuStep.DOCUMENTS" style="padding: 0">
           <div class="box-header"><span>Documents</span></div>
-          <div style="padding: 2% 4rem">
+          <div class="panel-body">
             <DownloadFormTemplatePdfButtons :form-templates="formTemplates" :context="context"
                                             :project-manager-backend-service="projectManagerBackendService"/>
           </div>
-          <div style="padding: 2% 4rem">
+          <div class="panel-body panel-stack">
             <div style="display:flex; flex-flow:row;  width:100% ">
               <UploadButton :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
@@ -592,7 +588,6 @@
                             text="Upload document URL" :call-refresh-context="refreshContext"
                             :is-file="false"/>
             </div>
-            <br/>
             <DocumentsTable :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
@@ -832,6 +827,32 @@ export default defineComponent({
     },
     projectFieldRenderBlock(): ProjectFieldRenderBlock[] {
       return this.fetchProjectFieldRenderBlocks();
+    },
+    // Consecutive optional BOOLEAN rows (each a single checkbox line) form a
+    // "run", rendered as one compact checklist (App.vue, .bool-run).
+    // A new section title, category or block ends a run. Keyed by row key:
+    // bool-run on every member, plus bool-run-first / bool-run-last.
+    optionalBooleanRunClasses(): Map<string, string> {
+      const rows = this.projectFieldRenderBlock.flatMap((group) =>
+          group.items
+              .filter((row) => row.shouldRenderRow)
+              .map((row) => ({row, category: group.category, block: group.block})));
+      const isMember = (index: number): boolean => {
+        const field = rows[index]?.row.field;
+        return field?.length === 1 && field[0].type === FormDataType.BOOLEAN && !field[0].mandatory && !field[0].block;
+      };
+      const startsNewGroup = (index: number): boolean =>
+          rows[index].category !== rows[index - 1]?.category ||
+          !!rows[index].row.field[0].section?.fetchNewSections().some((section) => section.displayName);
+      const result = new Map<string, string>();
+      rows.forEach(({row}, index) => {
+        if (!isMember(index)) return;
+        const classes = ['bool-run'];
+        if (!isMember(index - 1) || startsNewGroup(index)) classes.push('bool-run-first');
+        if (!isMember(index + 1) || startsNewGroup(index + 1)) classes.push('bool-run-last');
+        result.set(row.key, classes.join(' '));
+      });
+      return result;
     },
     // Same underlying data and v-if conditions as the old single-row status
     // table - see the Classification comment below for the color mapping.
@@ -1496,6 +1517,15 @@ export default defineComponent({
         return false
       }
       return currentGroup.key === firstGroup?.key
+    },
+
+    // In the summary and the request view, an enum-plus-text pair (CSS_ENUM +
+    // CSS_ENUM_VALUE) is shown as two ordinary rows: side by side, each title
+    // column would be a share of a 40%/60% column and the values would leave
+    // the summary's common value column.
+    isStackedPairRow(row: ProjectFieldRenderItem): boolean {
+      return (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY)) &&
+          row.field.some((field) => field.properties?.includes(FormFieldProperty.CSS_ENUM));
     },
 
     shouldRenderBlock(group: ProjectFieldRenderBlock): boolean {
@@ -3281,7 +3311,7 @@ export default defineComponent({
 .info-container {
   display: flex;
   flex-direction: column;
-  margin-bottom: 1.5%;
+  margin-bottom: var(--space-4);
 }
 
 /*
@@ -3298,9 +3328,24 @@ export default defineComponent({
   overflow: hidden;
 }
 .at-a-glance-card {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
-.panel-card .panel-header {
+/* Actions and Results below At a Glance / Status: same card look and the
+ * same gap between cards. Not .panel-card itself: its overflow:hidden would
+ * clip the user autocomplete inside Actions. */
+.status-panel {
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(31, 42, 55, .08);
+}
+.project-actions.status-panel,
+.documents.status-panel {
+  margin-bottom: var(--space-4);
+}
+.status-panel > .panel-header {
+  border-radius: 10px 10px 0 0;
+}
+.panel-card .panel-header,
+.status-panel > .panel-header {
   padding: 14px 22px;
   background: #2655a2;
   color: #fff;
@@ -3517,7 +3562,7 @@ export default defineComponent({
   0 1px 1px 0 rgba(0, 0, 0, 0.14),
   0 1px 3px 0 rgba(0, 0, 0, 0.12);*/
 
-  margin-bottom: 1.5%;
+  margin-bottom: var(--space-5);
 }
 
 .documents {
@@ -3526,7 +3571,7 @@ export default defineComponent({
   box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
   0 1px 1px 0 rgba(0, 0, 0, 0.14),
   0 1px 3px 0 rgba(0, 0, 0, 0.12);*/
-  margin-bottom: 1.5%;
+  margin-bottom: var(--space-5);
 }
 
 .main-menu {
@@ -3602,6 +3647,18 @@ export default defineComponent({
   flex: 1;
   overflow-y: auto;
   max-height: calc(100vh - 260px);
+  /* With the first/last element's own half gap: one field gap to the card edge. */
+  padding: calc(var(--field-gap) / 2) 0;
+}
+/* Summary step and request view: every gap in the form (fields, headers,
+ * sections, blocks, info boxes) switches to the summary rhythm. */
+.draft-dialog-content.summary-layout {
+  --field-gap: var(--field-gap-summary);
+}
+/* "Edit Fields" in the request view: inputs to fill in, so the draft rhythm,
+ * although titles stay beside their inputs. */
+.draft-dialog-content.edit-layout {
+  --field-gap-summary: var(--field-gap);
 }
 
 .button-container-right button {
@@ -3615,7 +3672,9 @@ export default defineComponent({
 }
 
 .vertical-stepper {
-  margin: 20% 0 0 28%;
+  /* Top: a fixed distance from the first card's top edge (a % top margin
+   * follows the window width, not the cards). Left: unchanged. */
+  margin: var(--space-3) 0 0 28%;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -3746,7 +3805,7 @@ export default defineComponent({
 }
 
 .notification-box {
-  padding: 2%;
+  padding: var(--space-4);
   font-family: "Calibri Light", Arial, sans-serif;
 }
 
@@ -3794,13 +3853,13 @@ export default defineComponent({
   0 1px 1px 0 rgba(0, 0, 0, 0.14),
   0 1px 3px 0 rgba(0, 0, 0, 0.12);
 
-  margin-top: 1.5%;
-  margin-bottom: 5%;
+  margin-top: var(--page-top);
+  margin-bottom: var(--space-7);
   margin-right: 0.5%;
 }
 
 .open-right-panel {
-  margin-top: 1.5%;
+  margin-top: var(--page-top);
 }
 
 .custom-width-notifications h2 {
@@ -3814,8 +3873,10 @@ export default defineComponent({
 
 .button-container {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
   padding: 14px 24px;
   border-top: 1px solid #e5e7eb;
   background: #f8fafc;
@@ -3824,10 +3885,20 @@ export default defineComponent({
 
 .button-nav-right {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: 10px;
+  margin-left: auto;
 }
 
+/* Zoomed in, the card gets narrow: keep the counter and every navigation
+ * button on one line instead of breaking their labels. */
+.step-counter,
+.button-container .btn,
+.button-container :deep(.btn) {
+  white-space: nowrap;
+}
 .step-counter {
   font-size: 12px;
   color: #94a3b8;
@@ -3928,9 +3999,36 @@ export default defineComponent({
   cursor: not-allowed;
 }
 
-.inviteUser {
-  padding: 2%;
+/* Content of a status/actions/results/documents panel below its box-header. */
+.panel-body {
+  padding: var(--space-5) var(--form-inset);
+}
+.panel-body + .panel-body {
+  padding-top: 0;
+}
+/* Tables and upload/download buttons stacked in one panel. */
+.panel-stack {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+.panel-stack > * {
+  max-width: 100%;
+}
+.button-group-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.inviteUser {
+  padding: var(--space-5);
+  display: flex;
+}
+/* Nothing to invite in this phase: no empty padded band. */
+.inviteUser:empty {
+  display: none;
 }
 
 .button-group-box {
@@ -3940,7 +4038,7 @@ export default defineComponent({
   width: fit-content;
   display: inline-block;
   margin-right: 2%;
-  margin-top: 1%;
+  margin-top: var(--space-3);
 }
 
 .button-group-label {
@@ -3977,11 +4075,13 @@ export default defineComponent({
 
 .project-field-header {
   background-color: #2655a2;
-  padding: 17px 28px;
+  padding: 17px var(--form-inset);
   flex-shrink: 0;
 }
+/* Category header: one and a half gaps above, half a gap to its first field,
+ * so a new step stands apart more than a new field does. */
 .project-field-header-inline {
-  padding: 30px 28px;
+  padding: var(--field-gap) var(--form-inset) 0;
   display: grid;
   grid-template-columns: minmax(25px, 1fr) auto minmax(25px, 1fr);
   align-items: center;
@@ -4043,7 +4143,7 @@ export default defineComponent({
 .form-switch-box {
   display: flex;
   justify-content: end;
-  margin: 1rem 2rem 0 1rem;
+  margin: var(--space-4) var(--form-inset) 0;
   position: sticky;
   top: 1rem;
   z-index:100;
@@ -4056,11 +4156,11 @@ export default defineComponent({
 .project-field-block {
   border: 1px solid #d0d7de;
   border-radius: 6px;
-  margin: 0 4rem 1.5rem 4rem;
+  margin: 0 var(--form-inset) calc(var(--field-gap) / 2);
 }
 
 .project-field-block-add-button {
-  margin: 0 4rem 1rem 4rem;
+  margin: 0 var(--form-inset) calc(var(--field-gap) / 2);
   display: block;
   border: 1px dashed #00489cf2;
   color: #00489cf2;
@@ -4078,8 +4178,10 @@ export default defineComponent({
 .clickable:hover {
   text-decoration: underline;
 }
+/* Block group header: like a field header, its description leads straight
+ * into the block instances below. */
 .input-field-header {
-  padding: 1.5rem 4rem;
+  padding: calc(var(--field-gap) / 2) var(--form-inset) var(--header-gap);
 }
 .project-field-block-title {
   font-weight: bold;
@@ -4088,11 +4190,16 @@ export default defineComponent({
 .project-field-block-description {
   font-size: 12px;
   font-weight: normal;
-  margin-bottom: 3px;
 }
 
 .project-field-block-instance-wrapper {
   position: relative;
+}
+
+/* With the rows' own half gaps: the same distance to the block's top and
+ * bottom edge as to its sides. */
+.project-field-block .project-field-block-body {
+  padding: var(--space-2) 0;
 }
 
 .project-field-block-delete-button {
@@ -4137,12 +4244,11 @@ export default defineComponent({
 }
 
 .project-feasibility {
-  margin: 0 0 1rem;
-  padding: 1rem 4rem;
+  padding: calc(var(--field-gap) / 2) var(--form-inset);
 }
 
 .project-feasibility-header {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--header-gap);
 }
 
 .project-feasibility-title {
@@ -4165,7 +4271,6 @@ export default defineComponent({
 
 /*noinspection CssUnusedSymbol*/
 .section-row.level-1 {
-  margin-top: 10px;
   border: none;
 }
 
@@ -4173,7 +4278,6 @@ export default defineComponent({
   /*background-image: linear-gradient(to right, #eaf0f4, #aed0e6);*/
   border-left: none;
   border-right: none;
-  margin: 0 1rem;
 }
 
 .section-row.empty-row td {
@@ -4188,7 +4292,10 @@ export default defineComponent({
 .section-title {
   font-weight: 600;
   line-height: 1.4;
-  margin: 0.5rem 2rem 0 2.5rem;
+  /* One and a half gaps above (with the previous field's half), half a gap
+   * below: the title belongs to the fields it introduces and stands apart
+   * more than a field does. */
+  margin: var(--field-gap) 2rem 0 var(--form-inset);
   color: #00489c;
   background: none;
 }
@@ -4260,8 +4367,8 @@ export default defineComponent({
 .section-description {
   font-size: 12px;
   color: #212529;
-  margin-left: 3rem;
-  margin-bottom: 1rem;
+  margin-top: var(--space-1);
+  margin-left: calc(var(--form-inset) + 0.5rem);
 }
 
 .section-underline {

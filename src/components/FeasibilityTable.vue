@@ -353,7 +353,9 @@ export default defineComponent({
   color: var(--status-danger-color);
 }
 
-/* Keeps the line below it (from .pm-table), so the add row closes the table */
+/* Keeps the line below it (from .pm-table), so the add row closes the table.
+ * No line of its own on top: the last site row already ends with one, and a
+ * second (dashed) line right under it read as a double line. */
 .feasibility-add-row td {
   padding: 0;
 }
@@ -365,7 +367,6 @@ export default defineComponent({
   gap: 8px;
   background: transparent;
   border: none;
-  border-top: 1px dashed #d7e2ed;
   color: #2655a2;
   font-size: 14px;
   font-weight: 600;
@@ -383,7 +384,6 @@ export default defineComponent({
   align-items: center;
   gap: 0.5rem;
   padding: 10px 22px;
-  border-top: 1px dashed #2655a2;
   background: #e9eef8;
 }
 

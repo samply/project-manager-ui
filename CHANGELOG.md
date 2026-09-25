@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## [1.1.0 - 2026-09-24]
+## [1.1.0 - 2026-09-25]
 ### Added
 - Dockerfile
 - Single Spa
@@ -189,6 +189,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Configurable localized date and time display formats
 - Subtle colors
 - Uniform number format
+- Clean spaces in draft dialog
 
 ### Removed
 - Application Form

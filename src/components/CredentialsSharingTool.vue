@@ -10,6 +10,7 @@ import {
 } from "@/services/projectManagerBackendService";
 import {EmailRole} from "@/services/emailRole";
 import {watch} from "vue";
+import {DEFAULT_APP_NAME, getAppName} from "@/services/appName";
 
 interface options {
   label: string,
@@ -35,7 +36,15 @@ export default class CredentialsSharingTool extends Vue {
   context!: ProjectManagerContext;
   projectRoles!: ProjectRole[];
 
+  // Configured application name, replacing "{app}" in the option texts.
+  appName = DEFAULT_APP_NAME;
+
+  withAppName(text: string): string {
+    return text.split('{app}').join(this.appName);
+  }
+
   mounted() {
+    getAppName().then(name => this.appName = name);
     watch(
         () => this.projectManagerBackendService,
         () => this.updateRecipientMessagesSubjects(),
@@ -63,35 +72,35 @@ export default class CredentialsSharingTool extends Vue {
     {
       label: "Option 1: Copy Recipients' Emails",
       shortDescription: "Copy recipients' email addresses to the clipboard.",
-      longDescription: "Easily copy the email addresses of all recipients to your clipboard. Use this to share credentials through your preferred communication method, independent of Samply.Requester.",
+      longDescription: "Easily copy the email addresses of all recipients to your clipboard. Use this to share credentials through your preferred communication method, independent of {app}.",
       advantages: "Provides maximum flexibility by allowing you to use any external tool or method to send the credentials. No dependency on the app.",
       useCases: "Ideal for users who prefer to send credentials through messaging platforms, custom email tools, or when using external security measures for communication."
     },
     {
       label: "Option 2: Copy Email Content",
       shortDescription: "Copy a prefilled email template to the clipboard.",
-      longDescription: "Copy a complete email template from Samply.Requester, including recipient details, credentials, and instructions. Paste the content into your email client to send quickly and securely.",
+      longDescription: "Copy a complete email template from {app}, including recipient details, credentials, and instructions. Paste the content into your email client to send quickly and securely.",
       advantages: "Saves time by generating a well-structured email template with all necessary details. Ensures consistency and avoids formatting errors.",
       useCases: "Suitable for users who want a quick and reliable way to send credentials without manually crafting the email."
     },
     {
       label: "Option 3: Open Email in Default App",
       shortDescription: "Generate and open an email draft in your default email app.",
-      longDescription: "Use this option to open an email draft in your default email app. The draft is prefilled by Samply.Requester with recipient details, credentials, and instructions based on a predefined template.",
+      longDescription: "Use this option to open an email draft in your default email app. The draft is prefilled by {app} with recipient details, credentials, and instructions based on a predefined template.",
       advantages: "Convenient and fast, as it automatically opens the draft in the default email app with no manual copying required.",
       useCases: "Best for users who rely on email apps like Outlook or Apple Mail and want to streamline their workflow."
     },
     {
       label: "Option 4: Download as EML File",
       shortDescription: "Generate and download an EML file for the email.",
-      longDescription: "Create an EML file with the prefilled email content from Samply.Requester, including recipients, credentials, and instructions. Download the file to open it in your preferred email client.",
+      longDescription: "Create an EML file with the prefilled email content from {app}, including recipients, credentials, and instructions. Download the file to open it in your preferred email client.",
       advantages: "Offers flexibility to share or archive credentials securely. The EML file format is compatible with most email clients.",
       useCases: "Ideal for users who want to save the email as a file for later use, share it as an attachment, or work offline."
     },
     {
       label: "Option 5: Download as HTML File",
       shortDescription: "Generate and download an HTML file of the email content.",
-      longDescription: "Generate a standalone HTML file with the prefilled email content from Samply.Requester, including recipient details, credentials, and instructions. Download the file and use it as needed.",
+      longDescription: "Generate a standalone HTML file with the prefilled email content from {app}, including recipient details, credentials, and instructions. Download the file and use it as needed.",
       advantages: "Provides a simple, portable file format that can be viewed in any web browser. Offers greater control over the email content's appearance.",
       useCases: "Best for users who want a flexible format to customize or integrate the email content into other tools or platforms."
     }
@@ -237,7 +246,7 @@ export default class CredentialsSharingTool extends Vue {
       external server, and the tool runs exclusively in your browser.</p>
 
     <div class="options">
-      <div style="margin-right: 10%;">
+      <div style="margin-right: var(--space-7);">
         <button class="option-button" @click="optionDropdownToggle = !optionDropdownToggle">
           <span class="dropdown-display">
             <span class="dropdown-label">{{ credentialOptions[selectedOption].label }}</span>
@@ -346,7 +355,7 @@ export default class CredentialsSharingTool extends Vue {
             </p>
           </div>
         </div>
-        <p>{{ credentialOptions[selectedOption].longDescription }}</p>
+        <p>{{ withAppName(credentialOptions[selectedOption].longDescription) }}</p>
         <p>
           <strong>Advantages:</strong> {{ credentialOptions[selectedOption].advantages }}
         </p>
@@ -412,12 +421,19 @@ p {
   padding: 0;
   position: relative;
   width: 310px;
-  max-height: 78px;
 }
 
 .dropdown-display {
   text-align: left;
   padding: 10px 15px;
+}
+
+/* Title above its short description, as in the open list: two spans side by
+ * side ran together ("EmailsCopy recipients' ...") and were cut off. */
+.option-button .dropdown-display {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .dropdown-icon {

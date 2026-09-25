@@ -54,7 +54,7 @@
                     </div>
                     <div class="glance-cell">
                       <span class="glance-label">Request ID</span>
-                      <span class="glance-value muted">{{ project ? project.code : '' }}</span>
+                      <span class="glance-value muted nowrap">{{ project ? project.code : '' }}</span>
                     </div>
                     <div class="glance-cell">
                       <span class="glance-label">Applicant</span>
@@ -67,7 +67,7 @@
                     </div>
                     <div class="glance-cell">
                       <span class="glance-label">Created at</span>
-                      <span class="glance-value muted">{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</span>
+                      <span class="glance-value muted nowrap">{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</span>
                     </div>
                     <div class="glance-cell">
                       <span class="glance-label">Phase</span>
@@ -196,6 +196,7 @@
                             :context="context"
                             :project="project"
                             :project-roles="projectRoles"
+                            @pending-review="pendingReviewSites = $event"
                 />
               </div>
             </div>
@@ -544,6 +545,11 @@
                           text="Upload publication URL" :call-refresh-context="refreshContext"
                           :is-file="false"/>
           </div>
+        </div>
+        <!-- Its own card, like Publications and Documents: two headers in one
+             card read as two cards glued together. -->
+        <div class="documents"
+             v-if="project?.state === ProjectState.FINISHED && currentMenuStep === MenuStep.DOCUMENTS">
           <div class="box-header">Final Reports</div>
           <div class="panel-body panel-stack">
             <DocumentsTable :context="context"
@@ -573,7 +579,8 @@
                                             :project-manager-backend-service="projectManagerBackendService"/>
           </div>
           <div class="panel-body panel-stack">
-            <div style="display:flex; flex-flow:row;  width:100% ">
+            <!-- File upload above URL upload, as in Publications and Final Reports. -->
+            <div style="display:flex; flex-direction:column; gap: var(--space-4); width:100%">
               <UploadButton :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE"
@@ -620,7 +627,7 @@
               Notifications
             </div>
           </div>
-          <button style="padding: 0 15px 0 0; margin-bottom: 5px" @click="showRightPanel=false"
+          <button style="padding: 0 var(--space-1); margin: 0 0 5px var(--space-2); flex-shrink: 0" @click="showRightPanel=false"
                   class="btn"
                   v-if="showRightPanel" data-toggle="tooltip" data-placement="top"
                   title="Hide Panel">
@@ -639,6 +646,20 @@
         />
 
         <div v-if="!showNotification">
+          <!-- Results waiting for this user's decision (reported by ResultsBox):
+               no action-messages entry covers it, and "No action is required"
+               would be wrong exactly then. -->
+          <div v-if="pendingReviewSites.length > 0" class="notification-box pending-review-todo">
+            <div class="card mb-3">
+              <div class="card-body">
+                <h5 class="card-title">
+                  The results of <b>{{ pendingReviewSites.join(', ') }}</b> are ready for your review.
+                  Please check them in the Results section and accept them, or request changes.
+                </h5>
+                <button type="button" class="btn btn-link p-0 mt-2" @click="scrollToResults">Go to results</button>
+              </div>
+            </div>
+          </div>
           <div v-if="extendedExplanations.size > 0" class="notification-box">
             <div v-for="(explanation, index) in Array.from(extendedExplanations.values())"
                  :key="index"
@@ -652,7 +673,7 @@
             </div>
           </div>
           <div
-              v-else-if="project?.state !== ProjectState.FINISHED && project?.state !== ProjectState.REJECTED && project?.state !== ProjectState.ARCHIVED"
+              v-else-if="pendingReviewSites.length === 0 && project?.state !== ProjectState.FINISHED && project?.state !== ProjectState.REJECTED && project?.state !== ProjectState.ARCHIVED"
               class="notification-box">
             <div class="card mb-3">
               <div class="card-body">
@@ -1056,6 +1077,8 @@ export default defineComponent({
       existsFinalReport: false,
       showExplanations: true,
       showRightPanel: false,
+      // Sites whose results wait for this user's review (from ResultsBox).
+      pendingReviewSites: [] as string[],
       existsVotum: false,
       mergedQueryStates: [] as { state: string; types: ProjectType[] }[],
       pipelineScrollIndex: null as number | null,
@@ -1187,7 +1210,9 @@ export default defineComponent({
     // setPipelineRowRef can first fire - the "Status" card only appears once
     // project data has loaded asynchronously, which is always after created().
     if (typeof ResizeObserver !== 'undefined') {
-      this.pipelineResizeObserver = new ResizeObserver(() => this.updatePipelineRowWidth());
+      // Next frame, not inside the callback: the width decides how many steps
+      // are shown, which resizes the row again ("ResizeObserver loop").
+      this.pipelineResizeObserver = new ResizeObserver(() => requestAnimationFrame(() => this.updatePipelineRowWidth()));
     }
   },
 
@@ -1590,6 +1615,12 @@ export default defineComponent({
           field.block === block?.label &&
           field.blockInstance != null
       );
+    },
+
+    scrollToResults() {
+      this.currentMenuStep = ProjectViewMenuStep.STATUS;
+      this.$nextTick(() => document.querySelector('.documents.status-panel')
+          ?.scrollIntoView({behavior: 'smooth', block: 'start'}));
     },
 
     toggleNotification() {
@@ -3353,18 +3384,19 @@ export default defineComponent({
   font-weight: 600;
 }
 
+/* One row on wide cards; on narrower ones the cells wrap onto more rows
+ * (at least 150px each) instead of scrolling, so every value stays visible.
+ * Each cell draws its separator lines to the right and below as a 1px shadow;
+ * the ones on the card's outer edge fall outside it and are clipped by the
+ * card (.panel-card overflow: hidden). */
 .at-a-glance-strip {
-  display: flex;
-  overflow-x: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 .glance-cell {
-  flex: 1;
-  min-width: 150px;
+  min-width: 0;
   padding: 16px 22px;
-  border-right: 1px solid #d7e2ed;
-}
-.glance-cell:last-child {
-  border-right: none;
+  box-shadow: 1px 0 0 0 #d7e2ed, 0 1px 0 0 #d7e2ed;
 }
 .glance-label {
   display: block;
@@ -3381,6 +3413,10 @@ export default defineComponent({
 }
 .glance-value.muted {
   color: #5b6b7c;
+}
+/* IDs and dates read as one unit: never "2026-09-24" / "16:06" on two lines. */
+.glance-value.nowrap {
+  white-space: nowrap;
 }
 .glance-title {
   display: block;
@@ -3599,11 +3635,20 @@ export default defineComponent({
   height:88vh;
 }
 
+/* PM-Admin phase stepper column: as wide as its labels ("APPROVAL",
+ * "FINISHED"), a fixed gap to the cards. A % width cut the labels off on a
+ * laptop-sized window. */
 .left-container {
   display: flex;
   flex-flow: column;
-  width: 14%;
-  margin-right: 2%;
+  flex: 0 0 auto;
+  margin-right: var(--space-5);
+}
+/* The cards take the rest and may shrink below their content width (the At a
+ * Glance strip scrolls instead), so they never run under the TODO panel. */
+.admin-view > .data-container {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .right-container {
@@ -3672,9 +3717,9 @@ export default defineComponent({
 }
 
 .vertical-stepper {
-  /* Top: a fixed distance from the first card's top edge (a % top margin
-   * follows the window width, not the cards). Left: unchanged. */
-  margin: var(--space-3) 0 0 28%;
+  /* A fixed distance from the first card's top edge (a % top margin follows
+   * the window width, not the cards). */
+  margin: var(--space-3) 0 0 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -3806,7 +3851,19 @@ export default defineComponent({
 
 .notification-box {
   padding: var(--space-4);
-  font-family: "Calibri Light", Arial, sans-serif;
+}
+/* TODO texts are messages, not headings: body size, like the rest of the app. */
+.pending-review-todo .card {
+  border-color: #f0c36d;
+  background: #fff7e6;
+}
+.pending-review-todo + .notification-box {
+  padding-top: 0;
+}
+.notification-box .card-title {
+  font-size: 14px;
+  line-height: 1.45;
+  margin-bottom: 0;
 }
 
 .todo-circle {
@@ -3841,6 +3898,8 @@ export default defineComponent({
 
 .custom-width-notifications {
   width: 22%;
+  /* Room for both tabs and the hide arrow, even with the list's scrollbar. */
+  min-width: 280px;
   background-color: white;
   color: black;
   order: 2;
@@ -4023,8 +4082,10 @@ export default defineComponent({
 }
 
 .inviteUser {
-  padding: var(--space-5);
+  /* Same left edge as the action groups above it (.panel-body). */
+  padding: 0 var(--form-inset) var(--space-5);
   display: flex;
+  flex-wrap: wrap;
 }
 /* Nothing to invite in this phase: no empty padded band. */
 .inviteUser:empty {
@@ -4059,10 +4120,22 @@ export default defineComponent({
   top: -9px;
 }
 
+/* The side panel is narrow (22% of the window): its tab header uses a smaller
+ * inset than the page headers, so the two tabs and the hide arrow fit
+ * without a horizontal scrollbar. */
+.custom-width-notifications .box-header {
+  padding: var(--space-3) var(--space-3) 0;
+}
+.custom-width-notifications .box-header > div {
+  min-width: 0;
+}
+/* Same size as the card titles (.panel-header), fixed padding instead of a
+ * share of the panel width. */
 .notification-tab {
-  padding: 5px 8% 5px 8%;
+  padding: var(--space-2) var(--space-3);
+  font-size: 16px;
   background-color: #e8f8fd;
-  margin: 0 2%;
+  margin: 0 var(--space-1);
   border-radius: 5px 5px 0 0;
   font-weight: normal;
   cursor: pointer;

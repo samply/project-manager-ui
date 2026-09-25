@@ -64,6 +64,8 @@ export interface FrontendConfig {
     NOTIFICATION_TIMESTAMP_DISPLAY_FORMAT?: string;
     /** "true" shows the "Create request" button in the dashboard. Hidden when absent or any other value. */
     CREATE_REQUEST_ENABLED?: string;
+    /** "true" offers the Credentials Sharing Tool in the Results section. Hidden when absent or any other value. */
+    CREDENTIALS_SHARING_TOOL_ENABLED?: string;
     /**
      * Query format (e.g. AST_DATA) of the empty query of a request created with the dashboard's
      * "Create request" button. The creator can change it afterwards in the project view.

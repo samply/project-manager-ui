@@ -203,7 +203,10 @@ export default class BridgeheadOverview extends Vue {
     // Created here (not mounted()) so the observer already exists by the
     // time setTimelineStepsRef can first fire.
     if (typeof ResizeObserver !== 'undefined') {
-      this.timelineResizeObserver = new ResizeObserver(() => this.updateTimelineRowWidth());
+      // Re-measure on the next frame: the new width changes how many columns
+      // are shown, which resizes the observed row again - done inside the
+      // observer callback that is a "ResizeObserver loop" error.
+      this.timelineResizeObserver = new ResizeObserver(() => requestAnimationFrame(() => this.updateTimelineRowWidth()));
     }
     watch(() => this.projectManagerBackendService,
         () => {

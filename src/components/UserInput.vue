@@ -161,7 +161,8 @@ export default class UserInput extends Vue {
             {{ suggestion.email }}
           </li>
         </ul>&nbsp;
-        <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite && isValidEmail">Invite</button>
+        <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite && isValidEmail"
+                type="button" class="btn btn-primary invite-button">Invite</button>
         <p v-if="partialEmail.length > 0 && canInvite && !isValidEmail" class="error-message">Please enter a valid email
           address.</p>
       </div>
@@ -204,19 +205,25 @@ export default class UserInput extends Vue {
 
 <style scoped>
 
+/* Site and email side by side while they fit, one under the other on a
+ * narrow card; both at the same height and top line. */
 .user-input-container {
   position: relative;
   display: flex;
-  margin: 10px 14px 20px 0;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
 }
 
 .form-select {
   width: 300px;
-  margin-right: 20px;
+  max-width: 100%;
 }
 
 .user-input {
-  width: 300px; /* Adjust width as needed */
+  width: 300px;
+  max-width: 100%;
+  padding: 0 var(--space-3);
   height: 38px;
   border: 1px solid #dee2e6;
   border-radius: 5px;
@@ -241,11 +248,23 @@ export default class UserInput extends Vue {
 .button-group-box {
   border: 1px solid lightgrey;
   border-radius: 5px;
-  padding: 0 0 18px 18px;
+  padding: 0 var(--space-4) var(--space-4);
   width: fit-content;
+  max-width: 100%;
   display: inline-block;
-  margin-right: 2%;
-  margin-top: 1%;
+  margin-right: var(--space-5);
+  margin-top: var(--space-3);
+}
+
+/* A second box right under the first (invite, then current users): its label
+ * sits 18px above its border, so it needs more than that to clear the box above. */
+.button-group-box + .button-group-box {
+  margin-top: var(--space-7);
+}
+
+.invite-button {
+  height: 38px;
+  margin-left: var(--space-2);
 }
 
 .button-group-label {

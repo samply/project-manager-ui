@@ -153,8 +153,8 @@ export default class UploadButton extends Vue {
                 </option>
               </select>
             </template>
-            <div v-if="isFile">
-              <div style="display: flex; flex-flow: row; align-items: center; width: 110%;">
+            <div v-if="isFile" style="width: 100%; min-width: 0;">
+              <div style="display: flex; flex-flow: row; align-items: center; width: 100%;">
                 <label :for="'file-'+uniqueId" class="btn btn-primary fileChooser dktk-darkblue">
                   Choose File
                   <input :id="'file-'+uniqueId" type="file" ref="fileInput" @change="onFileSelected($event)"
@@ -238,11 +238,14 @@ export default class UploadButton extends Vue {
   white-space: nowrap;
   padding: 0.4rem 0.75rem;
   margin-right: 3%;
+  flex-shrink: 0;
 }
 
+/* Shrinks instead of pushing the buttons out of the widget's width. */
 .inputField {
   border-radius: 5px;
   width: 100%;
+  min-width: 0;
   font-size: small;
   padding: .5rem .75rem;
   margin-right: 3%;

@@ -110,6 +110,7 @@ import {
   Bridgehead,
   Module,
   Notification,
+  OrganisationRole,
   PmRequestParameter,
   Project,
   ProjectManagerBackendService,
@@ -203,12 +204,24 @@ export default defineComponent({
       this.createdAtDisplayFormat = resolveDisplayFormatKey(
           config.PROJECT_DASHBOARD_CREATED_AT_DISPLAY_FORMAT, DisplayFormatKey.DATE_TIME_FORMAT);
     },
-    // The button needs the frontend variable CREATE_REQUEST_ENABLED and the permission to create requests
+    // The backend action permits request creation; this setting controls only dashboard button visibility.
     async updateCanCreateRequest() {
+      this.canCreateRequest = false;
       const config = await getConfig();
-      this.canCreateRequest = config.CREATE_REQUEST_ENABLED === 'true' &&
-          await this.projectManagerBackendService.isModuleActionActive(
-              Module.PROJECTS_MODULE, Action.CREATE_QUERY_AND_DESIGN_PROJECT_ACTION, this.context);
+      const visibleRoles = (config.CREATE_REQUEST_ORGANISATION_ROLES ?? '')
+          .split(',')
+          .map(role => role.trim())
+          .filter((role): role is OrganisationRole => Object.values(OrganisationRole).includes(role as OrganisationRole));
+      if (visibleRoles.length === 0 ||
+          !await this.projectManagerBackendService.isModuleActionActive(
+              Module.PROJECTS_MODULE, Action.CREATE_QUERY_AND_DESIGN_PROJECT_ACTION, this.context) ||
+          !await this.projectManagerBackendService.isModuleActionActive(
+              Module.USER_MODULE, Action.FETCH_ORGANISATION_ROLES_ACTION, this.context)) {
+        return;
+      }
+      const userRoles: OrganisationRole[] = await this.projectManagerBackendService.fetchData(
+          Module.USER_MODULE, Action.FETCH_ORGANISATION_ROLES_ACTION, this.context, new Map());
+      this.canCreateRequest = userRoles.some(role => visibleRoles.includes(role));
     },
 
     // Creates a draft request with an empty query (in the configured format) and no sites, like the explorer does

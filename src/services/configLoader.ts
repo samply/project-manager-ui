@@ -62,8 +62,8 @@ export interface FrontendConfig {
     DOCUMENT_CREATED_AT_DISPLAY_FORMAT?: string;
     /** Display format key for a notification's timestamp. Falls back to DATE_TIME_WITH_SECONDS_FORMAT when absent/invalid. */
     NOTIFICATION_TIMESTAMP_DISPLAY_FORMAT?: string;
-    /** "true" shows the "Create request" button in the dashboard. Hidden when absent or any other value. */
-    CREATE_REQUEST_ENABLED?: string;
+    /** Comma-separated organisation roles allowed to see the dashboard's "Create request" button. */
+    CREATE_REQUEST_ORGANISATION_ROLES?: string;
     /** "true" offers the Credentials Sharing Tool in the Results section. Hidden when absent or any other value. */
     CREDENTIALS_SHARING_TOOL_ENABLED?: string;
     /**

@@ -3,6 +3,8 @@
     <div v-for="step in getMenuSteps()" class="menu-item" @click="currentMenuStep=step"
          :class="{ 'active': currentMenuStep===step }">
       {{ step }}
+      <span v-if="step === MenuStep.NOTIFICATIONS && unreadNotificationsCount > 0" class="menu-count"
+            :aria-label="`${unreadNotificationsCount} unread`">{{ unreadNotificationsCount }}</span>
     </div>
   </div>
   <div class="main-container">
@@ -604,6 +606,12 @@
                             text="Other documents: " :project-manager-admin="isProjectManagerAdmin()"/>
           </div>
         </div>
+        <div v-if="currentMenuStep === MenuStep.NOTIFICATIONS" class="data-container mt-12">
+          <NotificationBox :context="context"
+                           :project-manager-backend-service="projectManagerBackendService"
+                           :notifications="notifications"
+                           :call-update-notifications="fetchNotifications"/>
+        </div>
       </div>
     </div>
 
@@ -611,7 +619,7 @@
     <div :class="showRightPanel ? 'custom-width-notifications' : 'open-right-panel'">
       <button style="" @click="showRightPanel=true" class="btn" v-if="!showRightPanel"
               data-toggle="tooltip"
-              data-placement="top" title="Show ToDos & Notifications">
+              data-placement="top" title="Show ToDos">
         <i style="font-size: 20px" class="bi bi-chevron-double-left"></i>
         <!-- Close symbol for Progress -->
       </button>
@@ -619,14 +627,7 @@
         <div class="box-header"
              style="display:flex; flex-flow:row; justify-content:space-between;padding-bottom:0;color:black ">
           <div style="display:flex; flex-flow:row;">
-            <div class="notification-tab" :class="{ 'active': !showNotification }"
-                 @click="toggleNotification">TODO
-            </div>
-            <div v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)"
-                 class="notification-tab" :class="{ 'active': showNotification }"
-                 @click="toggleNotification">
-              Notifications
-            </div>
+            <div class="notification-tab active">TODO</div>
           </div>
           <button style="padding: 0 var(--space-1); margin: 0 0 5px var(--space-2); flex-shrink: 0" @click="showRightPanel=false"
                   class="btn"
@@ -637,16 +638,7 @@
           </button>
         </div>
 
-        <NotificationBox :context="context"
-                         :project-manager-backend-service="projectManagerBackendService"
-                         :show-notification="showNotification"
-                         :call-toggle-notification="toggleNotification"
-                         :notifications="notifications"
-                         :call-update-notifications="fetchNotifications"
-                         :show-in-panel="false"
-        />
-
-        <div v-if="!showNotification">
+        <div>
           <!-- Results waiting for this user's decision (reported by ResultsBox):
                no action-messages entry covers it, and "No action is required"
                would be wrong exactly then. -->
@@ -831,6 +823,9 @@ export default defineComponent({
     },
     MenuStep() {
       return ProjectViewMenuStep
+    },
+    unreadNotificationsCount(): number {
+      return this.notifications.filter(notification => !notification.read).length;
     },
     ProjectRole() {
       return ProjectRole
@@ -1073,10 +1068,8 @@ export default defineComponent({
       dataShieldStatus: undefined as DataShieldProjectStatus | undefined,
       site: Site.PROJECT_VIEW_SITE,
       notifications: [] as Notification[],
-      showNotification: false,
       existsPublication: false,
       existsFinalReport: false,
-      showExplanations: true,
       showRightPanel: false,
       // Sites whose results wait for this user's review (from ResultsBox).
       pendingReviewSites: [] as string[],
@@ -1622,11 +1615,6 @@ export default defineComponent({
       this.currentMenuStep = ProjectViewMenuStep.STATUS;
       this.$nextTick(() => document.querySelector('.documents.status-panel')
           ?.scrollIntoView({behavior: 'smooth', block: 'start'}));
-    },
-
-    toggleNotification() {
-      this.showNotification = !this.showNotification;
-      this.showExplanations = !this.showNotification;
     },
 
     initializePollingService() {
@@ -2257,7 +2245,12 @@ export default defineComponent({
     },
 
     async fetchNotifications() {
-      return this.initializeData(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(), 'notifications');
+      // The Notifications tab covers the whole request: without a site, not only the active one.
+      return this.initializeDataInCallback(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(),
+          async result => {
+            this.notifications = result;
+          },
+          new ProjectManagerContext(this.context.projectCode, undefined));
     },
 
     async initializeProjectConfigurations(): Promise<void> {
@@ -3223,6 +3216,9 @@ export default defineComponent({
       if (isNonDraft && this.isDocumentsTabAvailable) {
         steps.push(ProjectViewMenuStep.DOCUMENTS);
       }
+      if (isNonDraft && this.isProjectManagerAdmin()) {
+        steps.push(ProjectViewMenuStep.NOTIFICATIONS);
+      }
       return steps;
     },
 
@@ -3619,6 +3615,21 @@ export default defineComponent({
 
 .menu-item.active {
   background-color: rgb(0, 56, 124);
+}
+
+/* Unread notifications on the Notifications tab */
+.menu-count {
+  display: inline-block;
+  min-width: 20px;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: #fff;
+  color: #2655a2;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .main-container {

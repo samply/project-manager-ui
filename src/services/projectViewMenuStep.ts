@@ -4,5 +4,6 @@ export enum ProjectViewMenuStep {
     STATUS = "Status",
     REQUEST = "Request",
     SCRIPT = "Script",
-    DOCUMENTS = "Documents"
+    DOCUMENTS = "Documents",
+    NOTIFICATIONS = "Notifications"
 }

@@ -1,8 +1,18 @@
 <template>
-  <div class="main-menu"></div>
+  <div class="main-menu">
+    <template v-if="canSeeNotifications">
+      <div class="menu-item" :class="{ active: currentTab === DashboardTab.REQUESTS }"
+           @click="currentTab = DashboardTab.REQUESTS">{{ DashboardTab.REQUESTS }}
+      </div>
+      <div class="menu-item" :class="{ active: currentTab === DashboardTab.NOTIFICATIONS }"
+           @click="currentTab = DashboardTab.NOTIFICATIONS">{{ DashboardTab.NOTIFICATIONS }}
+        <span v-if="unreadNotificationsCount > 0" class="menu-count"
+              :aria-label="`${unreadNotificationsCount} unread`">{{ unreadNotificationsCount }}</span>
+      </div>
+    </template>
+  </div>
   <div style="display: flex; min-height: 100vh;">
-    <div class="container custom-width-projects">
-      <!-- TODO: restore a notification-toggle entry point in the header when isProjectManagerAdmin is true. -->
+    <div v-show="currentTab === DashboardTab.REQUESTS" class="container custom-width-projects">
       <div class="box-header">
         <span>Requests</span>
         <button v-if="canCreateRequest" type="button" class="btn btn-outline-light create-request-button"
@@ -84,11 +94,11 @@
         </div>
       </div>
     </div>
-    <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
-                     :show-notification="showNotification" :call-toggle-notification="toggleNotification"
-                     :notifications="notifications" :call-update-notifications="fetchNotifications"
-                     :show-in-panel="true"
-    />
+    <div v-if="canSeeNotifications && currentTab === DashboardTab.NOTIFICATIONS" class="container notifications-tab">
+      <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
+                       :notifications="notifications" :call-update-notifications="fetchNotifications"
+                       :show-project="true"/>
+    </div>
   </div>
 </template>
 
@@ -99,6 +109,7 @@ import {
   Action,
   Bridgehead,
   Module,
+  Notification,
   PmRequestParameter,
   Project,
   ProjectManagerBackendService,
@@ -116,10 +127,19 @@ import {getConfig} from "@/services/configLoader";
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import store, {ActionFeedbackType} from "@/services/store";
 
+// The dashboard's tabs; Notifications only for the project manager admin
+enum DashboardTab {
+  REQUESTS = "Requests",
+  NOTIFICATIONS = "Notifications"
+}
+
 export default defineComponent({
   computed: {
     projectStates(): ProjectState[] {
       return this.availableProjectStates
+    },
+    unreadNotificationsCount(): number {
+      return this.notifications.filter(notification => !notification.read).length;
     },
 
   },
@@ -132,13 +152,14 @@ export default defineComponent({
       context: new ProjectManagerContext(undefined, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.PROJECT_DASHBOARD_SITE),
       projects: [] as Project[],
-      notifications: [],
-      showNotification: false,
+      DashboardTab,
+      currentTab: DashboardTab.REQUESTS,
+      notifications: [] as Notification[],
       currentPage: 1,
       totalPages: 1,
       selectedState: "" as "" | ProjectState,
       availableProjectStates: [] as ProjectState[],
-      isProjectManagerAdmin: false,
+      canSeeNotifications: false,
       applicants: [] as User[],
       bridgeheads: [] as Bridgehead[],
       selectedApplicant: "",
@@ -155,12 +176,19 @@ export default defineComponent({
       this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_DASHBOARD_SITE);
       this.fetchFilterOptions();
       this.fetchProjects();
-      this.fetchIfIsProjectManagerAdmin();
+      this.updateCanSeeNotifications();
       this.updateCanCreateRequest();
     },
     projects() {
-      if (this.isProjectManagerAdmin) {
+      if (this.canSeeNotifications) {
         this.fetchNotifications();
+      }
+    },
+    canSeeNotifications(canSee: boolean) {
+      if (canSee) {
+        this.fetchNotifications();
+      } else {
+        this.currentTab = DashboardTab.REQUESTS;
       }
     }
   },
@@ -218,9 +246,6 @@ export default defineComponent({
       }
     },
 
-    toggleNotification() {
-      this.showNotification = !this.showNotification;
-    },
     changeState() {
       this.currentPage = 1;
       this.fetchProjects()
@@ -285,20 +310,10 @@ export default defineComponent({
         console.error('Error loading projects:', error);
       }
     },
-    async fetchIfIsProjectManagerAdmin() {
-      try {
-        await this.projectManagerBackendService.fetchData(
-            Module.USER_MODULE,
-            Action.IS_PROJECT_MANAGER_ADMIN_ACTION,
-            this.context,
-            new Map()
-        ).then(result => {
-          this.isProjectManagerAdmin = result;
-        });
-      } catch (error) {
-        console.error('Error loading notifications:', error);
-        throw error;
-      }
+    // The Notifications tab: only for users allowed to fetch notifications (the project manager admin)
+    async updateCanSeeNotifications() {
+      this.canSeeNotifications = await this.projectManagerBackendService.isModuleActionActive(
+          Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, this.context);
     },
 
     async fetchNotifications() {
@@ -332,7 +347,7 @@ export default defineComponent({
       }
     },
     async initializeCurrentData() {
-      await Promise.all([this.fetchProjectStates(), this.fetchFilterOptions()]);
+      await Promise.all([this.fetchProjectStates(), this.fetchFilterOptions(), this.updateCanSeeNotifications()]);
       await this.fetchProjects();
     },
     async fetchFilterOptions() {
@@ -433,15 +448,39 @@ export default defineComponent({
   padding: 6px 14px;
 }
 
-.custom-width-notifications h2 {
-  margin-bottom: 15px;
-}
 .main-menu {
   width: 100%;
   height: 62px;
   background-color: rgba(0,72,156,.95);
   display: flex;
   padding-left: 60%;
+}
+/* Same tabs as the project view */
+.menu-item {
+  padding: 1.2rem 2rem;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+.menu-item.active {
+  background-color: rgb(0, 56, 124);
+}
+.menu-count {
+  display: inline-block;
+  min-width: 20px;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: #fff;
+  color: #2655a2;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.notifications-tab {
+  flex: 1;
+  margin-top: var(--page-top);
 }
 
 .table-box {

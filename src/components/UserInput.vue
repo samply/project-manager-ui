@@ -58,6 +58,9 @@ export default class UserInput extends Vue {
         },
         {immediate: true, deep: true}
     );
+    // The invite action depends on the phase, and after a phase change the
+    // backend service is replaced before the project is fetched again.
+    watch(() => this.project?.state, () => this.updateIsActive());
   }
 
   created() {

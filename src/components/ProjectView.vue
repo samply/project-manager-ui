@@ -190,7 +190,8 @@
                  v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) && currentMenuStep === MenuStep.STATUS">
               <div class="panel-header">Results</div>
               <div class="panel-body">
-                <ResultsBox :call-refresh-context="refreshContext"
+                <!-- Results actions change the state of a site: reload the sites too, for the status timeline. -->
+                <ResultsBox :call-refresh-context="refreshBridgeheadsAndContext"
                             :project-manager-backend-service="projectManagerBackendService"
                             :current-users="currentUsers"
                             :context="context"
@@ -3185,30 +3186,22 @@ export default defineComponent({
     },
 
     async checkButtonVisibility() {
-      let flagChanged = false;  // Track if the flag changes
-      await Promise.all(
-          this.actionButtons.map(async (buttonGroup, index) => {
+      const buttonGroups = await Promise.all(
+          this.actionButtons.map(async buttonGroup => {
             const statusArray = await Promise.all(
                 buttonGroup.button.map(async (button) => {
                   const visibility1 = button.visibilityCondition !== undefined ? button.visibilityCondition : true;
                   const visibility2 = await this.projectManagerBackendService.isModuleActionActive(button.module, button.action, this.context);
-                  // Check if a button is visible and the flag hasn't been set to true yet
-                  if (visibility1 && visibility2 && !this.isAnyButtonVisible) {
-                    this.isAnyButtonVisible = true; // Set the flag to true immediately if a visible button is found
-                    flagChanged = true;  // Mark the flag as changed
-                  }
                   return visibility1 && visibility2;
                 })
             );
-            // Update the visibility for the button group
-            this.buttonGroups[index] = statusArray.includes(true);
+            return statusArray.includes(true);
           })
       );
-
-      // If the flag changed, trigger the watcher by updating the property
-      if (flagChanged) {
-        // You can put any additional logic to notify the watcher if necessary here
-      }
+      this.buttonGroups = buttonGroups;
+      // Recomputed on every check: after an action the last visible button can disappear, and the empty
+      // Actions card has to go with it.
+      this.isAnyButtonVisible = buttonGroups.includes(true);
     },
 
     getMenuSteps(): ProjectViewMenuStep[] {

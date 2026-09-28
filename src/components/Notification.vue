@@ -263,7 +263,10 @@ export default class NotificationBox extends Vue {
   justify-content: space-between;
   align-items: center;
   gap: var(--space-4);
-  padding: 17px 28px;
+  /* Same height as a text-only card header (17px padding around a 19px
+   * title); the filter pills must not make it taller. */
+  min-height: 62.5px;
+  padding: 0 28px;
   background-color: #2655a2;
   color: #fff;
   font-size: 19px;

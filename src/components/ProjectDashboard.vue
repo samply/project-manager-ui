@@ -423,8 +423,13 @@ export default defineComponent({
  * rather than introducing a second, slightly different one.
  */
 .custom-width-projects {
-  flex: 1;
-  margin-top: var(--page-top);
+  /* Keep the Requests card on the same fixed, centered column as the
+   * project-view cards. Bootstrap's responsive .container would otherwise
+   * make this area narrower on wide screens. */
+  flex: 0 0 65%;
+  width: 65%;
+  max-width: 65%;
+  margin: var(--page-top) auto 0;
   border-radius: 10px !important;
   box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
   0 1px 1px 0 rgba(0, 0, 0, 0.14),
@@ -440,7 +445,10 @@ export default defineComponent({
    touching the container's own width-capping/centering behavior. */
 .box-header {
   margin: 0 -0.75rem;
-  padding: 17px 28px;
+  /* Same height as a text-only card header in the project view (17px padding
+   * around a 19px title); the Create request button must not make it taller. */
+  min-height: 62.5px;
+  padding: 0 28px;
   color: #fff;
   font-size: 19px;
   font-weight: 600;
@@ -466,7 +474,8 @@ export default defineComponent({
   height: 62px;
   background-color: rgba(0,72,156,.95);
   display: flex;
-  padding-left: 60%;
+  /* Tabs start at the content column's left edge, as in the project view. */
+  padding-left: calc((100% - 65%) / 2);
 }
 /* Same tabs as the project view */
 .menu-item {
@@ -491,9 +500,13 @@ export default defineComponent({
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
+/* Same fixed, centered column as the Requests card and the project view. */
 .notifications-tab {
-  flex: 1;
-  margin-top: var(--page-top);
+  flex: 0 0 65%;
+  width: 65%;
+  max-width: 65%;
+  margin: var(--page-top) auto 0;
+  padding: 0;
 }
 
 .table-box {

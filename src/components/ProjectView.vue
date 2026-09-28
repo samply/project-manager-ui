@@ -1,5 +1,8 @@
 <template>
   <div class="main-menu">
+    <router-link :to="{ name: 'ProjectDashboard' }" class="menu-item menu-back">
+      <i class="bi bi-arrow-left"></i> Requests
+    </router-link>
     <div v-for="step in getMenuSteps()" class="menu-item" @click="currentMenuStep=step"
          :class="{ 'active': currentMenuStep===step }">
       {{ step }}
@@ -13,23 +16,29 @@
     <div class="right-container">
       <div class="main-content">
         <div class="admin-view">
-          <div class="left-container"
-               v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) && currentMenuStep === MenuStep.STATUS">
-            <!--<div class="box-header" style="padding-left:7%"><span>Phase</span></div>-->
-            <div class="vertical-stepper">
+          <aside class="left-container"
+                 v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) && currentMenuStep === MenuStep.STATUS">
+            <div class="vertical-stepper2">
               <div v-for="(projectState, index) in getProjectStates()" :key="index"
-                   class="stepper-step">
-                <div style="display: flex; flex-flow: row"
-                     :class="{ 'active-step': project?.state === projectState }">
-                  <div class="step-circle">
+                   class="stepper-step2"
+                   :class="{ 'active': project?.state === projectState }">
+                <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
+                  <div :class="[
+                         'step-circle',
+                         index < getProjectStates().indexOf(project?.state ?? projectState) ? 'step-circle--done' :
+                         project?.state === projectState ? 'step-circle--active' : 'step-circle--future'
+                       ]">
                     <span>{{ index + 1 }}</span>
                   </div>
-                  <div class="step-title">{{ projectState }}</div>
+                  <div v-if="index < getProjectStates().length - 1"
+                       :class="['stepper-line2', { 'stepper-line2--done': index < getProjectStates().indexOf(project?.state ?? projectState) }]"></div>
                 </div>
-                <div v-if="index < getProjectStates().length - 1" class="stepper-line"></div>
+                <div class="stepper-step-textbox" style="padding-top: 4px;">
+                  <div class="stepper-step-header">{{ projectState }}</div>
+                </div>
               </div>
             </div>
-          </div>
+          </aside>
           <div class="data-container mt-12" style="width:100%;height:auto">
             <div v-if="project && project.state !== ProjectState.DRAFT && currentMenuStep === MenuStep.STATUS"
                  class="info-container">
@@ -3366,10 +3375,12 @@ export default defineComponent({
 }
 .panel-card .panel-header,
 .status-panel > .panel-header {
-  padding: 14px 22px;
+  /* Same height and title size as .box-header (Request, Documents, the
+   * dashboard); the side inset stays with the cards' 22px content inset. */
+  padding: 17px 22px;
   background: #2655a2;
   color: #fff;
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 600;
 }
 
@@ -3603,7 +3614,8 @@ export default defineComponent({
   width: 100%;
   background-color: rgba(0, 72, 156, .95);
   display: flex;
-  padding-left: 60%;
+  /* Tabs start at the content column's left edge, as on the dashboard. */
+  padding-left: calc((100% - 65%) / 2);
 }
 
 .menu-item {
@@ -3611,6 +3623,23 @@ export default defineComponent({
   color: white;
   cursor: pointer;
   font-weight: bold;
+}
+
+/* Back to the dashboard: a way out, not a section of this request, so it is
+ * lighter than the tabs and set off from them. */
+.menu-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: normal;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.25);
+  margin: 0.6rem 0.5rem 0.6rem 0;
+  padding: 0.6rem 1.5rem 0.6rem 2rem;
+}
+.menu-back:hover {
+  color: #fff;
 }
 
 .menu-item.active {
@@ -3635,32 +3664,36 @@ export default defineComponent({
 .main-container {
   display: flex;
   flex-flow: row;
+  position: relative;
   width: 100%;
-  height:88vh;
+  min-height: 88vh;
 }
 
-/* PM-Admin phase stepper column: as wide as its labels ("APPROVAL",
- * "FINISHED"), a fixed gap to the cards. A % width cut the labels off on a
- * laptop-sized window. */
+/* PM-Admin phase stepper: beside the content column, as wide as its labels
+ * ("APPROVAL", "FINISHED"), so it sits a fixed gap from the cards instead of
+ * drifting off into the margin. */
 .left-container {
   display: flex;
   flex-flow: column;
-  flex: 0 0 auto;
-  margin-right: var(--space-5);
+  position: absolute;
+  right: calc(100% + var(--space-4));
+  top: 0;
+  width: max-content;
+  padding-top: 2px;
 }
-/* The cards take the rest and may shrink below their content width (the At a
- * Glance strip scrolls instead), so they never run under the TODO panel. */
+/* The content column keeps the same size and position across every project
+ * tab. The optional status stepper is positioned beside it, never within it. */
 .admin-view > .data-container {
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 0 0 100%;
+  width: 100%;
 }
 
 .right-container {
-  flex: 3;
+  flex: 0 0 65%;
   display: flex;
   flex-flow: row;
   margin: 28px auto 0;
-  width: 100%;
+  width: 65%;
   max-width: 65%;
   /*align-self: flex-start;*/
 }
@@ -3675,13 +3708,15 @@ export default defineComponent({
 .draft-layout-row {
   display: flex;
   flex-flow: row;
-  gap: 22px;
+  position: relative;
+  width: 100%;
   padding: 0 0 20px;
   align-items: flex-start;
 }
 
 .draft-form-card {
-  flex: 1;
+  flex: 0 0 100%;
+  width: 100%;
   background: #fff;
   border-radius: 6px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
@@ -3690,6 +3725,15 @@ export default defineComponent({
   min-height: 580px;
   overflow: hidden;
   height:100%;
+}
+
+/* The draft stepper is a navigation aid, not part of the form column. Keeping
+ * it outside the flex flow gives the Draft stage the same fixed content area
+ * as Status, Documents, and the regular Request view. */
+.draft-layout-row > .vertical-stepper-box {
+  position: absolute;
+  right: calc(100% + var(--space-4));
+  top: 0;
 }
 
 .draft-dialog-content {
@@ -3718,6 +3762,8 @@ export default defineComponent({
   display: flex;
   flex-flow: row;
   background-color: transparent;
+  position: relative;
+  width: 100%;
 }
 
 .vertical-stepper {
@@ -3748,8 +3794,13 @@ export default defineComponent({
 .stepper-line2 {
   width: 2px;
   height: 28px;
-  background-color: #e2e8f0;
+  background-color: #cbd5e1;
   margin: 3px 0;
+}
+
+/* noinspection CssUnusedSymbol */
+.stepper-line2--done {
+  background-color: #2655a2;
 }
 
 .stepper-step {
@@ -3782,7 +3833,7 @@ export default defineComponent({
   /* noinspection CssNonIntegerLengthInPixels */
   font-size: 13.5px;
   font-weight: 400;
-  color: #94a3b8;
+  color: #64748b;
   line-height: 1.3;
 }
 
@@ -3794,7 +3845,7 @@ export default defineComponent({
 .stepper-step-desc {
   /* noinspection CssNonIntegerLengthInPixels */
   font-size: 11.5px;
-  color: #cbd5e1;
+  color: #94a3b8;
   line-height: 1.4;
   margin-top: 2px;
 }
@@ -3921,8 +3972,12 @@ export default defineComponent({
   margin-right: 0.5%;
 }
 
+/* The closed ToDo handle floats at the right edge instead of taking flow
+ * width, so the content column is centred exactly like the dashboard's. */
 .open-right-panel {
-  margin-top: var(--page-top);
+  position: absolute;
+  top: var(--page-top);
+  right: 0;
 }
 
 .custom-width-notifications h2 {
@@ -4133,8 +4188,7 @@ export default defineComponent({
 .custom-width-notifications .box-header > div {
   min-width: 0;
 }
-/* Same size as the card titles (.panel-header), fixed padding instead of a
- * share of the panel width. */
+/* Body-sized tab title, fixed padding instead of a share of the panel width. */
 .notification-tab {
   padding: var(--space-2) var(--space-3);
   font-size: 16px;

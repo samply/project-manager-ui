@@ -37,6 +37,9 @@ export default class NotificationBox extends Vue {
   readonly showProject!: boolean;
 
   showAll = false;
+  // '' = all sites, NO_SITE = request-wide events, otherwise the bridgehead id
+  selectedSite = '';
+  readonly NO_SITE = '__no_site__';
   currentPage = 1;
   notificationsPerPage = 10;
   markingAsRead = new Set<number>();
@@ -61,12 +64,31 @@ export default class NotificationBox extends Vue {
         new Date(b.timestamp ?? 0).getTime() - new Date(a.timestamp ?? 0).getTime());
   }
 
+  // The sites that appear in the notifications, for the site filter
+  get sites(): { id: string, label: string }[] {
+    const sites = new Map<string, string>();
+    this.sortedNotifications.forEach(notification => {
+      if (this.hasSite(notification)) {
+        sites.set(notification.bridgehead as string, this.site(notification));
+      }
+    });
+    return [...sites.entries()]
+        .map(([id, label]) => ({id, label}))
+        .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  get siteNotifications(): Notification[] {
+    if (this.selectedSite === '') return this.sortedNotifications;
+    if (this.selectedSite === this.NO_SITE) return this.sortedNotifications.filter(notification => !this.hasSite(notification));
+    return this.sortedNotifications.filter(notification => notification.bridgehead === this.selectedSite);
+  }
+
   get unreadCount(): number {
-    return this.sortedNotifications.filter(notification => !notification.read).length;
+    return this.siteNotifications.filter(notification => !notification.read).length;
   }
 
   get filteredNotifications(): Notification[] {
-    return this.showAll ? this.sortedNotifications : this.sortedNotifications.filter(notification => !notification.read);
+    return this.showAll ? this.siteNotifications : this.siteNotifications.filter(notification => !notification.read);
   }
 
   get totalPages(): number {
@@ -83,6 +105,10 @@ export default class NotificationBox extends Vue {
     this.currentPage = 1;
   }
 
+  changeSite() {
+    this.currentPage = 1;
+  }
+
   convertDate(date: string | Date) {
     return formatDisplayDate(date, this.timestampDisplayFormat)
   }
@@ -94,9 +120,12 @@ export default class NotificationBox extends Vue {
     return words.charAt(0).toUpperCase() + words.slice(1);
   }
 
+  hasSite(notification: Notification): boolean {
+    return !!notification.bridgehead && notification.bridgehead !== 'NONE';
+  }
+
   site(notification: Notification): string {
-    if (!notification.bridgehead || notification.bridgehead === 'NONE') return '';
-    return notification.humanReadableBridgehead || notification.bridgehead;
+    return this.hasSite(notification) ? (notification.humanReadableBridgehead || notification.bridgehead as string) : '';
   }
 
   async markAsRead(notification: Notification) {
@@ -141,9 +170,16 @@ export default class NotificationBox extends Vue {
           Unread <span class="count">{{ unreadCount }}</span>
         </button>
         <button type="button" :class="{ active: showAll }" :aria-pressed="showAll" @click="setShowAll(true)">
-          All <span class="count">{{ sortedNotifications.length }}</span>
+          All <span class="count">{{ siteNotifications.length }}</span>
         </button>
       </div>
+    </div>
+    <div v-if="sites.length > 0" class="filter-box">
+      <select v-model="selectedSite" class="form-select" aria-label="Site" @change="changeSite">
+        <option value="">All sites</option>
+        <option v-for="site in sites" :key="site.id" :value="site.id">{{ site.label }}</option>
+        <option :value="NO_SITE">No site (whole request)</option>
+      </select>
     </div>
     <div class="table-box">
       <table class="pm-table notifications-table">
@@ -266,6 +302,20 @@ export default class NotificationBox extends Vue {
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   opacity: .85;
+}
+
+/* Same filter row as the requests dashboard */
+.filter-box {
+  background-color: #e9eef8;
+  padding: 14px 22px;
+  display: flex;
+  border-bottom: 1px solid #d7e2ed;
+}
+
+.filter-box .form-select {
+  width: auto;
+  min-width: 200px;
+  cursor: pointer;
 }
 
 .table-box {

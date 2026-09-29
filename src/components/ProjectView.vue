@@ -267,6 +267,12 @@
                       <label class="form-check-label" for="flexSwitchCheckDefault">Edit Fields</label>
                     </div>
                   </div>
+                  <!-- Mandatory fields carry a *; "optional" is written only where a whole step or block
+                       is optional (docs/mandatory-fields.md). -->
+                  <div v-if="existsDraftDialog && !isCurrentStep(DialogStep.SUMMARY)" class="mandatory-legend"
+                       :class="{ 'field-missing': highlightMissingFields && isOutputsStep(draftDialogStepper.currentStep?.id) && !projectHasValidOutputs() }">
+                    {{ mandatoryLegend() }}
+                  </div>
                   <ContextInfoBox
                       v-if="existsDraftDialog && draftDialogStepper.currentStep?.preInfo"
                       :content="draftDialogStepper.currentStep.preInfo"
@@ -292,7 +298,9 @@
                     <template v-if="block.block">
                       <div v-if="shouldShowHeaderOfBlockGroup(blockIndex)" class="input-field-header" >
                         <div class="d-flex justify-content-between align-items-center">
-                          <span class="project-field-block-title">{{ block.block?.displayName ?? block.block?.label}}<!--<span v-if="item.field.mandatory">&nbsp*</span>--></span>
+                          <span class="project-field-block-title">{{ block.block?.displayName ?? block.block?.label}}<span
+                              v-if="existsDraftDialog && !isCurrentStep(DialogStep.SUMMARY) && isOptionalBlock(block.block?.label)"
+                              class="optional-note">(optional)</span></span>
                         </div>
                         <div class="project-field-block-description"
                              v-html="(!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY))
@@ -357,12 +365,10 @@
                                 class="project-feasibility"
                             >
                               <div class="project-feasibility-header">
-                                <span class="project-feasibility-title">
+                                <span class="project-feasibility-title"
+                                      :class="{ 'field-missing': highlightMissingFields && item.mandatory && bridgeheads.length === 0 }">
                                   {{ item.fieldKey }}
-                                  <MandatoryFieldMarker
-                                      :mandatory="item.mandatory"
-                                      :missing="bridgeheads.length === 0"
-                                  />
+                                  <MandatoryFieldMarker :mandatory="item.mandatory"/>
                                 </span>
                                 <div v-if="item.fieldDescription" class="project-feasibility-description"
                                      v-html="item.fieldDescription"></div>
@@ -420,6 +426,7 @@
                                 :delete-action="item.deleteAction"
                                 :delete-module="item.deleteModule"
                                 :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
+                                :highlight-missing="highlightMissingFields"
                                 :context="context"
                                 :properties="item.properties"
                                 :project-roles="projectRoles"
@@ -821,6 +828,13 @@ export default defineComponent({
   computed: {
     ProjectState() {
       return ProjectState
+    },
+    // Red is for errors only: empty mandatory fields turn red once the user
+    // has left the step and come back, never on the first visit.
+    highlightMissingFields(): boolean {
+      const step = this.draftDialogStepper.currentStep;
+      if (!this.existsDraftDialog || !step || step.id === FixedDialogStep.SUMMARY) return false;
+      return this.isDraftStepPassed(step, this.draftDialogStepper.currentSteps.indexOf(step));
     },
     DialogStep() {
       return FixedDialogStep
@@ -1901,12 +1915,42 @@ export default defineComponent({
     // "Next", so the steps before that one were passed, even the ones left empty.
     // The first time a draft is opened, only the imported query holds data.
     isDraftStepReached(step: DialogStep, index: number): boolean {
-      if (this.draftDialogStepper.visitedSteps.has(step.displayName)) return true;
+      if (this.draftDialogStepper.visitedSteps.has(step.id)) return true;
       const steps = this.draftDialogStepper.currentSteps;
       for (let i = steps.length - 1; i >= index; i--) {
         if (this.draftStepHasData(steps[i])) return true;
       }
       return false;
+    },
+
+    // Left at least once before: visited earlier in this session, or a later
+    // step holds data. Unlike isDraftStepReached, the step's own data does not
+    // count, so typing in the first field does not flag the others at once.
+    isDraftStepPassed(step: DialogStep, index: number): boolean {
+      if (this.draftDialogStepper.visitedSteps.has(step.id)) return true;
+      return this.draftDialogStepper.currentSteps.slice(index + 1).some(later => this.draftStepHasData(later));
+    },
+
+    currentStepHasMandatoryFields(): boolean {
+      const stepId = this.draftDialogStepper.currentStep?.id;
+      const rendered = this.projectFieldRenderBlock.some(block => block.items.some(row =>
+          row.shouldRenderRow && row.field.some(item => item.mandatory)));
+      // Also blocks without instances yet: their fields are not rendered.
+      return rendered || this.formFields.some(field =>
+          field.title === stepId && this.isDynamicFormField(field) && Boolean(field.mandatory));
+    },
+
+    // A block of the current step that can be left out: no entry is required
+    // (its mandatory fields only apply to an entry once it is added), or none
+    // of its fields is mandatory.
+    isOptionalBlock(blockLabel?: string): boolean {
+      if (!blockLabel) return false;
+      const stepId = this.draftDialogStepper.currentStep?.id;
+      const fields = this.formFields.filter(field =>
+          field.title === stepId && field.block === blockLabel && this.isDynamicFormField(field));
+      if (fields.length === 0) return false;
+      const requiredEntries = Math.max(...fields.map(field => field.minBlockInstances ?? 0));
+      return requiredEntries === 0 || fields.every(field => !field.mandatory);
     },
 
     // active: the step on screen; done / missing: reached, with all or not all
@@ -1940,15 +1984,37 @@ export default defineComponent({
           FixedFormFieldKey.QUERIED_SITES, FixedDialogStep.QUERY);
       addIfMissing(!this.hasMeaningfulValue(project.queryFormat), FixedFormFieldKey.QUERY_FORMAT, FixedDialogStep.QUERY);
 
-      // The outputs are edited in the Custom step, which only a PM admin with a
-      // custom configuration gets. Everyone else sets them by choosing a
-      // configuration, so they count against the configuration's step then.
-      if (!hasValidOutputs(project)) {
-        const outputStep = this.getFixedFieldDialogStep(FixedFormFieldKey.OUTPUT_FORMAT, FixedDialogStep.CUSTOM);
-        steps.add(this.draftDialogStepper.hasCurrentStep(outputStep) ? outputStep :
-            this.getFixedFieldDialogStep(FixedFormFieldKey.PROJECT_CONFIGURATION, FixedDialogStep.SERVICES));
-      }
+      if (!hasValidOutputs(project)) steps.add(this.fetchOutputsStepId());
       return steps;
+    },
+
+    // The outputs are edited in the Custom step, which only a PM admin with a
+    // custom configuration gets. Everyone else sets them by choosing a
+    // configuration, so they belong to the configuration's step then.
+    fetchOutputsStepId(): string {
+      const outputStep = this.getFixedFieldDialogStep(FixedFormFieldKey.OUTPUT_FORMAT, FixedDialogStep.CUSTOM);
+      return this.draftDialogStepper.hasCurrentStep(outputStep) ? outputStep :
+          this.getFixedFieldDialogStep(FixedFormFieldKey.PROJECT_CONFIGURATION, FixedDialogStep.SERVICES);
+    },
+
+    // The configuration step is required even though the configuration field
+    // carries no star (it is a set of option cards without a title): a request
+    // cannot be created without outputs.
+    isOutputsStep(stepId?: string): boolean {
+      return stepId !== undefined && stepId === this.fetchOutputsStepId() &&
+          stepId === this.getFixedFieldDialogStep(FixedFormFieldKey.PROJECT_CONFIGURATION, FixedDialogStep.SERVICES);
+    },
+
+    projectHasValidOutputs(): boolean {
+      return hasValidOutputs(this.project);
+    },
+
+    mandatoryLegend(): string {
+      const hasStars = this.currentStepHasMandatoryFields();
+      if (this.isOutputsStep(this.draftDialogStepper.currentStep?.id)) {
+        return 'Select at least one option.' + (hasStars ? ' Fields marked with * are required.' : '');
+      }
+      return hasStars ? 'Fields marked with * are required.' : 'All fields in this step are optional.';
     },
 
     nextDraftDialogStep(): void {
@@ -4302,6 +4368,25 @@ export default defineComponent({
   font-size: 13px;
   color: rgba(255, 255, 255, 0.82);
   margin-top: 4px;
+}
+
+.mandatory-legend {
+  font-size: 13px;
+  color: #5b6b7c;
+  padding: 0 var(--form-inset);
+  margin-bottom: var(--space-3);
+}
+
+.optional-note {
+  margin-left: 6px;
+  font-weight: normal;
+  font-size: 0.85em;
+  color: #5b6b7c;
+}
+
+.project-feasibility-title.field-missing,
+.mandatory-legend.field-missing {
+  color: var(--status-danger-color);
 }
 
 .missing-fields, .missing-fields .stepper-step-header {

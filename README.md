@@ -27,3 +27,9 @@ npm run lint
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
+
+## Documentation
+
+Design decisions and their reasoning are in [`docs/`](docs/):
+
+- [Marking mandatory and optional fields in the draft form](docs/mandatory-fields.md)

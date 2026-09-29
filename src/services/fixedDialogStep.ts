@@ -358,14 +358,17 @@ export class DialogStepper {
     private updateFields(): void {
         const previousStep = this.currentStep;
 
-        if (previousStep) {
-            this.visitedSteps.add(previousStep.displayName)
-        }
-
         this.currentSteps = this.fetchActiveSteps();
 
         this.currentStep =
             this.currentSteps.find(s => s.id === this.currentStepId) ?? null;
+
+        // Visited = left for another step. Not on every refresh: saving a field
+        // reloads the form and refreshes the stepper without the user moving.
+        // By id, as the configuration can rename a step after it is loaded.
+        if (previousStep && previousStep.id !== this.currentStep?.id) {
+            this.visitedSteps.add(previousStep.id);
+        }
 
         this.hasPreviousStep =
             this.currentStep !== null &&

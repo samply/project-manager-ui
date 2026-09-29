@@ -99,6 +99,8 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
     type: {type: String as PropType<FormDataType>, required: false},
     displayFormat: {type: String as PropType<DisplayFormatKey>, required: false},
     draftDialogCurrentStep: {type: Object as PropType<DialogStep>, required: false},
+    // The user already left this draft step once: an empty mandatory field is an error now.
+    highlightMissing: {type: Boolean, default: false},
     visibleBridgeheads: {type: Array as PropType<Bridgehead[]>, required: true},
     section: {type: Object as PropType<Section>, required: false},
     block: {type: Object as PropType<Block>, required: false},
@@ -180,6 +182,7 @@ export default class ProjectFieldRow extends Vue {
   readonly mandatory!: boolean;
   // noinspection JSUnusedGlobalSymbols
   readonly draftDialogCurrentStep?: DialogStep;
+  readonly highlightMissing!: boolean;
   // noinspection JSUnusedGlobalSymbols
   readonly visibleBridgeheads!: Bridgehead[];
   // noinspection JSUnusedGlobalSymbols
@@ -1077,6 +1080,7 @@ export default class ProjectFieldRow extends Vue {
         </div>
       </div>
       <select v-else-if="isSelection() && ((isDraft() && !isSummaryStep()) || editMode)"
+              :aria-required="mandatory ? 'true' : undefined"
               v-model="editedValue[0]" @change="onInputChange" class="form-select">
         <option v-for="value in possibleValues" :key="value" :value="value">
           {{ displayPossibleValue(value).name }}
@@ -1088,6 +1092,7 @@ export default class ProjectFieldRow extends Vue {
       </div>
       <div v-else-if="isInputType(FormDataType.LONG_STRING)" class="grow-wrap" style="width:100%" :data-replicated-value="editedValue[0]">
         <textarea
+            :aria-required="mandatory ? 'true' : undefined"
             v-model="editedValue[0]"
             @change="onInputChange"
             class="form-control auto-textarea"
@@ -1100,6 +1105,7 @@ export default class ProjectFieldRow extends Vue {
         {{ getFormFieldSummaryValue(editedValue[0]) }}
       </div>
       <input
+          :aria-required="mandatory ? 'true' : undefined"
           v-else
           :type="getInputType()"
           v-model="editedValue[0]"
@@ -1129,12 +1135,10 @@ export default class ProjectFieldRow extends Vue {
           <!-- No title (e.g. a declaration checkbox): no empty line holding only
                the mandatory marker - the marker moves to the option text. -->
           <div v-if="hasFieldTitle" style="display: flex;">
-            <span class="input-field-title">
+            <span class="input-field-title"
+                  :class="{ 'field-missing': highlightMissing && mandatory && !instances?.some(instance => instance.value) }">
               <span v-html="fieldKey"></span>
-              <MandatoryFieldMarker
-                  :mandatory="mandatory"
-                  :missing="!instances?.some(instance => instance.value)"
-              />
+              <MandatoryFieldMarker :mandatory="mandatory"/>
             </span>
           </div>
           <div
@@ -1177,12 +1181,12 @@ export default class ProjectFieldRow extends Vue {
                        @change="toggleCheckboxValue(value, ($event.target as HTMLInputElement).checked)">
                 <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
                   <span>
-                    <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'"
+                    <span :class="[hasAnyOptionDescription ? 'option-title' : 'option-title-plain',
+                                   { 'field-missing': !hasFieldTitle && highlightMissing && mandatory && !instances?.some(instance => instance.value) }]"
                           v-html="displayPossibleValue(value).name"></span>
                     <MandatoryFieldMarker
                         v-if="!hasFieldTitle"
                         :mandatory="mandatory"
-                        :missing="!instances?.some(instance => instance.value)"
                     />
                   </span>
                   <span v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
@@ -1268,6 +1272,7 @@ export default class ProjectFieldRow extends Vue {
                 :visible-bridgeheads="visibleBridgeheads"
                 :edit-project-param="editProjectParam"
                 :draft-dialog-current-step="draftDialogCurrentStep"
+                :highlight-missing="highlightMissing"
                 :properties="properties"
                 :transform-for-sending="buildInstanceTransform!(instance.fieldInstance)"
             />
@@ -1355,12 +1360,10 @@ export default class ProjectFieldRow extends Vue {
         />
         <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'with-value-below': hasValueBelowHeader() }">
           <div v-if="!isDescriptionUpload()" style="display: flex;">
-            <span class="input-field-title">
+            <span class="input-field-title"
+                  :class="{ 'field-missing': highlightMissing && mandatory && ((!isBridgeheads() && !editedValue[0]) || (isBridgeheads() && editingBridgeheads.length === 0)) }">
               <span v-html="fieldKey"></span>
-              <MandatoryFieldMarker
-                  :mandatory="mandatory"
-                  :missing="(!isBridgeheads() && !editedValue[0]) || (isBridgeheads() && editingBridgeheads.length === 0)"
-              />
+              <MandatoryFieldMarker :mandatory="mandatory"/>
             </span>
 
             <span v-if="this.uploadAction && todos?.get(this.uploadAction)"
@@ -1473,6 +1476,7 @@ export default class ProjectFieldRow extends Vue {
                      class="grow-wrap query-view-content"
                      :data-replicated-value="editedValue[0]">
                   <textarea
+                      :aria-required="mandatory ? 'true' : undefined"
                       v-model="editedValue[0]"
                       @change="onInputChange"
                       class="form-control auto-textarea"
@@ -1550,6 +1554,7 @@ export default class ProjectFieldRow extends Vue {
                 <Transition name="expand">
                   <div v-if="showPseudocode" class="grow-wrap" :data-replicated-value="editedValue[0]">
                     <textarea
+                        :aria-required="mandatory ? 'true' : undefined"
                         v-model="editedValue[0]"
                         @change="onInputChange"
                         class="form-control"
@@ -1702,7 +1707,7 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else-if="isSelection() && !isConfiguration()" style="width: 100%;">
-              <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onInputChange" class="form-select">
+              <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onInputChange" class="form-select" :aria-required="mandatory ? 'true' : undefined">
                 <option v-for="value in possibleValues" :key="value" :value="value">
                   {{ displayPossibleValue(value).name }}
                   <!--<span style="font-size: smaller"> {{displayPossibleValue(value).description}}</span>-->
@@ -1725,6 +1730,7 @@ export default class ProjectFieldRow extends Vue {
               </div>
               <div v-else class="grow-wrap" :data-replicated-value="editedValue[0]">
                 <textarea
+                    :aria-required="mandatory ? 'true' : undefined"
                     type="text"
                     v-model="editedValue[0]"
                     @change="onInputChange"
@@ -1741,6 +1747,7 @@ export default class ProjectFieldRow extends Vue {
                 {{ getFormFieldSummaryValue(editedValue[0]) }}
               </div>
               <input
+                  :aria-required="mandatory ? 'true' : undefined"
                   v-else
                   :type="getInputType()"
                   v-model="editedValue[0]"
@@ -2005,6 +2012,13 @@ export default class ProjectFieldRow extends Vue {
 .input-field-title {
   font-weight: bold;
   color: #00489cf2;
+}
+
+/* An empty mandatory field in a draft step the user already left once. The
+ * star keeps the label colour, so it turns red with it. */
+.input-field-title.field-missing,
+.field-missing {
+  color: var(--status-danger-color);
 }
 
 /* Header stacked above its value (draft): one gap between them, whether the

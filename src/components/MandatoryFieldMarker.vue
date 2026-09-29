@@ -1,5 +1,7 @@
 <template>
-  <span v-if="mandatory" class="mandatory-field-marker" :class="{ missing }">&nbsp;*</span>
+  <!-- Always the label's colour: red is kept for errors (see docs/mandatory-fields.md).
+       Hidden from screen readers, which get aria-required on the input instead. -->
+  <span v-if="mandatory" class="mandatory-field-marker" aria-hidden="true">&nbsp;*</span>
 </template>
 
 <script lang="ts">
@@ -11,17 +13,7 @@ export default defineComponent({
     mandatory: {
       type: Boolean,
       default: false
-    },
-    missing: {
-      type: Boolean,
-      default: false
     }
   }
 });
 </script>
-
-<style scoped>
-.mandatory-field-marker.missing {
-  color: var(--status-danger-color);
-}
-</style>

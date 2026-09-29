@@ -9,8 +9,9 @@ export type ReasonMode = 'none' | 'optional' | 'required';
 export default defineComponent({
   name: "ActionDialog",
   props: {
-    // The action's label, also the confirm button ("Reject request")
+    // The action's label, also the confirm button ("Reject request") unless confirmText is given
     title: {type: String, required: true},
+    confirmText: {type: String, default: ''},
     description: {type: String, default: ''},
     // "the requester and the admins of all sites"; empty = no email line
     recipients: {type: String, default: ''},
@@ -20,6 +21,8 @@ export default defineComponent({
     // Shown inside the dialog: a toast behind the modal backdrop would not be seen.
     errorMessage: {type: String, default: ''},
   },
+  // Extra fields go in the default slot; the parent checks them on "confirm" and reports problems through
+  // errorMessage, as the dialog stays open until the parent closes it.
   emits: ['confirm', 'cancel'],
   data() {
     return {
@@ -67,12 +70,15 @@ export default defineComponent({
 
 <template>
   <dialog ref="dialog" class="action-dialog" :aria-labelledby="titleId" @cancel="onCancel">
-    <form method="dialog" @submit.prevent="confirm">
+    <!-- novalidate: the dialog shows its own messages, not the browser's bubbles -->
+    <form method="dialog" novalidate @submit.prevent="confirm">
       <h2 :id="titleId" class="action-dialog-title">{{ title }}</h2>
       <p v-if="description" class="action-dialog-text">{{ description }}</p>
       <p v-if="recipients" class="action-dialog-text">
         <i class="bi bi-envelope" aria-hidden="true"></i> An email is sent to {{ recipients }}.
       </p>
+
+      <slot></slot>
 
       <div v-if="reasonMode !== 'none'" class="action-dialog-reason">
         <label :for="reasonId" class="action-dialog-label">
@@ -95,7 +101,7 @@ export default defineComponent({
         <button type="button" class="btn btn-outline-secondary" :disabled="pending" @click="onCancel()">Cancel</button>
         <button type="submit" class="btn" :class="danger ? 'btn-danger' : 'btn-primary'" :disabled="pending"
                 :aria-busy="pending">
-          <span v-if="pending" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>{{ title }}
+          <span v-if="pending" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>{{ confirmText || title }}
         </button>
       </div>
     </form>

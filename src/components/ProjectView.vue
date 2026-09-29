@@ -58,7 +58,7 @@
               </div>
               <!-- What this user has to do now. Replaces the Actions card's review and phase buttons and the
                    matching TODOs (plans/2026-09-29-plan-project-actions-redesign.md, step 3.4). -->
-              <div v-if="hasNextStep || hasNothingToDo" class="panel-card next-step-card">
+              <div v-if="hasNextStep || todoNotes.length > 0 || hasNothingToDo" class="panel-card next-step-card">
                 <div class="panel-header">Next step</div>
                 <div class="next-step-body">
                   <div v-if="pendingReviewSites.length > 0" class="next-step-item">
@@ -69,12 +69,15 @@
                     </p>
                     <button type="button" class="btn btn-primary" @click="scrollToResults">Go to results</button>
                   </div>
-                  <template v-for="(group, groupIndex) in nextStepGroups" :key="group.label">
-                    <div v-if="nextStepGroupsVisible[groupIndex]" class="next-step-item">
-                      <div class="next-step-title">{{ group.label }}</div>
-                      <p class="next-step-text" v-html="nextStepDescription(group)"></p>
+                  <!-- Ordered by nextStepEntries: the actions, inviting users, the remaining instructions (the
+                       former TODO panel; the "#N" badges next to upload and download buttons point to their
+                       numbers), and finishing the request last. -->
+                  <template v-for="entry in nextStepEntries" :key="entry.key">
+                    <div v-if="entry.group" class="next-step-item">
+                      <div class="next-step-title">{{ entry.group.label }}</div>
+                      <p class="next-step-text" v-html="nextStepDescription(entry.group)"></p>
                       <div class="next-step-buttons">
-                        <ProjectManagerButton v-for="button in group.button" :key="button.action"
+                        <ProjectManagerButton v-for="button in entry.group.button" :key="button.action"
                                               :module="button.module" :action="button.action"
                                               :context="context"
                                               :call-refresh-context="button.refreshContextCallFunction"
@@ -90,8 +93,21 @@
                                               :project-manager-backend-service="projectManagerBackendService"/>
                       </div>
                     </div>
+                    <div v-else-if="entry.invite" class="next-step-item">
+                      <div class="next-step-title">Invite users to the {{ project?.state?.toLowerCase() }} phase</div>
+                      <p class="next-step-text" v-html="entry.invite.message"></p>
+                      <div class="next-step-buttons">
+                        <button type="button" class="btn btn-primary" aria-haspopup="dialog" @click="openInviteDialog">
+                          <i class="bi bi-person-plus" aria-hidden="true"></i> Invite user
+                        </button>
+                      </div>
+                    </div>
+                    <div v-else-if="entry.note" class="next-step-item next-step-note">
+                      <span class="todo-circle">#{{ entry.note.number }}</span>
+                      <p class="next-step-text" v-html="entry.note.message"></p>
+                    </div>
                   </template>
-                  <p v-if="!hasNextStep" class="next-step-text next-step-idle">
+                  <p v-if="hasNothingToDo" class="next-step-text next-step-idle">
                     No action is required at the moment. You will be notified, also by email, when there is
                     something for you to do.
                   </p>
@@ -211,50 +227,13 @@
                                       :activeBridgehead="activeBridgehead"/>
                 </div>
             </div>
-            <!-- TODO: Restore creator access to this Actions box; see plans/2026-09-08-plan-restore-project-actions-for-creators.md. -->
-            <div
-                v-if="showActionsCard && currentMenuStep === MenuStep.STATUS"
-                class="project-actions status-panel">
-              <div class="panel-header">Actions</div>
-              <div class="panel-body">
-                <!-- Project State Module: Creator View -->
-                <!-- Project State Module: PM-ADMIN View -->
-                <template v-for="(buttonGroup, index) in actionButtons" :key="index">
-                  <div v-if="buttonGroups[index]" class="button-group-box">
-                    <div class="button-group-label">
-                      {{ buttonGroup.label }}
-                      <span style="display: flex">
-                    <span
-                        v-for="(explanationNumber, index3) in getExplanationsForButtonGroup(buttonGroup)"
-                        :key="index3" class="todo-circle-small">#{{ explanationNumber }}</span>
-                  </span>
-                    </div>
-                    <div class="button-group-buttons">
-                      <ProjectManagerButton v-for="(button, index2) in buttonGroup.button"
-                                            :key="index2"
-                                            :module="button.module" :action="button.action"
-                                            :context="context"
-                                            :call-refresh-context="button.refreshContextCallFunction"
-                                            :text="button.text"
-                                            :button-class="button.cssClass"
-                                            :with-message="button.withMessage"
-                                            :message-required="button.messageRequired"
-                                            :confirmation="button.confirmation"
-                                            :confirmation-text="button.confirmationText"
-                                            :visibility="button.visibilityCondition"
-                                            :do-action-on-click="button.doActionOnClick"
-                                            :params="button.params"
-                                            :project-manager-backend-service="projectManagerBackendService"/>
-                    </div>
-                  </div>
-                </template>
-              </div>
-              <div
-                  v-if="!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY)"
-                  class="inviteUser">
-                <UserInput :project="project" :context="context"
+            <!-- Who takes part in the current phase, and inviting more. The inline invite form becomes a
+                 dialog in step 3.6 of plans/2026-09-29-plan-project-actions-redesign.md. -->
+            <div v-if="showPeopleCard && currentMenuStep === MenuStep.STATUS" class="project-people status-panel">
+              <div class="panel-header">People</div>
+              <div class="people-body">
+                <UserInput ref="userInput" :project="project" :context="context"
                            :bridgeheads="visibleBridgeheads"
-                           :todos="extendedExplanations"
                            :current-users="currentUsers"
                            :project-manager-backend-service="projectManagerBackendService"
                            :call-refresh-context="refreshContext"
@@ -475,7 +454,7 @@
                                 :upload-action="item.uploadAction"
                                 :download-action="item.downloadAction"
                                 :download-module="item.downloadModule"
-                                :todos="extendedExplanations"
+                                :todos="existsDraftDialog ? undefined : extendedExplanations"
                                 :visible-bridgeheads="visibleBridgeheads"
                                 :mandatory="item.mandatory"
                                 :type="item.type"
@@ -692,46 +671,6 @@
         </div>
       </div>
     </div>
-
-
-    <div :class="showRightPanel ? 'custom-width-notifications' : 'open-right-panel'">
-      <button style="" @click="showRightPanel=true" class="btn" v-if="!showRightPanel"
-              data-toggle="tooltip"
-              data-placement="top" title="Show ToDos">
-        <i style="font-size: 20px" class="bi bi-chevron-double-left"></i>
-        <!-- Close symbol for Progress -->
-      </button>
-      <div v-if="showRightPanel">
-        <div class="box-header"
-             style="display:flex; flex-flow:row; justify-content:space-between;padding-bottom:0;color:black ">
-          <div style="display:flex; flex-flow:row;">
-            <div class="notification-tab active">TODO</div>
-          </div>
-          <button style="padding: 0 var(--space-1); margin: 0 0 5px var(--space-2); flex-shrink: 0" @click="showRightPanel=false"
-                  class="btn"
-                  v-if="showRightPanel" data-toggle="tooltip" data-placement="top"
-                  title="Hide Panel">
-            <i style="font-size: 20px;color:white" class="bi bi-chevron-double-right"></i>
-            <!-- Close symbol for Progress -->
-          </button>
-        </div>
-
-        <div>
-          <div v-if="extendedExplanations.size > 0" class="notification-box">
-            <div v-for="(explanation, index) in Array.from(extendedExplanations.values())"
-                 :key="index"
-                 class="card mb-3">
-              <div class="card-body">
-                <div style="display:flex; flex-flow: row;">
-                  <div class="todo-circle"><span>#{{ explanation.number }}</span></div>
-                  <h5 class="card-title" v-html="explanation.message"></h5>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
 </template>
@@ -831,6 +770,7 @@ const NEXT_STEP_ACTIONS: Action[] = [
   Action.REJECT_PROJECT_ANALYSIS_ACTION,
   Action.ACCEPT_PROJECT_RESULTS_ACTION, Action.REQUEST_CHANGES_IN_PROJECT_ACTION, Action.REJECT_PROJECT_RESULTS_ACTION,
   Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION,
+  Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION, Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
 ];
 
 interface ProjectFieldRenderItem {
@@ -882,16 +822,44 @@ export default defineComponent({
     ProjectState() {
       return ProjectState
     },
+    // The instructions left after the card's own items (numbered like the "#N" badges of the upload
+    // buttons). Not in the draft form, which shows its missing fields itself.
+    todoNotes(): { number: number, message: string }[] {
+      if (this.existsDraftDialog) return [];
+      return [...this.extendedExplanations.entries()]
+          .filter(([action]) => !this.inviteNote || action !== this.fetchInviteAction())
+          .map(([, note]) => note);
+    },
+    // The deployment's instruction to invite users, when it applies (the same rules as the former TODO
+    // panel) and this user can invite: an item with its button instead of a note.
+    inviteNote(): { number: number, message: string } | undefined {
+      if (this.existsDraftDialog || !this.canInviteUsers || !this.showPeopleCard) return undefined;
+      return this.extendedExplanations.get(this.fetchInviteAction());
+    },
+    // The card's entries in order. "Finish the request" is last: it is possible during the whole final
+    // phase, but only makes sense once everything else is done.
+    nextStepEntries(): { key: string, group?: ActionButtonGroup, invite?: { message: string },
+      note?: { number: number, message: string } }[] {
+      const visibleGroups = this.nextStepGroups.filter((_group, index) => this.nextStepGroupsVisible[index]);
+      const isFinish = (group: ActionButtonGroup) =>
+          group.button.some(button => button.action === Action.FINISH_PROJECT_ACTION);
+      return [
+        ...visibleGroups.filter(group => !isFinish(group)).map(group => ({key: group.label, group})),
+        ...(this.inviteNote ? [{key: 'invite', invite: this.inviteNote}] : []),
+        ...this.todoNotes.map(note => ({key: `note-${note.number}`, note})),
+        ...visibleGroups.filter(isFinish).map(group => ({key: group.label, group})),
+      ];
+    },
     // Something in the "Next step" card for this user
     hasNextStep(): boolean {
-      return this.pendingReviewSites.length > 0 || this.nextStepGroupsVisible.includes(true);
+      return this.pendingReviewSites.length > 0 || this.nextStepGroupsVisible.includes(true) || !!this.inviteNote;
     },
     // Nothing for this user anywhere: no card action, no Actions card button, no remaining TODO. Not in a
     // closed request, where "you will be notified" would be wrong.
     hasNothingToDo(): boolean {
       const closed = [ProjectState.FINISHED, ProjectState.REJECTED, ProjectState.ARCHIVED]
           .includes(this.project?.state as ProjectState);
-      return !this.hasNextStep && !this.showActionsCard && !this.showMoreActionsMenu &&
+      return !this.hasNextStep && !this.showMoreActionsMenu &&
           this.extendedExplanations.size === 0 && !closed;
     },
     // Temporarily, a user who is only the request's creator gets no actions box or menu
@@ -899,8 +867,12 @@ export default defineComponent({
     isOnlyCreator(): boolean {
       return this.projectRoles.length === 1 && this.projectRoles.includes(ProjectRole.CREATOR);
     },
-    showActionsCard(): boolean {
-      return !this.isOnlyCreator && this.isAnyButtonVisible;
+    // In APPROVAL with the develop phase possible, the final phase is the exception
+    skipsDevelopAndPilot(): boolean {
+      return this.project?.state === ProjectState.APPROVAL && this.canStartDevelopPhase;
+    },
+    showPeopleCard(): boolean {
+      return !this.isOnlyCreator && (this.canInviteUsers || this.currentUsers.length > 0);
     },
     showMoreActionsMenu(): boolean {
       return !this.isOnlyCreator && this.anyMoreActionVisible;
@@ -1168,7 +1140,6 @@ export default defineComponent({
       notifications: [] as Notification[],
       existsPublication: false,
       existsFinalReport: false,
-      showRightPanel: false,
       // Sites whose results wait for this user's review (from ResultsBox).
       pendingReviewSites: [] as string[],
       existsVotum: false,
@@ -1197,13 +1168,12 @@ export default defineComponent({
       areExportFilesTransferredToResearchEnvironment: false,
       explanations: new Map() as Explanations,
       extendedExplanations: new Map() as Explanations,
-      buttonGroups: [] as boolean[],
-      isAnyButtonVisible: false,
-      actionButtons: [] as ActionButtonGroup[],
+      canInviteUsers: false,
       moreActionButtons: [] as ActionButton[],
       nextStepGroups: [] as ActionButtonGroup[],
       nextStepGroupsVisible: [] as boolean[],
       anyMoreActionVisible: false,
+      canStartDevelopPhase: false,
       currentUser: undefined as User | undefined,
       hasProjectAllMandatoryFields: false,
       tooltipTextForCreateButton: '',
@@ -2212,6 +2182,9 @@ export default defineComponent({
           await this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, new Map(), 'dataShieldStatus');
         }
         this.updateProjectFields()
+        // Decides where "Start final phase" goes (see moreActionButtons)
+        this.canStartDevelopPhase = await this.projectManagerBackendService.isModuleActionActive(
+            Module.PROJECT_STATE_MODULE, Action.START_DEVELOP_STAGE_ACTION, this.context);
         this.fetchButtons()
         await this.checkButtonVisibility()
         this.explanations = this.projectManagerBackendService.fetchExplanations();
@@ -3035,34 +3008,6 @@ export default defineComponent({
         this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
       }
       let count = extendedExplanations.size + 1;
-      if (this.existsDraftDialog) {
-        if (this.isCurrentStep(FixedDialogStep.QUERY) && !this.project?.query) { // Query
-          extendedExplanations.set(count.toString(), {
-            number: count,
-            message: "Please define the query and select its format if they have not already been configured."
-          });
-          count++;
-        } else if (this.isCurrentStep(FixedDialogStep.CUSTOM) && !hasValidOutputs(this.project)) { // Output
-          extendedExplanations.set(count.toString(), {
-            number: count,
-            message: "Please select the output format and template ID. For advanced configuration, add the required environment variables."
-          });
-          count++;
-        } else if (this.isCurrentStep(FixedDialogStep.SUMMARY)) {
-          extendedExplanations.set(count.toString(), {
-            number: count,
-            message: "Please check all of the fields in the summary and click 'Create' if everything seems OK."
-          });
-          count++;
-          if (this.tooltipTextForCreateButton?.length > 0) {
-            extendedExplanations.set(count.toString(), {
-              number: count,
-              message: 'To proceed with creating the project, kindly fill in the following ' + this.tooltipTextForCreateButton
-            });
-            count++;
-          }
-        }
-      }
       if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) && this.activeBridgehead?.executions) {
         const pendingTypes = this.activeBridgehead.executions
             .filter(exec => ![QueryState.CREATED, QueryState.FINISHED, QueryState.ERROR].includes(exec.queryState))
@@ -3092,9 +3037,6 @@ export default defineComponent({
       }
     },
 
-    getExplanationsForButtonGroup(buttonGroup: ActionButtonGroup): number[] {
-      return buttonGroup.button?.map((button) => this.explanations?.get(button.action)?.number).filter((number): number is number => number !== undefined) || []
-    },
 
     goToResearchEnvironment() {
       if (this.researchEnvironmentUrl) {
@@ -3196,60 +3138,78 @@ export default defineComponent({
       // Check if RESEARCH_ENVIRONMENT exists
       const hasResearchEnvironment = projectTypes.includes(ProjectType.RESEARCH_ENVIRONMENT);
 
-      const teilerButtonGroups = [
-        // --- TEILER GROUP (always if executions exist) ---
-        ...(executions.length > 0
-            ? [{
-              label: "Teiler",
-              button: [
-                {
-                  module: Module.EXPORT_MODULE,
-                  action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
-                  refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-                  text: hasFinishedExecution ? "Resend query" : "Send query",
-                  withMessage: false,
-                  cssClass: hasFinishedExecution ? "btn btn-outline-primary" : "btn btn-primary",
-                  params: new Map<string, string>([
-                    [PmRequestParameter.PROJECT_TYPE, projectTypesParam]
-                  ]),
-                  visibilityCondition: this.canShowBridgeheadAdminButtons
-                }
-              ] as ActionButton[]
-            }]
-            : []),
-
-        // --- RESEARCH ENVIRONMENT GROUP (only if present) ---
+      // Site operations act on the active site (the site admin's own one). The first send of the query and
+      // authorizing access are that admin's next steps (the "Next step" card); resending and revoking are
+      // occasional, so they are in the "More actions" menu. Both name the site. Not in the Status card: it
+      // shows where things stand, not what to do.
+      const siteName = this.activeBridgehead?.humanReadable ?? this.activeBridgehead?.bridgehead ?? '';
+      const sendQueryButton = (resend: boolean): ActionButton => ({
+        module: Module.EXPORT_MODULE,
+        action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
+        refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+        text: resend ? `Resend query (${siteName})` : "Send query",
+        withMessage: false,
+        cssClass: resend ? "menu-item" : "btn btn-primary",
+        params: new Map<string, string>([
+          [PmRequestParameter.PROJECT_TYPE, projectTypesParam]
+        ]),
+        visibilityCondition: this.canShowBridgeheadAdminButtons && executions.length > 0 && resend === hasFinishedExecution
+      });
+      const siteNextStepGroups = [
+        {
+          label: `Send the query to ${siteName}`,
+          description: "Send the request's query to your site, where the data for this request is prepared.",
+          button: [sendQueryButton(false)]
+        },
+        {
+          label: `Authorize access for ${siteName}`,
+          description: "Once your site's data is ready, authorize access to it for this request.",
+          button: [{
+            module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
+            refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+            text: "Authorize access", withMessage: false, cssClass: "btn btn-primary",
+            visibilityCondition: this.activeBridgehead?.state !== 'ACCEPTED' && this.canShowBridgeheadAdminButtons
+          }]
+        },
+      ] as ActionButtonGroup[];
+      const siteMenuButtons = [
+        sendQueryButton(true),
         ...(hasResearchEnvironment
             ? [{
-              label: "Research Environment",
-              button: [
-                {
-                  module: Module.EXPORT_MODULE,
-                  action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,
-                  refreshContextCallFunction: this.refreshContext as () => void,
-                  text: "Resend export files",
-                  withMessage: false,
-                  params: new Map<string, string>([
-                    [PmRequestParameter.PROJECT_TYPE, ProjectType.RESEARCH_ENVIRONMENT]
-                  ]),
-                  cssClass: "btn btn-outline-primary"
-                }
-              ] as ActionButton[]
+              module: Module.EXPORT_MODULE,
+              action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: `Resend export files (${siteName})`,
+              withMessage: false,
+              params: new Map<string, string>([
+                [PmRequestParameter.PROJECT_TYPE, ProjectType.RESEARCH_ENVIRONMENT]
+              ]),
+              cssClass: "menu-item"
             }]
-            : [])
-      ];
+            : []),
+        {
+          module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION,
+          refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+          text: `Revoke access (${siteName})`,
+          confirmationText: "This site's data is no longer available for this request.", withMessage: true,
+          cssClass: "menu-item menu-item-danger",
+          visibilityCondition: this.activeBridgehead?.state !== 'REJECTED' && this.canShowBridgeheadAdminButtons
+        },
+      ] as ActionButton[];
 
       // Rare or destructive request-level actions: the "More actions" menu of the At a Glance card, out of the
-      // way of the main action. In APPROVAL, develop is the normal next phase; going straight to the final one
-      // is the exception, so it is here then (in PILOT it is the main action, in the Actions card).
+      // way of the main action. "Start final phase" is here only when it skips develop and pilot, which are
+      // possible (DataSHIELD, research environment); otherwise (from PILOT, or an export request in APPROVAL)
+      // it is the main action of the "Next step" card.
       this.moreActionButtons = [
+        ...siteMenuButtons,
         {
           module: Module.PROJECT_STATE_MODULE, action: Action.START_FINAL_STAGE_ACTION,
           refreshContextCallFunction: this.refreshContext as () => void,
           text: "Start final phase",
           confirmation: true, confirmationText: "The request skips the develop and pilot phases and moves to the final phase.",
           withMessage: false, cssClass: "menu-item",
-          visibilityCondition: this.project?.state === ProjectState.APPROVAL
+          visibilityCondition: this.skipsDevelopAndPilot
         },
         {
           module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION,
@@ -3308,7 +3268,7 @@ export default defineComponent({
               refreshContextCallFunction: this.refreshContext as () => void,
               text: "Start final phase",
               confirmation: true, confirmationText: "The request moves to the final phase.", withMessage: false, cssClass: "btn btn-primary",
-              visibilityCondition: this.project?.state !== ProjectState.APPROVAL
+              visibilityCondition: !this.skipsDevelopAndPilot
             }
           ] as ActionButton[]
         },
@@ -3402,6 +3362,7 @@ export default defineComponent({
             }
           ] as ActionButton[]
         },
+        ...siteNextStepGroups,
         {
           label: "Research environment",
           description: "Your workspace in the research environment is ready.",
@@ -3419,29 +3380,6 @@ export default defineComponent({
           ] as ActionButton[]
         }
       ] as ActionButtonGroup[];
-
-      // Everything else, until it moves next to what it acts on (site operations, people).
-      this.actionButtons = [
-        {
-          label: "User Access",
-          button: [
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: "Authorize access", withMessage: false, cssClass: "btn btn-primary",
-              visibilityCondition: this.activeBridgehead?.state !== 'ACCEPTED' && this.canShowBridgeheadAdminButtons
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: "Revoke access",
-              confirmationText: "This site's data is no longer available for this request.", withMessage: true, cssClass: "btn btn-outline-danger",
-              visibilityCondition: this.activeBridgehead?.state !== 'REJECTED' && this.canShowBridgeheadAdminButtons
-            }
-          ] as ActionButton[]
-        },
-        ...teilerButtonGroups,
-      ] as ActionButtonGroup[]
     },
 
     async isButtonVisible(button: ActionButton): Promise<boolean> {
@@ -3454,17 +3392,27 @@ export default defineComponent({
     },
 
     async checkButtonVisibility() {
-      const [buttonGroups, nextStepGroups, moreActions] = await Promise.all([
-        Promise.all(this.actionButtons.map(group => this.isAnyButtonOfGroupVisible(group))),
+      // Recomputed on every check: after an action the last visible button of a card or bar can disappear,
+      // and the empty card or bar has to go with it.
+      const [nextStepGroups, moreActions, canInvite] = await Promise.all([
         Promise.all(this.nextStepGroups.map(group => this.isAnyButtonOfGroupVisible(group))),
         Promise.all(this.moreActionButtons.map(button => this.isButtonVisible(button))),
+        this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, this.fetchInviteAction(), this.context),
       ]);
-      this.buttonGroups = buttonGroups;
       this.nextStepGroupsVisible = nextStepGroups;
       this.anyMoreActionVisible = moreActions.includes(true);
-      // Recomputed on every check: after an action the last visible button can disappear, and the empty
-      // Actions card has to go with it.
-      this.isAnyButtonVisible = buttonGroups.includes(true);
+      this.canInviteUsers = canInvite;
+    },
+
+    openInviteDialog() {
+      (this.$refs.userInput as InstanceType<typeof UserInput> | undefined)?.openInviteDialog();
+    },
+
+    // The invitation's action depends on the phase (as in UserInput).
+    fetchInviteAction(): Action {
+      if (this.project?.state === ProjectState.PILOT) return Action.SET_PILOT_USER_ACTION;
+      if (this.project?.state === ProjectState.FINAL) return Action.SET_FINAL_USER_ACTION;
+      return Action.SET_DEVELOPER_USER_ACTION;
     },
 
     // The deployment's explanation of the group's first action that has one (as the TODO panel showed it),
@@ -3634,7 +3582,7 @@ export default defineComponent({
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(31, 42, 55, .08);
 }
-.project-actions.status-panel,
+.project-people.status-panel,
 .documents.status-panel {
   margin-bottom: var(--space-4);
 }
@@ -3660,6 +3608,14 @@ export default defineComponent({
 .next-step-text {
   margin: 0 0 var(--space-3);
   font-size: 14px;
+}
+.next-step-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.next-step-note .next-step-text {
+  margin: 2px 0 0;
 }
 .next-step-idle {
   margin: 0;
@@ -3900,15 +3856,6 @@ export default defineComponent({
   padding-top: 2px;
 }
 
-.project-actions {
-  background-color: white;
-  /*border-radius: 10px;
-  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
-  0 1px 1px 0 rgba(0, 0, 0, 0.14),
-  0 1px 3px 0 rgba(0, 0, 0, 0.12);*/
-
-  margin-bottom: var(--space-5);
-}
 
 .documents {
   background-color: white;
@@ -4213,15 +4160,6 @@ export default defineComponent({
   background-color: #e05c2a;
 }
 
-.notification-box {
-  padding: var(--space-4);
-}
-/* TODO texts are messages, not headings: body size, like the rest of the app. */
-.notification-box .card-title {
-  font-size: 14px;
-  line-height: 1.45;
-  margin-bottom: 0;
-}
 
 .todo-circle {
   min-width: 32px;
@@ -4253,38 +4191,8 @@ export default defineComponent({
   font-size: 9pt;
 }
 
-.custom-width-notifications {
-  width: 22%;
-  /* Room for both tabs and the hide arrow, even with the list's scrollbar. */
-  min-width: 280px;
-  background-color: white;
-  color: black;
-  order: 2;
-  position: relative;
-  z-index: 1;
-  overflow-y: auto;
-  transition: transform 0.3s ease-in-out;
-  border-radius: 10px;
-  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
-  0 1px 1px 0 rgba(0, 0, 0, 0.14),
-  0 1px 3px 0 rgba(0, 0, 0, 0.12);
 
-  margin-top: var(--page-top);
-  margin-bottom: var(--space-7);
-  margin-right: 0.5%;
-}
 
-/* The closed ToDo handle floats at the right edge instead of taking flow
- * width, so the content column is centred exactly like the dashboard's. */
-.open-right-panel {
-  position: absolute;
-  top: var(--page-top);
-  right: 0;
-}
-
-.custom-width-notifications h2 {
-  margin-bottom: 15px;
-}
 
 .card {
   border-radius: 10px;
@@ -4436,75 +4344,17 @@ export default defineComponent({
 .panel-stack > * {
   max-width: 100%;
 }
-.button-group-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+/* The invite form and the users table, inset like the other cards' content */
+.people-body {
+  padding: 0 var(--form-inset) var(--space-4);
 }
 
-.inviteUser {
-  /* Same left edge as the action groups above it (.panel-body). */
-  padding: 0 var(--form-inset) var(--space-5);
-  display: flex;
-  flex-wrap: wrap;
-}
-/* Nothing to invite in this phase: no empty padded band. */
-.inviteUser:empty {
-  display: none;
-}
-
-.button-group-box {
-  border: 1px solid lightgrey;
-  border-radius: 5px;
-  padding: 0 0 18px 18px;
-  width: fit-content;
-  display: inline-block;
-  margin-right: 2%;
-  margin-top: var(--space-3);
-}
-
-.button-group-label {
-  border: 1px solid lightgrey;
-  border-radius: 5px;
-  width: fit-content;
-  padding: 4px 10px;
-  position: relative;
-  top: -18px;
-  background-color: #95c8dc;
-  font-weight: bold;
-  margin-right: 15px;
-  display: flex;
-}
 
 .explanation-button i {
   position: relative;
   top: -9px;
 }
 
-/* The side panel is narrow (22% of the window): its tab header uses a smaller
- * inset than the page headers, so the two tabs and the hide arrow fit
- * without a horizontal scrollbar. */
-.custom-width-notifications .box-header {
-  padding: var(--space-3) var(--space-3) 0;
-}
-.custom-width-notifications .box-header > div {
-  min-width: 0;
-}
-/* Body-sized tab title, fixed padding instead of a share of the panel width. */
-.notification-tab {
-  padding: var(--space-2) var(--space-3);
-  font-size: 16px;
-  background-color: #e8f8fd;
-  margin: 0 var(--space-1);
-  border-radius: 5px 5px 0 0;
-  font-weight: normal;
-  cursor: pointer;
-}
-
-.notification-tab.active {
-  font-weight: bold;
-  background-color: white;
-}
 
 .project-field-header {
   background-color: #2655a2;

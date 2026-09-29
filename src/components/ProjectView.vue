@@ -1052,6 +1052,9 @@ export default defineComponent({
       activeBridgehead: undefined as Bridgehead | undefined,
       activeBridgeheadIndex: 0,
       bridgeheads: [] as Bridgehead[],
+      // Until the project's sites have arrived, an empty bridgeheads list means
+      // "not loaded", not "no sites selected".
+      bridgeheadsLoaded: false,
       visibleBridgeheads: [] as Bridgehead[],
       feasibilityEnabled: false,
       feasibilityResults: new Map<string, FeasibilityResult>(),
@@ -1912,7 +1915,40 @@ export default defineComponent({
     draftStepState(step: DialogStep, index: number): 'active' | 'done' | 'missing' | 'future' {
       if (this.draftDialogStepper.currentStep === step) return 'active';
       if (step.id === FixedDialogStep.SUMMARY || !this.isDraftStepReached(step, index)) return 'future';
-      return this.groupedMissingFields[step.displayName]?.length > 0 ? 'missing' : 'done';
+      const missing = this.groupedMissingFields[step.displayName]?.length > 0 ||
+          this.fetchMissingFixedFieldSteps().has(step.id);
+      return missing ? 'missing' : 'done';
+    },
+
+    // The steps holding a missing mandatory fixed field: the same checks as
+    // fetchIfProjectHasAllMandatoryFields, each on the step where the field is
+    // shown (it can be configured onto another step). Kept apart from
+    // groupedMissingFields, which also feeds the Create button's tooltip.
+    fetchMissingFixedFieldSteps(): Set<string> {
+      const steps = new Set<string>();
+      const project = this.project;
+      if (!project) return steps;
+      const addIfMissing = (missing: boolean, key: FixedFormFieldKey, defaultStep: string) => {
+        if (missing) steps.add(this.getFixedFieldDialogStep(key, defaultStep));
+      };
+
+      addIfMissing(!this.hasConfiguredInactiveFixedField(FixedFormFieldKey.PROJECT_TITLE) &&
+          !this.hasMeaningfulValue(project.label), FixedFormFieldKey.PROJECT_TITLE, FixedDialogStep.PROJECT);
+      addIfMissing(!this.hasMeaningfulValue(project.query), FixedFormFieldKey.SELECTED_COHORT, FixedDialogStep.QUERY);
+      addIfMissing(this.bridgeheadsLoaded &&
+          !this.isMandatoryFixedProjectFieldValid(FixedFormFieldKey.QUERIED_SITES, this.bridgeheads),
+          FixedFormFieldKey.QUERIED_SITES, FixedDialogStep.QUERY);
+      addIfMissing(!this.hasMeaningfulValue(project.queryFormat), FixedFormFieldKey.QUERY_FORMAT, FixedDialogStep.QUERY);
+
+      // The outputs are edited in the Custom step, which only a PM admin with a
+      // custom configuration gets. Everyone else sets them by choosing a
+      // configuration, so they count against the configuration's step then.
+      if (!hasValidOutputs(project)) {
+        const outputStep = this.getFixedFieldDialogStep(FixedFormFieldKey.OUTPUT_FORMAT, FixedDialogStep.CUSTOM);
+        steps.add(this.draftDialogStepper.hasCurrentStep(outputStep) ? outputStep :
+            this.getFixedFieldDialogStep(FixedFormFieldKey.PROJECT_CONFIGURATION, FixedDialogStep.SERVICES));
+      }
+      return steps;
     },
 
     nextDraftDialogStep(): void {
@@ -1964,6 +2000,7 @@ export default defineComponent({
         await Promise.all([
           this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), async (result: Bridgehead[]) => {
             this.bridgeheads = result;
+            this.bridgeheadsLoaded = true;
           }),
           this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_STATES_ACTION, new Map(), 'projectStates'),
           this.fetchNotifications(),

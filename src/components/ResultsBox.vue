@@ -124,11 +124,11 @@ export default class ResultsBox extends Vue {
     },
     {
       module: Module.PROJECT_RESULTS_MODULE, action: Action.REJECT_PROJECT_RESULTS_URL_ACTION,
-      text: "Block", withMessage: true, cssClass: "btn btn-outline-danger",
+      text: "Reject", withMessage: true, messageRequired: true, cssClass: "btn btn-outline-danger",
     },
     {
       module: Module.PROJECT_RESULTS_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_RESULTS_URL_ACTION,
-      text: "Request Changes", withMessage: true, cssClass: "btn btn-outline-primary"
+      text: "Request Changes", withMessage: true, messageRequired: true, cssClass: "btn btn-outline-primary"
     }
   ] as ActionButton[];
 
@@ -139,11 +139,11 @@ export default class ResultsBox extends Vue {
     },
     {
       module: Module.PROJECT_RESULTS_MODULE, action: Action.REJECT_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION,
-      text: "Block", withMessage: true, cssClass: "btn btn-outline-danger",
+      text: "Reject", withMessage: true, messageRequired: true, cssClass: "btn btn-outline-danger",
     },
     {
       module: Module.PROJECT_RESULTS_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION,
-      text: "Request Changes", withMessage: true, cssClass: "btn btn-outline-primary"
+      text: "Request Changes", withMessage: true, messageRequired: true, cssClass: "btn btn-outline-primary"
     }
   ] as ActionButton[];
 
@@ -483,6 +483,7 @@ export default class ResultsBox extends Vue {
                                     :context="fetchButtonContext(result)" :call-refresh-context="this.callRefreshContext"
                                     :text="button.text"
                                     :button-class="button.cssClass" :with-message="button.withMessage"
+                                    :message-required="button.messageRequired"
                                     :visibility="isButtonVisible(button, result)"
                                     :project-manager-backend-service="projectManagerBackendService"/>
             </div>

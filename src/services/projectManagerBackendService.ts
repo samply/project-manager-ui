@@ -467,6 +467,8 @@ export interface DataShieldProjectStatus {
 
 export interface ActionButtonGroup {
     label: string
+    // What the user is asked to do, when the deployment has no explanation for the group's actions
+    description?: string
     button: ActionButton[]
 }
 
@@ -476,6 +478,11 @@ export interface ActionButton {
     refreshContextCallFunction: () => void
     text: string
     withMessage: boolean
+    // The message is required (reject, request changes); see ProjectManagerButton
+    messageRequired?: boolean
+    // Confirmation dialog even without a message, with what happens
+    confirmation?: boolean
+    confirmationText?: string
     cssClass: string
     params?: Map<string, string>
     visibilityCondition?: boolean
@@ -654,6 +661,23 @@ export type ActionMetadata = {
     priority?: number;
     /** The endpoint needs a site: it cannot be called in a context without one (a project without sites). */
     bridgeheadRequired?: boolean;
+    /** Who gets an email when the action succeeds, known before it runs (the backend's @EmailSender). */
+    emailRecipients: EmailRecipientType[];
+}
+
+// The backend's EmailRecipientType, without SESSION_USER (the user performing the action is never listed).
+// noinspection JSUnusedGlobalSymbols
+export enum EmailRecipientType {
+    EMAIL_ANNOTATION = "EMAIL_ANNOTATION",
+    CREATOR = "CREATOR",
+    PROJECT_MANAGER_ADMIN = "PROJECT_MANAGER_ADMIN",
+    ALL_DEVELOPERS = "ALL_DEVELOPERS",
+    ALL_PILOTS = "ALL_PILOTS",
+    ALL_FINALS = "ALL_FINALS",
+    ALL_BRIDGEHEAD_ADMINS = "ALL_BRIDGEHEAD_ADMINS",
+    BRIDGEHEAD_ADMIN = "BRIDGEHEAD_ADMIN",
+    BRIDGEHEAD_ADMINS_WHO_HAVE_NOT_ACCEPTED_NOR_REJECTED_THE_PROJECT = "BRIDGEHEAD_ADMINS_WHO_HAVE_NOT_ACCEPTED_NOR_REJECTED_THE_PROJECT",
+    PROJECT_ALL = "PROJECT_ALL"
 }
 
 export type ActionFeedbackMessages = Pick<ActionMetadata, 'successMessage' | 'errorMessage'>;
@@ -685,7 +709,9 @@ function jsonToActionMetadata(json: any): ActionMetadata | undefined {
         successMessage: json.successMessage,
         errorMessage: json.errorMessage,
         priority: json.priority,
-        bridgeheadRequired: json.bridgeheadRequired === true
+        bridgeheadRequired: json.bridgeheadRequired === true,
+        // An older backend does not send it: no recipients rather than a wrong list.
+        emailRecipients: Array.isArray(json.emailRecipients) ? json.emailRecipients : []
     };
 }
 
@@ -861,6 +887,12 @@ export class ProjectManagerBackendService {
             successMessage: metadata?.successMessage,
             errorMessage: metadata?.errorMessage,
         };
+    }
+
+    /** Who gets an email when the action succeeds; empty when it sends none or it is not active. */
+    public async getActionEmailRecipients(module: Module, action: Action): Promise<EmailRecipientType[]> {
+        await this.initializedPromise;
+        return this.getActionMetadata(module, action)?.emailRecipients ?? [];
     }
 
     /** Messages of an action given only by its name (e.g. from a URL), in whichever module of this site it is. */

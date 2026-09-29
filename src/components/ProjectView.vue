@@ -56,8 +56,69 @@
                   </div>
                 </div>
               </div>
+              <!-- What this user has to do now. Replaces the Actions card's review and phase buttons and the
+                   matching TODOs (plans/2026-09-29-plan-project-actions-redesign.md, step 3.4). -->
+              <div v-if="hasNextStep || hasNothingToDo" class="panel-card next-step-card">
+                <div class="panel-header">Next step</div>
+                <div class="next-step-body">
+                  <div v-if="pendingReviewSites.length > 0" class="next-step-item">
+                    <div class="next-step-title">Review the results</div>
+                    <p class="next-step-text">
+                      The results of <b>{{ pendingReviewSites.join(', ') }}</b> are ready for your review.
+                      Check them in the Results section and accept them, or request changes.
+                    </p>
+                    <button type="button" class="btn btn-primary" @click="scrollToResults">Go to results</button>
+                  </div>
+                  <template v-for="(group, groupIndex) in nextStepGroups" :key="group.label">
+                    <div v-if="nextStepGroupsVisible[groupIndex]" class="next-step-item">
+                      <div class="next-step-title">{{ group.label }}</div>
+                      <p class="next-step-text" v-html="nextStepDescription(group)"></p>
+                      <div class="next-step-buttons">
+                        <ProjectManagerButton v-for="button in group.button" :key="button.action"
+                                              :module="button.module" :action="button.action"
+                                              :context="context"
+                                              :call-refresh-context="button.refreshContextCallFunction"
+                                              :text="button.text"
+                                              :button-class="button.cssClass"
+                                              :with-message="button.withMessage"
+                                              :message-required="button.messageRequired"
+                                              :confirmation="button.confirmation"
+                                              :confirmation-text="button.confirmationText"
+                                              :visibility="button.visibilityCondition"
+                                              :do-action-on-click="button.doActionOnClick"
+                                              :params="button.params"
+                                              :project-manager-backend-service="projectManagerBackendService"/>
+                      </div>
+                    </div>
+                  </template>
+                  <p v-if="!hasNextStep" class="next-step-text next-step-idle">
+                    No action is required at the moment. You will be notified, also by email, when there is
+                    something for you to do.
+                  </p>
+                </div>
+              </div>
               <div class="panel-card at-a-glance-card">
-                  <div class="panel-header">At a Glance</div>
+                  <div class="panel-header panel-header-with-actions">
+                    <span>At a Glance</span>
+                    <!-- Same temporary creator restriction as the Actions card
+                         (plans/2026-09-08-plan-restore-project-actions-for-creators.md). -->
+                    <MoreActionsMenu v-if="showMoreActionsMenu">
+                      <ProjectManagerButton v-for="button in moreActionButtons" :key="button.action"
+                                            :module="button.module" :action="button.action"
+                                            :context="context"
+                                            :call-refresh-context="button.refreshContextCallFunction"
+                                            :text="button.text"
+                                            :button-class="button.cssClass"
+                                            button-role="menuitem"
+                                            :with-message="button.withMessage"
+                                            :message-required="button.messageRequired"
+                                            :confirmation="button.confirmation"
+                                            :confirmation-text="button.confirmationText"
+                                            :danger="button.cssClass.includes('danger')"
+                                            :visibility="button.visibilityCondition"
+                                            :project-manager-backend-service="projectManagerBackendService"/>
+                    </MoreActionsMenu>
+                  </div>
                   <div class="at-a-glance-strip">
                     <div class="glance-cell">
                       <span class="glance-label">Title</span>
@@ -152,7 +213,7 @@
             </div>
             <!-- TODO: Restore creator access to this Actions box; see plans/2026-09-08-plan-restore-project-actions-for-creators.md. -->
             <div
-                v-if="!(projectRoles.length === 1 && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible && currentMenuStep === MenuStep.STATUS"
+                v-if="showActionsCard && currentMenuStep === MenuStep.STATUS"
                 class="project-actions status-panel">
               <div class="panel-header">Actions</div>
               <div class="panel-body">
@@ -177,6 +238,9 @@
                                             :text="button.text"
                                             :button-class="button.cssClass"
                                             :with-message="button.withMessage"
+                                            :message-required="button.messageRequired"
+                                            :confirmation="button.confirmation"
+                                            :confirmation-text="button.confirmationText"
                                             :visibility="button.visibilityCondition"
                                             :do-action-on-click="button.doActionOnClick"
                                             :params="button.params"
@@ -471,10 +535,13 @@
                       :action="Action.DELETE_PROJECT_ACTION"
                       :context="context"
                       :call-refresh-context="() => redirectTo('/')"
-                      text="Delete Draft"
+                      text="Delete draft"
                       button-class="btn btn-delete-draft"
                       icon-class="bi bi-x-lg"
-                      :with-message="true"
+                      :with-message="false"
+                      :confirmation="true"
+                      confirmation-text="The draft and everything entered in it are deleted. This cannot be undone."
+                      :danger="true"
                       :project-manager-backend-service="projectManagerBackendService"/>
 
                   <!-- Right: step counter + navigation -->
@@ -650,20 +717,6 @@
         </div>
 
         <div>
-          <!-- Results waiting for this user's decision (reported by ResultsBox):
-               no action-messages entry covers it, and "No action is required"
-               would be wrong exactly then. -->
-          <div v-if="pendingReviewSites.length > 0" class="notification-box pending-review-todo">
-            <div class="card mb-3">
-              <div class="card-body">
-                <h5 class="card-title">
-                  The results of <b>{{ pendingReviewSites.join(', ') }}</b> are ready for your review.
-                  Please check them in the Results section and accept them, or request changes.
-                </h5>
-                <button type="button" class="btn btn-link p-0 mt-2" @click="scrollToResults">Go to results</button>
-              </div>
-            </div>
-          </div>
           <div v-if="extendedExplanations.size > 0" class="notification-box">
             <div v-for="(explanation, index) in Array.from(extendedExplanations.values())"
                  :key="index"
@@ -673,18 +726,6 @@
                   <div class="todo-circle"><span>#{{ explanation.number }}</span></div>
                   <h5 class="card-title" v-html="explanation.message"></h5>
                 </div>
-              </div>
-            </div>
-          </div>
-          <div
-              v-else-if="pendingReviewSites.length === 0 && project?.state !== ProjectState.FINISHED && project?.state !== ProjectState.REJECTED && project?.state !== ProjectState.ARCHIVED"
-              class="notification-box">
-            <div class="card mb-3">
-              <div class="card-body">
-                <h5 class="card-title">No action is required at the moment. Please wait for the next
-                  notification, which
-                  will
-                  also be sent to you via email.</h5>
               </div>
             </div>
           </div>
@@ -742,6 +783,7 @@ import {fromFormControlValue} from "@/services/formValueCodec";
 import {ACTION_FEEDBACK_PARAM} from "@/services/projectManagerBackendService";
 import store, {ActionFeedbackType} from "@/services/store";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
+import MoreActionsMenu from "@/components/MoreActionsMenu.vue";
 import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
 import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
 import ContextInfoBox from "@/components/ContextInfoBox.vue";
@@ -779,6 +821,17 @@ import {
   PipelineClassification,
   PipelineStepVisual
 } from "@/services/pipelineStatus";
+
+// The actions of the "Next step" card (fetchButtons): their explanations are not repeated in the TODO panel.
+const NEXT_STEP_ACTIONS: Action[] = [
+  Action.ACCEPT_PROJECT_ACTION, Action.START_DEVELOP_STAGE_ACTION, Action.START_PILOT_STAGE_ACTION,
+  Action.START_FINAL_STAGE_ACTION, Action.FINISH_PROJECT_ACTION,
+  Action.ACCEPT_SCRIPT_ACTION, Action.REQUEST_SCRIPT_CHANGES_ACTION, Action.REJECT_SCRIPT_ACTION,
+  Action.ACCEPT_PROJECT_ANALYSIS_ACTION, Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
+  Action.REJECT_PROJECT_ANALYSIS_ACTION,
+  Action.ACCEPT_PROJECT_RESULTS_ACTION, Action.REQUEST_CHANGES_IN_PROJECT_ACTION, Action.REJECT_PROJECT_RESULTS_ACTION,
+  Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION,
+];
 
 interface ProjectFieldRenderItem {
   key: string;
@@ -828,6 +881,29 @@ export default defineComponent({
   computed: {
     ProjectState() {
       return ProjectState
+    },
+    // Something in the "Next step" card for this user
+    hasNextStep(): boolean {
+      return this.pendingReviewSites.length > 0 || this.nextStepGroupsVisible.includes(true);
+    },
+    // Nothing for this user anywhere: no card action, no Actions card button, no remaining TODO. Not in a
+    // closed request, where "you will be notified" would be wrong.
+    hasNothingToDo(): boolean {
+      const closed = [ProjectState.FINISHED, ProjectState.REJECTED, ProjectState.ARCHIVED]
+          .includes(this.project?.state as ProjectState);
+      return !this.hasNextStep && !this.showActionsCard && !this.showMoreActionsMenu &&
+          this.extendedExplanations.size === 0 && !closed;
+    },
+    // Temporarily, a user who is only the request's creator gets no actions box or menu
+    // (plans/2026-09-08-plan-restore-project-actions-for-creators.md).
+    isOnlyCreator(): boolean {
+      return this.projectRoles.length === 1 && this.projectRoles.includes(ProjectRole.CREATOR);
+    },
+    showActionsCard(): boolean {
+      return !this.isOnlyCreator && this.isAnyButtonVisible;
+    },
+    showMoreActionsMenu(): boolean {
+      return !this.isOnlyCreator && this.anyMoreActionVisible;
     },
     // Red is for errors only: empty mandatory fields turn red once the user
     // has left the step and come back, never on the first visit.
@@ -1044,6 +1120,7 @@ export default defineComponent({
   },
   components: {
     MandatoryFieldMarker,
+    MoreActionsMenu,
     FeasibilityTable,
     DownloadFormTemplatePdfButtons,
     DownloadButton,
@@ -1123,6 +1200,10 @@ export default defineComponent({
       buttonGroups: [] as boolean[],
       isAnyButtonVisible: false,
       actionButtons: [] as ActionButtonGroup[],
+      moreActionButtons: [] as ActionButton[],
+      nextStepGroups: [] as ActionButtonGroup[],
+      nextStepGroupsVisible: [] as boolean[],
+      anyMoreActionVisible: false,
       currentUser: undefined as User | undefined,
       hasProjectAllMandatoryFields: false,
       tooltipTextForCreateButton: '',
@@ -2914,6 +2995,8 @@ export default defineComponent({
 
     fetchExtendedExplanations(): Explanations {
       const extendedExplanations = new Map(this.explanations)
+      // Shown in the "Next step" card instead
+      NEXT_STEP_ACTIONS.forEach(action => this.removeActionExplanation(action, extendedExplanations));
       if (this.existsVotum) {
         this.removeActionExplanation(Action.UPLOAD_VOTUM_ACTION, extendedExplanations);
       } else {
@@ -3123,9 +3206,9 @@ export default defineComponent({
                   module: Module.EXPORT_MODULE,
                   action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
                   refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-                  text: hasFinishedExecution ? "Resend Query" : "Send Query",
+                  text: hasFinishedExecution ? "Resend query" : "Send query",
                   withMessage: false,
-                  cssClass: "btn btn-primary mr-2",
+                  cssClass: hasFinishedExecution ? "btn btn-outline-primary" : "btn btn-primary",
                   params: new Map<string, string>([
                     [PmRequestParameter.PROJECT_TYPE, projectTypesParam]
                   ]),
@@ -3144,163 +3227,216 @@ export default defineComponent({
                   module: Module.EXPORT_MODULE,
                   action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,
                   refreshContextCallFunction: this.refreshContext as () => void,
-                  text: "Resend Export Files to Research Environment",
+                  text: "Resend export files",
                   withMessage: false,
                   params: new Map<string, string>([
                     [PmRequestParameter.PROJECT_TYPE, ProjectType.RESEARCH_ENVIRONMENT]
                   ]),
-                  cssClass: "btn btn-primary mr-2"
+                  cssClass: "btn btn-outline-primary"
                 }
               ] as ActionButton[]
             }]
             : [])
       ];
 
-      this.actionButtons = [
+      // Rare or destructive request-level actions: the "More actions" menu of the At a Glance card, out of the
+      // way of the main action. In APPROVAL, develop is the normal next phase; going straight to the final one
+      // is the exception, so it is here then (in PILOT it is the main action, in the Actions card).
+      this.moreActionButtons = [
         {
-          label: "Project",
+          module: Module.PROJECT_STATE_MODULE, action: Action.START_FINAL_STAGE_ACTION,
+          refreshContextCallFunction: this.refreshContext as () => void,
+          text: "Start final phase",
+          confirmation: true, confirmationText: "The request skips the develop and pilot phases and moves to the final phase.",
+          withMessage: false, cssClass: "menu-item",
+          visibilityCondition: this.project?.state === ProjectState.APPROVAL
+        },
+        {
+          module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION,
+          refreshContextCallFunction: this.refreshContext as () => void,
+          text: "Archive request",
+          confirmationText: "The request is archived. A project manager can accept it again later.",
+          withMessage: true, cssClass: "menu-item"
+        },
+        {
+          module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ACTION,
+          refreshContextCallFunction: this.refreshContext as () => void,
+          text: "Reject request",
+          messageRequired: true, confirmationText: "The request is rejected and closed. This cannot be undone.",
+          withMessage: true, cssClass: "menu-item menu-item-danger",
+          visibilityCondition: this.project?.state !== ProjectState.DRAFT
+        },
+      ] as ActionButton[];
+
+      // Button hierarchy: the action that moves things forward is the primary button; requesting changes is
+      // secondary (outline); rejecting and revoking are outlined in red, and their dialog confirms in red.
+
+      // What the user has to do now: the "Next step" card at the top of the Status tab. Each group is one thing
+      // to do, with the deployment's explanation of its first action (the backend's action messages) or, without
+      // one, the description here.
+      this.nextStepGroups = [
+        {
+          label: "Review the request",
+          description: "Check the application form. If everything is in order, accept the request; to reject or archive it, use More actions.",
           button: [
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2"
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Reject", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
-              visibilityCondition: this.project?.state !== ProjectState.DRAFT
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.FINISH_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Finish", withMessage: false, cssClass: "btn btn-primary mr-2"
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Archive", withMessage: true, cssClass: "btn btn-secondary"
+              text: "Accept request",
+              confirmation: true, confirmationText: "The request moves on to the approval phase.", withMessage: false, cssClass: "btn btn-primary"
             }
           ] as ActionButton[]
         },
         {
-          label: "Phase",
+          label: "Start the next phase",
+          description: "Move the request on to its next phase.",
           button: [
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_DEVELOP_STAGE_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Start Develop Phase", withMessage: false, cssClass: "btn btn-primary mr-2"
+              text: "Start develop phase",
+              confirmation: true, confirmationText: "The request moves to the develop phase.", withMessage: false, cssClass: "btn btn-primary"
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_PILOT_STAGE_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Start Pilot Phase", withMessage: false, cssClass: "btn btn-primary mr-2"
+              text: "Start pilot phase",
+              confirmation: true, confirmationText: "The request moves to the pilot phase.", withMessage: false, cssClass: "btn btn-primary"
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_FINAL_STAGE_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Start Final Phase", withMessage: false, cssClass: "btn btn-primary mr-2"
+              text: "Start final phase",
+              confirmation: true, confirmationText: "The request moves to the final phase.", withMessage: false, cssClass: "btn btn-primary",
+              visibilityCondition: this.project?.state !== ProjectState.APPROVAL
             }
           ] as ActionButton[]
         },
+        {
+          label: "Finish the request",
+          description: "Once everything has been delivered and accepted, finish the request.",
+          button: [
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.FINISH_PROJECT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Finish request",
+              confirmation: true, confirmationText: "The request is finished and closed.", withMessage: false, cssClass: "btn btn-primary"
+            }
+          ] as ActionButton[]
+        },
+        {
+          label: "Review the script",
+          description: "Check the script: accept it, request changes, or reject it.",
+          button: [
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_SCRIPT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Accept script", withMessage: false, cssClass: "btn btn-primary",
+              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_SCRIPT_CHANGES_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Request script changes",
+              messageRequired: true, withMessage: true, cssClass: "btn btn-outline-primary"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_SCRIPT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Reject script",
+              messageRequired: true, withMessage: true, cssClass: "btn btn-outline-danger",
+              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
+            }
+          ] as ActionButton[]
+        },
+        {
+          label: "Review the analysis",
+          description: "Check the analysis: accept it, request changes, or reject it.",
+          button: [
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ANALYSIS_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Accept analysis", withMessage: false, cssClass: "btn btn-primary",
+              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE,
+              action: Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Request changes to analysis",
+              messageRequired: true,
+              withMessage: true,
+              cssClass: "btn btn-outline-primary"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ANALYSIS_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Reject analysis",
+              messageRequired: true, withMessage: true, cssClass: "btn btn-outline-danger",
+              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
+            }
+          ] as ActionButton[]
+        },
+        {
+          label: "Review the results",
+          description: "Check the results: accept them, request changes, or reject them.",
+          button: [
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_RESULTS_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Accept results", withMessage: false, cssClass: "btn btn-primary",
+              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Request changes to results",
+              messageRequired: true, withMessage: true, cssClass: "btn btn-outline-primary"
+            },
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_RESULTS_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Reject results",
+              messageRequired: true, withMessage: true, cssClass: "btn btn-outline-danger",
+              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
+            }
+          ] as ActionButton[]
+        },
+        {
+          label: "Research environment",
+          description: "Your workspace in the research environment is ready.",
+          button: [
+            {
+              module: Module.USER_MODULE,
+              action: Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Open research environment ↗",
+              withMessage: false,
+              cssClass: "btn btn-outline-primary",
+              visibilityCondition: this.researchEnvironmentUrl !== undefined && this.existsResearchEnvironmentWorkspace,
+              doActionOnClick: this.goToResearchEnvironment as () => void
+            }
+          ] as ActionButton[]
+        }
+      ] as ActionButtonGroup[];
+
+      // Everything else, until it moves next to what it acts on (site operations, people).
+      this.actionButtons = [
         {
           label: "User Access",
           button: [
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: "Authorize", withMessage: false, cssClass: "btn btn-primary mr-2",
+              text: "Authorize access", withMessage: false, cssClass: "btn btn-primary",
               visibilityCondition: this.activeBridgehead?.state !== 'ACCEPTED' && this.canShowBridgeheadAdminButtons
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: "Revoke", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
+              text: "Revoke access",
+              confirmationText: "This site's data is no longer available for this request.", withMessage: true, cssClass: "btn btn-outline-danger",
               visibilityCondition: this.activeBridgehead?.state !== 'REJECTED' && this.canShowBridgeheadAdminButtons
-            }
-          ] as ActionButton[]
-        },
-        {
-          label: "Script",
-          button: [
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_SCRIPT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_SCRIPT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
-              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_SCRIPT_CHANGES_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Request Changes", withMessage: true, cssClass: "btn btn-primary mr-2"
-            }
-          ] as ActionButton[]
-        },
-        {
-          label: "Result",
-          button: [
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_RESULTS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_RESULTS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
-              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Request Changes", withMessage: true, cssClass: "btn btn-primary mr-2"
-            }
-          ] as ActionButton[]
-        },
-        {
-          label: "Analysis",
-          button: [
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ANALYSIS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ANALYSIS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
-              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE,
-              action: Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Request Changes",
-              withMessage: true,
-              cssClass: "btn btn-primary mr-2"
-            }
-          ] as ActionButton[]
-        },
-        {
-          label: "Research Environment",
-          button: [
-            {
-              module: Module.USER_MODULE,
-              action: Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Go",
-              withMessage: false,
-              cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.researchEnvironmentUrl !== undefined && this.existsResearchEnvironmentWorkspace,
-              doActionOnClick: this.goToResearchEnvironment as () => void
             }
           ] as ActionButton[]
         },
@@ -3308,23 +3444,34 @@ export default defineComponent({
       ] as ActionButtonGroup[]
     },
 
+    async isButtonVisible(button: ActionButton): Promise<boolean> {
+      return (button.visibilityCondition ?? true) &&
+          await this.projectManagerBackendService.isModuleActionActive(button.module, button.action, this.context);
+    },
+
+    async isAnyButtonOfGroupVisible(buttonGroup: ActionButtonGroup): Promise<boolean> {
+      return (await Promise.all(buttonGroup.button.map(button => this.isButtonVisible(button)))).includes(true);
+    },
+
     async checkButtonVisibility() {
-      const buttonGroups = await Promise.all(
-          this.actionButtons.map(async buttonGroup => {
-            const statusArray = await Promise.all(
-                buttonGroup.button.map(async (button) => {
-                  const visibility1 = button.visibilityCondition !== undefined ? button.visibilityCondition : true;
-                  const visibility2 = await this.projectManagerBackendService.isModuleActionActive(button.module, button.action, this.context);
-                  return visibility1 && visibility2;
-                })
-            );
-            return statusArray.includes(true);
-          })
-      );
+      const [buttonGroups, nextStepGroups, moreActions] = await Promise.all([
+        Promise.all(this.actionButtons.map(group => this.isAnyButtonOfGroupVisible(group))),
+        Promise.all(this.nextStepGroups.map(group => this.isAnyButtonOfGroupVisible(group))),
+        Promise.all(this.moreActionButtons.map(button => this.isButtonVisible(button))),
+      ]);
       this.buttonGroups = buttonGroups;
+      this.nextStepGroupsVisible = nextStepGroups;
+      this.anyMoreActionVisible = moreActions.includes(true);
       // Recomputed on every check: after an action the last visible button can disappear, and the empty
       // Actions card has to go with it.
       this.isAnyButtonVisible = buttonGroups.includes(true);
+    },
+
+    // The deployment's explanation of the group's first action that has one (as the TODO panel showed it),
+    // otherwise the group's own description.
+    nextStepDescription(group: ActionButtonGroup): string {
+      const explained = group.button.find(button => this.explanations?.get(button.action)?.message);
+      return explained ? this.explanations.get(explained.action)!.message : (group.description ?? '');
     },
 
     getMenuSteps(): ProjectViewMenuStep[] {
@@ -3493,6 +3640,47 @@ export default defineComponent({
 }
 .status-panel > .panel-header {
   border-radius: 10px 10px 0 0;
+}
+.next-step-card {
+  margin-bottom: var(--space-4);
+}
+.next-step-body {
+  padding: 16px 22px;
+}
+.next-step-item + .next-step-item {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid #d7e2ed;
+}
+.next-step-title {
+  font-weight: 600;
+  color: #00489cf2;
+  margin-bottom: var(--space-1);
+}
+.next-step-text {
+  margin: 0 0 var(--space-3);
+  font-size: 14px;
+}
+.next-step-idle {
+  margin: 0;
+  color: #5b6b7c;
+}
+.next-step-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.next-step-buttons :deep(.pm-button) {
+  margin-right: 0;
+}
+.panel-header-with-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+.panel-header-with-actions :deep(.more-actions-toggle) {
+  line-height: 1.3;
 }
 .panel-card .panel-header,
 .status-panel > .panel-header {
@@ -4029,13 +4217,6 @@ export default defineComponent({
   padding: var(--space-4);
 }
 /* TODO texts are messages, not headings: body size, like the rest of the app. */
-.pending-review-todo .card {
-  border-color: #f0c36d;
-  background: #fff7e6;
-}
-.pending-review-todo + .notification-box {
-  padding-top: 0;
-}
 .notification-box .card-title {
   font-size: 14px;
   line-height: 1.45;

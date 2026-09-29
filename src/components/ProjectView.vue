@@ -3810,12 +3810,11 @@ export default defineComponent({
 }
 
 .right-container {
-  flex: 0 0 65%;
+  flex: 0 0 70%;
   display: flex;
   flex-flow: row;
-  margin: 28px auto 0;
-  width: 65%;
-  max-width: 65%;
+  margin: 28px auto 28px;
+  max-width: 70%;
   /*align-self: flex-start;*/
 }
 

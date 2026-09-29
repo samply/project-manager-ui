@@ -250,7 +250,7 @@ export default class NotificationBox extends Vue {
             </div>
           </td>
           <td class="nowrap">{{ site(notification) }}</td>
-          <td><UserAndEmail :email="notification.email"/></td>
+          <td><UserAndEmail :first-name="notification.userName" :email="notification.email"/></td>
           <td class="action-cell">
             <button v-if="!notification.read" type="button" class="btn btn-outline-primary btn-sm mark-read"
                     :disabled="notification.id !== undefined && markingAsRead.has(notification.id)"

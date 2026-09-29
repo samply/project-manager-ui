@@ -304,6 +304,8 @@ export function hasProjectType(project?: Project, type?: ProjectType): boolean {
 export interface Notification {
     id?: number;
     email?: string;
+    // Full name of the user behind the email, if the backend knows it
+    userName?: string;
     timestamp?: string;
     projectCode?: string;
     bridgehead?: string;

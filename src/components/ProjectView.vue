@@ -222,23 +222,18 @@
 
               <aside v-if="existsDraftDialog" class="vertical-stepper-box">
                 <div class="vertical-stepper2">
-                  <div v-for="(step, index) in draftDialogStepper.currentSteps" :key="index"
+                  <div v-for="(step, index) in draftDialogStepper.currentSteps" :key="step.id"
                        class="stepper-step2"
-                       :class="{ 'active': draftDialogStepper.currentStep === step, 'missing-fields': hasMissingFieldsInStep(step.displayName) && (draftDialogStepper.currentStep !== step || draftDialogStepper.visitedSteps.size > 1) }"
+                       :class="{ 'active': draftDialogStepper.currentStep === step, 'missing-fields': draftStepState(step, index) === 'missing' }"
                   >
                     <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
-                      <div :class="[
-                             'step-circle',
-                             index < draftDialogStepper.currentSteps.indexOf(<DialogStep>draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) ? 'step-circle--done' :
-                             draftDialogStepper.currentStep === step ? 'step-circle--active' : 'step-circle--future'
-                           ]"
+                      <div :class="['step-circle', 'step-circle--' + draftStepState(step, index)]"
                            @click="draftDialogStepper.setCurrentStep(step.id)">
-                        <span>{{ index < draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) ?
-                            (hasMissingFieldsInStep(step.displayName) ? '!' : '✓') :
-                            index + 1 }}</span>
+                        <span>{{ draftStepState(step, index) === 'done' ? '✓' :
+                            draftStepState(step, index) === 'missing' ? '!' : index + 1 }}</span>
                       </div>
                       <div v-if="index < draftDialogStepper.currentSteps.length - 1"
-                           :class="['stepper-line2', index < draftDialogStepper.currentSteps.indexOf(<DialogStep>draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) ? 'stepper-line2--done' : '']">
+                           :class="['stepper-line2', isDraftStepReached(step, index) && isDraftStepReached(draftDialogStepper.currentSteps[index + 1], index + 1) ? 'stepper-line2--done' : '']">
                       </div>
                     </div>
                     <div class="stepper-step-textbox"
@@ -1890,11 +1885,34 @@ export default defineComponent({
       return result.length > 0 ? 'missing fields:<br><br>' + result : result;
     },
 
-    hasMissingFieldsInStep(step: string): boolean {
-      if (this.draftDialogStepper.visitedSteps.has(step)) {
-        return this.groupedMissingFields[step]?.length > 0;
+    // Whether the user has entered anything in this step. Saved values survive
+    // a reload, unlike the stepper's in-memory list of visited steps.
+    draftStepHasData(step: DialogStep): boolean {
+      if (step.id === FixedDialogStep.QUERY && this.project?.query) return true;
+      return this.formFields.some(field =>
+          field.title === step.id && this.isDynamicFormField(field) && this.hasFieldValue(field.value));
+    },
+
+    // A step is reached when it was visited in this session, or when it lies at
+    // or before the furthest step holding data: the wizard is walked forward with
+    // "Next", so the steps before that one were passed, even the ones left empty.
+    // The first time a draft is opened, only the imported query holds data.
+    isDraftStepReached(step: DialogStep, index: number): boolean {
+      if (this.draftDialogStepper.visitedSteps.has(step.displayName)) return true;
+      const steps = this.draftDialogStepper.currentSteps;
+      for (let i = steps.length - 1; i >= index; i--) {
+        if (this.draftStepHasData(steps[i])) return true;
       }
-      return false
+      return false;
+    },
+
+    // active: the step on screen; done / missing: reached, with all or not all
+    // of its mandatory fields filled; future: not reached yet. Independent of
+    // where the user is now, so jumping back to a step keeps the later ones done.
+    draftStepState(step: DialogStep, index: number): 'active' | 'done' | 'missing' | 'future' {
+      if (this.draftDialogStepper.currentStep === step) return 'active';
+      if (step.id === FixedDialogStep.SUMMARY || !this.isDraftStepReached(step, index)) return 'future';
+      return this.groupedMissingFields[step.displayName]?.length > 0 ? 'missing' : 'done';
     },
 
     nextDraftDialogStep(): void {

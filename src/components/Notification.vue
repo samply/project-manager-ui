@@ -43,6 +43,7 @@ export default class NotificationBox extends Vue {
   currentPage = 1;
   notificationsPerPage = 10;
   markingAsRead = new Set<number>();
+  markingPageAsRead = false;
   timestampDisplayFormat: DisplayFormatKey = DisplayFormatKey.DATE_TIME_WITH_SECONDS_FORMAT;
 
   mounted() {
@@ -128,18 +129,47 @@ export default class NotificationBox extends Vue {
     return this.hasSite(notification) ? (notification.humanReadableBridgehead || notification.bridgehead as string) : '';
   }
 
+  // The unread notifications on the current page, for "Mark page as read"
+  get unreadOnPage(): Notification[] {
+    return this.pagedNotifications.filter(notification => !notification.read && notification.id !== undefined);
+  }
+
+  sendAsRead(notificationId: number) {
+    const params = new Map<string, string>();
+    params.set('notification-id', '' + notificationId);
+    return this.projectManagerBackendService.fetchData(Module.NOTIFICATIONS_MODULE, Action.SET_NOTIFICATION_AS_READ_ACTION, this.context, params);
+  }
+
   async markAsRead(notification: Notification) {
     if (notification.id === undefined) return;
-    const params = new Map<string, string>();
-    params.set('notification-id', '' + notification.id);
     this.markingAsRead.add(notification.id);
     try {
-      await this.projectManagerBackendService.fetchData(Module.NOTIFICATIONS_MODULE, Action.SET_NOTIFICATION_AS_READ_ACTION, this.context, params);
+      await this.sendAsRead(notification.id);
       await this.callUpdateNotifications();
     } catch (error) {
       console.error('Error marking the notification as read:', error);
     } finally {
       this.markingAsRead.delete(notification.id);
+    }
+  }
+
+  // Only the page on screen, not every unread notification: the user has seen these.
+  // The backend marks one notification per call; a page holds at most notificationsPerPage.
+  async markPageAsRead() {
+    const ids = this.unreadOnPage.map(notification => notification.id as number);
+    if (ids.length === 0) return;
+    this.markingPageAsRead = true;
+    ids.forEach(id => this.markingAsRead.add(id));
+    try {
+      const results = await Promise.allSettled(ids.map(id => this.sendAsRead(id)));
+      results.filter(result => result.status === 'rejected')
+          .forEach(result => console.error('Error marking the notification as read:', (result as PromiseRejectedResult).reason));
+      await this.callUpdateNotifications();
+    } catch (error) {
+      console.error('Error updating the notifications:', error);
+    } finally {
+      ids.forEach(id => this.markingAsRead.delete(id));
+      this.markingPageAsRead = false;
     }
   }
 
@@ -165,13 +195,21 @@ export default class NotificationBox extends Vue {
   <div class="notifications-card">
     <div class="box-header">
       <span>Notifications</span>
-      <div class="notification-filter" role="group" aria-label="Which notifications">
-        <button type="button" :class="{ active: !showAll }" :aria-pressed="!showAll" @click="setShowAll(false)">
-          Unread <span class="count">{{ unreadCount }}</span>
+      <div class="header-actions">
+        <button v-if="unreadOnPage.length > 0" type="button" class="btn btn-outline-light btn-sm mark-page-read"
+                :disabled="markingPageAsRead" :aria-busy="markingPageAsRead"
+                title="Mark the unread notifications on this page as read" @click="markPageAsRead">
+          <i class="bi bi-check2-all" aria-hidden="true"></i>
+          {{ markingPageAsRead ? 'Marking…' : 'Mark page as read' }}
         </button>
-        <button type="button" :class="{ active: showAll }" :aria-pressed="showAll" @click="setShowAll(true)">
-          All <span class="count">{{ siteNotifications.length }}</span>
-        </button>
+        <div class="notification-filter" role="group" aria-label="Which notifications">
+          <button type="button" :class="{ active: !showAll }" :aria-pressed="!showAll" @click="setShowAll(false)">
+            Unread <span class="count">{{ unreadCount }}</span>
+          </button>
+          <button type="button" :class="{ active: showAll }" :aria-pressed="showAll" @click="setShowAll(true)">
+            All <span class="count">{{ siteNotifications.length }}</span>
+          </button>
+        </div>
       </div>
     </div>
     <div v-if="sites.length > 0" class="filter-box">
@@ -271,6 +309,21 @@ export default class NotificationBox extends Vue {
   color: #fff;
   font-size: 19px;
   font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.mark-page-read {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .notification-filter {

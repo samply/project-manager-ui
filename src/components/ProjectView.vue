@@ -1,5 +1,5 @@
 <template>
-  <div class="main-menu">
+  <div class="main-menu" :class="{ 'with-draft-stepper': showsDraftStepper }">
     <router-link :to="{ name: 'ProjectDashboard' }" class="menu-item menu-back">
       <i class="bi bi-arrow-left"></i> Requests
     </router-link>
@@ -13,7 +13,7 @@
   <div class="main-container">
 
 
-    <div class="right-container">
+    <div class="right-container" :class="{ 'with-draft-stepper': showsDraftStepper }">
       <div class="main-content">
         <div class="admin-view">
           <aside class="left-container"
@@ -271,6 +271,7 @@
                   >
                     <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
                       <div :class="['step-circle', 'step-circle--' + draftStepState(step, index)]"
+                           :title="step.displayName"
                            @click="draftDialogStepper.setCurrentStep(step.id)">
                         <span>{{ draftStepState(step, index) === 'done' ? '✓' :
                             draftStepState(step, index) === 'missing' ? '!' : index + 1 }}</span>
@@ -892,6 +893,10 @@ export default defineComponent({
     },
     unreadNotificationsCount(): number {
       return this.notifications.filter(notification => !notification.read).length;
+    },
+    // The draft's step list is shown left of the content column, which then has to leave room for it
+    showsDraftStepper(): boolean {
+      return this.existsDraftDialog && !!this.project && this.currentMenuStep === this.MenuStep.REQUEST;
     },
     ProjectRole() {
       return ProjectRole
@@ -3870,6 +3875,9 @@ export default defineComponent({
   width: 100%;
   background-color: rgba(0, 72, 156, .95);
   display: flex;
+  /* In a narrow window the tabs continue on a second line instead of making
+     the page scroll sideways. */
+  flex-wrap: wrap;
   /* Tabs start at the content column's left edge, as on the dashboard. */
   padding-left: calc((100% - var(--content-width)) / 2);
 }
@@ -3952,6 +3960,44 @@ export default defineComponent({
   width: var(--content-width);
   max-width: var(--content-width);
   /*align-self: flex-start;*/
+}
+
+/* Draft dialog: the step list sits in the left margin of the content column.
+ * When the window is too narrow for that margin to hold it, the column moves
+ * right just enough (and the tabs with it) instead of staying centred with
+ * the step list cut off. It keeps its width while that fits and otherwise
+ * ends one gap before the window's right edge. */
+.with-draft-stepper {
+  --draft-stepper-width: 208px;
+  --draft-stepper-space: calc(var(--draft-stepper-width) + 2 * var(--space-4));
+  --draft-column-left: max((100% - var(--content-width)) / 2, var(--draft-stepper-space));
+}
+.main-menu.with-draft-stepper {
+  padding-left: var(--draft-column-left);
+}
+.right-container.with-draft-stepper {
+  --draft-column-width: min(var(--content-width), 100% - var(--draft-stepper-space) - var(--space-4));
+  flex-basis: var(--draft-column-width);
+  width: var(--draft-column-width);
+  max-width: var(--draft-column-width);
+  margin-left: var(--draft-column-left);
+}
+.with-draft-stepper .vertical-stepper-box {
+  width: var(--draft-stepper-width);
+}
+/* Small windows: the step list shrinks to its circles (the name is the
+ * circle's tooltip and the card's header), and the form takes the rest. */
+@media (max-width: 760px) {
+  .with-draft-stepper {
+    --draft-stepper-width: 42px;
+    --draft-column-left: var(--draft-stepper-space);
+  }
+  .right-container.with-draft-stepper {
+    --draft-column-width: calc(100% - var(--draft-stepper-space) - var(--space-4));
+  }
+  .with-draft-stepper .vertical-stepper-box .stepper-step-textbox {
+    display: none;
+  }
 }
 
 .main-content {

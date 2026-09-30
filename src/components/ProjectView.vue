@@ -223,8 +223,7 @@
                                       :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
                                       :exists-publication="existsPublication"
                                       :existsFinalReport="existsFinalReport"
-                                      :bridgeheads="visibleBridgeheads"
-                                      :activeBridgehead="activeBridgehead"/>
+                                      :bridgeheads="visibleBridgeheads"/>
                 </div>
             </div>
             <!-- Who takes part in the current phase, and inviting more. The inline invite form becomes a
@@ -752,6 +751,7 @@ import {
 import {ProjectViewMenuStep} from "@/services/projectViewMenuStep";
 import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
 import {PollingService} from "@/services/PollingService";
+import {BatchLoad, runBatchLoads} from "@/services/actionsBatch";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
 import {
   assignPipelineVisuals,
@@ -1782,23 +1782,13 @@ export default defineComponent({
           .then(() => this.refreshBridgeheadsAndContext());
     },
 
-    async initializeFeasibilityAvailability(): Promise<void> {
+    // backendEnabled: the answer of IS_FEASIBILITY_ENABLED; false when it may not be asked or could not be loaded
+    async applyFeasibilityAvailability(backendEnabled: boolean): Promise<void> {
       const wasEnabled = this.feasibilityEnabled;
-      const availabilityActionActive = await this.projectManagerBackendService.isModuleActionActive(
-          Module.PROJECT_BRIDGEHEAD_MODULE,
-          Action.IS_FEASIBILITY_ENABLED_ACTION, this.context);
       // Allowed, not callable: this is decided before any site exists; each site is then fetched with its own context
       const fetchActionActive = await this.projectManagerBackendService.isModuleActionAllowed(
           Module.PROJECT_BRIDGEHEAD_MODULE,
           Action.FETCH_FEASIBILITY_ACTION
-      );
-      const backendEnabled = availabilityActionActive && Boolean(
-          await this.projectManagerBackendService.fetchData(
-              Module.PROJECT_BRIDGEHEAD_MODULE,
-              Action.IS_FEASIBILITY_ENABLED_ACTION,
-              this.context,
-              new Map()
-          )
       );
       this.feasibilityEnabled = backendEnabled && fetchActionActive;
 
@@ -2105,87 +2095,24 @@ export default defineComponent({
           this.currentMenuStep = ProjectViewMenuStep.REQUEST;
         }
 
-        // Resolve the configuration first. If the only predefined configuration
-        // is assigned automatically, the refreshed context performs a clean initialization.
+        // Everything the view reads for this project goes to the backend in as few requests as the dependencies
+        // between the loads allow (see projectRelatedLoads). A failed load is reported on the console and does
+        // not keep the rest of the view from loading.
+        this.formTitleCanonicalOrder = [];
         await Promise.all([
-          this.initializeCurrentProjectConfiguration(),
-          this.initializeProjectConfigurations()
+          this.initializeScriptTabAvailability(),
+          this.initializeDocumentsTabAvailability(),
+          runBatchLoads(this.projectRelatedLoads(),
+              entries => this.projectManagerBackendService.fetchBatch(entries, this.context))
         ]);
+        // If the only predefined configuration is assigned automatically, the refreshed context performs a clean
+        // initialization.
         if (await this.selectOnlyAvailableProjectConfiguration()) {
           // Reload the project because assigning a configuration changes its fields.
           this.refreshContext();
           return;
         }
-
-        await this.initializeFeasibilityAvailability();
-
-        await Promise.all([
-          this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), async (result: Bridgehead[]) => {
-            this.bridgeheads = result;
-            this.bridgeheadsLoaded = true;
-          }),
-          this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_STATES_ACTION, new Map(), 'projectStates'),
-          this.fetchNotifications(),
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, new Map(), 'projectTypes'),
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, new Map(), 'queryFormats'),
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, new Map(), 'outputFormats'),
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATION_SELECTION_TYPE_ACTION, new Map(), 'projectConfigurationSelectionType'),
-          this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads'),
-          this.initializeData(Module.USER_MODULE, Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION, new Map(), 'existsResearchEnvironmentWorkspace'),
-          this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_PUBLICATION_ACTION, new Map(), 'existsPublication'),
-          this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_FINAL_REPORT_ACTION, new Map(), 'existsFinalReport'),
-          this.initializeData(Module.USER_MODULE, Action.FETCH_RESEARCH_ENVIRONMENT_URL_ACTION, new Map(), 'researchEnvironmentUrl'),
-          this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, new Map(), 'currentUsers'),
-          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_DESCRIPTION_ACTION, new Map(), async (result: boolean) => {
-            this.existsProjectDescription = result;
-            if (this.existsProjectDescription) {
-              await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_DESCRIPTION_ACTION, new Map(), 'projectDescription');
-            } else {
-              this.projectDescription = {} as ProjectDocument
-            }
-          }),
-          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, new Map(), async (result: boolean) => {
-            this.existsVotum = result;
-            if (this.existsVotum) {
-              await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_DESCRIPTION_ACTION, new Map(), 'votumDescription');
-            } else {
-              this.votumDescription = {} as ProjectDocument
-            }
-          }),
-          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION, new Map(), async (result: boolean) => {
-            this.existsVotumForAllBridgeheads = result;
-            if (this.existsVotumForAllBridgeheads) {
-              await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION_ACTION, new Map(), 'votumForAllBridgeheadsDescription');
-            } else {
-              this.votumForAllBridgeheadsDescription = {} as ProjectDocument;
-            }
-          }),
-          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), async (result: boolean) => {
-            this.existsScript = result;
-            if (this.existsScript) {
-              await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_SCRIPT_DESCRIPTION_ACTION, new Map(), 'scriptDescription');
-            } else {
-              this.scriptDescription = {} as ProjectDocument;
-            }
-          }),
-          this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript'),
-          this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, new Map(), 'projectRoles'),
-          this.initializeDataInCallback(Module.USER_MODULE, Action.EXIST_INVITED_USERS_ACTION, new Map(), async result => {
-            this.existInvitedUsers = result;
-            this.canShowBridgeheadAdminButtons = this.fetchIfCanShowBridgeheadAdminButtons();
-          }),
-          this.initializeData(Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, new Map(), 'currentUser'),
-          this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment'),
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_TEMPLATES_ACTION, new Map(), 'formTemplates'),
-          this.initializeScriptTabAvailability(),
-          this.initializeDocumentsTabAvailability(),
-          this.initializeProjectFormsData(),
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, new Map(), 'exporterTemplateIds')
-        ]);
         this.applyProjectConfigurationVisibility();
-        if (hasProjectType(this.project, ProjectType.DATASHIELD)) {
-          await this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, new Map(), 'dataShieldStatus');
-        }
         this.updateProjectFields()
         // Decides where "Start final phase" goes (see moreActionButtons)
         this.canStartDevelopPhase = await this.projectManagerBackendService.isModuleActionActive(
@@ -2213,36 +2140,127 @@ export default defineComponent({
       }
     },
 
-    async initializeProjectFormsData() {
-      this.formTitleCanonicalOrder = [];
-      try {
-        await this.initializeData(
-            Module.PROJECT_EDITION_MODULE,
-            Action.FETCH_PROJECT_FORM_TITLE_ORDER_ACTION,
-            new Map(),
-            'formTitleCanonicalOrder'
-        );
-      } catch (error) {
-        console.warn('Failed to load canonical project form-title order; using the frontend fallback order.', error);
-      }
-
-      try {
-        await this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_SELECTED_PROJECT_FORMS_ACTION, new Map(), async result => {
-          this.selectedForms = result;
-          await Promise.all([
-            this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_FIELDS_ACTION, new Map(), async formFields => {
-              this.addFormFields(formFields);
-            }),
-            this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_LAYOUTS_ACTION, new Map(), 'layouts')
-          ]);
-        });
-      } catch (error) {
-        console.warn('Failed to load project form definitions.', error);
+    /**
+     * What the view loads for its project. Loads without `dependsOn` go to the backend in one request; the others
+     * follow in a second one. The answers are applied in the order of this list.
+     */
+    projectRelatedLoads(): BatchLoad<Module, Action, ProjectManagerContext>[] {
+      type ProjectLoad = BatchLoad<Module, Action, ProjectManagerContext>;
+      // The response becomes the value of a data variable
+      const set = (id: string, module: Module, action: Action, dataVariable: string): ProjectLoad =>
+          ({id, module, action, apply: response => { (this.$data as any)[dataVariable] = response; }});
+      // A document's description is fetched only if the document exists
+      const documentDescription = (id: string, existsId: string, action: Action, dataVariable: string): ProjectLoad => ({
+        id, module: Module.PROJECT_DOCUMENTS_MODULE, action,
+        dependsOn: [existsId],
+        when: responses => responses[existsId] === true,
+        apply: response => { (this.$data as any)[dataVariable] = response; },
+        otherwise: () => { (this.$data as any)[dataVariable] = {} as ProjectDocument; }
+      });
+      const resetForms = () => {
+        console.warn('Failed to load project form definitions.');
         this.selectedForms = [];
         this.formFields = [];
         this.formTitles = [];
         this.layouts = {};
-      }
+      };
+
+      return [
+        // The configuration first: the loads after it and the steps after the batch build on it
+        {
+          id: 'currentProjectConfiguration', module: Module.PROJECT_EDITION_MODULE,
+          action: Action.FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION,
+          apply: (response: string[] | Record<string, ProjectAndForms>) => this.applyCurrentProjectConfiguration(response)
+        },
+        {
+          // Keep the loaded configurations until the replacement arrives. Project refreshes overlap (e.g. saving
+          // a form field twice in a row); clearing the map before let an earlier refresh run
+          // applyProjectConfigurationVisibility against an empty map, briefly showing the Services step.
+          id: 'projectConfigurations', module: Module.PROJECT_EDITION_MODULE,
+          action: Action.FETCH_PROJECT_CONFIGURATIONS_ACTION,
+          apply: (response: Record<string, ProjectAndForms> | undefined) => {
+            this.projectConfigurations = new Map(Object.entries(response ?? {}));
+          }
+        },
+        {
+          id: 'isFeasibilityEnabled', module: Module.PROJECT_BRIDGEHEAD_MODULE,
+          action: Action.IS_FEASIBILITY_ENABLED_ACTION,
+          apply: response => this.applyFeasibilityAvailability(Boolean(response)),
+          otherwise: () => this.applyFeasibilityAvailability(false)
+        },
+        {
+          id: 'bridgeheads', module: Module.PROJECT_BRIDGEHEAD_MODULE, action: Action.FETCH_PROJECT_BRIDGEHEADS_ACTION,
+          apply: (response: Bridgehead[]) => {
+            this.bridgeheads = response;
+            this.bridgeheadsLoaded = true;
+          }
+        },
+        set('projectStates', Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_STATES_ACTION, 'projectStates'),
+        {
+          // The Notifications tab covers the whole request: without a site, not only the active one.
+          ...set('notifications', Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, 'notifications'),
+          context: () => new ProjectManagerContext(this.context.projectCode, undefined)
+        },
+        set('projectTypes', Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, 'projectTypes'),
+        set('queryFormats', Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, 'queryFormats'),
+        set('outputFormats', Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, 'outputFormats'),
+        set('projectConfigurationSelectionType', Module.PROJECT_EDITION_MODULE,
+            Action.FETCH_PROJECT_CONFIGURATION_SELECTION_TYPE_ACTION, 'projectConfigurationSelectionType'),
+        set('allBridgeheads', Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, 'allBridgeheads'),
+        set('existsResearchEnvironmentWorkspace', Module.USER_MODULE,
+            Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION, 'existsResearchEnvironmentWorkspace'),
+        set('existsPublication', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_PUBLICATION_ACTION, 'existsPublication'),
+        set('existsFinalReport', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_FINAL_REPORT_ACTION, 'existsFinalReport'),
+        set('researchEnvironmentUrl', Module.USER_MODULE, Action.FETCH_RESEARCH_ENVIRONMENT_URL_ACTION, 'researchEnvironmentUrl'),
+        set('currentUsers', Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, 'currentUsers'),
+        set('existsDescription', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_DESCRIPTION_ACTION, 'existsProjectDescription'),
+        documentDescription('projectDescription', 'existsDescription', Action.FETCH_DESCRIPTION_ACTION, 'projectDescription'),
+        set('existsVotum', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, 'existsVotum'),
+        documentDescription('votumDescription', 'existsVotum', Action.FETCH_VOTUM_DESCRIPTION_ACTION, 'votumDescription'),
+        set('existsVotumForAllBridgeheads', Module.PROJECT_DOCUMENTS_MODULE,
+            Action.EXISTS_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION, 'existsVotumForAllBridgeheads'),
+        documentDescription('votumForAllBridgeheadsDescription', 'existsVotumForAllBridgeheads',
+            Action.FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION_ACTION, 'votumForAllBridgeheadsDescription'),
+        set('existsScript', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, 'existsScript'),
+        documentDescription('scriptDescription', 'existsScript', Action.FETCH_SCRIPT_DESCRIPTION_ACTION, 'scriptDescription'),
+        set('existsAuthenticationScript', Module.TOKEN_MANAGER_MODULE,
+            Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, 'existsAuthenticationScript'),
+        set('projectRoles', Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, 'projectRoles'),
+        {
+          id: 'existInvitedUsers', module: Module.USER_MODULE, action: Action.EXIST_INVITED_USERS_ACTION,
+          apply: response => {
+            this.existInvitedUsers = response;
+            this.canShowBridgeheadAdminButtons = this.fetchIfCanShowBridgeheadAdminButtons();
+          }
+        },
+        set('currentUser', Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, 'currentUser'),
+        set('areExportFilesTransferredToResearchEnvironment', Module.EXPORT_MODULE,
+            Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, 'areExportFilesTransferredToResearchEnvironment'),
+        set('formTemplates', Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_TEMPLATES_ACTION, 'formTemplates'),
+        set('exporterTemplateIds', Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, 'exporterTemplateIds'),
+        {
+          ...set('dataShieldStatus', Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, 'dataShieldStatus'),
+          when: () => hasProjectType(this.project, ProjectType.DATASHIELD)
+        },
+        // Without the canonical order the frontend's fallback order is used (the list was emptied before)
+        set('formTitleCanonicalOrder', Module.PROJECT_EDITION_MODULE,
+            Action.FETCH_PROJECT_FORM_TITLE_ORDER_ACTION, 'formTitleCanonicalOrder'),
+        {
+          ...set('selectedForms', Module.PROJECT_EDITION_MODULE, Action.FETCH_SELECTED_PROJECT_FORMS_ACTION, 'selectedForms'),
+          otherwise: resetForms
+        },
+        {
+          id: 'formFields', module: Module.PROJECT_EDITION_MODULE, action: Action.FETCH_PROJECT_FORM_FIELDS_ACTION,
+          dependsOn: ['selectedForms'],
+          when: responses => 'selectedForms' in responses,
+          apply: (response: FormField[]) => this.addFormFields(response)
+        },
+        {
+          ...set('layouts', Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_LAYOUTS_ACTION, 'layouts'),
+          dependsOn: ['selectedForms'],
+          when: responses => 'selectedForms' in responses
+        }
+      ];
     },
 
     async initializeScriptTabAvailability(): Promise<void> {
@@ -2442,21 +2460,6 @@ export default defineComponent({
           new ProjectManagerContext(this.context.projectCode, undefined));
     },
 
-    async initializeProjectConfigurations(): Promise<void> {
-      // Keep the loaded configurations until the replacement arrives. Project
-      // refreshes overlap (e.g. saving a form field twice in a row); clearing
-      // the map here let an earlier refresh run applyProjectConfigurationVisibility
-      // against an empty map, briefly showing the Services step.
-      await this.initializeDataInCallback(
-          Module.PROJECT_EDITION_MODULE,
-          Action.FETCH_PROJECT_CONFIGURATIONS_ACTION,
-          new Map(),
-          async (result: Record<string, ProjectAndForms> | undefined) => {
-            this.projectConfigurations = new Map(Object.entries(result ?? {}));
-          }
-      );
-    },
-
     applyProjectConfigurationVisibility(): void {
       // Count predefined options independently of CUSTOM: visibility filtering
       // below removes CUSTOM from this map, and overlapping project refreshes
@@ -2479,44 +2482,28 @@ export default defineComponent({
       this.refreshCurrentProjectConfigurationFields();
     },
 
-    async initializeCurrentProjectConfiguration(): Promise<void> {
-      return new Promise((resolve, reject) => {
-        this.initializeDataInCallback(
-            Module.PROJECT_EDITION_MODULE,
-            Action.FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION,
-            new Map(),
-            async (result: string[] | Record<string, ProjectAndForms>) => {
+    // result: the answer of FETCH_CURRENT_PROJECT_CONFIGURATION
+    applyCurrentProjectConfiguration(result: string[] | Record<string, ProjectAndForms> | undefined): void {
+      if (result) {
+        if (Array.isArray(result)) {
+          this.currentProjectConfiguration = result;
+        } else {
+          const keys = Object.keys(result);
+          if (keys.length > 0) {
+            this.currentProjectConfiguration = keys;
+          } else {
+            this.resetCurrentProjectConfiguration();
+          }
+        }
 
-              if (result) {
-                if (Array.isArray(result)) {
-                  this.currentProjectConfiguration = result;
-                } else {
-                  const keys = Object.keys(result);
-                  if (keys.length > 0) {
-                    this.currentProjectConfiguration = keys;
-                  } else {
-                    this.resetCurrentProjectConfiguration();
-                  }
-                }
-
-                if (this.currentProjectConfiguration.length > 0) {
-                  this.refreshCurrentProjectConfigurationFields();
-                } else {
-                  this.resetCurrentProjectConfiguration();
-                }
-              } else {
-                this.resetCurrentProjectConfiguration();
-              }
-
-              resolve();
-            }
-        )
-            .then(() => {
-              // IMPORTANT: this runs even if condition === false
-              resolve();
-            })
-            .catch(reject);
-      });
+        if (this.currentProjectConfiguration.length > 0) {
+          this.refreshCurrentProjectConfigurationFields();
+        } else {
+          this.resetCurrentProjectConfiguration();
+        }
+      } else {
+        this.resetCurrentProjectConfiguration();
+      }
     },
 
     resetCurrentProjectConfiguration() {

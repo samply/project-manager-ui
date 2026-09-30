@@ -127,6 +127,7 @@ import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/se
 import {getConfig} from "@/services/configLoader";
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import store, {ActionFeedbackType} from "@/services/store";
+import {runBatchLoads} from "@/services/actionsBatch";
 
 // The dashboard's tabs; Notifications only for the project manager admin
 enum DashboardTab {
@@ -180,11 +181,8 @@ export default defineComponent({
       this.updateCanSeeNotifications();
       this.updateCanCreateRequest();
     },
-    projects() {
-      if (this.canSeeNotifications) {
-        this.fetchNotifications();
-      }
-    },
+    // The notifications are loaded once, when the tab becomes available. They are not reloaded with the requests
+    // table (filters, sorting, paging): nothing on the dashboard creates notifications.
     canSeeNotifications(canSee: boolean) {
       if (canSee) {
         this.fetchNotifications();
@@ -295,33 +293,38 @@ export default defineComponent({
     // TODO: Fetch several pages of projects
     async fetchProjects() {
       try {
-        const params = new Map<string, string>();
-        if (this.selectedState) {
-          params.set(PmRequestParameter.PROJECT_STATE, this.selectedState)
-        }
-        if (this.selectedApplicant) {
-          params.set(PmRequestParameter.PROJECT_CREATOR_EMAIL, this.selectedApplicant)
-        }
-        if (this.selectedBridgehead) {
-          params.set(PmRequestParameter.BRIDGEHEAD, this.selectedBridgehead)
-        }
-        params.set(PmRequestParameter.PAGE, (this.currentPage - 1).toString());
-        params.set(PmRequestParameter.PAGE_SIZE, '10');
-        params.set(PmRequestParameter.SORT_BY, this.sortBy);
-        params.set(PmRequestParameter.SORT_DESC, this.sortDesc.toString());
-        params.set(PmRequestParameter.SITE, Site.PROJECT_DASHBOARD_SITE);
         this.projectManagerBackendService.fetchData(
             Module.PROJECTS_MODULE,
             Action.FETCH_PROJECTS_ACTION,
             this.context,
-            params
-        ).then(projects => {
-          this.projects = projects.content;
-          this.totalPages = projects.totalPages === 0 ? 1 : projects.totalPages;
-        });
+            this.projectsParams()
+        ).then(projects => this.applyProjects(projects));
       } catch (error) {
         console.error('Error loading projects:', error);
       }
+    },
+    // The page of requests that the filters, the sorting and the pager ask for
+    projectsParams(): Map<string, string> {
+      const params = new Map<string, string>();
+      if (this.selectedState) {
+        params.set(PmRequestParameter.PROJECT_STATE, this.selectedState)
+      }
+      if (this.selectedApplicant) {
+        params.set(PmRequestParameter.PROJECT_CREATOR_EMAIL, this.selectedApplicant)
+      }
+      if (this.selectedBridgehead) {
+        params.set(PmRequestParameter.BRIDGEHEAD, this.selectedBridgehead)
+      }
+      params.set(PmRequestParameter.PAGE, (this.currentPage - 1).toString());
+      params.set(PmRequestParameter.PAGE_SIZE, '10');
+      params.set(PmRequestParameter.SORT_BY, this.sortBy);
+      params.set(PmRequestParameter.SORT_DESC, this.sortDesc.toString());
+      params.set(PmRequestParameter.SITE, Site.PROJECT_DASHBOARD_SITE);
+      return params;
+    },
+    applyProjects(projects: { content: Project[], totalPages: number }) {
+      this.projects = projects.content;
+      this.totalPages = projects.totalPages === 0 ? 1 : projects.totalPages;
     },
     // The Notifications tab: only for users allowed to fetch notifications (the project manager admin)
     async updateCanSeeNotifications() {
@@ -342,26 +345,43 @@ export default defineComponent({
         throw error;
       }
     },
-    async fetchProjectStates() {
-      try {
-        const states = await this.projectManagerBackendService.fetchData(
-            Module.PROJECTS_MODULE,
-            Action.FETCH_VISIBLE_PROJECT_STATES_ACTION,
-            this.context,
-            new Map()
-        );
-        this.availableProjectStates = Array.isArray(states) ? states : [];
-        if (this.selectedState && !this.availableProjectStates.includes(this.selectedState)) {
-          this.selectedState = "";
-        }
-      } catch (error) {
-        console.error('Error loading notifications:', error);
-        throw error;
+    applyProjectStates(states: unknown) {
+      this.availableProjectStates = Array.isArray(states) ? states : [];
+      if (this.selectedState && !this.availableProjectStates.includes(this.selectedState)) {
+        this.selectedState = "";
       }
     },
+    applyApplicants(applicants: unknown) {
+      this.applicants = Array.isArray(applicants) ? applicants : [];
+      if (this.applicants.length <= 1) this.selectedApplicant = "";
+    },
+    applyBridgeheads(bridgeheads: unknown) {
+      this.bridgeheads = Array.isArray(bridgeheads) ? bridgeheads : [];
+      if (this.bridgeheads.length <= 1) this.selectedBridgehead = "";
+    },
+    // The first load of the dashboard: the filter options and the first page of requests in one request to the
+    // backend. A part that fails is reported on the console and leaves its filter empty.
     async initializeCurrentData() {
-      await Promise.all([this.fetchProjectStates(), this.fetchFilterOptions(), this.updateCanSeeNotifications()]);
-      await this.fetchProjects();
+      await this.updateCanSeeNotifications();
+      await runBatchLoads<Module, Action, ProjectManagerContext>([
+        {
+          id: 'projectStates', module: Module.PROJECTS_MODULE, action: Action.FETCH_VISIBLE_PROJECT_STATES_ACTION,
+          apply: states => this.applyProjectStates(states), otherwise: () => this.applyProjectStates([])
+        },
+        {
+          id: 'applicants', module: Module.PROJECTS_MODULE, action: Action.FETCH_PROJECT_CREATORS_ACTION,
+          apply: applicants => this.applyApplicants(applicants), otherwise: () => this.applyApplicants([])
+        },
+        {
+          id: 'bridgeheads', module: Module.PROJECTS_MODULE, action: Action.FETCH_VISIBLE_BRIDGEHEADS_ACTION,
+          apply: bridgeheads => this.applyBridgeheads(bridgeheads), otherwise: () => this.applyBridgeheads([])
+        },
+        {
+          id: 'projects', module: Module.PROJECTS_MODULE, action: Action.FETCH_PROJECTS_ACTION,
+          params: () => this.projectsParams(),
+          apply: projects => this.applyProjects(projects)
+        }
+      ], entries => this.projectManagerBackendService.fetchBatch(entries, this.context));
     },
     async fetchFilterOptions() {
       const [applicants, bridgeheads] = await Promise.all([
@@ -384,10 +404,8 @@ export default defineComponent({
           return [];
         })
       ]);
-      this.applicants = Array.isArray(applicants) ? applicants : [];
-      this.bridgeheads = Array.isArray(bridgeheads) ? bridgeheads : [];
-      if (this.applicants.length <= 1) this.selectedApplicant = "";
-      if (this.bridgeheads.length <= 1) this.selectedBridgehead = "";
+      this.applyApplicants(applicants);
+      this.applyBridgeheads(bridgeheads);
     },
     firstPage() {
       this.currentPage = 1;

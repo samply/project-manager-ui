@@ -87,6 +87,7 @@ import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
 import '@/assets/styles/state-circle.css'
 import {PropType, watch} from "vue";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
+import {BatchEntry} from "@/services/actionsBatch";
 import {
   assignPipelineVisuals,
   classifyStateCircle,
@@ -212,7 +213,8 @@ export default class BridgeheadOverview extends Vue {
         () => {
           this.updateBridgeheadExtraInfo();
         },
-        {immediate: true, deep: true}
+        // Not immediate: the first load is the one awaited below
+        {deep: true}
     );
     watch(() => this.bridgeheads,
         () => {
@@ -427,35 +429,37 @@ export default class BridgeheadOverview extends Vue {
     return new ProjectManagerContext(this.context.projectCode, bridgehead);
   }
 
+  // The vote and, for DataSHIELD requests, the DataSHIELD status of every site, in one request to the backend.
+  // A site whose answer is missing (not allowed or failed) has no vote and no status available.
   async updateBridgeheadExtraInfo() {
-    this.existsVotums = await this.fetchExistsVotums();
-    if (hasProjectType(this.project, ProjectType.DATASHIELD)) {
-      this.dataShieldStatusArray = await this.fetchDataShieldStates();
+    const bridgeheads = this.bridgeheads;
+    const withDataShield = hasProjectType(this.project, ProjectType.DATASHIELD);
+    const entries: BatchEntry<Module, Action, ProjectManagerContext>[] = bridgeheads.flatMap((bridgehead, index) => [
+      {
+        id: `votum-${index}`, module: Module.PROJECT_DOCUMENTS_MODULE, action: Action.EXISTS_VOTUM_ACTION,
+        params: new Map<string, unknown>(), context: this.fetchContext(bridgehead)
+      },
+      ...(withDataShield ? [{
+        id: `dataShield-${index}`, module: Module.TOKEN_MANAGER_MODULE, action: Action.FETCH_DATASHIELD_STATUS_ACTION,
+        params: new Map<string, unknown>(), context: this.fetchContext(bridgehead)
+      }] : [])
+    ]);
+    const results = await this.projectManagerBackendService.fetchBatch(entries, this.context);
+    results.forEach((result, id) => {
+      if (result.errorCode !== undefined && ![403, 404, 405].includes(result.errorCode)) {
+        console.error(`Error ${result.errorCode} loading '${id}':`, result.errorMessage ?? '',
+            result.errorStacktrace ? `\n${result.errorStacktrace}` : '');
+      }
+    });
+    this.existsVotums = bridgeheads.map((_, index) => results.get(`votum-${index}`)?.response === true);
+    if (withDataShield) {
+      this.dataShieldStatusArray = bridgeheads.map((bridgehead, index) =>
+          (results.get(`dataShield-${index}`)?.response as DataShieldProjectStatus | undefined) ?? {
+            project_id: this.context.projectCode,
+            bk: bridgehead.bridgehead,
+            project_status: 'NOT_AVAILABLE'
+          } as DataShieldProjectStatus);
     }
-  }
-
-  // noinspection SpellCheckingInspection
-  async fetchExistsVotums(): Promise<boolean[]> {
-    const promises = this.bridgeheads.map(bridgehead => this.existsVotum(bridgehead));
-    return Promise.all(promises);
-  }
-
-  async existsVotum(bridgehead: Bridgehead): Promise<boolean> {
-    return this.projectManagerBackendService.fetchData(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, this.fetchContext(bridgehead), new Map());
-  }
-
-  async fetchDataShieldStates(): Promise<DataShieldProjectStatus[]> {
-    const promises = this.bridgeheads.map(bridgehead => this.fetchDataShieldState(bridgehead));
-    return Promise.all(promises);
-  }
-
-  async fetchDataShieldState(bridgehead: Bridgehead): Promise<DataShieldProjectStatus> {
-    return this.projectManagerBackendService.isModuleActionActive(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, this.fetchContext(bridgehead)).then(condition =>
-        (condition) ? this.projectManagerBackendService.fetchData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, this.fetchContext(bridgehead), new Map()) : {
-          project_id: this.context.projectCode,
-          bk: bridgehead.bridgehead,
-          project_status: 'NOT_AVAILABLE'
-        });
   }
 
   selectBridgehead(bridgehead: Bridgehead) {

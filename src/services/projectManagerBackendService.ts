@@ -3,6 +3,7 @@ import axios, {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
 import axiosRetry from "axios-retry";
 import {getConfig, DisplayFormatKey} from "@/services/configLoader";
 import {AuthService} from "@/services/auth";
+import {BatchEntry, BatchResult} from "@/services/actionsBatch";
 
 
 const bridgeheadParam = 'bridgehead'
@@ -12,6 +13,7 @@ export const ACTION_FEEDBACK_PARAM = 'action-feedback'
 const siteParam = 'site'
 
 const actionsPath = '/actions'
+const actionsBatchRequestsParam = 'requests'
 
 export const CUSTOM_PROJECT_CONFIGURATION = 'CUSTOM';
 export const NOT_SELECTED_PROJECT_CONFIGURATION = 'NOT_SELECTED';
@@ -55,7 +57,9 @@ export enum Module {
     PROJECT_DOCUMENTS_MODULE = "PROJECT_DOCUMENTS",
     NOTIFICATIONS_MODULE = "NOTIFICATIONS",
     EXPORT_MODULE = "EXPORT",
-    TOKEN_MANAGER_MODULE = "TOKEN_MANAGER"
+    TOKEN_MANAGER_MODULE = "TOKEN_MANAGER",
+    // Actions about the actions themselves, e.g. calling several of them in one request
+    ACTIONS_MODULE = "ACTIONS"
 }
 
 function getModuleFromString(value: string): Module | undefined {
@@ -117,6 +121,7 @@ export enum Action {
     REJECT_PROJECT_RESULTS_ACTION = "REJECT_PROJECT_RESULTS",
     REQUEST_CHANGES_IN_PROJECT_ACTION = "REQUEST_CHANGES_IN_PROJECT",
     FETCH_NOTIFICATIONS_ACTION = "FETCH_NOTIFICATIONS",
+    FETCH_ACTIONS_BATCH_ACTION = "FETCH_ACTIONS_BATCH",
     SET_NOTIFICATION_AS_READ_ACTION = "SET_NOTIFICATION_AS_READ",
     FETCH_PROJECT_ACTION = "FETCH_PROJECT",
     FETCH_PROJECT_STATES_ACTION = "FETCH_PROJECT_STATES",
@@ -968,6 +973,41 @@ export class ProjectManagerBackendService {
         sendEmptyStrings = false
     ) {
         return (await this.fetchHttpResponse(module, action, context, params, sendEmptyStrings)).data;
+    }
+
+    /**
+     * Calls several read actions (GET endpoints) in one request. Every entry is answered on its own: with the
+     * response of its endpoint, or with the error the endpoint would have answered with.
+     * Entries whose action is not active for the user and their context are not sent and have no result, like
+     * isModuleActionActive followed by fetchData. Use runBatchLoads to load a page with it.
+     */
+    public async fetchBatch(
+        entries: BatchEntry<Module, Action, ProjectManagerContext>[],
+        defaultContext: ProjectManagerContext
+    ): Promise<Map<string, BatchResult>> {
+        await this.initializedPromise;
+        const requests: Record<string, { action: Action, params: Record<string, unknown> }> = {};
+        for (const entry of entries) {
+            const context = entry.context ?? defaultContext;
+            const actionMetadata = this.getActionMetadata(entry.module, entry.action);
+            if (!actionMetadata || (actionMetadata.bridgeheadRequired && !context.bridgehead)) continue;
+            if (actionMetadata.method !== HttpMethod.GET) {
+                throw new Error(`Action ${entry.action} for module ${entry.module} is not a read action`);
+            }
+            requests[entry.id] = {
+                action: entry.action,
+                params: Object.fromEntries(this.buildHttpParams(context, entry.params, actionMetadata))
+            };
+        }
+        if (Object.keys(requests).length === 0) return new Map();
+        // The batch is a frontend action itself: path and method come from the backend like for any other action
+        const batchMetadata = this.getActionMetadata(Module.ACTIONS_MODULE, Action.FETCH_ACTIONS_BATCH_ACTION);
+        if (!batchMetadata) {
+            throw new Error(`Action ${Action.FETCH_ACTIONS_BATCH_ACTION} for module ${Module.ACTIONS_MODULE} is not active`);
+        }
+        const response = await this.doHttpRequest(batchMetadata.method, batchMetadata.path,
+            new Map<string, unknown>([[actionsBatchRequestsParam, requests]]));
+        return new Map(Object.entries((response.data?.results ?? {}) as Record<string, BatchResult>));
     }
 
     public async fetchHttpResponse(

@@ -41,7 +41,10 @@ export default class NotificationBox extends Vue {
   showAll = false;
   // The filters work on the loaded notifications; like on the requests dashboard, each one is offered
   // only when there is something to choose from. '' = no filter.
-  selectedRequest = '';
+  // The options of a filter are narrowed by the view (Unread / All) and by the other filters.
+  // Text typed by the user: a request ID, or a part of an ID or title
+  requestSearch = '';
+  readonly requestListId = `notification-requests-${Math.random().toString(36).slice(2)}`;
   selectedState: '' | ProjectState = '';
   // NO_USER = events without a user (e.g. scheduled jobs), otherwise the email
   selectedUser = '';
@@ -89,12 +92,46 @@ export default class NotificationBox extends Vue {
   }
 
   // The requests that appear in the notifications, for the request filter (several only on the dashboard)
-  get requests(): string[] {
-    const requests = new Set<string>();
+  get requests(): { code: string, title: string }[] {
+    const requests = new Map<string, string>();
     this.sortedNotifications.forEach(notification => {
-      if (notification.projectCode) requests.add(notification.projectCode);
+      if (notification.projectCode) requests.set(notification.projectCode, notification.projectLabel ?? '');
     });
-    return [...requests].sort((a, b) => a.localeCompare(b));
+    return [...requests.entries()]
+        .map(([code, title]) => ({code, title}))
+        .sort((a, b) => a.code.localeCompare(b.code));
+  }
+
+  // The notifications a filter chooses from: those of the view that match the other filters
+  optionNotifications(filter: 'request' | 'state' | 'user' | 'site'): Notification[] {
+    return this.sortedNotifications.filter(notification =>
+        (this.showAll || !notification.read) &&
+        (filter === 'request' || this.matchesRequest(notification)) &&
+        (filter === 'state' || this.matchesState(notification)) &&
+        (filter === 'user' || this.matchesUser(notification)) &&
+        (filter === 'site' || this.matchesSite(notification)));
+  }
+
+  // The suggestions of the request search. In the Unread view these are the requests with unread notifications.
+  get requestOptions(): { code: string, title: string }[] {
+    const codes = new Set(this.optionNotifications('request').map(notification => notification.projectCode));
+    return this.requests.filter(request => codes.has(request.code));
+  }
+
+  // A selected option stays in its list, even if the other filters leave it without notifications
+  get projectStateOptions(): ProjectState[] {
+    const states = new Set(this.optionNotifications('state').map(notification => notification.projectState));
+    return this.projectStates.filter(state => states.has(state) || state === this.selectedState);
+  }
+
+  get userOptions(): { email: string, label: string }[] {
+    const emails = new Set(this.optionNotifications('user').map(notification => notification.email));
+    return this.users.filter(user => emails.has(user.email) || user.email === this.selectedUser);
+  }
+
+  get siteOptions(): { id: string, label: string }[] {
+    const ids = new Set(this.optionNotifications('site').map(notification => notification.bridgehead));
+    return this.sites.filter(site => ids.has(site.id) || site.id === this.selectedSite);
   }
 
   // The phases of those requests, in the order of the process
@@ -129,7 +166,21 @@ export default class NotificationBox extends Vue {
   }
 
   get isFiltered(): boolean {
-    return this.selectedRequest !== '' || this.selectedState !== '' || this.selectedUser !== '' || this.selectedSite !== '';
+    return this.requestSearch.trim() !== '' || this.selectedState !== '' || this.selectedUser !== '' || this.selectedSite !== '';
+  }
+
+  // A complete request ID (e.g. a chosen suggestion) selects that request only; any other text is looked for
+  // in the IDs and titles.
+  matchesRequest(notification: Notification): boolean {
+    const search = this.requestSearch.trim().toLowerCase();
+    if (search === '') return true;
+    const code = (notification.projectCode ?? '').toLowerCase();
+    if (this.requests.some(request => request.code.toLowerCase() === search)) return code === search;
+    return code.includes(search) || (notification.projectLabel ?? '').toLowerCase().includes(search);
+  }
+
+  matchesState(notification: Notification): boolean {
+    return this.selectedState === '' || notification.projectState === this.selectedState;
   }
 
   matchesUser(notification: Notification): boolean {
@@ -147,8 +198,8 @@ export default class NotificationBox extends Vue {
   // The notifications that match the request, phase, user and site filters
   get matchingNotifications(): Notification[] {
     return this.sortedNotifications.filter(notification =>
-        (this.selectedRequest === '' || notification.projectCode === this.selectedRequest) &&
-        (this.selectedState === '' || notification.projectState === this.selectedState) &&
+        this.matchesRequest(notification) &&
+        this.matchesState(notification) &&
         this.matchesUser(notification) &&
         this.matchesSite(notification));
   }
@@ -168,9 +219,8 @@ export default class NotificationBox extends Vue {
     return this.showAll ? 'There are no notifications yet.' : 'No unread notifications.';
   }
 
-  // After a reload a selected request, phase, user or site may no longer appear (e.g. the request changed phase)
+  // After a reload a selected phase, user or site may no longer appear (e.g. the request changed phase)
   resetUnavailableFilters() {
-    if (this.selectedRequest !== '' && !this.requests.includes(this.selectedRequest)) this.selectedRequest = '';
     if (this.selectedState !== '' && !this.projectStates.includes(this.selectedState)) this.selectedState = '';
     if (this.selectedUser === this.NO_USER ? !this.hasNotificationsWithoutUser
         : this.selectedUser !== '' && !this.users.some(user => user.email === this.selectedUser)) {
@@ -306,25 +356,28 @@ export default class NotificationBox extends Vue {
       </div>
     </div>
     <div v-if="hasFilters" class="filter-box">
-      <select v-if="requests.length > 1" v-model="selectedRequest" class="form-select" aria-label="Request"
-              @change="changeFilter">
-        <option value="">All requests</option>
-        <option v-for="request in requests" :key="request" :value="request">{{ request }}</option>
-      </select>
+      <template v-if="requests.length > 1">
+        <input v-model="requestSearch" type="search" class="form-control request-search" :list="requestListId"
+               placeholder="Request ID or title" aria-label="Request ID or title" autocomplete="off"
+               @input="changeFilter">
+        <datalist :id="requestListId">
+          <option v-for="request in requestOptions" :key="request.code" :value="request.code">{{ request.title }}</option>
+        </datalist>
+      </template>
       <select v-if="projectStates.length > 1" v-model="selectedState" class="form-select" aria-label="Phase"
               @change="changeFilter">
         <option value="">All phases</option>
-        <option v-for="state in projectStates" :key="state" :value="state">{{ stateLabel(state) }}</option>
+        <option v-for="state in projectStateOptions" :key="state" :value="state">{{ stateLabel(state) }}</option>
       </select>
       <select v-if="showUserFilter" v-model="selectedUser" class="form-select" aria-label="User" @change="changeFilter">
         <option value="">All users</option>
-        <option v-for="user in users" :key="user.email" :value="user.email">{{ user.label }}</option>
+        <option v-for="user in userOptions" :key="user.email" :value="user.email">{{ user.label }}</option>
         <option v-if="hasNotificationsWithoutUser" :value="NO_USER">No user (system)</option>
       </select>
       <select v-if="sites.length > 0" v-model="selectedSite" class="form-select" aria-label="Site"
               @change="changeFilter">
         <option value="">All sites</option>
-        <option v-for="site in sites" :key="site.id" :value="site.id">{{ site.label }}</option>
+        <option v-for="site in siteOptions" :key="site.id" :value="site.id">{{ site.label }}</option>
         <option :value="NO_SITE">No site (whole request)</option>
       </select>
     </div>
@@ -349,6 +402,7 @@ export default class NotificationBox extends Vue {
           <td v-if="showProject">
             <router-link :to="{ name: 'ProjectView', query: { 'project-code': notification.projectCode } }"
                          class="label-link">{{ notification.projectCode }}</router-link>
+            <div v-if="notification.projectLabel" class="event-details">{{ notification.projectLabel }}</div>
           </td>
           <td>
             <div class="event-label">{{ operationLabel(notification.operationType) }}</div>
@@ -485,6 +539,11 @@ export default class NotificationBox extends Vue {
   /* A long "name (email)" must not push the other filters out of the row */
   max-width: 100%;
   cursor: pointer;
+}
+
+.filter-box .request-search {
+  width: 260px;
+  max-width: 100%;
 }
 
 .table-box {

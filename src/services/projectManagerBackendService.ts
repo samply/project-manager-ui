@@ -308,6 +308,8 @@ export interface Notification {
     userName?: string;
     timestamp?: string;
     projectCode?: string;
+    // Title of the request
+    projectLabel?: string;
     // Current phase of the request, not the phase at the time of the notification
     projectState?: ProjectState;
     bridgehead?: string;

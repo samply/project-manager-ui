@@ -5,7 +5,9 @@ import {
   Module,
   Notification,
   ProjectManagerBackendService,
-  ProjectManagerContext
+  ProjectManagerContext,
+  ProjectState,
+  projectStateLabel
 } from "@/services/projectManagerBackendService";
 import {Options, Vue} from "vue-class-component";
 import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
@@ -37,7 +39,14 @@ export default class NotificationBox extends Vue {
   readonly showProject!: boolean;
 
   showAll = false;
-  // '' = all sites, NO_SITE = request-wide events, otherwise the bridgehead id
+  // The filters work on the loaded notifications; like on the requests dashboard, each one is offered
+  // only when there is something to choose from. '' = no filter.
+  selectedRequest = '';
+  selectedState: '' | ProjectState = '';
+  // NO_USER = events without a user (e.g. scheduled jobs), otherwise the email
+  selectedUser = '';
+  readonly NO_USER = '__no_user__';
+  // NO_SITE = request-wide events, otherwise the bridgehead id
   selectedSite = '';
   readonly NO_SITE = '__no_site__';
   currentPage = 1;
@@ -48,6 +57,7 @@ export default class NotificationBox extends Vue {
 
   mounted() {
     watch(() => this.notifications, () => {
+      this.resetUnavailableFilters();
       this.currentPage = Math.min(this.currentPage, this.totalPages);
     });
     this.fetchTimestampDisplayFormat();
@@ -78,18 +88,101 @@ export default class NotificationBox extends Vue {
         .sort((a, b) => a.label.localeCompare(b.label));
   }
 
-  get siteNotifications(): Notification[] {
-    if (this.selectedSite === '') return this.sortedNotifications;
-    if (this.selectedSite === this.NO_SITE) return this.sortedNotifications.filter(notification => !this.hasSite(notification));
-    return this.sortedNotifications.filter(notification => notification.bridgehead === this.selectedSite);
+  // The requests that appear in the notifications, for the request filter (several only on the dashboard)
+  get requests(): string[] {
+    const requests = new Set<string>();
+    this.sortedNotifications.forEach(notification => {
+      if (notification.projectCode) requests.add(notification.projectCode);
+    });
+    return [...requests].sort((a, b) => a.localeCompare(b));
+  }
+
+  // The phases of those requests, in the order of the process
+  get projectStates(): ProjectState[] {
+    const states = new Set(this.sortedNotifications.map(notification => notification.projectState));
+    return Object.values(ProjectState).filter(state => states.has(state));
+  }
+
+  // The users that appear in the notifications, for the user filter
+  get users(): { email: string, label: string }[] {
+    const users = new Map<string, string>();
+    this.sortedNotifications.forEach(notification => {
+      if (notification.email && !users.get(notification.email)) {
+        users.set(notification.email, notification.userName ?? '');
+      }
+    });
+    return [...users.entries()]
+        .map(([email, name]) => ({email, label: name ? `${name} (${email})` : email}))
+        .sort((a, b) => a.label.localeCompare(b.label));
+  }
+
+  get hasNotificationsWithoutUser(): boolean {
+    return this.sortedNotifications.some(notification => !notification.email);
+  }
+
+  get showUserFilter(): boolean {
+    return this.users.length + (this.hasNotificationsWithoutUser ? 1 : 0) > 1;
+  }
+
+  get hasFilters(): boolean {
+    return this.requests.length > 1 || this.projectStates.length > 1 || this.showUserFilter || this.sites.length > 0;
+  }
+
+  get isFiltered(): boolean {
+    return this.selectedRequest !== '' || this.selectedState !== '' || this.selectedUser !== '' || this.selectedSite !== '';
+  }
+
+  matchesUser(notification: Notification): boolean {
+    if (this.selectedUser === '') return true;
+    if (this.selectedUser === this.NO_USER) return !notification.email;
+    return notification.email === this.selectedUser;
+  }
+
+  matchesSite(notification: Notification): boolean {
+    if (this.selectedSite === '') return true;
+    if (this.selectedSite === this.NO_SITE) return !this.hasSite(notification);
+    return notification.bridgehead === this.selectedSite;
+  }
+
+  // The notifications that match the request, phase, user and site filters
+  get matchingNotifications(): Notification[] {
+    return this.sortedNotifications.filter(notification =>
+        (this.selectedRequest === '' || notification.projectCode === this.selectedRequest) &&
+        (this.selectedState === '' || notification.projectState === this.selectedState) &&
+        this.matchesUser(notification) &&
+        this.matchesSite(notification));
   }
 
   get unreadCount(): number {
-    return this.siteNotifications.filter(notification => !notification.read).length;
+    return this.matchingNotifications.filter(notification => !notification.read).length;
   }
 
   get filteredNotifications(): Notification[] {
-    return this.showAll ? this.siteNotifications : this.siteNotifications.filter(notification => !notification.read);
+    return this.showAll ? this.matchingNotifications : this.matchingNotifications.filter(notification => !notification.read);
+  }
+
+  get emptyMessage(): string {
+    if (this.isFiltered) {
+      return this.showAll ? 'No notifications match the filters.' : 'No unread notifications match the filters.';
+    }
+    return this.showAll ? 'There are no notifications yet.' : 'No unread notifications.';
+  }
+
+  // After a reload a selected request, phase, user or site may no longer appear (e.g. the request changed phase)
+  resetUnavailableFilters() {
+    if (this.selectedRequest !== '' && !this.requests.includes(this.selectedRequest)) this.selectedRequest = '';
+    if (this.selectedState !== '' && !this.projectStates.includes(this.selectedState)) this.selectedState = '';
+    if (this.selectedUser === this.NO_USER ? !this.hasNotificationsWithoutUser
+        : this.selectedUser !== '' && !this.users.some(user => user.email === this.selectedUser)) {
+      this.selectedUser = '';
+    }
+    if (this.selectedSite !== '' && this.selectedSite !== this.NO_SITE && !this.sites.some(site => site.id === this.selectedSite)) {
+      this.selectedSite = '';
+    }
+  }
+
+  stateLabel(state: ProjectState): string {
+    return projectStateLabel(state);
   }
 
   get totalPages(): number {
@@ -106,7 +199,7 @@ export default class NotificationBox extends Vue {
     this.currentPage = 1;
   }
 
-  changeSite() {
+  changeFilter() {
     this.currentPage = 1;
   }
 
@@ -207,13 +300,29 @@ export default class NotificationBox extends Vue {
             Unread <span class="count">{{ unreadCount }}</span>
           </button>
           <button type="button" :class="{ active: showAll }" :aria-pressed="showAll" @click="setShowAll(true)">
-            All <span class="count">{{ siteNotifications.length }}</span>
+            All <span class="count">{{ matchingNotifications.length }}</span>
           </button>
         </div>
       </div>
     </div>
-    <div v-if="sites.length > 0" class="filter-box">
-      <select v-model="selectedSite" class="form-select" aria-label="Site" @change="changeSite">
+    <div v-if="hasFilters" class="filter-box">
+      <select v-if="requests.length > 1" v-model="selectedRequest" class="form-select" aria-label="Request"
+              @change="changeFilter">
+        <option value="">All requests</option>
+        <option v-for="request in requests" :key="request" :value="request">{{ request }}</option>
+      </select>
+      <select v-if="projectStates.length > 1" v-model="selectedState" class="form-select" aria-label="Phase"
+              @change="changeFilter">
+        <option value="">All phases</option>
+        <option v-for="state in projectStates" :key="state" :value="state">{{ stateLabel(state) }}</option>
+      </select>
+      <select v-if="showUserFilter" v-model="selectedUser" class="form-select" aria-label="User" @change="changeFilter">
+        <option value="">All users</option>
+        <option v-for="user in users" :key="user.email" :value="user.email">{{ user.label }}</option>
+        <option v-if="hasNotificationsWithoutUser" :value="NO_USER">No user (system)</option>
+      </select>
+      <select v-if="sites.length > 0" v-model="selectedSite" class="form-select" aria-label="Site"
+              @change="changeFilter">
         <option value="">All sites</option>
         <option v-for="site in sites" :key="site.id" :value="site.id">{{ site.label }}</option>
         <option :value="NO_SITE">No site (whole request)</option>
@@ -261,7 +370,7 @@ export default class NotificationBox extends Vue {
         </tr>
         <tr v-if="pagedNotifications.length === 0" class="empty-row">
           <td :colspan="showProject ? 6 : 5">
-            {{ showAll ? 'There are no notifications yet.' : 'No unread notifications.' }}
+            {{ emptyMessage }}
           </td>
         </tr>
         </tbody>
@@ -365,12 +474,16 @@ export default class NotificationBox extends Vue {
   background-color: #e9eef8;
   padding: 14px 22px;
   display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
   border-bottom: 1px solid #d7e2ed;
 }
 
 .filter-box .form-select {
   width: auto;
   min-width: 200px;
+  /* A long "name (email)" must not push the other filters out of the row */
+  max-width: 100%;
   cursor: pointer;
 }
 

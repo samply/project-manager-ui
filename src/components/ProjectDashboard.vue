@@ -426,9 +426,9 @@ export default defineComponent({
   /* Keep the Requests card on the same fixed, centered column as the
    * project-view cards. Bootstrap's responsive .container would otherwise
    * make this area narrower on wide screens. */
-  flex: 0 0 65%;
-  width: 65%;
-  max-width: 65%;
+  flex: 0 0 var(--content-width);
+  width: var(--content-width);
+  max-width: var(--content-width);
   margin: var(--page-top) auto 0;
   border-radius: 10px !important;
   box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
@@ -475,7 +475,7 @@ export default defineComponent({
   background-color: rgba(0,72,156,.95);
   display: flex;
   /* Tabs start at the content column's left edge, as in the project view. */
-  padding-left: calc((100% - 65%) / 2);
+  padding-left: calc((100% - var(--content-width)) / 2);
 }
 /* Same tabs as the project view */
 .menu-item {
@@ -502,9 +502,9 @@ export default defineComponent({
 }
 /* Same fixed, centered column as the Requests card and the project view. */
 .notifications-tab {
-  flex: 0 0 65%;
-  width: 65%;
-  max-width: 65%;
+  flex: 0 0 var(--content-width);
+  width: var(--content-width);
+  max-width: var(--content-width);
   margin: var(--page-top) auto 0;
   padding: 0;
 }

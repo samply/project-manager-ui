@@ -57,15 +57,19 @@ export default defineComponent({
      --form-inset:        left/right edge of everything in the form card:
                           card and step headers, fields, sections, blocks
      Each half of a gap belongs to one side, so two neighbours add up to one
-     gap without collapsing or doubling. Values agreed on 2026-09-25, see
+     gap without collapsing or doubling. Values agreed on 2026-09-25; the
+     summary gap was raised to the draft's on 2026-09-30, see
      plans/2026-09-25-plan-audit-vertical-spacing.md. */
   --field-gap: 2rem;
-  --field-gap-summary: calc(var(--field-gap) * 0.5);
+  --field-gap-summary: var(--field-gap);
   --header-gap: var(--space-2);
   --option-gap: 0.35rem;
   --form-inset: 2rem;
   --page-top: 28px;
+  /* Width of the centred content column (dashboard and request view) */
+  --content-width: 65%;
 }
+
 
 /* Runs of optional Yes/No checkboxes (see ProjectView optionalBooleanRunClasses)
    read as one checklist: the checkboxes of one run sit an option gap apart and

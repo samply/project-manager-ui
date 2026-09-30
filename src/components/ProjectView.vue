@@ -3871,7 +3871,7 @@ export default defineComponent({
   background-color: rgba(0, 72, 156, .95);
   display: flex;
   /* Tabs start at the content column's left edge, as on the dashboard. */
-  padding-left: calc((100% - 65%) / 2);
+  padding-left: calc((100% - var(--content-width)) / 2);
 }
 
 .menu-item {
@@ -3945,12 +3945,12 @@ export default defineComponent({
 }
 
 .right-container {
-  flex: 0 0 65%;
+  flex: 0 0 var(--content-width);
   display: flex;
   flex-flow: row;
   margin: 28px auto 0;
-  width: 65%;
-  max-width: 65%;
+  width: var(--content-width);
+  max-width: var(--content-width);
   /*align-self: flex-start;*/
 }
 
@@ -4363,12 +4363,13 @@ export default defineComponent({
 }
 /* Category header: one and a half gaps above, half a gap to its first field,
  * so a new step stands apart more than a new field does. */
+/* A step's title in the summary and the request view: a left-aligned heading
+ * on a tinted band across the card, instead of a centred title between two
+ * lines. Half a gap above and below; the neighbouring fields add their half. */
 .project-field-header-inline {
-  padding: var(--field-gap) var(--form-inset) 0;
-  display: grid;
-  grid-template-columns: minmax(25px, 1fr) auto minmax(25px, 1fr);
-  align-items: center;
-  grid-gap: 1rem;
+  margin: calc(var(--field-gap) / 2) 0;
+  padding: var(--space-3) var(--form-inset);
+  background: #f1f5fb;
 }
 .project-field-title {
   font-size: 19px;
@@ -4379,21 +4380,6 @@ export default defineComponent({
   font-size: 18px;
   font-weight: 600;
   color: #00489cf2;
-}
-.project-field-header-inline:before, .project-field-header-inline:after {
-  content: "";
-  height: 1px;
-  flex-grow: 1;
-  margin: 0 12px;
-  background: #333;
-}
-
-.project-field-header-inline:before {
-  background: linear-gradient(to right, transparent, #818078);
-}
-
-.project-field-header-inline:after {
-  background: linear-gradient(to right, #818078, transparent);
 }
 .project-field-notification {
   font-size: 13px;

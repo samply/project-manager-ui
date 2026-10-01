@@ -23,8 +23,9 @@ WORKDIR /usr/share/nginx/html
 # Copy the built Vue application from the previous stage
 COPY --from=build /app/dist .
 
-# Copy custom Nginx configuration if needed
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# Nginx configuration and Content-Security-Policy, filled in by start.sh
+COPY docker/nginx.conf                          /samply/nginx.conf.template
+COPY docker/content-security-policy.template    /samply/
 
 # Expose port 80 for the Nginx server
 EXPOSE 80

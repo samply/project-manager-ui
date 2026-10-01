@@ -8,12 +8,32 @@
     <base href="/">
     <link rel="icon" href="<%= BASE_URL %>favicon.png">
     <title><%= htmlWebpackPlugin.options.title %></title>
+    <!-- Standalone single-spa bootstrap. Everything is served by this frontend
+         (vendor/ is copied from node_modules, see vue.config.js), so the page
+         works in networks without internet access. Paths stay relative for
+         sub-path deployments. -->
+    <script type="systemjs-importmap">
+      {
+        "imports": {
+          "single-spa": "./vendor/single-spa.min.js",
+          "project-manager-ui": "./<%= htmlWebpackPlugin.files.js[0].replace(/^\.?\//, '') %>"
+        }
+      }
+    </script>
+    <meta name="importmap-type" content="systemjs-importmap">
+    <script src="clear-import-map-overrides.js"></script>
+    <script src="vendor/import-map-overrides.js"></script>
+    <!-- Hidden unless a developer runs localStorage.setItem('devtools', true). -->
+    <import-map-overrides-full show-when-local-storage="devtools"></import-map-overrides-full>
+    <script src="vendor/runtime.js"></script>
+    <script src="vendor/system.min.js"></script>
+    <script src="vendor/amd.min.js"></script>
+    <script src="bootstrap.js"></script>
   </head>
   <body>
     <noscript>
       <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
     <div id="app"></div>
-    <!-- built files will be auto injected -->
   </body>
 </html>

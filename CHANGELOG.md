@@ -5,7 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## [1.1.0 - 2026-09-30]
+## [1.1.0 - 2026-10-01]
 ### Added
 - Dockerfile
 - Single Spa
@@ -150,6 +150,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Creator edits the query of a draft without explorer
 - Success message after a redirect (action feedback marker)
 - Projects without sites: isModuleActionActive also checks that an action needing a site has one (isModuleActionAllowed: permission only); the last site can be removed
+- Embed external URL's
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

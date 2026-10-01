@@ -61,6 +61,15 @@ module.exports = {
             config.plugins.delete("SystemJSPublicPathWebpackPlugin");
         }
 
+        // Hide the import-map-overrides "{...}" panel unless a developer
+        // enables it with localStorage.setItem('devtools', true), matching the
+        // root config's convention for the integrated (microfrontend) mode.
+        if (config.plugins.has("StandaloneSingleSpaPlugin")) {
+            config.plugin("StandaloneSingleSpaPlugin").tap(([options]) => [
+                { ...options, importMapOverridesLocalStorageKey: 'devtools' },
+            ]);
+        }
+
         // silentRenew belongs only to silent-renew.html.
         // title: shown in the browser tab until the app boots and replaces it
         // with the backend-configured PAGE_TITLE (see router/index.ts) - falls

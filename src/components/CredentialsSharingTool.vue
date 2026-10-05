@@ -6,6 +6,7 @@ import {
   Module,
   ProjectManagerBackendService,
   ProjectManagerContext,
+  PmRequestParameter,
   ProjectRole
 } from "@/services/projectManagerBackendService";
 import {EmailRole} from "@/services/emailRole";
@@ -113,7 +114,7 @@ export default class CredentialsSharingTool extends Vue {
         this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_EMAIL_MESSAGE_AND_SUBJECT_ACTION, this.context).then(condition => {
           if (condition) {
             this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.FETCH_EMAIL_MESSAGE_AND_SUBJECT_ACTION, this.context,
-                new Map([['email', emailRole.email], ['project-role', emailRole.projectRole], ['email-template-type', this.fetchEmailTemplateType()]])).then(messageSubject => {
+                new Map([[PmRequestParameter.EMAIL, emailRole.email], [PmRequestParameter.PROJECT_ROLE, emailRole.projectRole], [PmRequestParameter.EMAIL_TEMPLATE_TYPE, this.fetchEmailTemplateType()]])).then(messageSubject => {
               if (messageSubject) {
                 messageSubject.emailTo = emailRole.email;
                 this.addMessageSubject(messageSubject);

@@ -1,3 +1,5 @@
+import {Bridgehead, Project, ProjectBridgeheadState, UserProjectState} from "@/services/projectManagerBackendService";
+
 // Shared classification for the "lifecycle pipeline" visual pattern used by
 // both ProjectView.vue's single-bridgehead Status card and
 // BridgeheadOverview.vue's per-site timelines: a sequence of steps, each
@@ -59,6 +61,17 @@ export const CREATOR_STATUS_DESCRIPTIONS: Record<string, string> = {
 
 export function describeCreatorStatus(state: string): string {
   return CREATOR_STATUS_DESCRIPTIONS[state] ?? state;
+}
+
+// The applicant's acceptance of a bridgehead's results ("Data received and accepted"): the project's decision once it
+// is accepted or rejected (with a final user, the applicant accepts the final user's results), otherwise the
+// applicant's decision on this bridgehead's results, once the bridgehead has authorized access. The same for the
+// bridgehead overview and the single-bridgehead status.
+export function creatorStatusOfBridgehead(project?: Project, bridgehead?: Bridgehead): UserProjectState | undefined {
+  if (project?.creatorState === UserProjectState.ACCEPTED || project?.creatorState === UserProjectState.REJECTED) {
+    return project.creatorState;
+  }
+  return bridgehead?.state === ProjectBridgeheadState.ACCEPTED ? bridgehead.creatorState : undefined;
 }
 
 // "Next" is the first still-grey (untouched) step found after the last step

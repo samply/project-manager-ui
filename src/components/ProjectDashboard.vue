@@ -62,7 +62,7 @@
           </thead>
           <tbody>
           <tr v-for="(project, index) in projects" :key="index">
-            <td><router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }" class="label-link" :class="{ 'label-placeholder': project?.label?.length === 0 }">{{
+            <td><router-link :to="{ name: 'ProjectView', query: { [ProjectViewQueryParameter.PROJECT_CODE]: project.code } }" class="label-link" :class="{ 'label-placeholder': project?.label?.length === 0 }">{{
                 (project?.label?.length ?? 0) > 0 ? project.label : "New Request"
               }}</router-link></td>
             <td>{{ project.code }}</td>
@@ -121,6 +121,7 @@ import {
   Site,
   User
 } from "@/services/projectManagerBackendService";
+import {ProjectViewQueryParameter} from "@/services/frontendRoutes";
 import NotificationBox from "@/components/Notification.vue";
 import PhasePill from "@/components/PhasePill.vue";
 import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
@@ -150,6 +151,7 @@ export default defineComponent({
   data() {
     return {
       ProjectSortField,
+      ProjectViewQueryParameter,
       site: Site.PROJECT_DASHBOARD_SITE,
       context: new ProjectManagerContext(undefined, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.PROJECT_DASHBOARD_SITE),
@@ -239,7 +241,7 @@ export default defineComponent({
             Module.PROJECTS_MODULE, Action.CREATE_QUERY_AND_DESIGN_PROJECT_ACTION, this.context, params, true);
         const projectViewUrl = Object.values(response ?? {})[0] ?? '';
         const query = Object.fromEntries(new URL(projectViewUrl, window.location.href).searchParams);
-        if (!query['project-code']) {
+        if (!query[ProjectViewQueryParameter.PROJECT_CODE]) {
           throw new Error(`No project code in ${projectViewUrl}`);
         }
         // Like the explorer, follow the returned URL: its action-feedback marker makes the project view show the

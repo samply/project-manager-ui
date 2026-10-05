@@ -6,9 +6,11 @@ import {
   Notification,
   ProjectManagerBackendService,
   ProjectManagerContext,
+  PmRequestParameter,
   ProjectState,
   projectStateLabel
 } from "@/services/projectManagerBackendService";
+import {ProjectViewQueryParameter} from "@/services/frontendRoutes";
 import {Options, Vue} from "vue-class-component";
 import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
 import {getConfig} from "@/services/configLoader";
@@ -32,6 +34,7 @@ import UserAndEmail from "@/components/UserAndEmail.vue";
 })
 export default class NotificationBox extends Vue {
   readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly ProjectViewQueryParameter = ProjectViewQueryParameter;
   readonly notifications!: Notification[];
   readonly context!: ProjectManagerContext;
   readonly callUpdateNotifications!: () => Promise<unknown>;
@@ -279,7 +282,7 @@ export default class NotificationBox extends Vue {
 
   sendAsRead(notificationId: number) {
     const params = new Map<string, string>();
-    params.set('notification-id', '' + notificationId);
+    params.set(PmRequestParameter.NOTIFICATION_ID, '' + notificationId);
     return this.projectManagerBackendService.fetchData(Module.NOTIFICATIONS_MODULE, Action.SET_NOTIFICATION_AS_READ_ACTION, this.context, params);
   }
 
@@ -400,7 +403,7 @@ export default class NotificationBox extends Vue {
             {{ notification.timestamp ? convertDate(notification.timestamp) : '' }}
           </td>
           <td v-if="showProject">
-            <router-link :to="{ name: 'ProjectView', query: { 'project-code': notification.projectCode } }"
+            <router-link :to="{ name: 'ProjectView', query: { [ProjectViewQueryParameter.PROJECT_CODE]: notification.projectCode } }"
                          class="label-link">{{ notification.projectCode }}</router-link>
             <div v-if="notification.projectLabel" class="event-details">{{ notification.projectLabel }}</div>
           </td>

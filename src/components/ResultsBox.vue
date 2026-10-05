@@ -1,7 +1,7 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
 import '@/assets/styles/table.css'
-import {PmRequestParameter, Project, UserProjectState} from "@/services/projectManagerBackendService";
+import {PmRequestParameter, Project, ProjectBridgeheadState, UserProjectState} from "@/services/projectManagerBackendService";
 import {
   Action,
   ActionButton,
@@ -28,7 +28,10 @@ import {getConfig} from "@/services/configLoader";
   components: {ProjectManagerButton, UserAndEmail, CredentialsSharingTool, StatusDot},
   props: {
     callRefreshContext: {type: Function as unknown as () => () => void, required: true},
+    // The project as a whole (no bridgehead); the bridgeheads' results are asked with each bridgehead
+    // (docs/bridgehead-context.md)
     context: {type: Object as PropType<ProjectManagerContext>, required: true},
+    bridgeheads: {type: Array as PropType<Bridgehead[]>, required: true},
     projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
     project: {type: Object as PropType<Project>, required: true},
     currentUsers: {type: Array as PropType<User[]>, required: true},
@@ -42,20 +45,30 @@ export default class ResultsBox extends Vue {
   // noinspection JSUnusedGlobalSymbols
   readonly callRefreshContext!: () => void;
   readonly context!: ProjectManagerContext;
+  readonly bridgeheads!: Bridgehead[];
   readonly projectManagerBackendService!: ProjectManagerBackendService;
   readonly project!: Project;
   readonly currentUsers!: User[];
   readonly projectRoles!: ProjectRole[];
 
   readonly RESULTS_ALREADY_SENT = 'Results already sent';
+  readonly UserProjectState = UserProjectState;
+  readonly ProjectBridgeheadState = ProjectBridgeheadState;
 
   resultsUrl = "";
   projectResults: Results | undefined = undefined;
   projectBridgeheadResults: Results[] | undefined = undefined;
   canSendProjectResults = false;
   canSendProjectBridgeheadResults = false;
+  // The bridgeheads whose results URL this user may send (a bridgehead admin, for each bridgehead they administrate),
+  // and the one chosen in the sender
+  sendBridgeheads: Bridgehead[] = [];
+  sendBridgehead: Bridgehead | undefined = undefined;
   canAcceptProjectResults = false;
   canAcceptProjectBridgeheadResults = false;
+  // The bridgeheads whose results this user may accept, by id: accepting acts on one bridgehead, so it is allowed per
+  // bridgehead (docs/bridgehead-context.md)
+  acceptBridgeheads: string[] = [];
   resultsToShow: Results[] = [];
   isPopupVisible = false;
   actionButtons: ActionButton[] = [];
@@ -82,6 +95,11 @@ export default class ResultsBox extends Vue {
         },
         {immediate: true}
     );
+    watch(() => this.bridgeheads, () => {
+      this.resetCanAccept();
+      this.resetCanSend();
+      this.resetResults();
+    });
     // Tells the page which sites wait for this user's decision, so the TODO
     // panel can say so instead of "No action is required".
     watch(() => this.pendingReviewSites,
@@ -153,7 +171,7 @@ export default class ResultsBox extends Vue {
   }
 
   resetEmailRecipients(): void {
-    this.emailRecipients = (this.project?.creatorEmail) ? [new EmailRole(this.project?.creatorEmail, 'CREATOR')] : [];
+    this.emailRecipients = (this.project?.creatorEmail) ? [new EmailRole(this.project?.creatorEmail, ProjectRole.CREATOR)] : [];
     this.currentUsers.forEach(currentUser => {
       this.emailRecipients.push(new EmailRole(currentUser.email, currentUser.projectRole));
     });
@@ -169,9 +187,24 @@ export default class ResultsBox extends Vue {
     this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_RESULTS_URL_ACTION, this.context).then(condition => {
       this.canSendProjectResults = condition;
     });
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION, this.context).then(condition => {
-      this.canSendProjectBridgeheadResults = condition;
+    this.fetchBridgeheadsWhereActive(Action.ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION).then(bridgeheads => {
+      this.sendBridgeheads = bridgeheads;
+      if (!bridgeheads.some(bridgehead => bridgehead.bridgehead === this.sendBridgehead?.bridgehead)) {
+        this.sendBridgehead = bridgeheads[0];
+      }
+      this.canSendProjectBridgeheadResults = bridgeheads.length > 0;
     });
+  }
+
+  // The bridgeheads where the action is allowed, each asked with its own context
+  async fetchBridgeheadsWhereActive(action: Action): Promise<Bridgehead[]> {
+    const active = await Promise.all(this.bridgeheads.map(bridgehead => this.projectManagerBackendService
+        .isModuleActionActive(Module.PROJECT_RESULTS_MODULE, action, this.createContext(bridgehead))));
+    return this.bridgeheads.filter((_bridgehead, index) => active[index]);
+  }
+
+  createContext(bridgehead: Bridgehead): ProjectManagerContext {
+    return new ProjectManagerContext(this.context.projectCode, bridgehead);
   }
 
   areThereFinalUsers(): boolean {
@@ -187,8 +220,9 @@ export default class ResultsBox extends Vue {
         this.updateActionButtons();
       });
     }
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.ACCEPT_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION, this.context).then(condition => {
-      this.canAcceptProjectBridgeheadResults = condition;
+    this.fetchBridgeheadsWhereActive(Action.ACCEPT_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION).then(bridgeheads => {
+      this.acceptBridgeheads = bridgeheads.map(bridgehead => bridgehead.bridgehead);
+      this.canAcceptProjectBridgeheadResults = bridgeheads.length > 0;
       this.updateActionButtons();
     });
   }
@@ -218,15 +252,14 @@ export default class ResultsBox extends Vue {
         });
       }
     });
-    this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_BRIDGEHEAD_RESULTS_FOR_OWN_BRIDGEHEAD_ACTION, this.context).then(condition => {
-      if (condition) {
-        this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_BRIDGEHEAD_RESULTS_FOR_OWN_BRIDGEHEAD_ACTION, this.context, new Map()).then(results => {
-          if (results) {
-            this.projectBridgeheadResults = [results];
-            this.updateResultsToShow();
-          }
-        });
-      }
+    // A bridgehead admin: the results of each bridgehead they administrate
+    this.fetchBridgeheadsWhereActive(Action.FETCH_PROJECT_BRIDGEHEAD_RESULTS_FOR_OWN_BRIDGEHEAD_ACTION).then(async bridgeheads => {
+      if (bridgeheads.length === 0) return;
+      const results = await Promise.all(bridgeheads.map(bridgehead => this.projectManagerBackendService.fetchData(
+          Module.PROJECT_RESULTS_MODULE, Action.FETCH_PROJECT_BRIDGEHEAD_RESULTS_FOR_OWN_BRIDGEHEAD_ACTION,
+          this.createContext(bridgehead), new Map()) as Promise<Results | undefined>));
+      this.projectBridgeheadResults = results.filter((result): result is Results => !!result);
+      this.updateResultsToShow();
     });
   }
 
@@ -280,8 +313,8 @@ export default class ResultsBox extends Vue {
   }
 
   sendProjectBridgeheadResults(resultsUrl: string) {
-    if (resultsUrl && this.canSendProjectBridgeheadResults) {
-      this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION, this.context, new Map([[PmRequestParameter.RESULTS_URL, resultsUrl]])).then(() => {
+    if (resultsUrl && this.canSendProjectBridgeheadResults && this.sendBridgehead) {
+      this.projectManagerBackendService.fetchData(Module.PROJECT_RESULTS_MODULE, Action.ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION, this.createContext(this.sendBridgehead), new Map([[PmRequestParameter.RESULTS_URL, resultsUrl]])).then(() => {
         this.resetResults();
       });
     }
@@ -293,6 +326,10 @@ export default class ResultsBox extends Vue {
 
   isButtonVisible(actionButton: ActionButton, results: Results): boolean {
     if (!this.isUrl(results?.url) && results?.url != this.RESULTS_ALREADY_SENT) {
+      return false;
+    }
+    // A bridgehead's results: only where that bridgehead allows this user to accept them
+    if (!this.showsProjectResults && !this.acceptBridgeheads.includes(results.bridgehead)) {
       return false;
     }
     if (results.creatorState === UserProjectState.ACCEPTED && actionButton.action.includes('ACCEPT')) {
@@ -316,15 +353,25 @@ export default class ResultsBox extends Vue {
   }
 
   fetchCreatorState(results: Results) {
-    return (this.fetchUserAccess(results) === 'ACCEPTED') ? results.creatorState : UserProjectState.CREATED;
+    // The access to the row's results: the bridgehead admin's (ProjectBridgeheadState) or the final user's (UserProjectState)
+    return (this.fetchUserAccess(results) === UserProjectState.ACCEPTED) ? results.creatorState : UserProjectState.CREATED;
   }
 
   isFinalUser(): boolean {
     return this.projectRoles.includes(ProjectRole.FINAL);
   }
 
+  // Of the results this user sends: the project's, or those of the bridgehead chosen in the sender
   areResultsAlreadyMarkedAsSent(): boolean {
-    return this.resultsToShow?.length > 0 && this.resultsToShow[0].url == this.RESULTS_ALREADY_SENT;
+    const results = (!this.canSendProjectResults && this.sendBridgehead)
+        ? this.resultsToShow.find(result => result.bridgehead === this.sendBridgehead?.bridgehead)
+        : this.resultsToShow[0];
+    return results?.url == this.RESULTS_ALREADY_SENT;
+  }
+
+  // The context of the results this user sends (the email template names the bridgehead)
+  get sendContext(): ProjectManagerContext {
+    return (!this.canSendProjectResults && this.sendBridgehead) ? this.createContext(this.sendBridgehead) : this.context;
   }
 
 }
@@ -333,7 +380,7 @@ export default class ResultsBox extends Vue {
 <template>
   <div v-if="canSendProjectResults || canSendProjectBridgeheadResults" class="results-sender">
     <!-- Text field for user input -->
-    <div v-if="projectResults?.finalUserState !== 'ACCEPTED' && projectResults?.bridgeheadAdminState !== 'ACCEPTED'">
+    <div v-if="projectResults?.finalUserState !== UserProjectState.ACCEPTED && projectResults?.bridgeheadAdminState !== ProjectBridgeheadState.ACCEPTED">
       <p>Please review and accept the results in the 'Actions' section. Once accepted, we recommend securing the results
         URL with a password before sharing it with the request applicant, either through this interface or, if
         necessary,
@@ -345,6 +392,12 @@ export default class ResultsBox extends Vue {
         or messaging.</p>
     </div>
     <!-- Button to directly call sendProjectResults -->
+    <div v-if="!canSendProjectResults && sendBridgeheads.length > 1" class="results-send-bridgehead">
+      <label :for="`results-send-bridgehead-${$.uid}`">For:</label>
+      <select :id="`results-send-bridgehead-${$.uid}`" v-model="sendBridgehead" class="form-select form-select-sm">
+        <option v-for="bridgehead in sendBridgeheads" :key="bridgehead.bridgehead" :value="bridgehead">{{ bridgehead.humanReadable ?? bridgehead.bridgehead }}</option>
+      </select>
+    </div>
     <div class="results-url-sender" v-if="canSendProjectResults || canSendProjectBridgeheadResults">
       <input
           type="text"
@@ -421,7 +474,7 @@ export default class ResultsBox extends Vue {
         <CredentialsSharingTool
             :project-manager-backend-service="projectManagerBackendService"
             :recipients-emails="emailRecipients"
-            :context="context"
+            :context="sendContext"
             :project-roles="projectRoles"
         />
       </div>
@@ -440,8 +493,10 @@ export default class ResultsBox extends Vue {
       <table class="pm-table results-table">
         <thead>
         <tr>
-          <th v-if="!showsProjectResults">Site</th>
-          <th v-if="!showsProjectResults">Bridgehead Admin</th>
+          <!-- One person column per row: the final user sees their own results and the bridgeheads' in one table,
+               so always the Site column and one column for whoever sent the row's results. -->
+          <th v-if="!showsProjectResults || isFinalUser()">Site</th>
+          <th v-if="!showsProjectResults && !isFinalUser()">Bridgehead Admin</th>
           <th v-if="showsProjectResults && !isFinalUser()">Final User</th>
           <th v-if="isFinalUser()">Final User / Bridgehead Admin</th>
           <th>URL</th>
@@ -452,7 +507,7 @@ export default class ResultsBox extends Vue {
         </thead>
         <tbody>
         <tr v-for="result in resultsToShow" :key="result.bridgehead">
-          <td v-if="!showsProjectResults" class="nowrap-cell">{{ result.humanReadableBridgehead }}</td>
+          <td v-if="!showsProjectResults || isFinalUser()" class="nowrap-cell">{{ result.humanReadableBridgehead }}</td>
           <td class="nowrap-cell">
             <UserAndEmail
                 :first-name="result.firstName"
@@ -655,6 +710,19 @@ p {
 
 .results-sender {
   margin-bottom: var(--space-5);
+}
+
+/* The bridgehead whose results URL is sent, for an admin of several bridgeheads: like the "For:" field of the
+ * uploads. */
+.results-send-bridgehead {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.results-send-bridgehead .form-select {
+  width: fit-content;
 }
 
 .results-url-sender {

@@ -5,6 +5,7 @@
   "scripts": {
     "test:number-format": "node --test tests/numberFormat.test.cjs",
     "test:actions-batch": "node --test tests/actionsBatch.test.cjs",
+    "test:bridgehead-roles": "node --test tests/bridgeheadRoles.test.cjs",
     "serve": "vue-cli-service serve",
     "serve-https": "vue-cli-service serve --https",
     "build": "vue-cli-service build",

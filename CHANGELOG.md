@@ -152,6 +152,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Projects without sites: isModuleActionActive also checks that an action needing a site has one (isModuleActionAllowed: permission only); the last site can be removed
 - Embed external URL's
 - Draft: a stored value that is not one of its field's allowed values is shown as not valid and blocks creating the request
+- Ethics vote of a bridgehead: one row per bridgehead, each with its own bridgehead (no longer the bridgehead selected in the Status tab)
+- Documents: "For" in the upload (whole project or a bridgehead, by the user's roles); each document is downloaded and removed with its own bridgehead; a project without bridgeheads lists its documents
 
 ### Changed
 - Display feasibility results based only on non-empty backend results
@@ -193,6 +195,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Uniform number format
 - Clean spaces in draft dialog
 - Actions batch
+- No selected bridgehead in the project view: the bridgehead overview is read only; bridgehead actions, results, invitations and the single-bridgehead status use each bridgehead's own permissions, everything else is asked for the whole project (the user's bridgehead sent only for their role where needed)
 
 ### Removed
 - Application Form
@@ -207,6 +210,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Refresh draft-project feasibility statistics after adding or removing bridgeheads without repeating feasibility requests for unchanged bridgeheads
 - Edit query
 - Form fields being omitted when using multi-row field layouts
+- Results table of the final user: one person column, so every column has its cells (Applicant Acceptance was empty)
+- Refreshing the bridgeheads (e.g. after adding a bridgehead or an action) loaded the page twice
+- Status of a project with one bridgehead: "Data received and accepted" shows the applicant's acceptance of that bridgehead's results, as the bridgehead overview does (it only showed the project's acceptance, so without a final user it stayed open for the bridgehead admin)
 
 ### Changed
 - Notification only if the project manager admin

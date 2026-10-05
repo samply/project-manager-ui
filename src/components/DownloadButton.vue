@@ -3,6 +3,7 @@ import {Options, Vue} from "vue-class-component";
 import {
   Action,
   Module,
+  PmRequestParameter,
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
@@ -66,7 +67,7 @@ export default class DownloadButton extends Vue {
 
     // Merge filename
     if (this.filename) {
-      params.set('filename', this.filename);
+      params.set(PmRequestParameter.FILENAME, this.filename);
     }
 
     // Merge additional params if provided

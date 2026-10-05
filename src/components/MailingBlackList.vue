@@ -4,6 +4,7 @@ import {
   Action,
   Module,
   ProjectManagerBackendService,
+  PmRequestParameter,
   ProjectManagerContext,
   User
 } from "@/services/projectManagerBackendService";
@@ -61,7 +62,7 @@ export default class MailingBlackList extends Vue {
     }
 
     this.projectManagerBackendService
-        .fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([['email', this.inputEmail.trim()]]))
+        .fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([[PmRequestParameter.EMAIL, this.inputEmail.trim()]]))
         .then(users => {
           this.suggestions = users;
           this.showSuggestions = users.length > 0;
@@ -76,7 +77,7 @@ export default class MailingBlackList extends Vue {
   addUserToMailingBlackList(email: string) {
     this.inputEmail = "";
     this.projectManagerBackendService
-        .fetchData(Module.USER_MODULE, Action.ADD_USER_TO_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([['email', email]]))
+        .fetchData(Module.USER_MODULE, Action.ADD_USER_TO_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([[PmRequestParameter.EMAIL, email]]))
         .then(() => {
           this.updateMailingBlackList();
           this.initializeSuggestions();
@@ -86,7 +87,7 @@ export default class MailingBlackList extends Vue {
   removeUserFromMailingBlackList(email: string) {
     this.inputEmail = "";
     this.projectManagerBackendService
-        .fetchData(Module.USER_MODULE, Action.REMOVE_USER_FROM_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([['email', email]]))
+        .fetchData(Module.USER_MODULE, Action.REMOVE_USER_FROM_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([[PmRequestParameter.EMAIL, email]]))
         .then(() => {
           this.updateMailingBlackList();
         });

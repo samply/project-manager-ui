@@ -6,6 +6,7 @@ import {
   Action,
   Bridgehead,
   Module,
+  PmRequestParameter,
   ProjectManagerBackendService,
   ProjectManagerContext,
   User
@@ -39,6 +40,8 @@ export default class UserInput extends Vue {
   readonly currentUsers!: User[];
 
   isActive = false;
+  // The bridgeheads where the user may invite (docs/bridgehead-context.md: each bridgehead with its own permissions)
+  inviteBridgeheads: Bridgehead[] = [];
   // Invite dialog
   email = '';
   selectedBridgehead: Bridgehead | undefined = undefined;
@@ -50,26 +53,28 @@ export default class UserInput extends Vue {
   mounted() {
     watch(
         () => this.projectManagerBackendService,
-        () => {
-          this.selectedBridgehead = this.bridgeheads[0];
-          this.updateIsActive();
-        },
+        () => this.updateIsActive(),
         {immediate: true, deep: true}
     );
     // The invite action depends on the phase, and after a phase change the
     // backend service is replaced before the project is fetched again.
     watch(() => this.project?.state, () => this.updateIsActive());
+    watch(() => this.bridgeheads, () => this.updateIsActive());
   }
 
   created() {
-    this.selectedBridgehead = this.bridgeheads[0];
     this.updateIsActive();
   }
 
-  updateIsActive() {
-    this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, this.fetchAction(), this.context).then(isActive => {
-      this.isActive = isActive;
-    });
+  async updateIsActive() {
+    const action = this.fetchAction();
+    const allowed = await Promise.all(this.bridgeheads.map(bridgehead => this.projectManagerBackendService
+        .isModuleActionActive(Module.USER_MODULE, action, this.createContext(bridgehead))));
+    this.inviteBridgeheads = this.bridgeheads.filter((_bridgehead, index) => allowed[index]);
+    this.isActive = this.inviteBridgeheads.length > 0;
+    if (!this.inviteBridgeheads.some(bridgehead => bridgehead.bridgehead === this.selectedBridgehead?.bridgehead)) {
+      this.selectedBridgehead = this.inviteBridgeheads[0];
+    }
   }
 
   fetchAction(): Action {
@@ -99,7 +104,7 @@ export default class UserInput extends Vue {
     this.email = '';
     this.suggestions = [];
     this.dialogError = '';
-    this.selectedBridgehead = this.selectedBridgehead ?? this.bridgeheads[0];
+    this.selectedBridgehead = this.selectedBridgehead ?? this.inviteBridgeheads[0];
     this.recipientsText = describeEmailRecipients(
         await this.projectManagerBackendService.getActionEmailRecipients(Module.USER_MODULE, this.fetchAction()));
     this.dialog.open();
@@ -123,7 +128,7 @@ export default class UserInput extends Vue {
       return;
     }
     const params = new Map<string, string>();
-    params.set('email', email);
+    params.set(PmRequestParameter.EMAIL, email);
     this.isPending = true;
     try {
       await this.projectManagerBackendService.fetchData(Module.USER_MODULE, this.fetchAction(),
@@ -149,7 +154,7 @@ export default class UserInput extends Vue {
       return;
     }
     const params = new Map<string, string>();
-    params.set('partial-email', partialEmail);
+    params.set(PmRequestParameter.PARTIAL_EMAIL, partialEmail);
     this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_ACTION,
         this.createContext(this.selectedBridgehead), params).then(users => {
       this.suggestions = users ?? [];
@@ -219,10 +224,10 @@ export default class UserInput extends Vue {
                   :recipients="recipientsText" :pending="isPending" :error-message="dialogError"
                   @confirm="invite">
       <div class="invite-field">
-        <template v-if="bridgeheads.length > 1">
+        <template v-if="inviteBridgeheads.length > 1">
           <label :for="`${datalistId}-site`" class="invite-label">Site</label>
           <select :id="`${datalistId}-site`" v-model="selectedBridgehead" class="form-select">
-            <option v-for="bridgehead in bridgeheads" :key="bridgehead.bridgehead" :value="bridgehead">
+            <option v-for="bridgehead in inviteBridgeheads" :key="bridgehead.bridgehead" :value="bridgehead">
               {{ bridgehead.humanReadable }}
             </option>
           </select>

@@ -6,14 +6,12 @@ import {AuthService} from "@/services/auth";
 import {BatchEntry, BatchResult} from "@/services/actionsBatch";
 
 
-const bridgeheadParam = 'bridgehead'
-const projectCodeParam = 'project-code'
 /** Marker the backend adds to a redirect URL: the success message of this action is shown once in the target page. */
 export const ACTION_FEEDBACK_PARAM = 'action-feedback'
-const siteParam = 'site'
 
 const actionsPath = '/actions'
-const actionsBatchRequestsParam = 'requests'
+// Open to every user, without an action: the project view needs the bridgeheads before it loads their actions
+const visibleBridgeheadsPath = '/bridgeheads/visible'
 
 export const CUSTOM_PROJECT_CONFIGURATION = 'CUSTOM';
 export const NOT_SELECTED_PROJECT_CONFIGURATION = 'NOT_SELECTED';
@@ -216,7 +214,20 @@ export enum PmRequestParameter {
     SORT_BY = "sort-by",
     SORT_DESC = "sort-desc",
     SITE = "site",
-    QUERY_DETAILS = "query-details"
+    QUERY_DETAILS = "query-details",
+    PROJECT_CODE = "project-code",
+    EMAIL = "email",
+    PARTIAL_EMAIL = "partial-email",
+    FILENAME = "filename",
+    NOTIFICATION_ID = "notification-id",
+    MESSAGE = "message",
+    PROJECT_ROLE = "project-role",
+    EMAIL_TEMPLATE_TYPE = "email-template-type",
+    DOCUMENT = "document",
+    DOCUMENT_URL = "document-url",
+    DOCUMENT_ID = "document-id",
+    // The read actions called by the actions batch
+    ACTIONS_BATCH_REQUESTS = "requests"
 }
 
 export enum ProjectType {
@@ -498,6 +509,9 @@ export interface ActionButton {
     params?: Map<string, string>
     visibilityCondition?: boolean
     doActionOnClick?: () => void
+    // An action of one bridgehead: called with that bridgehead, and shown if that bridgehead's permissions allow it
+    // (docs/bridgehead-context.md). Without it, the page's context and permissions.
+    bridgehead?: Bridgehead
 }
 
 export interface FormFieldGroup {
@@ -670,7 +684,7 @@ export type ActionMetadata = {
     successMessage?: string;
     errorMessage?: string;
     priority?: number;
-    /** The endpoint needs a site: it cannot be called in a context without one (a project without sites). */
+    /** The endpoint needs a bridgehead: it cannot be called in a context without one (a project without bridgeheads). */
     bridgeheadRequired?: boolean;
     /** Who gets an email when the action succeeds, known before it runs (the backend's @EmailSender). */
     emailRecipients: EmailRecipientType[];
@@ -737,8 +751,6 @@ export class ProjectManagerContext {
 
 }
 
-export const UPLOAD_DOCUMENT_PARAM = 'document';
-export const UPLOAD_DOCUMENT_URL_PARAM = 'document-url';
 
 // Variable to hold the backend URL once loaded
 let projectManagerBackendUrl: string | null = null;
@@ -773,39 +785,91 @@ const createAxiosInstance = async (): Promise<AxiosInstance> => {
 };
 
 
+/**
+ * The bridgeheads of the project the user may see, called directly (not through the actions): the project view loads
+ * them first and then the actions of these bridgeheads, in one request (docs/bridgehead-context.md).
+ */
+export async function fetchVisibleBridgeheads(projectCode: string): Promise<Bridgehead[]> {
+    const axiosInstance = await createAxiosInstance();
+    const token = await AuthService.getToken();
+    const response = await axiosInstance.get(visibleBridgeheadsPath, {
+        params: {[PmRequestParameter.PROJECT_CODE]: projectCode},
+        headers: {Authorization: `Bearer ${token}`},
+        withCredentials: true
+    });
+    return response.data ?? [];
+}
+
 export class ProjectManagerBackendService {
     private axiosInstance?: AxiosInstance;
+    // The actions allowed in the context the service was created with
     private activeModuleActionsMetadata?: Map<Module, Map<Action, ActionMetadata>> | undefined;
+    // The actions allowed at each of the bridgeheads the service was created with, by bridgehead id: the bridgehead
+    // roles count only for their bridgehead, so a call with a bridgehead is checked against that bridgehead's actions
+    // (docs/bridgehead-context.md)
+    private bridgeheadActionsMetadata = new Map<string, Map<Module, Map<Action, ActionMetadata>>>();
     private activeModuleActionsMetadataWithExplanation?: Map<Module, Map<Action, ActionMetadata>> | undefined;
     private readonly initializedPromise: Promise<void> | undefined;
 
-    constructor(context: ProjectManagerContext, site: Site) {
-        this.initializedPromise = this.initialize(context, site);
+    /**
+     * bridgeheads: the ids of the bridgeheads whose actions are loaded too, all in the same request (or their coming
+     * load: the actions are loaded once they are known). A call with one of these bridgeheads in its context is then
+     * checked against that bridgehead's actions; any other call against the context's.
+     */
+    constructor(context: ProjectManagerContext, site: Site, bridgeheads: string[] | Promise<string[]> = []) {
+        this.initializedPromise = this.initialize(context, site, bridgeheads);
     }
 
-    private async initialize(context: ProjectManagerContext, site: Site): Promise<void> {
+    private async initialize(context: ProjectManagerContext, site: Site,
+                             bridgeheads: string[] | Promise<string[]>): Promise<void> {
         try {
             this.axiosInstance = await createAxiosInstance();
-            await this.fetchActiveModuleActions(context, site);
+            await this.fetchActiveModuleActions(context, site, await bridgeheads);
         } catch (error) {
             console.error("Initialization failed:", error);
             throw error;
         }
     }
 
-    private async fetchActiveModuleActions(context: ProjectManagerContext, site: Site): Promise<void> {
+    private async fetchActiveModuleActions(context: ProjectManagerContext, site: Site, bridgeheads: string[]): Promise<void> {
+        // The actions without a bridgehead, and those of each given bridgehead: the context's bridgehead is one of them
+        // if needed
         const params = new Map<string, string>();
-        this.addContextToMap(params, context);
-        params.set(siteParam, site);
+        if (context.projectCode) params.set(PmRequestParameter.PROJECT_CODE, context.projectCode);
+        params.set(PmRequestParameter.SITE, site);
+        if (bridgeheads.length > 0) params.set(PmRequestParameter.BRIDGEHEADS, bridgeheads.join(','));
 
         try {
+            // One action package per bridgehead id, and the one without a bridgehead under ""
             const response = await this.doHttpRequest(HttpMethod.GET, actionsPath, params);
-            this.activeModuleActionsMetadata = this.parseModuleActions(response.data);
-            this.activeModuleActionsMetadataWithExplanation = this.filterModuleActionsWithExplanations(this.activeModuleActionsMetadata);
+            this.activeModuleActionsMetadata = this.parseModuleActions(response.data?.[''] ?? {});
+            this.bridgeheadActionsMetadata = new Map(bridgeheads.filter(id => response.data?.[id])
+                .map(id => [id, this.parseModuleActions(response.data[id])]));
+            this.activeModuleActionsMetadataWithExplanation =
+                this.filterModuleActionsWithExplanations(this.mergeModuleActions(this.allModuleActions()));
         } catch (error) {
             console.error("Error fetching active module actions:", error);
             throw error;
         }
+    }
+
+    // The actions without a bridgehead first, then each bridgehead's
+    private allModuleActions(): Map<Module, Map<Action, ActionMetadata>>[] {
+        return [...(this.activeModuleActionsMetadata ? [this.activeModuleActionsMetadata] : []),
+            ...this.bridgeheadActionsMetadata.values()];
+    }
+
+    // Every action allowed anywhere, each once (its first metadata)
+    private mergeModuleActions(packages: Map<Module, Map<Action, ActionMetadata>>[]): Map<Module, Map<Action, ActionMetadata>> {
+        const result = new Map<Module, Map<Action, ActionMetadata>>();
+        packages.forEach(actions => actions.forEach((actionMap, module) => {
+            const merged = result.get(module) ?? new Map<Action, ActionMetadata>();
+            actionMap.forEach((metadata, action) => {
+                if (!merged.has(action)) merged.set(action, metadata);
+            });
+            result.set(module, merged);
+        }));
+        return result;
     }
 
     private filterModuleActionsWithExplanations(actions: Map<Module, Map<Action, ActionMetadata>>):
@@ -874,26 +938,26 @@ export class ProjectManagerBackendService {
 
     /**
      * The action can be used in this context: it is allowed for the user and project, and if its endpoint needs a
-     * site, the context has one (not the case for a project without sites). Use this one by default.
+     * bridgehead, the context has one (not the case for a project without bridgeheads). Use this one by default.
      */
     public async isModuleActionActive(module: Module, action: Action, context: ProjectManagerContext): Promise<boolean> {
         await this.initializedPromise;
-        const metadata = this.getActionMetadata(module, action);
-        return metadata !== undefined && (!metadata.bridgeheadRequired || context.bridgehead !== undefined);
+        const call = this.resolveCall(module, action, context);
+        return call !== undefined && (!call.metadata.bridgeheadRequired || call.context.bridgehead !== undefined);
     }
 
     /**
      * Only whether the action is allowed for the user and project, regardless of the context it would be called with.
-     * For decisions made before a site exists, e.g. whether feasibility can be shown at all.
+     * For decisions made before a bridgehead exists, e.g. whether feasibility can be shown at all.
      */
     public async isModuleActionAllowed(module: Module, action: Action): Promise<boolean> {
         await this.initializedPromise;
-        return this.getActionMetadata(module, action) !== undefined;
+        return this.findActionMetadata(module, action) !== undefined;
     }
 
     public async getActionFeedbackMessages(module: Module, action: Action): Promise<ActionFeedbackMessages> {
         await this.initializedPromise;
-        const metadata = this.getActionMetadata(module, action);
+        const metadata = this.findActionMetadata(module, action);
         return {
             successMessage: metadata?.successMessage,
             errorMessage: metadata?.errorMessage,
@@ -903,13 +967,13 @@ export class ProjectManagerBackendService {
     /** Who gets an email when the action succeeds; empty when it sends none or it is not active. */
     public async getActionEmailRecipients(module: Module, action: Action): Promise<EmailRecipientType[]> {
         await this.initializedPromise;
-        return this.getActionMetadata(module, action)?.emailRecipients ?? [];
+        return this.findActionMetadata(module, action)?.emailRecipients ?? [];
     }
 
     /** Messages of an action given only by its name (e.g. from a URL), in whichever module of this site it is. */
     public async getActionFeedbackMessagesOfAction(action: string): Promise<ActionFeedbackMessages> {
         await this.initializedPromise;
-        for (const actions of this.activeModuleActionsMetadata?.values() ?? []) {
+        for (const actions of this.mergeModuleActions(this.allModuleActions()).values()) {
             const metadata = actions.get(action as Action);
             if (metadata) {
                 return {successMessage: metadata.successMessage, errorMessage: metadata.errorMessage};
@@ -925,13 +989,41 @@ export class ProjectManagerBackendService {
         return config.DEFAULT_ERROR_MESSAGE_FOR_USER_ACTIONS;
     }
 
-    private getActionMetadata(module: Module, action: Action): ActionMetadata | undefined {
-        return this.activeModuleActionsMetadata?.get(module)?.get(action);
+    // The action as allowed in this context: at its bridgehead, if the service has that bridgehead's actions
+    private getActionMetadata(module: Module, action: Action, context?: ProjectManagerContext): ActionMetadata | undefined {
+        const bridgehead = context?.bridgehead?.bridgehead;
+        const actions = (bridgehead && this.bridgeheadActionsMetadata.get(bridgehead)) || this.activeModuleActionsMetadata;
+        return actions?.get(module)?.get(action);
+    }
+
+    /**
+     * The action and the context it is sent with. A call without a bridgehead is for the project as a whole. If the
+     * action is allowed there only through a bridgehead role (the backend counts bridgehead roles only for the
+     * bridgehead sent, see docs/bridgehead-context.md), it is sent with the first bridgehead where it is allowed: for
+     * these actions the bridgehead only tells the backend the user's role. Not for actions that need a bridgehead: they
+     * act on it, so it must be chosen.
+     */
+    private resolveCall(module: Module, action: Action, context: ProjectManagerContext):
+        { metadata: ActionMetadata, context: ProjectManagerContext } | undefined {
+        const metadata = this.getActionMetadata(module, action, context);
+        if (metadata || context.bridgehead) return metadata && {metadata, context};
+        for (const [bridgehead, actions] of this.bridgeheadActionsMetadata) {
+            const bridgeheadMetadata = actions.get(module)?.get(action);
+            if (bridgeheadMetadata && !bridgeheadMetadata.bridgeheadRequired) {
+                return {metadata: bridgeheadMetadata, context: new ProjectManagerContext(context.projectCode, {bridgehead})};
+            }
+        }
+        return undefined;
+    }
+
+    // The action wherever it is allowed (without a bridgehead or at any bridgehead), for what does not depend on the context
+    private findActionMetadata(module: Module, action: Action): ActionMetadata | undefined {
+        return this.allModuleActions().map(actions => actions.get(module)?.get(action)).find(Boolean);
     }
 
     public addContextToMap(map: Map<string, unknown>, context: ProjectManagerContext): void {
-        if (context.projectCode) map.set(projectCodeParam, context.projectCode);
-        if (context.bridgehead) map.set(bridgeheadParam, context.bridgehead.bridgehead);
+        if (context.projectCode) map.set(PmRequestParameter.PROJECT_CODE, context.projectCode);
+        if (context.bridgehead) map.set(PmRequestParameter.BRIDGEHEAD, context.bridgehead.bridgehead);
     }
 
     public async downloadFile(
@@ -988,9 +1080,9 @@ export class ProjectManagerBackendService {
         await this.initializedPromise;
         const requests: Record<string, { action: Action, params: Record<string, unknown> }> = {};
         for (const entry of entries) {
-            const context = entry.context ?? defaultContext;
-            const actionMetadata = this.getActionMetadata(entry.module, entry.action);
-            if (!actionMetadata || (actionMetadata.bridgeheadRequired && !context.bridgehead)) continue;
+            const call = this.resolveCall(entry.module, entry.action, entry.context ?? defaultContext);
+            if (!call || (call.metadata.bridgeheadRequired && !call.context.bridgehead)) continue;
+            const {metadata: actionMetadata, context} = call;
             if (actionMetadata.method !== HttpMethod.GET) {
                 throw new Error(`Action ${entry.action} for module ${entry.module} is not a read action`);
             }
@@ -1001,12 +1093,12 @@ export class ProjectManagerBackendService {
         }
         if (Object.keys(requests).length === 0) return new Map();
         // The batch is a frontend action itself: path and method come from the backend like for any other action
-        const batchMetadata = this.getActionMetadata(Module.ACTIONS_MODULE, Action.FETCH_ACTIONS_BATCH_ACTION);
+        const batchMetadata = this.findActionMetadata(Module.ACTIONS_MODULE, Action.FETCH_ACTIONS_BATCH_ACTION);
         if (!batchMetadata) {
             throw new Error(`Action ${Action.FETCH_ACTIONS_BATCH_ACTION} for module ${Module.ACTIONS_MODULE} is not active`);
         }
         const response = await this.doHttpRequest(batchMetadata.method, batchMetadata.path,
-            new Map<string, unknown>([[actionsBatchRequestsParam, requests]]));
+            new Map<string, unknown>([[PmRequestParameter.ACTIONS_BATCH_REQUESTS, requests]]));
         return new Map(Object.entries((response.data?.results ?? {}) as Record<string, BatchResult>));
     }
 
@@ -1018,15 +1110,15 @@ export class ProjectManagerBackendService {
         sendEmptyStrings = false
     ): Promise<AxiosResponse> {
         await this.initializedPromise;
-        const actionMetadata = this.getActionMetadata(module, action);
-        if (!actionMetadata) {
+        const call = this.resolveCall(module, action, context);
+        if (!call) {
             throw new Error(`Action ${action} for module ${module} is not active`);
         }
-        if (actionMetadata.bridgeheadRequired && !context.bridgehead) {
-            throw new Error(`Action ${action} for module ${module} needs a site`);
+        if (call.metadata.bridgeheadRequired && !call.context.bridgehead) {
+            throw new Error(`Action ${action} for module ${module} needs a bridgehead`);
         }
-        return this.doHttpRequest(actionMetadata.method, actionMetadata.path,
-            this.buildHttpParams(context, params, actionMetadata, sendEmptyStrings));
+        return this.doHttpRequest(call.metadata.method, call.metadata.path,
+            this.buildHttpParams(call.context, params, call.metadata, sendEmptyStrings));
     }
 
     private buildHttpParams(
@@ -1067,12 +1159,12 @@ export class ProjectManagerBackendService {
         // If this is an upload, send it as multipart/form-data
         if (endpoint.includes('upload')) {
             config.headers!["Content-Type"] = 'multipart/form-data';
-            const uploadFile = params.get(UPLOAD_DOCUMENT_PARAM);
+            const uploadFile = params.get(PmRequestParameter.DOCUMENT);
             if (!uploadFile) throw new Error("Upload file not provided");
-            params.delete(UPLOAD_DOCUMENT_PARAM);
+            params.delete(PmRequestParameter.DOCUMENT);
 
             const data = new FormData();
-            data.append('document', uploadFile as File);
+            data.append(PmRequestParameter.DOCUMENT, uploadFile as File);
 
             // Append all other params to FormData
             for (const [key, value] of params) {

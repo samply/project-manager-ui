@@ -1,5 +1,6 @@
 import {createRouter, createWebHistory, RouteRecordRaw} from 'vue-router';
 import {getFrontendUrl} from "@/services/frontendUrl";
+import {ProjectViewQueryParameter} from "@/services/frontendRoutes";
 import ProjectView from '../components/ProjectView.vue';
 import ProjectDashboard from "@/components/ProjectDashboard.vue";
 import AdminConfig from "@/components/AdminConfig.vue";
@@ -33,7 +34,7 @@ const routes: Array<RouteRecordRaw> = [
         name: 'ProjectView',
         component: ProjectView,
         props: (route) => ({
-            projectCode: route.query['project-code'] // Accessing the project-code query parameter
+            projectCode: route.query[ProjectViewQueryParameter.PROJECT_CODE]
         })
     },
     {

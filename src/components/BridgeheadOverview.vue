@@ -12,8 +12,7 @@
         </div>
       </div>
       <div v-for="site in siteTimelines" :key="site.bridgehead.bridgehead"
-           class="timeline-row" :class="{ selected: selectedBridgehead === site.bridgehead.bridgehead }"
-           @click="selectBridgehead(site.bridgehead)">
+           class="timeline-row">
         <div class="site-name">
           <span>{{ site.bridgehead.humanReadable ?? site.bridgehead.bridgehead }}</span>
           <BridgeheadContacts :contacts="site.bridgehead.contacts ?? []" />
@@ -91,6 +90,7 @@ import {BatchEntry} from "@/services/actionsBatch";
 import {
   assignPipelineVisuals,
   classifyStateCircle,
+  creatorStatusOfBridgehead,
   describeCreatorStatus,
   describeQueryState,
   PipelineClassification,
@@ -167,10 +167,6 @@ interface SiteTimeline {
     existsFinalReport: {
       type: Boolean,
       required: true
-    },
-    callUpdateActiveBridgehead: {
-      type: Function as PropType<(param: Bridgehead) => void>,
-      required: true
     }
   }
 })
@@ -183,7 +179,6 @@ export default class BridgeheadOverview extends Vue {
   readonly existsVotumForAllBridgeheads!: boolean;
   readonly existsFinalReport!: boolean;
   readonly existsPublication!: boolean;
-  readonly callUpdateActiveBridgehead!: (param: Bridgehead) => void;
 
   Module = Module;
   Action = Action;
@@ -193,7 +188,6 @@ export default class BridgeheadOverview extends Vue {
   // noinspection SpellCheckingInspection
   existsVotums: boolean[] = [];
   dataShieldStatusArray: DataShieldProjectStatus[] = [];
-  selectedBridgehead: string | null = null;
 
   timelineScrollIndex: number | null = null;
   timelineRowWidth = 0;
@@ -222,7 +216,6 @@ export default class BridgeheadOverview extends Vue {
         }
     );
     await this.updateBridgeheadExtraInfo();
-    this.selectedBridgehead = this.context.bridgehead?.bridgehead ?? this.bridgeheads[0]?.bridgehead ?? null;
   }
 
   mounted() {
@@ -264,7 +257,7 @@ export default class BridgeheadOverview extends Vue {
   buildSiteSteps(bridgehead: Bridgehead, bridgeheadIndex: number): ClassifiedTimelineStep[] {
     const steps: ClassifiedTimelineStep[] = [];
 
-    // Same fact ProjectView.vue's pipeline shows for the active bridgehead,
+    // Same fact ProjectView.vue's pipeline shows for a project with one bridgehead,
     // here per site: no failure state, only "not received" - which per the
     // real workflow means no ethics vote is required for that site, not
     // that one is awaiting review. Classified separately from warning/amber
@@ -462,16 +455,8 @@ export default class BridgeheadOverview extends Vue {
     }
   }
 
-  selectBridgehead(bridgehead: Bridgehead) {
-    this.selectedBridgehead = bridgehead.bridgehead;
-    this.callUpdateActiveBridgehead(bridgehead);
-  }
-
-  getCreatorStatusForBridgehead(bridgehead: Bridgehead): string | null | undefined {
-    if (this.project?.creatorState === UserProjectState.ACCEPTED || this.project?.creatorState === UserProjectState.REJECTED) {
-      return this.project?.creatorState;
-    }
-    return (bridgehead?.state === 'ACCEPTED') ? bridgehead?.creatorState : undefined;
+  getCreatorStatusForBridgehead(bridgehead: Bridgehead): UserProjectState | undefined {
+    return creatorStatusOfBridgehead(this.project, bridgehead);
   }
 
 }
@@ -500,21 +485,9 @@ export default class BridgeheadOverview extends Vue {
   border-bottom: 1px solid #d7e2ed;
 }
 
+/* Read only: where every bridgehead stands (docs/bridgehead-context.md - no selected bridgehead) */
 .timeline-row {
   padding: 12px 0 12px 8px;
-  cursor: pointer;
-}
-
-.timeline-row:hover {
-  background: #f4f7fb;
-}
-
-.timeline-row.selected {
-  box-shadow: inset 4px 0 0 #2655a2;
-}
-
-.timeline-row.selected .site-name {
-  color: #2655a2;
 }
 
 .site-col-spacer, .site-name {

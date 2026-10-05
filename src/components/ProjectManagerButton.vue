@@ -3,6 +3,7 @@
 import {
   Action,
   Module,
+  PmRequestParameter,
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
@@ -141,7 +142,7 @@ export default class ProjectManagerButton extends Vue {
     const feedbackMessages = await this.projectManagerBackendService.getActionFeedbackMessages(
         this.module, actionToUse
     );
-    this.params.set('message', message);
+    this.params.set(PmRequestParameter.MESSAGE, message);
     this.isPending = true;
     this.dialogError = '';
     try {

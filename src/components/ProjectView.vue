@@ -51,8 +51,8 @@
                 <div class="card"
                      style="padding: 3px 20px;height: fit-content">
                   <div class="card-body" style="padding: 0 0;">
-                    <span style="padding: 0 0;">{{ context.bridgehead?.humanReadable }}</span>
-                    <BridgeheadContacts :contacts="context.bridgehead?.contacts ?? []" />
+                    <span style="padding: 0 0;">{{ statusBridgehead?.humanReadable }}</span>
+                    <BridgeheadContacts :contacts="statusBridgehead?.contacts ?? []" />
                   </div>
                 </div>
               </div>
@@ -79,7 +79,7 @@
                       <div class="next-step-buttons">
                         <ProjectManagerButton v-for="button in entry.group.button" :key="button.action"
                                               :module="button.module" :action="button.action"
-                                              :context="context"
+                                              :context="buttonContext(button)"
                                               :call-refresh-context="button.refreshContextCallFunction"
                                               :text="button.text"
                                               :button-class="button.cssClass"
@@ -119,9 +119,9 @@
                     <!-- Same temporary creator restriction as the Actions card
                          (plans/2026-09-08-plan-restore-project-actions-for-creators.md). -->
                     <MoreActionsMenu v-if="showMoreActionsMenu">
-                      <ProjectManagerButton v-for="button in moreActionButtons" :key="button.action"
+                      <ProjectManagerButton v-for="button in moreActionButtons" :key="button.text"
                                             :module="button.module" :action="button.action"
-                                            :context="context"
+                                            :context="buttonContext(button)"
                                             :call-refresh-context="button.refreshContextCallFunction"
                                             :text="button.text"
                                             :button-class="button.cssClass"
@@ -164,7 +164,7 @@
                   </div>
                 </div>
 
-                <div class="panel-card status-pipeline-card" v-if="visibleBridgeheads?.length === 1 && activeBridgehead">
+                <div class="panel-card status-pipeline-card" v-if="statusBridgehead">
                   <div class="panel-header">Status</div>
                   <div class="pipeline-row" :ref="setPipelineRowRef">
                     <button v-if="statusPipelineSteps.length > pipelineStepsShown" type="button"
@@ -197,7 +197,7 @@
                         <div class="pipeline-label">{{ step.label }}</div>
                         <DownloadButton
                             v-if="step.downloadAction"
-                            :context="context"
+                            :context="createContext(statusBridgehead)"
                             :project-manager-backend-service="projectManagerBackendService"
                             icon-class="bi bi-download"
                             button-class="pipeline-download-button"
@@ -217,7 +217,6 @@
                 <div class="panel-card" v-if="visibleBridgeheads.length > 1">
                   <div class="panel-header">Status</div>
                   <BridgeheadOverview :project-manager-backend-service="projectManagerBackendService"
-                                      :call-update-active-bridgehead="updateActiveBridgehead"
                                       :context="context"
                                       :project="project"
                                       :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
@@ -248,6 +247,7 @@
                             :project-manager-backend-service="projectManagerBackendService"
                             :current-users="currentUsers"
                             :context="context"
+                            :bridgeheads="visibleBridgeheads"
                             :project="project"
                             :project-roles="projectRoles"
                             @pending-review="pendingReviewSites = $event"
@@ -556,7 +556,7 @@
           <div class="box-header"><span>Script</span></div>
           <div class="panel-body panel-stack">
             <UploadButton
-                :context="context"
+                :context="createContext(fetchScriptUploadBridgehead())"
                 :project-manager-backend-service="projectManagerBackendService"
                 :module="Module.PROJECT_DOCUMENTS_MODULE"
                 :upload-action="Action.UPLOAD_SCRIPT_ACTION"
@@ -565,20 +565,22 @@
                 :is-file="true"
             />
             <DownloadButton
-                :context="context"
+                :context="createContext(fetchScriptViewBridgehead())"
                 :project-manager-backend-service="projectManagerBackendService"
                 :module="Module.PROJECT_DOCUMENTS_MODULE"
                 :action="Action.DOWNLOAD_SCRIPT_ACTION"
                 :filename="scriptDescription.originalFilename"
                 text="Last uploaded script"
             />
+            <!-- The authentication script of each bridgehead where the user is an invited user -->
             <DownloadButton
-                v-if="existsAuthenticationScript"
-                :context="context"
+                v-for="bridgehead in fetchAuthenticationScriptBridgeheads()" :key="bridgehead.bridgehead"
+                :context="createContext(bridgehead)"
                 :project-manager-backend-service="projectManagerBackendService"
                 :module="Module.TOKEN_MANAGER_MODULE"
                 :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION"
-                text="Authentication script"
+                :text="fetchInvitedUserBridgeheads().length > 1
+                    ? `Authentication script (${bridgehead.humanReadable ?? bridgehead.bridgehead})` : 'Authentication script'"
             />
           </div>
         </div>
@@ -590,7 +592,7 @@
                             :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
                             :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
-                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download"
+                            :list-bridgeheads="documentListBridgeheads" icon-class="bi bi-download"
                             text="Publications: " :project-manager-admin="isProjectManagerAdmin()"/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
@@ -616,7 +618,7 @@
                             :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_FINAL_REPORT_ACTION"
                             :fetch-list-action="Action.FETCH_FINAL_REPORTS_ACTION"
-                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download"
+                            :list-bridgeheads="documentListBridgeheads" icon-class="bi bi-download"
                             text="Final Reports: " :project-manager-admin="isProjectManagerAdmin()"/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
@@ -645,6 +647,7 @@
                             :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE"
                             :upload-action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
+                            :bridgehead-choices="otherDocumentBridgeheadChoices"
                             text="Upload document" :call-refresh-context="refreshContext"
                             :is-file="true"/>
 
@@ -652,6 +655,7 @@
                             :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE"
                             :upload-action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
+                            :bridgehead-choices="otherDocumentUrlBridgeheadChoices"
                             text="Upload document URL" :call-refresh-context="refreshContext"
                             :is-file="false"/>
             </div>
@@ -659,7 +663,7 @@
                             :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
                             :fetch-list-action="Action.FETCH_OTHER_DOCUMENTS_ACTION"
-                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download"
+                            :list-bridgeheads="documentListBridgeheads" icon-class="bi bi-download"
                             text="Other documents: " :project-manager-admin="isProjectManagerAdmin()"/>
           </div>
         </div>
@@ -707,6 +711,7 @@ import {
   ProjectAndForms,
   ProjectConfigurationSelectionType,
   ProjectDocument,
+  ProjectBridgeheadState,
   ProjectManagerBackendService,
   ProjectManagerContext,
   ProjectOutput,
@@ -719,7 +724,7 @@ import {
   UserProjectState
 } from "@/services/projectManagerBackendService";
 import {fromFormControlValue} from "@/services/formValueCodec";
-import {ACTION_FEEDBACK_PARAM} from "@/services/projectManagerBackendService";
+import {ACTION_FEEDBACK_PARAM, fetchVisibleBridgeheads} from "@/services/projectManagerBackendService";
 import store, {ActionFeedbackType} from "@/services/store";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
 import MoreActionsMenu from "@/components/MoreActionsMenu.vue";
@@ -752,10 +757,18 @@ import {ProjectViewMenuStep} from "@/services/projectViewMenuStep";
 import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
 import {PollingService} from "@/services/PollingService";
 import {BatchLoad, runBatchLoads} from "@/services/actionsBatch";
+import {
+  actingBridgeheads,
+  BRIDGEHEAD_ROLES,
+  BridgeheadRoles,
+  canActForWholeProject,
+  toBridgeheadRoles
+} from "@/services/bridgeheadRoles";
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
 import {
   assignPipelineVisuals,
   classifyStateCircle,
+  creatorStatusOfBridgehead,
   describeCreatorStatus,
   describeQueryState,
   PipelineClassification,
@@ -818,8 +831,47 @@ interface PipelineStep {
   subSteps?: PipelineSubStep[];
 }
 
+// Who may upload the request's script, and who may see it (as the backend's role constraints)
+const SCRIPT_UPLOAD_ROLES = [ProjectRole.DEVELOPER, ProjectRole.BRIDGEHEAD_ADMIN];
+const SCRIPT_ROLES = [ProjectRole.DEVELOPER, ProjectRole.PILOT, ProjectRole.FINAL, ProjectRole.BRIDGEHEAD_ADMIN];
+
+// What a bridgehead where the user is an invited user (developer, pilot, final) says about them
+interface BridgeheadUserData {
+  currentUser?: User;
+  existsAuthenticationScript?: boolean;
+  researchEnvironmentUrl?: string;
+  existsResearchEnvironmentWorkspace: boolean;
+}
+
 export default defineComponent({
   computed: {
+    // The bridgehead of the single-bridgehead status: the project's only visible bridgehead.
+    statusBridgehead(): Bridgehead | undefined {
+      return this.visibleBridgeheads.length === 1 ? this.visibleBridgeheads[0] : undefined;
+    },
+    // The user's roles in the project: those that do not depend on a bridgehead, and their roles at each bridgehead.
+    projectRoles(): ProjectRole[] {
+      return [...new Set([...this.bridgeheadIndependentRoles,
+        ...Array.from(this.bridgeheadRoles.values()).flatMap(roles => Array.from(roles))])];
+    },
+    // The invited user's state at the bridgehead of the single-bridgehead status
+    statusBridgeheadUser(): User | undefined {
+      return this.statusBridgehead && this.bridgeheadUserData.get(this.statusBridgehead.bridgehead)?.currentUser;
+    },
+    // The bridgeheads to list documents for (docs/bridgehead-context.md): without a bridgehead, i.e. everything, for
+    // whoever may act for the whole project; otherwise each bridgehead the user acts for.
+    documentListBridgeheads(): (Bridgehead | null)[] {
+      return this.canActForWholeProject() ? [null] : this.fetchActingBridgeheads();
+    },
+    // For whom a document can be uploaded: the whole project and/or the bridgeheads the user acts for.
+    otherDocumentBridgeheadChoices(): (Bridgehead | null)[] {
+      return [...(this.canActForWholeProject() ? [null] : []), ...this.fetchActingBridgeheads()];
+    },
+    // A document URL: only bridgehead admins among the bridgehead roles may add one (ADD_OTHER_DOCUMENT_URL).
+    otherDocumentUrlBridgeheadChoices(): (Bridgehead | null)[] {
+      return [...(this.canActForWholeProject() ? [null] : []),
+        ...this.fetchActingBridgeheads([ProjectRole.BRIDGEHEAD_ADMIN])];
+    },
     ProjectState() {
       return ProjectState
     },
@@ -945,7 +997,9 @@ export default defineComponent({
     // Same underlying data and v-if conditions as the old single-row status
     // table - see the Classification comment below for the color mapping.
     statusPipelineSteps(): PipelineStep[] {
-      if (!this.activeBridgehead) return [];
+      if (!this.statusBridgehead) return [];
+      // As in the bridgehead overview
+      const creatorAcceptance = creatorStatusOfBridgehead(this.project, this.statusBridgehead);
 
       // Five colors: grey (not started yet), warning/amber (actively in
       // progress - never anything else), not_required/slate (this step
@@ -1002,8 +1056,8 @@ export default defineComponent({
       classifiedSteps.push({
         key: 'user_access',
         label: BridgeheadOverviewHeader.USER_ACCESS,
-        classification: classifyStateCircle(this.activeBridgehead?.state),
-        tooltip: this.activeBridgehead?.state ?? undefined
+        classification: classifyStateCircle(this.statusBridgehead?.state),
+        tooltip: this.statusBridgehead?.state ?? undefined
       });
 
       if (this.dataShieldStatus) {
@@ -1023,21 +1077,21 @@ export default defineComponent({
         });
       }
 
-      if (this.currentUser) {
+      if (this.statusBridgeheadUser) {
         classifiedSteps.push({
           key: 'user_acceptance',
           label: (hasProjectType(this.project, ProjectType.DATASHIELD) && this.project?.state !== ProjectState.FINAL)
               ? 'Script Acceptance' : 'Results Acceptance',
-          classification: classifyStateCircle(this.currentUser.projectState),
-          tooltip: this.currentUser.projectState
+          classification: classifyStateCircle(this.statusBridgeheadUser.projectState),
+          tooltip: this.statusBridgeheadUser.projectState
         });
       }
 
       classifiedSteps.push({
         key: 'creator_acceptance',
         label: BridgeheadOverviewHeader.APPLICANT_RESULTS_ACCEPTANCE,
-        classification: classifyStateCircle(this.creatorAcceptance),
-        tooltip: this.creatorAcceptance ? describeCreatorStatus(this.creatorAcceptance) : undefined
+        classification: classifyStateCircle(creatorAcceptance),
+        tooltip: creatorAcceptance ? describeCreatorStatus(creatorAcceptance) : undefined
       });
 
       const reportDone = this.existsFinalReport || this.existsPublication;
@@ -1116,9 +1170,16 @@ export default defineComponent({
   },
 
   data() {
+    // The bridgeheads the user may see, loaded directly: the page's first service loads the actions of these
+    // bridgeheads, so that the page asks for the actions once (docs/bridgehead-context.md)
+    const visibleBridgeheadsLoad = fetchVisibleBridgeheads(this.projectCode);
     return {
-      activeBridgehead: undefined as Bridgehead | undefined,
-      activeBridgeheadIndex: 0,
+      visibleBridgeheadsLoad,
+      // Whether the page's data was loaded once (fetchVisibleBridgeheads)
+      pageDataLoaded: false,
+      // The user's bridgehead roles at each visible bridgehead (docs/bridgehead-context.md)
+      bridgeheadRoles: new Map() as BridgeheadRoles,
+      bridgeheadUserData: new Map<string, BridgeheadUserData>(),
       bridgeheads: [] as Bridgehead[],
       // Until the project's sites have arrived, an empty bridgeheads list means
       // "not loaded", not "no sites selected".
@@ -1131,8 +1192,13 @@ export default defineComponent({
       formFieldDescriptionCollapsedLines: DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES,
       createdAtDisplayFormat: DisplayFormatKey.DATE_TIME_FORMAT as DisplayFormatKey,
       pollingService: null as PollingService | null,
+      // The project as a whole: the page has no bridgehead (docs/bridgehead-context.md). Calls with a bridgehead get
+      // their own context (createContext); where only a bridgehead role allows a call without one, the service sends
+      // one of the user's bridgeheads for the role. A new object reloads the page's data (refreshContext).
       context: new ProjectManagerContext(this.projectCode, undefined),
-      projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
+      projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined),
+          Site.PROJECT_VIEW_SITE, visibleBridgeheadsLoad
+              .then(bridgeheads => bridgeheads.map(bridgehead => bridgehead.bridgehead)).catch(() => [])),
       project: undefined as Project | undefined,
       projectTypes: [] as string[],
       outputFormats: {} as Record<ProjectType, string[]>,
@@ -1155,14 +1221,14 @@ export default defineComponent({
       observedPipelineRow: undefined as HTMLElement | undefined,
       existsProjectDescription: false,
       existsVotumForAllBridgeheads: false,
-      existsAuthenticationScript: false,
       existsScript: false,
       projectConfigurations: new Map<string, ProjectAndForms>(),
       projectConfigurationLabels: [] as string[],
       currentProjectConfiguration: [] as string[],
       currentProjectConfigurationFields: [] as string[],
       projectConfigurationSelectionType: ProjectConfigurationSelectionType.SINGLE,
-      projectRoles: [] as ProjectRole[],
+      // The user's roles in the project that do not depend on a bridgehead (see projectRoles)
+      bridgeheadIndependentRoles: [] as ProjectRole[],
       draftDialogStepper: new DialogStepper(() => this.updateProjectFields()) as DialogStepper,
       existsDraftDialog: false,
       scriptDescription: {} as ProjectDocument,
@@ -1179,14 +1245,10 @@ export default defineComponent({
       nextStepGroupsVisible: [] as boolean[],
       anyMoreActionVisible: false,
       canStartDevelopPhase: false,
-      currentUser: undefined as User | undefined,
       hasProjectAllMandatoryFields: false,
       tooltipTextForCreateButton: '',
       canShowBridgeheadAdminButtons: false,
       currentUsers: [] as User[],
-      creatorAcceptance: UserProjectState.CREATED,
-      existsResearchEnvironmentWorkspace: false,
-      researchEnvironmentUrl: undefined as string | undefined,
       formTemplates: [] as FormTemplate[],
       formTitleCanonicalOrder: [] as FormTitle[],
       formTitles: [] as FormTitle[],
@@ -1203,15 +1265,8 @@ export default defineComponent({
     };
   },
   watch: {
-    activeBridgehead(newValue, _oldValue) {
-      this.activeBridgeheadIndex = this.visibleBridgeheads.findIndex(
-          bridgehead => bridgehead.bridgehead === newValue?.bridgehead
-      );
-      this.context = new ProjectManagerContext(this.projectCode, newValue);
-      this.creatorAcceptance = (this.project?.creatorState) ? this.project.creatorState : UserProjectState.CREATED;
-      this.pipelineScrollIndex = null;
-    },
     visibleBridgeheads(newValue: Bridgehead[], oldValue: Bridgehead[]) {
+      this.pipelineScrollIndex = null;
       const visibleBridgeheadIds = new Set(newValue.map(bridgehead => bridgehead.bridgehead));
       const previousBridgeheadIds = new Set(oldValue.map(bridgehead => bridgehead.bridgehead));
 
@@ -1230,12 +1285,9 @@ export default defineComponent({
           });
     },
     context(newValue, _oldValue) {
-      this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
-      this.fetchProject().then(() => {
-        if (this.activeBridgehead) {
-          this.mergedQueryStates = this.getMergedQueryStates(this.activeBridgehead, getAllProjectTypes(this.project));
-        }
-      })
+      this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE,
+          this.visibleBridgeheads.map(bridgehead => bridgehead.bridgehead));
+      this.loadPageData();
     },
     async project() {
       try {
@@ -1255,16 +1307,10 @@ export default defineComponent({
     existsScript() {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    existsAuthenticationScript() {
-      this.extendedExplanations = this.fetchExtendedExplanations();
-    },
     existsVotum() {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
     existInvitedUsers() {
-      this.extendedExplanations = this.fetchExtendedExplanations();
-    },
-    currentUser() {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
     currentProjectConfiguration(newValue, _oldValue) {
@@ -1704,18 +1750,59 @@ export default defineComponent({
       );
     },
 
+    // The user's bridgehead roles at every visible bridgehead, in one request: the backend answers the roles for one
+    // bridgehead at a time.
+    async loadBridgeheadRoles(): Promise<void> {
+      const bridgeheads = this.visibleBridgeheads;
+      const entries = bridgeheads.map((bridgehead, index) => ({
+        id: `roles-${index}`, module: Module.USER_MODULE, action: Action.FETCH_PROJECT_ROLES_ACTION,
+        params: new Map<string, unknown>(), context: new ProjectManagerContext(this.projectCode, bridgehead)
+      }));
+      try {
+        const results = entries.length > 0
+            ? await this.projectManagerBackendService.fetchBatch(entries, this.context)
+            : new Map();
+        // The bridgeheads changed meanwhile: their own load applies
+        if (bridgeheads !== this.visibleBridgeheads) return;
+        this.bridgeheadRoles = toBridgeheadRoles(new Map(bridgeheads.map((bridgehead, index) =>
+            [bridgehead.bridgehead, results.get(`roles-${index}`)?.response as ProjectRole[] | undefined])));
+        await this.updateBridgeheadActions();
+      } catch (error) {
+        console.error('Error loading the bridgehead roles:', error);
+      }
+    },
+
+    // The bridgeheads where the user has a bridgehead role: their actions are shown per bridgehead.
+    fetchBridgeheadsWithBridgeheadRoles(): Bridgehead[] {
+      return actingBridgeheads(this.visibleBridgeheads, this.bridgeheadRoles, []);
+    },
+
+    // What the user's bridgeheads say about them, then the buttons of those bridgeheads: again with every new context
+    // of the page (an action can change what is allowed).
+    async updateBridgeheadActions(): Promise<void> {
+      await this.loadBridgeheadUserData();
+      this.fetchButtons();
+      await this.checkButtonVisibility();
+    },
+
+    // The bridgeheads the user may act for with one of the allowed bridgehead roles (all of them by default).
+    fetchActingBridgeheads(allowedRoles?: ProjectRole[]): Bridgehead[] {
+      return actingBridgeheads(this.visibleBridgeheads, this.bridgeheadRoles, this.projectRoles, allowedRoles);
+    },
+
+    // Whether the user may act for the whole project, without a bridgehead: creator or project manager admin.
+    canActForWholeProject(): boolean {
+      return canActForWholeProject(this.projectRoles);
+    },
+
+    // The bridgeheads, then the page's data (fetchVisibleBridgeheads refreshes the context). The polling service loads
+    // the bridgeheads itself and then decides whether to keep polling.
     refreshBridgeheadsAndContext() {
-      const activeBridgehead = this.activeBridgehead;
-      this.fetchVisibleBridgeheads().then(() => {
-        if (this.activeBridgehead === activeBridgehead) {
-          this.refreshContext();
-        }
-        this.pollingService?.execute();
-      })
+      void (this.pollingService ? this.pollingService.execute() : this.fetchVisibleBridgeheads());
     },
 
     refreshContext() {
-      this.context = new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
+      this.context = new ProjectManagerContext(this.context.projectCode, undefined);
     },
 
     queryChanged(query?: string) {
@@ -1746,26 +1833,31 @@ export default defineComponent({
 
     async fetchVisibleBridgeheads() {
       try {
-        const activeBridgeheadId = this.activeBridgehead?.bridgehead ?? this.context.bridgehead?.bridgehead;
-        return await this.projectManagerBackendService.fetchData(
-            Module.PROJECT_BRIDGEHEAD_MODULE,
-            Action.FETCH_VISIBLE_BRIDGEHEADS_ACTION,
-            this.context,
-            new Map()
-        ).then((bridgeheads: Bridgehead[]) => {
-          this.visibleBridgeheads = bridgeheads;
-          this.activeBridgehead = bridgeheads.find(
-              (bridgehead: Bridgehead) => bridgehead.bridgehead === activeBridgeheadId
-          ) ?? bridgeheads[0];
-          // The project is loaded when the active site changes (see the watchers). A project without sites
-          // (e.g. created from the dashboard) has no active site, so load it here the first time.
-          if (!this.activeBridgehead && !this.project) {
-            this.refreshContext();
-          }
-        });
+        // The first time, those the page's first service was created with; afterwards (an action, the polling) again
+        const firstLoad = !this.pageDataLoaded;
+        this.visibleBridgeheads = await (firstLoad ? this.visibleBridgeheadsLoad : fetchVisibleBridgeheads(this.projectCode));
+        // The first service already has the actions of these bridgeheads. Afterwards their states may allow other
+        // actions: a new context loads them and the page's data again.
+        if (firstLoad) {
+          this.loadPageData();
+        } else {
+          this.refreshContext();
+        }
       } catch (error) {
         console.error('Error loading BridgeheadList:', error);
       }
+    },
+
+    // The page's data with the page's service: the user's roles at each bridgehead, then the project and what follows
+    // from it
+    loadPageData() {
+      this.pageDataLoaded = true;
+      void this.loadBridgeheadRoles();
+      this.fetchProject().then(() => {
+        if (this.statusBridgehead) {
+          this.mergedQueryStates = this.getMergedQueryStates(this.statusBridgehead, getAllProjectTypes(this.project));
+        }
+      });
     },
 
     canEditSelectedSites(): boolean {
@@ -1849,8 +1941,8 @@ export default defineComponent({
     async fetchProject() {
       const params = new Map<string, string>();
       // TODO: Control page size
-      params.set('page', '' + 0);
-      params.set('page-size', '' + 10);
+      params.set(PmRequestParameter.PAGE, '' + 0);
+      params.set(PmRequestParameter.PAGE_SIZE, '' + 10);
       return await this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_ACTION, params, 'project');
     },
 
@@ -2165,6 +2257,11 @@ export default defineComponent({
       // The response becomes the value of a data variable
       const set = (id: string, module: Module, action: Action, dataVariable: string): ProjectLoad =>
           ({id, module, action, apply: response => { (this.$data as any)[dataVariable] = response; }});
+      // Loads of the single-bridgehead status: with its bridgehead, and only if there is one
+      const statusBridgeheadLoad = {
+        context: () => this.createContext(this.statusBridgehead),
+        when: () => !!this.statusBridgehead
+      };
       // A document's description is fetched only if the document exists
       const documentDescription = (id: string, existsId: string, action: Action, dataVariable: string): ProjectLoad => ({
         id, module: Module.PROJECT_DOCUMENTS_MODULE, action,
@@ -2212,36 +2309,50 @@ export default defineComponent({
           }
         },
         set('projectStates', Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_STATES_ACTION, 'projectStates'),
-        {
-          // The Notifications tab covers the whole request: without a site, not only the active one.
-          ...set('notifications', Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, 'notifications'),
-          context: () => new ProjectManagerContext(this.context.projectCode, undefined)
-        },
+        set('notifications', Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, 'notifications'),
         set('projectTypes', Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, 'projectTypes'),
         set('queryFormats', Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, 'queryFormats'),
         set('outputFormats', Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, 'outputFormats'),
         set('projectConfigurationSelectionType', Module.PROJECT_EDITION_MODULE,
             Action.FETCH_PROJECT_CONFIGURATION_SELECTION_TYPE_ACTION, 'projectConfigurationSelectionType'),
         set('allBridgeheads', Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, 'allBridgeheads'),
-        set('existsResearchEnvironmentWorkspace', Module.USER_MODULE,
-            Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION, 'existsResearchEnvironmentWorkspace'),
         set('existsPublication', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_PUBLICATION_ACTION, 'existsPublication'),
         set('existsFinalReport', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_FINAL_REPORT_ACTION, 'existsFinalReport'),
-        set('researchEnvironmentUrl', Module.USER_MODULE, Action.FETCH_RESEARCH_ENVIRONMENT_URL_ACTION, 'researchEnvironmentUrl'),
         set('currentUsers', Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, 'currentUsers'),
         set('existsDescription', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_DESCRIPTION_ACTION, 'existsProjectDescription'),
         documentDescription('projectDescription', 'existsDescription', Action.FETCH_DESCRIPTION_ACTION, 'projectDescription'),
-        set('existsVotum', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, 'existsVotum'),
-        documentDescription('votumDescription', 'existsVotum', Action.FETCH_VOTUM_DESCRIPTION_ACTION, 'votumDescription'),
+        // The single-bridgehead status: its bridgehead's vote
+        {
+          ...set('existsVotum', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, 'existsVotum'),
+          ...statusBridgeheadLoad,
+          otherwise: () => { this.existsVotum = false; }
+        },
+        {
+          ...documentDescription('votumDescription', 'existsVotum', Action.FETCH_VOTUM_DESCRIPTION_ACTION, 'votumDescription'),
+          context: statusBridgeheadLoad.context
+        },
         set('existsVotumForAllBridgeheads', Module.PROJECT_DOCUMENTS_MODULE,
             Action.EXISTS_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION, 'existsVotumForAllBridgeheads'),
         documentDescription('votumForAllBridgeheadsDescription', 'existsVotumForAllBridgeheads',
             Action.FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION_ACTION, 'votumForAllBridgeheadsDescription'),
-        set('existsScript', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, 'existsScript'),
-        documentDescription('scriptDescription', 'existsScript', Action.FETCH_SCRIPT_DESCRIPTION_ACTION, 'scriptDescription'),
-        set('existsAuthenticationScript', Module.TOKEN_MANAGER_MODULE,
-            Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, 'existsAuthenticationScript'),
-        set('projectRoles', Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, 'projectRoles'),
+        {
+          ...set('existsScript', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, 'existsScript'),
+          context: () => this.createContext(this.fetchScriptViewBridgehead())
+        },
+        {
+          ...documentDescription('scriptDescription', 'existsScript', Action.FETCH_SCRIPT_DESCRIPTION_ACTION, 'scriptDescription'),
+          context: () => this.createContext(this.fetchScriptViewBridgehead())
+        },
+        {
+          // Asked without a bridgehead: a user with only bridgehead roles gets those of one of their bridgeheads too
+          // (the service sends one), which are left out here - their roles at every bridgehead come from
+          // loadBridgeheadRoles.
+          id: 'projectRoles', module: Module.USER_MODULE, action: Action.FETCH_PROJECT_ROLES_ACTION,
+          apply: (response: ProjectRole[]) => {
+            this.bridgeheadIndependentRoles = response.filter(role => !BRIDGEHEAD_ROLES.includes(role));
+          },
+          otherwise: () => { this.bridgeheadIndependentRoles = []; }
+        },
         {
           id: 'existInvitedUsers', module: Module.USER_MODULE, action: Action.EXIST_INVITED_USERS_ACTION,
           apply: response => {
@@ -2249,14 +2360,19 @@ export default defineComponent({
             this.canShowBridgeheadAdminButtons = this.fetchIfCanShowBridgeheadAdminButtons();
           }
         },
-        set('currentUser', Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, 'currentUser'),
-        set('areExportFilesTransferredToResearchEnvironment', Module.EXPORT_MODULE,
-            Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, 'areExportFilesTransferredToResearchEnvironment'),
+        {
+          ...set('areExportFilesTransferredToResearchEnvironment', Module.EXPORT_MODULE,
+              Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, 'areExportFilesTransferredToResearchEnvironment'),
+          ...statusBridgeheadLoad,
+          otherwise: () => { this.areExportFilesTransferredToResearchEnvironment = false; }
+        },
         set('formTemplates', Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_TEMPLATES_ACTION, 'formTemplates'),
         set('exporterTemplateIds', Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, 'exporterTemplateIds'),
         {
           ...set('dataShieldStatus', Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, 'dataShieldStatus'),
-          when: () => hasProjectType(this.project, ProjectType.DATASHIELD)
+          context: statusBridgeheadLoad.context,
+          when: () => !!this.statusBridgehead && hasProjectType(this.project, ProjectType.DATASHIELD),
+          otherwise: () => { this.dataShieldStatus = undefined; }
         },
         // Without the canonical order the frontend's fallback order is used (the list was emptied before)
         set('formTitleCanonicalOrder', Module.PROJECT_EDITION_MODULE,
@@ -2281,10 +2397,10 @@ export default defineComponent({
 
     async initializeScriptTabAvailability(): Promise<void> {
       const [canUploadScript, canDownloadScript] = await Promise.all([
-        this.projectManagerBackendService.isModuleActionActive(
-            Module.PROJECT_DOCUMENTS_MODULE, Action.UPLOAD_SCRIPT_ACTION, this.context),
-        this.projectManagerBackendService.isModuleActionActive(
-            Module.PROJECT_DOCUMENTS_MODULE, Action.DOWNLOAD_SCRIPT_ACTION, this.context)
+        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE,
+            Action.UPLOAD_SCRIPT_ACTION, this.createContext(this.fetchScriptUploadBridgehead())),
+        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE,
+            Action.DOWNLOAD_SCRIPT_ACTION, this.createContext(this.fetchScriptViewBridgehead()))
       ]);
 
       // The backend action catalogue is context-aware and is the sole source
@@ -2468,12 +2584,10 @@ export default defineComponent({
     },
 
     async fetchNotifications() {
-      // The Notifications tab covers the whole request: without a site, not only the active one.
       return this.initializeDataInCallback(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(),
           async result => {
             this.notifications = result;
-          },
-          new ProjectManagerContext(this.context.projectCode, undefined));
+          });
     },
 
     applyProjectConfigurationVisibility(): void {
@@ -2587,10 +2701,6 @@ export default defineComponent({
           throw error; // Re-throw the error if it's not a 404
         }
       }
-    },
-
-    updateActiveBridgehead(bridgehead: Bridgehead) {
-      this.activeBridgehead = bridgehead;
     },
 
     fetchIfCanShowBridgeheadAdminButtons(): boolean {
@@ -2961,10 +3071,10 @@ export default defineComponent({
     getProjectStates(): ProjectState[] {
       let visibleProjectStates: ProjectState[] = this.projectStates.slice();
       if (this.projectStates.length > 0) {
-        if (this.project?.state === 'REJECTED') {
+        if (this.project?.state === ProjectState.REJECTED) {
           visibleProjectStates = visibleProjectStates.filter(item => ![ProjectState.FINISHED, ProjectState.ARCHIVED].includes(item));
         } else {
-          if (this.project?.state === 'ARCHIVED') {
+          if (this.project?.state === ProjectState.ARCHIVED) {
             visibleProjectStates = visibleProjectStates.filter(item => ![ProjectState.FINISHED, ProjectState.REJECTED].includes(item));
           } else {
             visibleProjectStates = visibleProjectStates.filter(item => ![ProjectState.ARCHIVED, ProjectState.REJECTED].includes(item));
@@ -2991,10 +3101,10 @@ export default defineComponent({
         this.removeActionExplanation(Action.REJECT_SCRIPT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.REQUEST_SCRIPT_CHANGES_ACTION, extendedExplanations);
       }
-      if (!this.currentUser) {
+      if (!Array.from(this.bridgeheadUserData.values()).some(data => data.currentUser)) {
         this.removeActionExplanation(Action.DOWNLOAD_SCRIPT_ACTION, extendedExplanations);
       }
-      if (!this.existsAuthenticationScript) {
+      if (this.fetchAuthenticationScriptBridgeheads().length === 0) {
         this.removeActionExplanation(Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION, extendedExplanations);
       }
       if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN)) {
@@ -3016,19 +3126,23 @@ export default defineComponent({
         this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
       }
       let count = extendedExplanations.size + 1;
-      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) && this.activeBridgehead?.executions) {
-        const pendingTypes = this.activeBridgehead.executions
+      // For each bridgehead the user administrates; named when there are several.
+      const adminBridgeheads = this.fetchBridgeheadsWithBridgeheadRoles()
+          .filter(bridgehead => this.bridgeheadRoles.get(bridgehead.bridgehead)?.has(ProjectRole.BRIDGEHEAD_ADMIN));
+      adminBridgeheads.forEach(bridgehead => {
+        const pendingTypes = (bridgehead.executions ?? [])
             .filter(exec => ![QueryState.CREATED, QueryState.FINISHED, QueryState.ERROR].includes(exec.queryState))
             .map(exec => exec.projectType);
-
         if (pendingTypes.length) {
+          const teiler = adminBridgeheads.length > 1
+              ? `the Teiler of ${bridgehead.humanReadable ?? bridgehead.bridgehead}` : 'the Teiler';
           extendedExplanations.set(count.toString(), {
             number: count,
-            message: `Please access the Teiler for project types "${pendingTypes.join(", ")}", review the queries, and execute them. Note that the queries may take some time to arrive at the Teiler. Once execution is complete, return here for further instructions.`
+            message: `Please access ${teiler} for project types "${pendingTypes.join(", ")}", review the queries, and execute them. Note that the queries may take some time to arrive at the Teiler. Once execution is complete, return here for further instructions.`
           });
           count++;
         }
-      }
+      });
       return extendedExplanations
     },
 
@@ -3045,12 +3159,6 @@ export default defineComponent({
       }
     },
 
-
-    goToResearchEnvironment() {
-      if (this.researchEnvironmentUrl) {
-        window.open(this.researchEnvironmentUrl, '_blank');
-      }
-    },
 
     fetchExtraParamsForProjectOutput(currentPmRequestParameter: PmRequestParameter, output: ProjectOutput) {
       let result = new Map<string, string>();
@@ -3132,85 +3240,96 @@ export default defineComponent({
           this.getCategorySortValue(a.category) - this.getCategorySortValue(b.category))
     },
 
-    fetchButtons(): void {
-
-      const executions = this.activeBridgehead?.executions ?? [];
-
-      // Collect unique project types
+    // The bridgehead admin's operations for one bridgehead: what moves it forward (Next step) and the occasional ones
+    // (menu).
+    fetchBridgeheadButtons(bridgehead: Bridgehead):
+        { nextStepGroups: ActionButtonGroup[], menuButtons: ActionButton[] } {
+      const executions = bridgehead.executions ?? [];
       const projectTypes = [...new Set(executions.map(exec => exec.projectType))];
-      const projectTypesParam = projectTypes.join(",");
-
-      // Determine button text
-      const hasFinishedExecution = executions.some(exec => exec.queryState === "FINISHED");
-
-      // Check if RESEARCH_ENVIRONMENT exists
+      const hasFinishedExecution = executions.some(exec => exec.queryState === QueryState.FINISHED);
       const hasResearchEnvironment = projectTypes.includes(ProjectType.RESEARCH_ENVIRONMENT);
-
-      // Site operations act on the active site (the site admin's own one). The first send of the query and
-      // authorizing access are that admin's next steps (the "Next step" card); resending and revoking are
-      // occasional, so they are in the "More actions" menu. Both name the site. Not in the Status card: it
-      // shows where things stand, not what to do.
-      const siteName = this.activeBridgehead?.humanReadable ?? this.activeBridgehead?.bridgehead ?? '';
+      const bridgeheadName = bridgehead.humanReadable ?? bridgehead.bridgehead;
       const sendQueryButton = (resend: boolean): ActionButton => ({
         module: Module.EXPORT_MODULE,
         action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
         refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-        text: resend ? `Resend query (${siteName})` : "Send query",
+        text: resend ? `Resend query (${bridgeheadName})` : "Send query",
         withMessage: false,
         cssClass: resend ? "menu-item" : "btn btn-primary",
         params: new Map<string, string>([
-          [PmRequestParameter.PROJECT_TYPE, projectTypesParam]
+          [PmRequestParameter.PROJECT_TYPE, projectTypes.join(",")]
         ]),
-        visibilityCondition: this.canShowBridgeheadAdminButtons && executions.length > 0 && resend === hasFinishedExecution
+        visibilityCondition: this.canShowBridgeheadAdminButtons && executions.length > 0 && resend === hasFinishedExecution,
+        bridgehead
       });
-      const siteNextStepGroups = [
-        {
-          label: `Send the query to ${siteName}`,
-          description: "Send the request's query to your site, where the data for this request is prepared.",
-          button: [sendQueryButton(false)]
-        },
-        {
-          label: `Authorize access for ${siteName}`,
-          description: "Once your site's data is ready, authorize access to it for this request.",
-          button: [{
-            module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
-            refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-            text: "Authorize access", withMessage: false, cssClass: "btn btn-primary",
-            visibilityCondition: this.activeBridgehead?.state !== 'ACCEPTED' && this.canShowBridgeheadAdminButtons
-          }]
-        },
-      ] as ActionButtonGroup[];
-      const siteMenuButtons = [
-        sendQueryButton(true),
-        ...(hasResearchEnvironment
-            ? [{
-              module: Module.EXPORT_MODULE,
-              action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: `Resend export files (${siteName})`,
-              withMessage: false,
-              params: new Map<string, string>([
-                [PmRequestParameter.PROJECT_TYPE, ProjectType.RESEARCH_ENVIRONMENT]
-              ]),
-              cssClass: "menu-item"
+      return {
+        nextStepGroups: [
+          {
+            label: `Send the query to ${bridgeheadName}`,
+            description: "Send the request's query to your site, where the data for this request is prepared.",
+            button: [sendQueryButton(false)]
+          },
+          {
+            label: `Authorize access for ${bridgeheadName}`,
+            description: "Once your site's data is ready, authorize access to it for this request.",
+            button: [{
+              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
+              refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+              text: "Authorize access", withMessage: false, cssClass: "btn btn-primary",
+              visibilityCondition: bridgehead.state !== ProjectBridgeheadState.ACCEPTED && this.canShowBridgeheadAdminButtons,
+              bridgehead
             }]
-            : []),
-        {
-          module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION,
-          refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-          text: `Revoke access (${siteName})`,
-          confirmationText: "This site's data is no longer available for this request.", withMessage: true,
-          cssClass: "menu-item menu-item-danger",
-          visibilityCondition: this.activeBridgehead?.state !== 'REJECTED' && this.canShowBridgeheadAdminButtons
-        },
-      ] as ActionButton[];
+          },
+        ],
+        menuButtons: [
+          sendQueryButton(true),
+          ...(hasResearchEnvironment
+              ? [{
+                module: Module.EXPORT_MODULE,
+                action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,
+                refreshContextCallFunction: this.refreshContext as () => void,
+                text: `Resend export files (${bridgeheadName})`,
+                withMessage: false,
+                params: new Map<string, string>([
+                  [PmRequestParameter.PROJECT_TYPE, ProjectType.RESEARCH_ENVIRONMENT]
+                ]),
+                cssClass: "menu-item",
+                bridgehead
+              }]
+              : []),
+          {
+            module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION,
+            refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+            text: `Revoke access (${bridgeheadName})`,
+            confirmationText: "This site's data is no longer available for this request.", withMessage: true,
+            cssClass: "menu-item menu-item-danger",
+            visibilityCondition: bridgehead.state !== ProjectBridgeheadState.REJECTED && this.canShowBridgeheadAdminButtons,
+            bridgehead
+          },
+        ]
+      };
+    },
+
+    fetchButtons(): void {
+      // Bridgehead operations: once per bridgehead where the user has a bridgehead role, each with that bridgehead and
+      // its permissions (docs/bridgehead-context.md). The first send of the query and authorizing access are the
+      // bridgehead admin's next steps (the "Next step" card); resending and revoking are occasional, so they are in the
+      // "More actions" menu. Both name the bridgehead. Not in the Status card: it shows where things stand, not what to
+      // do.
+      const bridgeheadButtons = this.fetchBridgeheadsWithBridgeheadRoles()
+          .map(bridgehead => this.fetchBridgeheadButtons(bridgehead));
+      const bridgeheadNextStepGroups = bridgeheadButtons.flatMap(buttons => buttons.nextStepGroups);
+      const bridgeheadMenuButtons = bridgeheadButtons.flatMap(buttons => buttons.menuButtons);
+      // Reviews and research environment of invited users: once per bridgehead where they are invited
+      const invitedUserGroups = this.fetchInvitedUserBridgeheads()
+          .map(bridgehead => this.fetchInvitedUserGroups(bridgehead));
 
       // Rare or destructive request-level actions: the "More actions" menu of the At a Glance card, out of the
       // way of the main action. "Start final phase" is here only when it skips develop and pilot, which are
       // possible (DataSHIELD, research environment); otherwise (from PILOT, or an export request in APPROVAL)
       // it is the main action of the "Next step" card.
       this.moreActionButtons = [
-        ...siteMenuButtons,
+        ...bridgeheadMenuButtons,
         {
           module: Module.PROJECT_STATE_MODULE, action: Action.START_FINAL_STAGE_ACTION,
           refreshContextCallFunction: this.refreshContext as () => void,
@@ -3292,107 +3411,137 @@ export default defineComponent({
             }
           ] as ActionButton[]
         },
-        {
-          label: "Review the script",
-          description: "Check the script: accept it, request changes, or reject it.",
-          button: [
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_SCRIPT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept script", withMessage: false, cssClass: "btn btn-primary",
-              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_SCRIPT_CHANGES_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Request script changes",
-              messageRequired: true, withMessage: true, cssClass: "btn btn-outline-primary"
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_SCRIPT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Reject script",
-              messageRequired: true, withMessage: true, cssClass: "btn btn-outline-danger",
-              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
-            }
-          ] as ActionButton[]
-        },
-        {
-          label: "Review the analysis",
-          description: "Check the analysis: accept it, request changes, or reject it.",
-          button: [
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ANALYSIS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept analysis", withMessage: false, cssClass: "btn btn-primary",
-              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE,
-              action: Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Request changes to analysis",
-              messageRequired: true,
-              withMessage: true,
-              cssClass: "btn btn-outline-primary"
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ANALYSIS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Reject analysis",
-              messageRequired: true, withMessage: true, cssClass: "btn btn-outline-danger",
-              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
-            }
-          ] as ActionButton[]
-        },
-        {
-          label: "Review the results",
-          description: "Check the results: accept them, request changes, or reject them.",
-          button: [
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_RESULTS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept results", withMessage: false, cssClass: "btn btn-primary",
-              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Request changes to results",
-              messageRequired: true, withMessage: true, cssClass: "btn btn-outline-primary"
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_RESULTS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Reject results",
-              messageRequired: true, withMessage: true, cssClass: "btn btn-outline-danger",
-              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
-            }
-          ] as ActionButton[]
-        },
-        ...siteNextStepGroups,
-        {
-          label: "Research environment",
-          description: "Your workspace in the research environment is ready.",
-          button: [
-            {
-              module: Module.USER_MODULE,
-              action: Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Open research environment ↗",
-              withMessage: false,
-              cssClass: "btn btn-outline-primary",
-              visibilityCondition: this.researchEnvironmentUrl !== undefined && this.existsResearchEnvironmentWorkspace,
-              doActionOnClick: this.goToResearchEnvironment as () => void
-            }
-          ] as ActionButton[]
-        }
+        ...invitedUserGroups.flatMap(groups => groups.reviewGroups),
+        ...bridgeheadNextStepGroups,
+        ...invitedUserGroups.flatMap(groups => groups.environmentGroups)
       ] as ActionButtonGroup[];
+    },
+
+    // The bridgeheads where the user is an invited user: developer, pilot or final.
+    fetchInvitedUserBridgeheads(): Bridgehead[] {
+      return this.fetchBridgeheadsWithBridgeheadRoles().filter(bridgehead =>
+          [ProjectRole.DEVELOPER, ProjectRole.PILOT, ProjectRole.FINAL]
+              .some(role => this.bridgeheadRoles.get(bridgehead.bridgehead)?.has(role)));
+    },
+
+    // The invited user's state and research environment at each of their bridgeheads, each asked with that bridgehead's
+    // permissions (one request per bridgehead).
+    async loadBridgeheadUserData(): Promise<void> {
+      const bridgeheads = this.fetchInvitedUserBridgeheads();
+      const answers = await Promise.all(bridgeheads.map(async (bridgehead): Promise<[string, BridgeheadUserData]> => {
+        const context = new ProjectManagerContext(this.projectCode, bridgehead);
+        const entry = (id: string, action: Action) =>
+            ({id, module: Module.USER_MODULE, action, params: new Map<string, unknown>(), context});
+        try {
+          const results = await this.projectManagerBackendService.fetchBatch([
+            entry('currentUser', Action.FETCH_CURRENT_USER_ACTION),
+            entry('url', Action.FETCH_RESEARCH_ENVIRONMENT_URL_ACTION),
+            entry('workspace', Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION),
+            {...entry('authenticationScript', Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION), module: Module.TOKEN_MANAGER_MODULE}
+          ], context);
+          return [bridgehead.bridgehead, {
+            currentUser: results.get('currentUser')?.response as User | undefined,
+            researchEnvironmentUrl: results.get('url')?.response as string | undefined,
+            existsResearchEnvironmentWorkspace: results.get('workspace')?.response === true,
+            existsAuthenticationScript: results.get('authenticationScript')?.response === true
+          }];
+        } catch (error) {
+          console.error(`Error loading the user's data at ${bridgehead.bridgehead}:`, error);
+          return [bridgehead.bridgehead, {existsResearchEnvironmentWorkspace: false}];
+        }
+      }));
+      this.bridgeheadUserData = new Map(answers);
+      this.extendedExplanations = this.fetchExtendedExplanations();
+    },
+
+    // An invited user's reviews (script, analysis, results) and research environment at one bridgehead. Named with the
+    // bridgehead when the user has bridgehead roles at several bridgeheads.
+    fetchInvitedUserGroups(bridgehead: Bridgehead):
+        { reviewGroups: ActionButtonGroup[], environmentGroups: ActionButtonGroup[] } {
+      const data = this.bridgeheadUserData.get(bridgehead.bridgehead);
+      const state = data?.currentUser?.projectState;
+      const named = (label: string) => this.fetchBridgeheadsWithBridgeheadRoles().length > 1
+          ? `${label} (${bridgehead.humanReadable ?? bridgehead.bridgehead})` : label;
+      const button = (action: Action, text: string, cssClass: string, more: Partial<ActionButton> = {}): ActionButton => ({
+        module: Module.PROJECT_STATE_MODULE, action,
+        refreshContextCallFunction: this.refreshContext as () => void,
+        text, withMessage: false, cssClass, bridgehead, ...more
+      });
+      const review = (label: string, description: string, accept: Action, acceptText: string, changes: Action,
+                      changesText: string, reject: Action, rejectText: string): ActionButtonGroup => ({
+        label: named(label),
+        description,
+        button: [
+          button(accept, acceptText, "btn btn-primary", {visibilityCondition: state !== UserProjectState.ACCEPTED}),
+          button(changes, changesText, "btn btn-outline-primary", {messageRequired: true, withMessage: true}),
+          button(reject, rejectText, "btn btn-outline-danger",
+              {messageRequired: true, withMessage: true, visibilityCondition: state !== UserProjectState.REJECTED})
+        ]
+      });
+      const url = data?.researchEnvironmentUrl;
+      return {
+        reviewGroups: [
+          review("Review the script", "Check the script: accept it, request changes, or reject it.",
+              Action.ACCEPT_SCRIPT_ACTION, "Accept script", Action.REQUEST_SCRIPT_CHANGES_ACTION,
+              "Request script changes", Action.REJECT_SCRIPT_ACTION, "Reject script"),
+          review("Review the analysis", "Check the analysis: accept it, request changes, or reject it.",
+              Action.ACCEPT_PROJECT_ANALYSIS_ACTION, "Accept analysis", Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
+              "Request changes to analysis", Action.REJECT_PROJECT_ANALYSIS_ACTION, "Reject analysis"),
+          review("Review the results", "Check the results: accept them, request changes, or reject them.",
+              Action.ACCEPT_PROJECT_RESULTS_ACTION, "Accept results", Action.REQUEST_CHANGES_IN_PROJECT_ACTION,
+              "Request changes to results", Action.REJECT_PROJECT_RESULTS_ACTION, "Reject results")
+        ],
+        environmentGroups: [{
+          label: named("Research environment"),
+          description: "Your workspace in the research environment is ready.",
+          button: [{
+            module: Module.USER_MODULE,
+            action: Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION,
+            refreshContextCallFunction: this.refreshContext as () => void,
+            text: "Open research environment ↗",
+            withMessage: false,
+            cssClass: "btn btn-outline-primary",
+            visibilityCondition: url !== undefined && data?.existsResearchEnvironmentWorkspace === true,
+            doActionOnClick: () => window.open(url, '_blank'),
+            bridgehead
+          }]
+        }]
+      };
+    },
+
+    // The context of the project and a bridgehead; without a bridgehead, the page's. The page's service checks every
+    // call against the actions of the call's bridgehead.
+    createContext(bridgehead?: Bridgehead): ProjectManagerContext {
+      return bridgehead ? new ProjectManagerContext(this.projectCode, bridgehead) : this.context;
+    },
+    buttonContext(button: ActionButton): ProjectManagerContext {
+      return this.createContext(button.bridgehead);
+    },
+
+    // The project has one script; a bridgehead is only sent so that the backend knows the user's role. The project
+    // manager admin needs none; anyone else uses a bridgehead where they have one of the allowed roles.
+    fetchScriptBridgehead(allowedRoles: ProjectRole[]): Bridgehead | undefined {
+      if (this.projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)) return undefined;
+      return this.fetchBridgeheadsWithBridgeheadRoles()
+          .find(bridgehead => allowedRoles.some(role => this.bridgeheadRoles.get(bridgehead.bridgehead)?.has(role)));
+    },
+
+    fetchScriptUploadBridgehead(): Bridgehead | undefined {
+      return this.fetchScriptBridgehead(SCRIPT_UPLOAD_ROLES);
+    },
+    fetchScriptViewBridgehead(): Bridgehead | undefined {
+      return this.fetchScriptBridgehead(SCRIPT_ROLES);
+    },
+
+    // The bridgeheads with an authentication script for the user (DataSHIELD; invited users only).
+    fetchAuthenticationScriptBridgeheads(): Bridgehead[] {
+      return this.fetchInvitedUserBridgeheads()
+          .filter(bridgehead => this.bridgeheadUserData.get(bridgehead.bridgehead)?.existsAuthenticationScript);
     },
 
     async isButtonVisible(button: ActionButton): Promise<boolean> {
       return (button.visibilityCondition ?? true) &&
-          await this.projectManagerBackendService.isModuleActionActive(button.module, button.action, this.context);
+          await this.projectManagerBackendService.isModuleActionActive(button.module, button.action, this.buttonContext(button));
     },
 
     async isAnyButtonOfGroupVisible(buttonGroup: ActionButtonGroup): Promise<boolean> {
@@ -3405,11 +3554,18 @@ export default defineComponent({
       const [nextStepGroups, moreActions, canInvite] = await Promise.all([
         Promise.all(this.nextStepGroups.map(group => this.isAnyButtonOfGroupVisible(group))),
         Promise.all(this.moreActionButtons.map(button => this.isButtonVisible(button))),
-        this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, this.fetchInviteAction(), this.context),
+        this.canInviteAtAnyBridgehead(),
       ]);
       this.nextStepGroupsVisible = nextStepGroups;
       this.anyMoreActionVisible = moreActions.includes(true);
       this.canInviteUsers = canInvite;
+    },
+
+    // Invitations are per bridgehead: whether the user may invite at any visible bridgehead.
+    async canInviteAtAnyBridgehead(): Promise<boolean> {
+      return (await Promise.all(this.visibleBridgeheads.map(bridgehead => this.projectManagerBackendService
+          .isModuleActionActive(Module.USER_MODULE, this.fetchInviteAction(), this.createContext(bridgehead)))))
+          .includes(true);
     },
 
     openInviteDialog() {

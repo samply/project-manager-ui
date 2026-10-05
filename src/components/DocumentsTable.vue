@@ -9,6 +9,7 @@ import {
   ProjectManagerBackendService,
   ProjectManagerContext
 } from "@/services/projectManagerBackendService";
+import {PmRequestParameter} from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import {PropType, watch} from "vue";
@@ -26,7 +27,10 @@ import {getConfig} from "@/services/configLoader";
     fetchListAction: {type: String as PropType<Action>, required: false},
     iconClass: {type: String, required: false},
     text: {type: String, required: true},
-    bridgeheads: {type: Array as PropType<Bridgehead[]>, required: false, default: () => []},
+    // The bridgeheads to list the documents for, each with its own bridgehead; null: without a bridgehead, which lists
+    // the documents of the whole project and of every bridgehead (for the creator and the project manager admin,
+    // docs/bridgehead-context.md)
+    listBridgeheads: {type: Array as PropType<(Bridgehead | null)[]>, required: false, default: () => []},
     documents: {type: Array as PropType<ProjectDocument[]>, required: false},
     projectManagerAdmin: {type: Boolean, default: false},
     callRefreshContext: {type: Function as unknown as () => () => void, required: false}
@@ -42,7 +46,7 @@ export default class DocumentsTable extends Vue {
   // noinspection JSUnusedGlobalSymbols
   readonly iconClass?: string;
   readonly text!: string;
-  readonly bridgeheads!: Bridgehead[];
+  readonly listBridgeheads!: (Bridgehead | null)[];
   readonly documents?: ProjectDocument[];
   readonly projectManagerAdmin!: boolean;
   readonly callRefreshContext?: () => void;
@@ -53,6 +57,8 @@ export default class DocumentsTable extends Vue {
   Module = Module;
   projectDocuments: ProjectDocument[] = [];
   projectDocumentIds = new Set<string>();
+  // The context each listed document was found with: downloading and removing it use the same one
+  documentContexts = new Map<string, ProjectManagerContext>();
   createdAtDisplayFormat: DisplayFormatKey = DisplayFormatKey.DATE_TIME_FORMAT;
 
   get usesProvidedDocuments(): boolean {
@@ -77,6 +83,12 @@ export default class DocumentsTable extends Vue {
         {immediate: true, deep: true}
     );
     watch(
+        () => this.listBridgeheads.map(bridgehead => bridgehead?.bridgehead ?? '').join(','),
+        () => {
+          if (this.canDownload && !this.usesProvidedDocuments) this.fetchProjectDocuments();
+        }
+    );
+    watch(
         () => this.documents,
         (documents) => {
           if (documents) this.projectDocuments = documents;
@@ -98,17 +110,31 @@ export default class DocumentsTable extends Vue {
   fetchProjectDocuments() {
     this.projectDocuments = [];
     this.projectDocumentIds = new Set<string>();
+    this.documentContexts = new Map<string, ProjectManagerContext>();
     const fetchListAction = this.fetchListAction;
     if (!fetchListAction) return;
-    this.bridgeheads.forEach(bridgehead => this.projectManagerBackendService
-        .fetchData(Module.PROJECT_DOCUMENTS_MODULE, fetchListAction, this.createContext(bridgehead), new Map())
-        .then(results => (results as ProjectDocument[]).forEach(result => {
-          let key = result.id != null ? String(result.id) : JSON.stringify(result);
-          if (!this.projectDocumentIds.has(key)) {
-            this.projectDocuments.push(result);
-            this.projectDocumentIds.add(key);
-          }
-        })));
+    this.listBridgeheads.forEach(bridgehead => {
+      const context = this.createContext(bridgehead);
+      this.projectManagerBackendService
+          .fetchData(Module.PROJECT_DOCUMENTS_MODULE, fetchListAction, context, new Map())
+          .then(results => (results as ProjectDocument[]).forEach(result => {
+            const key = this.documentKey(result);
+            if (!this.projectDocumentIds.has(key)) {
+              this.projectDocuments.push(result);
+              this.projectDocumentIds.add(key);
+              this.documentContexts.set(key, context);
+            }
+          }));
+    });
+  }
+
+  documentKey(projectDocument: ProjectDocument): string {
+    return projectDocument.id != null ? String(projectDocument.id) : JSON.stringify(projectDocument);
+  }
+
+  // Provided documents come with the context of whoever shows them.
+  documentContext(projectDocument: ProjectDocument): ProjectManagerContext {
+    return this.documentContexts.get(this.documentKey(projectDocument)) ?? this.context;
   }
 
   updateCanDownload() {
@@ -131,8 +157,8 @@ export default class DocumentsTable extends Vue {
       await this.projectManagerBackendService.fetchData(
           Module.PROJECT_DOCUMENTS_MODULE,
           Action.REMOVE_DOCUMENT_ACTION,
-          this.context,
-          new Map([["document-id", projectDocument.id]]));
+          this.documentContext(projectDocument),
+          new Map([[PmRequestParameter.DOCUMENT_ID, projectDocument.id]]));
       this.projectDocuments = this.projectDocuments.filter(document => document.id !== projectDocument.id);
       this.callRefreshContext?.();
     } finally {
@@ -145,8 +171,8 @@ export default class DocumentsTable extends Vue {
         projectDocument.creatorEmail === AuthService.getEmail());
   }
 
-  createContext(bridgehead: Bridgehead) {
-    return new ProjectManagerContext(this.context.projectCode, bridgehead);
+  createContext(bridgehead: Bridgehead | null) {
+    return new ProjectManagerContext(this.context.projectCode, bridgehead ?? undefined);
   }
 
   formatCreatedAt(createdAt: string): string {
@@ -189,7 +215,7 @@ export default class DocumentsTable extends Vue {
           <td>
             <div class="document-actions">
             <DownloadButton v-if="canDownload && projectDocument.originalFilename"
-                            :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :context="documentContext(projectDocument)" :project-manager-backend-service="projectManagerBackendService"
                             :module="Module.PROJECT_DOCUMENTS_MODULE" :action="downloadAction" :icon-class="iconClass"
                             :filename="projectDocument.originalFilename"/>
             <button v-if="canRemoveDocument(projectDocument) && projectDocument.id != null" type="button"

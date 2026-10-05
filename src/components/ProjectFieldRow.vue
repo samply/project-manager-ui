@@ -16,10 +16,12 @@ import {
   ProjectDocument,
   ProjectRole,
   ProjectState,
+  ProjectType,
   NOT_SELECTED_PROJECT_CONFIGURATION
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
+import BridgeheadVotes from "@/components/BridgeheadVotes.vue";
 import ContextInfoBox from "@/components/ContextInfoBox.vue";
 import MandatoryFieldMarker from "@/components/MandatoryFieldMarker.vue";
 import type {DialogStep} from "@/services/fixedDialogStep";
@@ -39,6 +41,12 @@ import {handleError, PropType, watch} from "vue";
 import "@samply/lens";
 import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
 
+// The URL parameters of the Explorer (Lens), where "Edit in Explorer" redirects to: an external interface
+enum ExplorerUrlParameter {
+  QUERY = "query",
+  DATA_REQUESTS = "datarequests"
+}
+
 @Options({
   name: "ProjectFieldRow",
   methods: {handleError},
@@ -47,7 +55,7 @@ import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
       return configLabel;
     }
   },
-  components: {ContextInfoBox, DownloadButton, MandatoryFieldMarker, UploadButton},
+  components: {ContextInfoBox, DownloadButton, MandatoryFieldMarker, BridgeheadVotes, UploadButton},
   props: {
     fieldKey: {type: String, required: true},
     editProjectParam: {type: Array as PropType<PmRequestParameter[]>, required: false, default: []},
@@ -429,7 +437,7 @@ export default class ProjectFieldRow extends Vue {
     const params = new Map<string, string>();
 
     if (this.editProjectParam && this.editProjectParam.length > 0) {
-      if (this.includesPmRequestParameter(PmRequestParameter.PROJECT_TYPE) && this.tempFieldValue[0] === "DATASHIELD") {
+      if (this.includesPmRequestParameter(PmRequestParameter.PROJECT_TYPE) && this.tempFieldValue[0] === ProjectType.DATASHIELD) {
         params.set(PmRequestParameter.OUTPUT_FORMAT, "OPAL");
         params.set(PmRequestParameter.TEMPLATE_ID, "opal-ccp");
       }
@@ -492,11 +500,11 @@ export default class ProjectFieldRow extends Vue {
     const url = new URL(this.redirectUrl);
     const bridgeheads = this.bridgeheads?.selected?.map(bridgehead => bridgehead.bridgehead) ?? [];
     const query = this.toLensUrlQuery(this.editedValue[2])
-        ?? this.toLensUrlQuery(url.searchParams.get("query"));
+        ?? this.toLensUrlQuery(url.searchParams.get(ExplorerUrlParameter.QUERY));
     // An unparseable query would only make the Explorer show an error.
-    if (query) url.searchParams.set("query", query);
-    else url.searchParams.delete("query");
-    url.searchParams.set("datarequests", Utils.encodeBase64(JSON.stringify(bridgeheads)));
+    if (query) url.searchParams.set(ExplorerUrlParameter.QUERY, query);
+    else url.searchParams.delete(ExplorerUrlParameter.QUERY);
+    url.searchParams.set(ExplorerUrlParameter.DATA_REQUESTS, Utils.encodeBase64(JSON.stringify(bridgeheads)));
     window.location.href = url.toString();
   }
 
@@ -657,6 +665,9 @@ export default class ProjectFieldRow extends Vue {
   }
   isDescription(): boolean {
     return this.includesPmRequestParameter(PmRequestParameter.DESCRIPTION);
+  }
+  isBridgeheadVote(): boolean {
+    return this.uploadAction === Action.UPLOAD_VOTUM_ACTION;
   }
   isDescriptionUpload(): boolean {
     return this.fieldKey === "DescriptionUpload";
@@ -1427,7 +1438,14 @@ export default class ProjectFieldRow extends Vue {
         </div>
       </div>
       <div v-if="!(isInputType(FormDataType.BOOLEAN) && !this.mandatory) || isBlock() || isReadOnlyView()" :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'full-row': isHeaderlessReadOnlyView() }]">
-        <div v-if="uploadAction && !isDescriptionUpload()" style="width:100%;min-width:0">
+        <!-- The ethics vote of one bridgehead: a row per bridgehead, each with its own bridgehead
+             (docs/bridgehead-context.md). -->
+        <div v-if="isBridgeheadVote()" style="width:100%;min-width:0">
+          <BridgeheadVotes :context="context" :project-manager-backend-service="projectManagerBackendService"
+                     :bridgeheads="visibleBridgeheads" :editable="!isReadOnlyView()" :mandatory="mandatory"
+                     :project-manager-admin="isProjectManagerAdmin()" :call-refresh-context="exitAndCallRefreshContext"/>
+        </div>
+        <div v-else-if="uploadAction && !isDescriptionUpload()" style="width:100%;min-width:0">
           <div v-if="isReadOnlyView()" style="display:flex; align-items:center; gap:0.5rem"
                :class="{ 'summary-empty': !existsFile, 'summary-missing': mandatory && !existsFile }">
             <span>{{ getFileSummaryValue() }}</span>
@@ -1439,7 +1457,6 @@ export default class ProjectFieldRow extends Vue {
           <UploadButton v-else :context="context" :project-manager-backend-service="projectManagerBackendService"
                         :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
                         :download-action="downloadAction"
-                        :visible-bridgeheads="visibleBridgeheads" :use-bridgehead-chooser="fieldKey === 'Ethic vote'"
                         :text="fieldKey?.trim() ? 'Upload ' + fieldKey : ''" :call-refresh-context="exitAndCallRefreshContext"
                         :project-manager-admin="isProjectManagerAdmin()"
                         :is-file="true" :toggle-input="fieldKey.startsWith('Ethic vote')" :file-name="fieldValue[1]" :exists-file="existsFile" :project-document="projectDocument"/>

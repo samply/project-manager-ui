@@ -1873,7 +1873,8 @@ export default defineComponent({
           ?.filter(field => this.isApplicableMandatoryFormField(field))
           .every(field => this.hasMeaningfulValue(field.value));
 
-      return baseFieldsValid && mandatoryFormFieldsValid;
+      return baseFieldsValid && mandatoryFormFieldsValid &&
+          !this.formFields?.some(field => this.hasNotAllowedValue(field));
     },
 
     isMandatoryFixedProjectFieldValid(key: FixedFormFieldKey, value: unknown): boolean {
@@ -1882,12 +1883,25 @@ export default defineComponent({
     },
 
     isApplicableMandatoryFormField(field: FormField): boolean {
+      return Boolean(field.mandatory) && this.isApplicableFormField(field);
+    },
+
+    isApplicableFormField(field: FormField): boolean {
       const belongsToExistingBlock = !field.block || field.blockInstance != null;
 
       return this.isDynamicFormField(field) &&
-          Boolean(field.mandatory) &&
           belongsToExistingBlock &&
           this.selectedForms.some(form => form.title === field.title);
+    },
+
+    // A stored value that is not one of the field's allowed values (e.g. the
+    // config changed, or a condition chose another instance of the field). It
+    // is kept, but the request cannot be created with it; mandatory or not.
+    hasNotAllowedValue(field: FormField): boolean {
+      return this.isApplicableFormField(field) &&
+          (field.allowedValues?.length ?? 0) > 0 &&
+          this.hasMeaningfulValue(field.value) &&
+          !field.allowedValues!.some(allowedValue => allowedValue.label === field.value);
     },
 
     hasMeaningfulValue(value: unknown): boolean {
@@ -1924,10 +1938,12 @@ export default defineComponent({
 
         // 👇 group missing mandatory form fields
         this.groupedMissingFields = this.formFields
-            ?.filter(field => this.isApplicableMandatoryFormField(field) && !this.hasMeaningfulValue(field.value))
+            ?.filter(field => (this.isApplicableMandatoryFormField(field) && !this.hasMeaningfulValue(field.value)) ||
+                this.hasNotAllowedValue(field))
             .reduce((acc, field) => {
               const title = field.titleDisplayName ?? field.title;
-              const label = field.labelDisplayName ?? field.label;
+              const label = (field.labelDisplayName ?? field.label) +
+                  (this.hasNotAllowedValue(field) ? ' (value not allowed)' : '');
 
               if (!acc[title]) acc[title] = [];
               acc[title].push(label);

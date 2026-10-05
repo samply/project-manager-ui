@@ -739,6 +739,26 @@ export default class ProjectFieldRow extends Vue {
   get nonEmptyInstances(): ProjectFieldInstance[] {
     return (this.instances ?? []).filter(instance => this.hasMeaningfulValue(instance.value));
   }
+  // A stored value that is not one of the allowed values (e.g. the config
+  // changed, or a condition chose another instance of the field). It is kept
+  // and shown as invalid until the user picks another one; ProjectView blocks
+  // creating the request meanwhile. Only in a draft: once submitted, the value
+  // was accepted. Only form fields: the fixed fields' options come from
+  // elsewhere, and ProjectView checks only form fields.
+  isNotAllowedValue(value?: string): boolean {
+    return this.isDraft() && this.includesPmRequestParameter(PmRequestParameter.FORM_FIELDS) &&
+        this.isSelection() &&
+        this.hasMeaningfulValue(value) && !(this.possibleValues ?? []).includes(value!);
+  }
+  get notAllowedInstanceValues(): string[] {
+    return this.nonEmptyInstances.map(instance => instance.value!).filter(value => this.isNotAllowedValue(value));
+  }
+  getNotAllowedValueMessage(values: string[]): string {
+    const quoted = values.map(value => `"${value}"`).join(", ");
+    return values.length > 1
+        ? `${quoted} are not valid values. Please choose different ones.`
+        : `${quoted} is not a valid value. Please choose a different one.`;
+  }
   getEmptySummaryValue(emptyCollectionText = "Not provided"): string {
     return this.mandatory ? "Missing — required" : emptyCollectionText;
   }
@@ -1082,6 +1102,9 @@ export default class ProjectFieldRow extends Vue {
       <select v-else-if="isSelection() && ((isDraft() && !isSummaryStep()) || editMode)"
               :aria-required="mandatory ? 'true' : undefined"
               v-model="editedValue[0]" @change="onInputChange" class="form-select">
+        <option v-if="isNotAllowedValue(editedValue[0])" :value="editedValue[0]" disabled>
+          {{ editedValue[0] }} (not allowed)
+        </option>
         <option v-for="value in possibleValues" :key="value" :value="value">
           {{ displayPossibleValue(value).name }}
         </option>
@@ -1115,6 +1138,9 @@ export default class ProjectFieldRow extends Vue {
           :disabled="(!isDraft() || isSummaryStep()) && !editMode"
           style="width:100%"
       >
+      <div v-if="isNotAllowedValue(editedValue[0])" class="not-allowed-value">
+        {{ getNotAllowedValueMessage([editedValue[0]]) }}
+      </div>
     </div>
     <button v-if="deleteAction && deleteModule && ((isDraft() && !isSummaryStep()) || editMode)"
             type="button" class="btn btn-sm dktk-darkblue" style="padding: 0 6px; flex-shrink:0;" title="Remove this value"
@@ -1194,6 +1220,15 @@ export default class ProjectFieldRow extends Vue {
                         v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></span>
                 </label>
               </div>
+              <!-- Stored values that are not allowed: unchecking removes them. -->
+              <div v-for="value in notAllowedInstanceValues" :key="`not-allowed-${value}`" class="form-check option-row">
+                <input class="form-check-input" type="checkbox" style="margin:0;" checked
+                       :id="`${radioGroupName}-not-allowed-${value}`"
+                       @change="toggleCheckboxValue(value, ($event.target as HTMLInputElement).checked)">
+                <label class="form-check-label option-label not-allowed-value" :for="`${radioGroupName}-not-allowed-${value}`">
+                  {{ value }} (not allowed)
+                </label>
+              </div>
             </div>
           </template>
           <!--
@@ -1240,6 +1275,9 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
           </template>
+          <div v-if="notAllowedInstanceValues.length > 0" class="not-allowed-value">
+            {{ getNotAllowedValueMessage(notAllowedInstanceValues) }}
+          </div>
         </template>
         <template v-else>
           <div v-if="isReadOnlyView() && nonEmptyInstances.length === 0"
@@ -1705,9 +1743,15 @@ export default class ProjectFieldRow extends Vue {
                   {{ getEmptySummaryValue() }}
                 </div>
               </div>
+              <div v-if="isNotAllowedValue(editedValue[0])" class="not-allowed-value">
+                {{ getNotAllowedValueMessage([editedValue[0]]) }}
+              </div>
             </div>
             <div v-else-if="isSelection() && !isConfiguration()" style="width: 100%;">
               <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onInputChange" class="form-select" :aria-required="mandatory ? 'true' : undefined">
+                <option v-if="isNotAllowedValue(editedValue[0])" :value="editedValue[0]" disabled>
+                  {{ editedValue[0] }} (not allowed)
+                </option>
                 <option v-for="value in possibleValues" :key="value" :value="value">
                   {{ displayPossibleValue(value).name }}
                   <!--<span style="font-size: smaller"> {{displayPossibleValue(value).description}}</span>-->
@@ -1721,6 +1765,9 @@ export default class ProjectFieldRow extends Vue {
                 <div v-else class="summary-empty" :class="{ 'summary-missing': mandatory }">
                   {{ getEmptySummaryValue() }}
                 </div>
+              </div>
+              <div v-if="isNotAllowedValue(editedValue[0])" class="not-allowed-value">
+                {{ getNotAllowedValueMessage([editedValue[0]]) }}
               </div>
             </div>
             <div v-else-if="isInputType(FormDataType.LONG_STRING)" style="width:100%">
@@ -1786,6 +1833,13 @@ export default class ProjectFieldRow extends Vue {
 .summary-missing {
   color: #b42318;
   font-weight: 600;
+}
+
+/* A stored value that is not one of the field's allowed values (draft only). */
+.not-allowed-value {
+  color: var(--status-danger-color);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
 }
 
 .truncate-15 {

@@ -151,6 +151,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Success message after a redirect (action feedback marker)
 - Projects without sites: isModuleActionActive also checks that an action needing a site has one (isModuleActionAllowed: permission only); the last site can be removed
 - Embed external URL's
+- Draft: a stored value that is not one of its field's allowed values is shown as not valid and blocks creating the request
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

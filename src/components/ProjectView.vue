@@ -3956,12 +3956,11 @@ export default defineComponent({
 }
 
 .right-container {
-  flex: 0 0 var(--content-width);
+  flex: 0 0 70%;
   display: flex;
   flex-flow: row;
-  margin: 28px auto 0;
-  width: var(--content-width);
-  max-width: var(--content-width);
+  margin: 28px auto 28px;
+  max-width: 70%;
   /*align-self: flex-start;*/
 }
 

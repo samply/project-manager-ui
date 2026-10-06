@@ -4,6 +4,14 @@ import {FRONTEND_VARIABLES_PATH} from "@/services/BridgeheadOverviewHeaders";
 export const DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES = 2;
 export const DISPLAY_FORMATS_PATH = '/frontend/display-formats';
 
+/** Spacing between the fields of the summary and the request view (frontend variable SUMMARY_SPACING). */
+export enum SummarySpacing {
+    /** Half the gap of the draft, as before 2026-09-30 */
+    COMPACT = "compact",
+    /** The gap of the draft (default) */
+    AIRY = "airy"
+}
+
 export enum DisplayFormatKey {
     DATE_FORMAT = 'DATE_FORMAT',
     LONG_DATE_FORMAT = 'LONG_DATE_FORMAT',
@@ -52,6 +60,8 @@ export interface FrontendConfig {
      * the user. The UI defaults to two lines when this value is absent or invalid.
      */
     FORM_FIELD_DESCRIPTION_COLLAPSED_LINES?: string;
+    /** Spacing between the fields of the summary and the request view: "compact" or "airy" (default, also when absent or invalid). */
+    SUMMARY_SPACING?: string;
     /** Fallback feedback for failed actions initiated directly by the user. */
     DEFAULT_ERROR_MESSAGE_FOR_USER_ACTIONS?: string;
     /** Display format key for the project dashboard's "created at" column. Falls back to DATE_TIME_FORMAT when absent/invalid. */

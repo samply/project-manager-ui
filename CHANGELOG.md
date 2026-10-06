@@ -196,6 +196,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Clean spaces in draft dialog
 - Actions batch
 - No selected bridgehead in the project view: the bridgehead overview is read only; bridgehead actions, results, invitations and the single-bridgehead status use each bridgehead's own permissions, everything else is asked for the whole project (the user's bridgehead sent only for their role where needed)
+- Frontend variable SUMMARY_SPACING: compact (half the draft's field gap, as before 2026-09-30) or airy (the draft's gap, default) for the summary and the request view
 
 ### Removed
 - Application Form

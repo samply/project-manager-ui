@@ -289,7 +289,7 @@
                 </div>
               </aside>
 
-              <div class="draft-form-card">
+              <div class="draft-form-card" :class="{ 'summary-compact': summaryCompact }">
                   <div v-if="existsDraftDialog" class="project-field-header">
                     <div class="project-field-title">{{
                         draftDialogStepper.currentStep?.displayName
@@ -740,7 +740,7 @@ import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
 import FeasibilityTable from "@/components/FeasibilityTable.vue";
 import MandatoryFieldMarker from "@/components/MandatoryFieldMarker.vue";
 import PhasePill from "@/components/PhasePill.vue";
-import {DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES, getConfig} from "@/services/configLoader";
+import {DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES, getConfig, SummarySpacing} from "@/services/configLoader";
 import {DialogStep, DialogStepper, FixedDialogStep} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
@@ -1190,6 +1190,8 @@ export default defineComponent({
       feasibilityErrors: new Set<string>(),
       feasibilityPageSize: 10,
       formFieldDescriptionCollapsedLines: DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES,
+      // Frontend variable SUMMARY_SPACING: the summary and the request view with half the gap of the draft
+      summaryCompact: false,
       createdAtDisplayFormat: DisplayFormatKey.DATE_TIME_FORMAT as DisplayFormatKey,
       pollingService: null as PollingService | null,
       // The project as a whole: the page has no bridgehead (docs/bridgehead-context.md). Calls with a bridgehead get
@@ -1338,6 +1340,7 @@ export default defineComponent({
     this.pollingService?.execute();
     this.fetchFeasibilityPageSize();
     this.fetchFormFieldDescriptionCollapsedLines();
+    this.fetchSummarySpacing();
     this.fetchCreatedAtDisplayFormat();
     // Backstop alongside the ResizeObserver above: a plain window resize
     // (dragging the browser narrower/wider) always changes the row's width
@@ -1936,6 +1939,10 @@ export default defineComponent({
       this.formFieldDescriptionCollapsedLines = Number.isInteger(configuredLines) && configuredLines > 0
           ? configuredLines
           : DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES;
+    },
+
+    async fetchSummarySpacing() {
+      this.summaryCompact = (await getConfig()).SUMMARY_SPACING === SummarySpacing.COMPACT;
     },
 
     async fetchProject() {
@@ -4203,6 +4210,11 @@ export default defineComponent({
   max-height: calc(100vh - 260px);
   /* With the first/last element's own half gap: one field gap to the card edge. */
   padding: calc(var(--field-gap) / 2) 0;
+}
+/* SUMMARY_SPACING = compact: the summary rhythm is half the draft's. Set on the card, not on the content below: the
+ * content redefines --field-gap with --field-gap-summary, which would refer to itself on the same element. */
+.draft-form-card.summary-compact {
+  --field-gap-summary: calc(var(--field-gap) * 0.5);
 }
 /* Summary step and request view: every gap in the form (fields, headers,
  * sections, blocks, info boxes) switches to the summary rhythm. */

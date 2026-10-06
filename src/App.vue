@@ -59,7 +59,9 @@ export default defineComponent({
      Each half of a gap belongs to one side, so two neighbours add up to one
      gap without collapsing or doubling. Values agreed on 2026-09-25; the
      summary gap was raised to the draft's on 2026-09-30, see
-     plans/2026-09-25-plan-audit-vertical-spacing.md. */
+     plans/2026-09-25-plan-audit-vertical-spacing.md. The frontend variable
+     SUMMARY_SPACING=compact brings back half the draft's gap (ProjectView,
+     .summary-compact). */
   --field-gap: 2rem;
   --field-gap-summary: var(--field-gap);
   --header-gap: var(--space-2);

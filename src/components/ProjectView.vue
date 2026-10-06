@@ -421,6 +421,8 @@
                                   :results="feasibilityResults"
                                   :errors="feasibilityErrors"
                                   :page-size="feasibilityPageSize"
+                                  :width="feasibilityTableWidth"
+                                  :alignment="feasibilityTableAlignment"
                                   :editable="canEditSelectedSites()"
                                   :has-query="!project || Boolean(project.query)"
                                   :available-bridgeheads="allBridgeheads"
@@ -740,7 +742,15 @@ import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
 import FeasibilityTable from "@/components/FeasibilityTable.vue";
 import MandatoryFieldMarker from "@/components/MandatoryFieldMarker.vue";
 import PhasePill from "@/components/PhasePill.vue";
-import {DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES, getConfig, SummarySpacing} from "@/services/configLoader";
+import {
+  DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES,
+  FeasibilityTableAlignment,
+  FeasibilityTableWidth,
+  getConfig,
+  resolveFeasibilityTableAlignment,
+  resolveFeasibilityTableWidth,
+  SummarySpacing
+} from "@/services/configLoader";
 import {DialogStep, DialogStepper, FixedDialogStep} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
@@ -1189,6 +1199,8 @@ export default defineComponent({
       feasibilityResults: new Map<string, FeasibilityResult>(),
       feasibilityErrors: new Set<string>(),
       feasibilityPageSize: 10,
+      feasibilityTableWidth: FeasibilityTableWidth.COMPACT,
+      feasibilityTableAlignment: FeasibilityTableAlignment.STANDARD,
       formFieldDescriptionCollapsedLines: DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES,
       // Frontend variable SUMMARY_SPACING: the summary and the request view with half the gap of the draft
       summaryCompact: false,
@@ -1338,7 +1350,7 @@ export default defineComponent({
   mounted() {
     this.initializePollingService();
     this.pollingService?.execute();
-    this.fetchFeasibilityPageSize();
+    this.fetchFeasibilityConfig();
     this.fetchFormFieldDescriptionCollapsedLines();
     this.fetchSummarySpacing();
     this.fetchCreatedAtDisplayFormat();
@@ -1922,9 +1934,11 @@ export default defineComponent({
       });
     },
 
-    async fetchFeasibilityPageSize() {
+    async fetchFeasibilityConfig() {
       const config = await getConfig();
       this.feasibilityPageSize = Number(config.FEASIBILITY_PAGE_SIZE ?? 10);
+      this.feasibilityTableWidth = resolveFeasibilityTableWidth(config.FEASIBILITY_TABLE_WIDTH);
+      this.feasibilityTableAlignment = resolveFeasibilityTableAlignment(config.FEASIBILITY_TABLE_ALIGNMENT);
     },
 
     async fetchCreatedAtDisplayFormat() {

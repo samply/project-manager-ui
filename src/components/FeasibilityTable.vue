@@ -1,6 +1,6 @@
 <template>
   <div class="feasibility-table-wrapper">
-    <table class="pm-table feasibility-table">
+    <table class="pm-table feasibility-table" :class="`feasibility-table-${width}`">
       <thead>
         <tr>
           <th :rowspan="hasAnyBreakdown ? 2 : 1" class="pm-table-sortable" @click="sortBy('site')">
@@ -8,7 +8,8 @@
           </th>
           <template v-for="item in topLevelItems" :key="item.label">
             <th v-if="item.children.length" :colspan="item.children.length">{{ item.label }}</th>
-            <th v-else :rowspan="hasAnyBreakdown ? 2 : 1" class="pm-table-sortable" @click="sortBy(item.label)">
+            <th v-else :rowspan="hasAnyBreakdown ? 2 : 1" class="pm-table-sortable"
+                :class="columnClasses(item.label)" @click="sortBy(item.label)">
               <span class="th-label">{{ item.label }}<svg v-if="sortKey === item.label" class="sort-caret" :class="{ desc: sortDirection === 'desc' }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
             </th>
           </template>
@@ -20,6 +21,7 @@
                 v-for="child in item.children"
                 :key="child"
                 class="feasibility-breakdown-label pm-table-sortable"
+                :class="columnClasses(child)"
                 @click="sortBy(child)"
             >
               <span class="th-label">{{ child }}<svg v-if="sortKey === child" class="sort-caret" :class="{ desc: sortDirection === 'desc' }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
@@ -30,12 +32,14 @@
       <tbody>
         <tr v-for="bridgehead in pagedBridgeheads" :key="bridgehead.bridgehead">
           <td class="feasibility-bridgehead-name">
-            <span>{{ bridgehead.humanReadable ?? bridgehead.bridgehead }}</span>
-            <button v-if="editable" type="button" class="btn btn-link feasibility-remove-button"
-                    title="Remove site" aria-label="Remove site"
-                    @click="removeBridgehead(bridgehead.bridgehead)">
-              <i class="bi bi-x-lg"></i>
-            </button>
+            <div class="feasibility-bridgehead-name-content">
+              <span>{{ bridgehead.humanReadable ?? bridgehead.bridgehead }}</span>
+              <button v-if="editable" type="button" class="btn btn-link feasibility-remove-button"
+                      title="Remove site" aria-label="Remove site"
+                      @click="removeBridgehead(bridgehead.bridgehead)">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
           </td>
           <td
               v-if="hasError(bridgehead.bridgehead)"
@@ -52,7 +56,8 @@
             loading...
           </td>
           <template v-else>
-            <td v-for="column in columns" :key="column.label" :class="{ 'feasibility-breakdown-value': column.depth > 0 }">
+            <td v-for="column in columns" :key="column.label"
+                :class="[columnClasses(column.label), { 'feasibility-breakdown-value': column.depth > 0 }]">
               {{ cellText(bridgehead.bridgehead, column.label) }}
             </td>
             <td v-if="!columns.length">-</td>
@@ -117,6 +122,7 @@
 import {defineComponent, PropType} from "vue";
 import {Bridgehead, FeasibilityResult, hasFeasibilityResult} from "@/services/projectManagerBackendService";
 import {formatDisplayNumber} from "@/services/displayFormatService";
+import {FeasibilityTableAlignment, FeasibilityTableWidth} from "@/services/configLoader";
 import '@/assets/styles/table.css'
 
 interface FeasibilityColumn {
@@ -160,6 +166,16 @@ export default defineComponent({
     availableBridgeheads: {
       type: Array as PropType<Bridgehead[]>,
       default: () => []
+    },
+    // Frontend variable FEASIBILITY_TABLE_WIDTH
+    width: {
+      type: String as PropType<FeasibilityTableWidth>,
+      default: FeasibilityTableWidth.COMPACT
+    },
+    // Frontend variable FEASIBILITY_TABLE_ALIGNMENT
+    alignment: {
+      type: String as PropType<FeasibilityTableAlignment>,
+      default: FeasibilityTableAlignment.STANDARD
     }
   },
   data() {
@@ -263,6 +279,32 @@ export default defineComponent({
       });
       return map;
     },
+    // The columns whose values are all numbers (also numbers sent as text). With the standard alignment they are
+    // right-aligned, so that units, tens and thousands line up. The values are whatever the feasibility answer
+    // contains, so a column with any text stays left-aligned. Sites without a value (loading, error, missing) do not
+    // decide.
+    numericColumns(): Set<string> {
+      const isNumber = (value: unknown) => (typeof value === 'number' && Number.isFinite(value))
+          || (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value)));
+      const values = Array.from(this.valuesByBridgehead.values());
+      return new Set(this.columns.map(column => column.label).filter(label => {
+        const present = values.map(bridgeheadValues => bridgeheadValues.get(label))
+            .filter(value => value !== undefined && value !== null);
+        return present.length > 0 && present.every(isNumber);
+      }));
+    },
+    // The value columns aligned to the right, header included: all (right), none (left) or the numeric ones
+    // (standard). The Site column always stays left.
+    rightAlignedColumns(): Set<string> {
+      switch (this.alignment) {
+        case FeasibilityTableAlignment.RIGHT:
+          return new Set(this.columns.map(column => column.label));
+        case FeasibilityTableAlignment.LEFT:
+          return new Set();
+        default:
+          return this.numericColumns;
+      }
+    },
     availableBridgeheadsToAdd(): Bridgehead[] {
       const selectedIds = new Set(this.bridgeheads.map(bridgehead => bridgehead.bridgehead));
       return this.availableBridgeheads.filter(bridgehead => !selectedIds.has(bridgehead.bridgehead));
@@ -280,6 +322,9 @@ export default defineComponent({
     }
   },
   methods: {
+    columnClasses(label: string): Record<string, boolean> {
+      return {numeric: this.numericColumns.has(label), 'align-right': this.rightAlignedColumns.has(label)};
+    },
     hasError(bridgeheadId: string): boolean {
       return this.errors.has(bridgeheadId);
     },
@@ -335,9 +380,39 @@ export default defineComponent({
   font-variant-numeric: tabular-nums;
 }
 
+/* FEASIBILITY_TABLE_ALIGNMENT, header included (see rightAlignedColumns) */
+.feasibility-table td.align-right,
+.feasibility-table th.align-right {
+  text-align: right;
+}
+
+/* FEASIBILITY_TABLE_WIDTH (see FeasibilityTableWidth). compact and medium: the table only as wide as its columns need,
+ * at least 32rem / 48rem, so a site and its numbers stay close together on a wide screen. It is never wider than the
+ * card for that minimum; more columns than fit scroll inside the wrapper. */
+.feasibility-table.feasibility-table-compact {
+  width: auto;
+  min-width: min(100%, 32rem);
+}
+
+.feasibility-table.feasibility-table-medium {
+  width: auto;
+  min-width: min(100%, 48rem);
+}
+
+/* full: the table across the whole card, the number columns only as wide as their content (at the right) */
+.feasibility-table.feasibility-table-full td.numeric,
+.feasibility-table.feasibility-table-full th.numeric {
+  width: 1%;
+  white-space: nowrap;
+}
+
 .feasibility-bridgehead-name {
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* Flex inside the cell, not on the td: a flex td is no table cell anymore and broke the line below the row */
+.feasibility-bridgehead-name-content {
   display: flex;
   align-items: center;
   justify-content: space-between;

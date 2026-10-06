@@ -12,6 +12,36 @@ export enum SummarySpacing {
     AIRY = "airy"
 }
 
+/** Width of the feasibility table in the request view (frontend variable FEASIBILITY_TABLE_WIDTH). */
+export enum FeasibilityTableWidth {
+    /** As wide as its columns need, at least 32rem (default, also when absent or invalid): for few value columns */
+    COMPACT = "compact",
+    /** As wide as its columns need, at least 48rem: more room when the values are longer */
+    MEDIUM = "medium",
+    /** The whole card; the number columns only as wide as their content: for many columns */
+    FULL = "full"
+}
+
+export const resolveFeasibilityTableWidth = (value: unknown): FeasibilityTableWidth =>
+    (Object.values(FeasibilityTableWidth) as unknown[]).includes(value)
+        ? value as FeasibilityTableWidth
+        : FeasibilityTableWidth.COMPACT;
+
+/** Alignment of the value columns of the feasibility table (frontend variable FEASIBILITY_TABLE_ALIGNMENT). */
+export enum FeasibilityTableAlignment {
+    /** By content (default, also when absent or invalid): columns with only numbers right, columns with text left */
+    STANDARD = "standard",
+    /** Every value column left */
+    LEFT = "left",
+    /** Every value column right */
+    RIGHT = "right"
+}
+
+export const resolveFeasibilityTableAlignment = (value: unknown): FeasibilityTableAlignment =>
+    (Object.values(FeasibilityTableAlignment) as unknown[]).includes(value)
+        ? value as FeasibilityTableAlignment
+        : FeasibilityTableAlignment.STANDARD;
+
 export enum DisplayFormatKey {
     DATE_FORMAT = 'DATE_FORMAT',
     LONG_DATE_FORMAT = 'LONG_DATE_FORMAT',
@@ -54,6 +84,10 @@ export interface FrontendConfig {
     LOGO_HTML?: string;
     LOGO_CSS?: string;
     FEASIBILITY_PAGE_SIZE?: string;
+    /** Width of the feasibility table: "compact" (default, also when absent or invalid), "medium" or "full", see FeasibilityTableWidth. */
+    FEASIBILITY_TABLE_WIDTH?: string;
+    /** Alignment of the feasibility table's value columns: "standard" (default, also when absent or invalid), "left" or "right", see FeasibilityTableAlignment. */
+    FEASIBILITY_TABLE_ALIGNMENT?: string;
     /**
      * Number of lines shown for a normal form-field description when the field
      * value is rendered beside it. Overflowing descriptions can be expanded by

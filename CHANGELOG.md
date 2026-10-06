@@ -197,6 +197,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Actions batch
 - No selected bridgehead in the project view: the bridgehead overview is read only; bridgehead actions, results, invitations and the single-bridgehead status use each bridgehead's own permissions, everything else is asked for the whole project (the user's bridgehead sent only for their role where needed)
 - Frontend variable SUMMARY_SPACING: compact (half the draft's field gap, as before 2026-09-30) or airy (the draft's gap, default) for the summary and the request view
+- Feasibility table: columns whose values are all numbers are right-aligned, header included; columns with text stay left-aligned
+- Frontend variable FEASIBILITY_TABLE_WIDTH: compact (as wide as needed, at least 32rem, default), medium (at least 48rem) or full (whole card, number columns as narrow as their content) for the feasibility table
+- Frontend variable FEASIBILITY_TABLE_ALIGNMENT: standard (columns with only numbers right, with text left, default), left or right for the value columns of the feasibility table
 
 ### Removed
 - Application Form
@@ -213,6 +216,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Form fields being omitted when using multi-row field layouts
 - Results table of the final user: one person column, so every column has its cells (Applicant Acceptance was empty)
 - Refreshing the bridgeheads (e.g. after adding a bridgehead or an action) loaded the page twice
+- Feasibility table: the line below each row was interrupted under the Site column
 - Status of a project with one bridgehead: "Data received and accepted" shows the applicant's acceptance of that bridgehead's results, as the bridgehead overview does (it only showed the project's acceptance, so without a final user it stayed open for the bridgehead admin)
 
 ### Changed

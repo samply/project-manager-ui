@@ -217,6 +217,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Results table of the final user: one person column, so every column has its cells (Applicant Acceptance was empty)
 - Refreshing the bridgeheads (e.g. after adding a bridgehead or an action) loaded the page twice
 - Feasibility table: the line below each row was interrupted under the Site column
+- Page language: the app's root element (and the document, if it has none) gets the display locale of the backend (`lang` was empty); docs/date-input.md explains why date inputs still follow the browser's language
 - Status of a project with one bridgehead: "Data received and accepted" shows the applicant's acceptance of that bridgehead's results, as the bridgehead overview does (it only showed the project's acceptance, so without a final user it stayed open for the bridgehead admin)
 
 ### Changed

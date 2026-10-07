@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" :lang="locale">
     <NavBar/>
     <ActionFeedbackToast/>
     <router-view></router-view>
@@ -10,11 +10,16 @@
 import {defineComponent} from 'vue';
 import ActionFeedbackToast from '@/components/ActionFeedbackToast.vue';
 import NavBar from '@/components/NavBar.vue';
+import {getDisplayLocale} from '@/services/displayFormatService';
 
 export default defineComponent({
   components: {
     ActionFeedbackToast,
     NavBar,
+  },
+  data() {
+    // Display formats are configured in bootstrap, before the app is mounted (main.ts)
+    return {locale: getDisplayLocale()};
   },
 });
 </script>

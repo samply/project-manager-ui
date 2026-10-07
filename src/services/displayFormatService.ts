@@ -66,14 +66,19 @@ export const formatDisplayDate = (
     return format(date, resolved.pattern, {locale: resolveLocale(resolved.language)});
 };
 
-export const formatDisplayNumber = (value: string | number | null | undefined): string => {
+/**
+ * Locale of the UI as resolved by the backend (e.g. "en-US"): numbers, and the page's lang attribute
+ * (see docs/date-input.md). Also supports older backends during a rolling upgrade.
+ */
+export const getDisplayLocale = (): string => {
     const settings = requireConfig();
-    // Also supports older backends during a rolling upgrade.
-    const locale = settings.locale
+    return settings.locale
         ?? settings.numberFormat?.locale
         ?? settings.formats[settings.defaultDateDisplayFormat].language;
-    return formatNumber(value, locale);
 };
+
+export const formatDisplayNumber = (value: string | number | null | undefined): string =>
+    formatNumber(value, getDisplayLocale());
 
 /** The display format key applied to a DATE field when it has no explicit display_format. */
 export const getDefaultDateDisplayFormat = (): DisplayFormatKey =>

@@ -5,7 +5,7 @@ import {createAppRouter} from './router';
 import store from './services/store';
 import type {Router} from "vue-router";
 import {getConfig, getDisplayFormatsConfig} from "@/services/configLoader";
-import {configureDisplayFormats} from "@/services/displayFormatService";
+import {configureDisplayFormats, getDisplayLocale} from "@/services/displayFormatService";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
@@ -25,6 +25,14 @@ function setFavicon(faviconUrl?: string) {
         document.head.appendChild(favicon);
     }
     favicon.href = faviconUrl;
+}
+
+// The language of the page, for screen readers, hyphenation and spell checking (see docs/date-input.md). The app's root
+// element always gets it (App.vue). The document only when it has none: as a micro frontend the host page owns it.
+function setDocumentLanguage(locale: string) {
+    if (!document.documentElement.lang) {
+        document.documentElement.lang = locale;
+    }
 }
 
 async function handleOidcRedirect(appRouter: Router) {
@@ -72,6 +80,7 @@ export const bootstrap = [
     async () => {
         const config = await getConfig();
         configureDisplayFormats(await getDisplayFormatsConfig());
+        setDocumentLanguage(getDisplayLocale());
         setFavicon(config.FAVICON_URL);
         router = createAppRouter(config.VUE_APP_FRONTEND_URL, config.PAGE_TITLE ?? 'Data Request Tool');
 

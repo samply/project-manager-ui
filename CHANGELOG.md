@@ -154,6 +154,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Draft: a stored value that is not one of its field's allowed values is shown as not valid and blocks creating the request
 - Ethics vote of a bridgehead: one row per bridgehead, each with its own bridgehead (no longer the bridgehead selected in the Status tab)
 - Documents: "For" in the upload (whole project or a bridgehead, by the user's roles); each document is downloaded and removed with its own bridgehead; a project without bridgeheads lists its documents
+- Form fields: values are checked against their data type (EMAIL, INTEGER, DOUBLE, DATE, TIMESTAMP, LOCAL_DATE_TIME); an invalid value is shown with its reason, not saved, and blocks creating the request; surrounding whitespace is ignored; an unreadable number or incomplete date or date and time no longer clears the stored value; a value rejected by the backend is shown with its reason; DOUBLE accepts a decimal comma (1,5 as 1.5, not 1,500); a step, tab or the page is not left while an entered value is not valid and therefore not saved
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

@@ -13,7 +13,8 @@
     "postbuild:standalone": "node scripts/check-no-external-urls.cjs",
     "lint": "vue-cli-service lint",
     "serve:standalone": "vue-cli-service serve --mode standalone",
-    "serve-https:standalone": "vue-cli-service serve --https --mode standalone"
+    "serve-https:standalone": "vue-cli-service serve --https --mode standalone",
+    "test:form-value-validation": "node --test tests/formValueValidation.test.cjs"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
@@ -55,7 +56,8 @@
     "regenerator-runtime": "^0.14.1",
     "single-spa": "^6.0.3",
     "typescript": "~5.9.3",
-    "vue-cli-plugin-single-spa": "~3.3.0"
+    "vue-cli-plugin-single-spa": "~3.3.0",
+    "vue-tsc": "^3.3.12"
   },
   "browserslist": [
     "> 1%",

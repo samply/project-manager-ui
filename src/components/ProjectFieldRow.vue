@@ -36,7 +36,8 @@ import {
   getDefaultDateDisplayFormat,
   getDefaultTimestampDisplayFormat
 } from "@/services/displayFormatService";
-import {isCanonicalTimestampValue, toFormControlValue} from "@/services/formValueCodec";
+import {fromFormControlValue, isCanonicalTimestampValue, toFormControlValue} from "@/services/formValueCodec";
+import {getInvalidValueMessage, normalizeFormValue} from "@/services/formValueValidation";
 import {handleError, PropType, watch} from "vue";
 import "@samply/lens";
 import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
@@ -132,6 +133,13 @@ enum ExplorerUrlParameter {
       required: false
     },
     headless: {type: Boolean, required: false, default: false},
+    // Tells the parent that this row holds an entered value that does not
+    // match its data type and was therefore not saved (label), or no longer
+    // (undefined). The id is unique per row.
+    callInvalidValueChange: {
+      type: Function as unknown as () => (id: string, label?: string) => void,
+      required: false
+    },
   }
 })
 export default class ProjectFieldRow extends Vue {
@@ -211,6 +219,7 @@ export default class ProjectFieldRow extends Vue {
   readonly buildInstanceTransform?: (fieldInstance: number) => (input: string) => unknown;
   // noinspection JSUnusedGlobalSymbols
   readonly headless!: boolean;
+  readonly callInvalidValueChange?: (id: string, label?: string) => void;
 
   editing = false;
   editedValue: string[] = [];
@@ -235,6 +244,14 @@ export default class ProjectFieldRow extends Vue {
   descriptionExpanded = false;
   descriptionOverflows = false;
   descriptionResizeObserver?: ResizeObserver;
+  // Set once the user tried to save a value that does not match the data
+  // type: from then on its message is shown, and updated while typing.
+  invalidValueTried = false;
+  // The browser could not read the input (e.g. "1e" in a number or an
+  // incomplete date): its value is then "", which would clear the field.
+  badInput = false;
+  // Why the backend did not save the last value (e.g. a 400), or null.
+  rejectedValueMessage: string | null = null;
   observedDescription?: HTMLElement;
 
   mounted() {
@@ -282,6 +299,7 @@ export default class ProjectFieldRow extends Vue {
 
   beforeUnmount() {
     this.descriptionResizeObserver?.disconnect();
+    this.callInvalidValueChange?.(this.radioGroupName, undefined);
   }
 
   get dialogStep() {
@@ -370,7 +388,7 @@ export default class ProjectFieldRow extends Vue {
 
     this.projectManagerBackendService
         .fetchData(this.deleteModule, this.deleteAction, this.context, params)
-        .then(() => this.callRefreshContext());
+        .then(() => this.callRefreshContext(), error => this.onSaveRejected(error));
   }
 
   // Adds a new value instance to a multiple field: next fieldInstance =
@@ -392,7 +410,14 @@ export default class ProjectFieldRow extends Vue {
 
     this.projectManagerBackendService
         .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_FORM_FIELDS_ACTION, this.context, params)
-        .then(() => this.callRefreshContext());
+        .then(() => {
+          this.clearRejectedValue();
+          this.callRefreshContext();
+        }, error => {
+          this.onSaveRejected(error);
+          // e.g. a checked checkbox whose value was not saved
+          this.callRefreshContext();
+        });
   }
 
   // The CHECK_BOX counterpart to addInstance: removes whichever instance
@@ -419,7 +444,13 @@ export default class ProjectFieldRow extends Vue {
 
     this.projectManagerBackendService
         .fetchData(Module.PROJECT_EDITION_MODULE, Action.DELETE_FORM_FIELD_VALUE_ACTION, this.context, params)
-        .then(() => this.callRefreshContext());
+        .then(() => {
+          this.clearRejectedValue();
+          this.callRefreshContext();
+        }, error => {
+          this.onSaveRejected(error);
+          this.callRefreshContext();
+        });
   }
 
   toggleCheckboxValue(value: string, checked: boolean) {
@@ -430,9 +461,63 @@ export default class ProjectFieldRow extends Vue {
     }
   }
 
+  // Only single values being edited are checked: the configuration, sites
+  // and key-value fields are not typed.
+  get checksValueType(): boolean {
+    return !!this.type && !this.isConfiguration() && !this.isBridgeheads() && !this.isReadOnlyView();
+  }
+  // Why the entered value does not match the data type (e.g. EMAIL), or undefined.
+  get invalidValueMessage(): string | undefined {
+    if (!this.checksValueType) return undefined;
+    if (this.badInput) {
+      return this.type === FormDataType.INTEGER ? 'The entered value is not a valid whole number'
+          : this.type === FormDataType.DATE ? 'The entered date is not complete or not valid'
+          : this.type === FormDataType.TIMESTAMP || this.type === FormDataType.LOCAL_DATE_TIME
+              ? 'The entered date and time is not complete or not valid'
+          : 'The entered value is not valid';
+    }
+    return this.editedValue
+        .slice(0, this.editProjectParam?.length ?? 0)
+        .map((value, index) => getInvalidValueMessage(this.toSentValue(value, index), this.type))
+        .find(message => message !== undefined);
+  }
+  // The value as sent: a TIMESTAMP is edited as local time ("2026-10-07T10:00")
+  // but sent and checked as UTC ("2026-10-07T08:00:00.000Z").
+  toSentValue(value: string, index: number): string {
+    return this.type === FormDataType.TIMESTAMP && typeof value === 'string'
+        ? fromFormControlValue(value, this.type, this.fieldValue[index])
+        : value;
+  }
+  get shownInvalidValueMessage(): string | undefined {
+    return (this.invalidValueTried ? this.invalidValueMessage : undefined) ?? this.rejectedValueMessage ?? undefined;
+  }
+  reportInvalidValue() {
+    this.callInvalidValueChange?.(this.radioGroupName,
+        this.shownInvalidValueMessage ? this.fieldKey : undefined);
+  }
+
   saveField() {
+    // As the backend saves it: e.g. 223 (a number from v-model on a number
+    // input) as "223", " a@b.de" as "a@b.de".
+    if (this.checksValueType) {
+      this.editedValue = this.editedValue.map(value => normalizeFormValue(value, this.type));
+    }
+    // An invalid value is not saved (the backend would reject it): it stays
+    // in the input with its message, and the parent blocks creating the request.
+    if (this.invalidValueMessage) {
+      this.invalidValueTried = true;
+      this.rejectedValueMessage = null;
+      this.reportInvalidValue();
+      return;
+    }
+    if (this.invalidValueTried || this.rejectedValueMessage) {
+      this.invalidValueTried = false;
+      this.rejectedValueMessage = null;
+      this.reportInvalidValue();
+    }
     this.showInputs = false;
     this.editing = false;
+    const savedFieldValue = this.tempFieldValue;
     this.tempFieldValue = this.editedValue.slice();
     const params = new Map<string, string>();
 
@@ -468,8 +553,24 @@ export default class ProjectFieldRow extends Vue {
           .fetchData(this.module, this.fetchAction(), this.context, params, this.isBridgeheads())
           .then(() => this.isBridgeheads()
               ? this.callRefreshBridgeheads()
-              : this.callRefreshContext());
+              : this.callRefreshContext(),
+              error => {
+                // Not saved: the entered value stays with the reason
+                this.tempFieldValue = savedFieldValue;
+                this.onSaveRejected(error);
+              });
     }
+  }
+
+  // The backend did not save a value: shows why (its message for a rejected
+  // value, a 400) and blocks creating the request like an invalid value.
+  onSaveRejected(error: unknown) {
+    const response = (error as {response?: {status?: number, data?: unknown}})?.response;
+    this.rejectedValueMessage = response?.status === 400 && typeof response.data === 'string' && response.data
+        ? response.data
+        : 'The value could not be saved';
+    if (response?.status !== 400) console.error(error);
+    this.reportInvalidValue();
   }
 
   applyTransformToSend(editedValue: any): any {
@@ -919,6 +1020,7 @@ export default class ProjectFieldRow extends Vue {
     if (this.type === FormDataType.TIMESTAMP) return 'datetime-local'
     if (this.type === FormDataType.LOCAL_DATE_TIME) return 'datetime-local'
     if (this.type === FormDataType.STRING) return 'text'
+    if (this.type === FormDataType.EMAIL) return 'email'
     if (this.type === FormDataType.LONG_STRING) return 'longtext'
     return 'text'
   }
@@ -964,8 +1066,19 @@ export default class ProjectFieldRow extends Vue {
     this.saveField()
   }
 
-  onInputChange(_event: Event) {
+  onInputChange(event: Event) {
+    this.trackBadInput(event);
     this.saveField()
+  }
+
+  trackBadInput(event: Event) {
+    this.badInput = (event.target as HTMLInputElement | null)?.validity?.badInput === true;
+  }
+
+  clearRejectedValue() {
+    if (!this.rejectedValueMessage) return;
+    this.rejectedValueMessage = null;
+    this.reportInvalidValue();
   }
 
   async copyToClipboard(text: string) {
@@ -1143,14 +1256,19 @@ export default class ProjectFieldRow extends Vue {
           v-else
           :type="getInputType()"
           v-model="editedValue[0]"
+          @input="trackBadInput"
           @change="onInputChange"
           class="form-control"
           :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
           :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+          :aria-invalid="shownInvalidValueMessage ? 'true' : undefined"
           style="width:100%"
       >
       <div v-if="isNotAllowedValue(editedValue[0])" class="not-allowed-value">
         {{ getNotAllowedValueMessage([editedValue[0]]) }}
+      </div>
+      <div v-if="shownInvalidValueMessage" class="not-allowed-value" role="alert">
+        {{ shownInvalidValueMessage }}
       </div>
     </div>
     <button v-if="deleteAction && deleteModule && ((isDraft() && !isSummaryStep()) || editMode)"
@@ -1324,6 +1442,7 @@ export default class ProjectFieldRow extends Vue {
                 :highlight-missing="highlightMissing"
                 :properties="properties"
                 :transform-for-sending="buildInstanceTransform!(instance.fieldInstance)"
+                :call-invalid-value-change="callInvalidValueChange"
             />
           </div>
           <button v-if="(isDraft() && !isSummaryStep()) || editMode"
@@ -1331,6 +1450,9 @@ export default class ProjectFieldRow extends Vue {
             <i class="bi bi-plus"></i>
           </button>
         </template>
+        <div v-if="rejectedValueMessage" class="not-allowed-value" role="alert">
+          {{ rejectedValueMessage }}
+        </div>
       </div>
     </div>
     <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo" attach="previous"/>
@@ -1815,13 +1937,18 @@ export default class ProjectFieldRow extends Vue {
                   v-else
                   :type="getInputType()"
                   v-model="editedValue[0]"
+                  @input="trackBadInput"
                   @change="onInputChange"
                   class="form-control"
-                  :placeholder="isInputType(FormDataType.STRING) ? placeholder : undefined"
+                  :placeholder="isInputType(FormDataType.STRING) || isInputType(FormDataType.EMAIL) ? placeholder : undefined"
                   :class="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration() ? 'grey' : 'white'"
                   :style="{width: getInputType()==='number' ? '100%' : '100%'}"
                   :disabled="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration()"
+                  :aria-invalid="shownInvalidValueMessage ? 'true' : undefined"
               >
+              <div v-if="shownInvalidValueMessage" class="not-allowed-value" role="alert">
+                {{ shownInvalidValueMessage }}
+              </div>
             </div>
           </div>
         </div>

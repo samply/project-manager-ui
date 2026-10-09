@@ -2007,12 +2007,12 @@ export default defineComponent({
 
       return baseFieldsValid && mandatoryFormFieldsValid &&
           !this.formFields?.some(field => this.hasNotAllowedValue(field) || this.hasInvalidValue(field)) &&
-          Object.keys(this.invalidValueFields).length === 0;
+          !this.hasUnsavedInvalidValues();
     },
 
     onInvalidValueChange(id: string, label?: string) {
+      if (this.invalidValueFields[id] === label) return;
       if (label === undefined) {
-        if (!(id in this.invalidValueFields)) return;
         delete this.invalidValueFields[id];
       } else {
         this.invalidValueFields[id] = label;
@@ -2109,9 +2109,8 @@ export default defineComponent({
 
         // If there are blocks, append them with two line-breaks between
         // Entered but not saved: they belong to no stored field of a form.
-        const invalidValueLabels = [...new Set(Object.values(this.invalidValueFields))];
-        if (invalidValueLabels.length > 0) {
-          blocks.push(`<strong>Values not valid</strong>: ${invalidValueLabels.join(', ')}`);
+        if (this.hasUnsavedInvalidValues()) {
+          blocks.push(`<strong>Values not valid</strong>: ${this.invalidValueLabels().join(', ')}`);
         }
 
         if (blocks.length > 0) {
@@ -2262,13 +2261,18 @@ export default defineComponent({
       return Object.keys(this.invalidValueFields).length > 0;
     },
 
+    // The fields with such a value, each once (a multiple field can have several)
+    invalidValueLabels(): string[] {
+      return [...new Set(Object.values(this.invalidValueFields))];
+    },
+
     // The fields of another step or tab are not rendered: an entered value
     // that is not valid (and therefore not saved) would be lost without a
     // word. So it is corrected or cleared first, and shown to the user.
     canLeaveCurrentView(): boolean {
       if (!this.hasUnsavedInvalidValues()) return true;
-      const labels = [...new Set(Object.values(this.invalidValueFields))].join(', ');
-      this.leaveBlockedMessage = `Please correct or clear the value that is not valid first: ${labels}`;
+      this.leaveBlockedMessage =
+          `Please correct or clear the value that is not valid first: ${this.invalidValueLabels().join(', ')}`;
       this.$nextTick(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
       return false;
     },

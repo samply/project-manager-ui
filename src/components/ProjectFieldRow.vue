@@ -43,6 +43,14 @@ import "@samply/lens";
 import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
 
 // The URL parameters of the Explorer (Lens), where "Edit in Explorer" redirects to: an external interface
+// Shown when the browser could not read the input (badInput), by data type.
+const BAD_INPUT_MESSAGES: Partial<Record<FormDataType, string>> = {
+  [FormDataType.INTEGER]: 'The entered value is not a valid whole number',
+  [FormDataType.DATE]: 'The entered date is not complete or not valid',
+  [FormDataType.TIMESTAMP]: 'The entered date and time is not complete or not valid',
+  [FormDataType.LOCAL_DATE_TIME]: 'The entered date and time is not complete or not valid'
+};
+
 enum ExplorerUrlParameter {
   QUERY = "query",
   DATA_REQUESTS = "datarequests"
@@ -386,9 +394,8 @@ export default class ProjectFieldRow extends Vue {
     const params = new Map<string, unknown>();
     params.set(PmRequestParameter.FORM_FIELD, JSON.stringify(formField));
 
-    this.projectManagerBackendService
-        .fetchData(this.deleteModule, this.deleteAction, this.context, params)
-        .then(() => this.callRefreshContext(), error => this.onSaveRejected(error));
+    this.afterInstanceChange(this.projectManagerBackendService
+        .fetchData(this.deleteModule, this.deleteAction, this.context, params));
   }
 
   // Adds a new value instance to a multiple field: next fieldInstance =
@@ -408,16 +415,8 @@ export default class ProjectFieldRow extends Vue {
     // there's no initial value, same as a block's blank new instance.
     params.set(this.editProjectParam[0], transform(value ?? (undefined as unknown as string)));
 
-    this.projectManagerBackendService
-        .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_FORM_FIELDS_ACTION, this.context, params)
-        .then(() => {
-          this.clearRejectedValue();
-          this.callRefreshContext();
-        }, error => {
-          this.onSaveRejected(error);
-          // e.g. a checked checkbox whose value was not saved
-          this.callRefreshContext();
-        });
+    this.afterInstanceChange(this.projectManagerBackendService
+        .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_FORM_FIELDS_ACTION, this.context, params));
   }
 
   // The CHECK_BOX counterpart to addInstance: removes whichever instance
@@ -442,15 +441,17 @@ export default class ProjectFieldRow extends Vue {
     const params = new Map<string, unknown>();
     params.set(PmRequestParameter.FORM_FIELD, JSON.stringify(formField));
 
-    this.projectManagerBackendService
-        .fetchData(Module.PROJECT_EDITION_MODULE, Action.DELETE_FORM_FIELD_VALUE_ACTION, this.context, params)
-        .then(() => {
-          this.clearRejectedValue();
-          this.callRefreshContext();
-        }, error => {
-          this.onSaveRejected(error);
-          this.callRefreshContext();
-        });
+    this.afterInstanceChange(this.projectManagerBackendService
+        .fetchData(Module.PROJECT_EDITION_MODULE, Action.DELETE_FORM_FIELD_VALUE_ACTION, this.context, params));
+  }
+
+  // After adding or removing a value instance: a rejection is shown (or a
+  // previous one cleared), and the instances are reloaded either way, e.g.
+  // for a checkbox whose value was not saved.
+  afterInstanceChange(request: Promise<unknown>) {
+    request
+        .then(() => this.clearRejectedValue(), error => this.onSaveRejected(error))
+        .finally(() => this.callRefreshContext());
   }
 
   toggleCheckboxValue(value: string, checked: boolean) {
@@ -470,11 +471,7 @@ export default class ProjectFieldRow extends Vue {
   get invalidValueMessage(): string | undefined {
     if (!this.checksValueType) return undefined;
     if (this.badInput) {
-      return this.type === FormDataType.INTEGER ? 'The entered value is not a valid whole number'
-          : this.type === FormDataType.DATE ? 'The entered date is not complete or not valid'
-          : this.type === FormDataType.TIMESTAMP || this.type === FormDataType.LOCAL_DATE_TIME
-              ? 'The entered date and time is not complete or not valid'
-          : 'The entered value is not valid';
+      return BAD_INPUT_MESSAGES[this.type!] ?? 'The entered value is not valid';
     }
     return this.editedValue
         .slice(0, this.editProjectParam?.length ?? 0)
@@ -504,17 +501,13 @@ export default class ProjectFieldRow extends Vue {
     }
     // An invalid value is not saved (the backend would reject it): it stays
     // in the input with its message, and the parent blocks creating the request.
-    if (this.invalidValueMessage) {
-      this.invalidValueTried = true;
-      this.rejectedValueMessage = null;
-      this.reportInvalidValue();
-      return;
-    }
-    if (this.invalidValueTried || this.rejectedValueMessage) {
-      this.invalidValueTried = false;
+    const invalid = this.invalidValueMessage !== undefined;
+    if (invalid || this.invalidValueTried || this.rejectedValueMessage) {
+      this.invalidValueTried = invalid;
       this.rejectedValueMessage = null;
       this.reportInvalidValue();
     }
+    if (invalid) return;
     this.showInputs = false;
     this.editing = false;
     const savedFieldValue = this.tempFieldValue;

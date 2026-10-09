@@ -67,10 +67,10 @@ function mergeDialogStepMetadata(existing: DialogStep, formTitle: FormTitle, isF
         (isFixedStep ? existing.description : "");
     const nextShortDescription = formTitle.titleShortDescription ??
         (isFixedStep ? existing.shortDescription : undefined);
-    const nextPreInfo = formTitle.titlePreInfo ??
-        (isFixedStep ? existing.preInfo : undefined);
-    const nextPostInfo = formTitle.titlePostInfo ??
-        (isFixedStep ? existing.postInfo : undefined);
+    // Only the backend provides pre/post info, and a conditional one disappears when its condition no longer
+    // holds: no fallback to the previous text.
+    const nextPreInfo = formTitle.titlePreInfo;
+    const nextPostInfo = formTitle.titlePostInfo;
 
     if (
         existing.displayName !== nextDisplayName ||
@@ -91,8 +91,9 @@ function overrideDialogStepMetadata(existing: DialogStep, formTitle: FormTitle):
     existing.displayName = formTitle.titleDisplayName ?? existing.displayName;
     existing.description = formTitle.titleDescription ?? existing.description;
     existing.shortDescription = formTitle.titleShortDescription ?? existing.shortDescription;
-    existing.preInfo = formTitle.titlePreInfo ?? existing.preInfo;
-    existing.postInfo = formTitle.titlePostInfo ?? existing.postInfo;
+    // As in mergeDialogStepMetadata: no fallback for pre/post info
+    existing.preInfo = formTitle.titlePreInfo;
+    existing.postInfo = formTitle.titlePostInfo;
 }
 
 /* -----------------------------

@@ -930,9 +930,9 @@ export default defineComponent({
     isOnlyCreator(): boolean {
       return this.projectRoles.length === 1 && this.projectRoles.includes(ProjectRole.CREATOR);
     },
-    // In APPROVAL with the develop phase possible, the final phase is the exception
+    // In CENTRAL_APPROVAL with the develop phase possible, the final phase is the exception
     skipsDevelopAndPilot(): boolean {
-      return this.project?.state === ProjectState.APPROVAL && this.canStartDevelopPhase;
+      return this.project?.state === ProjectState.CENTRAL_APPROVAL && this.canStartDevelopPhase;
     },
     showPeopleCard(): boolean {
       return !this.isOnlyCreator && (this.canInviteUsers || this.currentUsers.length > 0);
@@ -3347,7 +3347,7 @@ export default defineComponent({
 
       // Rare or destructive request-level actions: the "More actions" menu of the At a Glance card, out of the
       // way of the main action. "Start final phase" is here only when it skips develop and pilot, which are
-      // possible (DataSHIELD, research environment); otherwise (from PILOT, or an export request in APPROVAL)
+      // possible (DataSHIELD, research environment); otherwise (from PILOT, or an export request in CENTRAL_APPROVAL)
       // it is the main action of the "Next step" card.
       this.moreActionButtons = [
         ...bridgeheadMenuButtons,
@@ -4114,7 +4114,7 @@ export default defineComponent({
 }
 
 /* PM-Admin phase stepper: beside the content column, as wide as its labels
- * ("APPROVAL", "FINISHED"), so it sits a fixed gap from the cards instead of
+ * ("CENTRAL_APPROVAL", "FINISHED"), so it sits a fixed gap from the cards instead of
  * drifting off into the margin. */
 .left-container {
   display: flex;

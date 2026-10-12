@@ -201,6 +201,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Feasibility table: columns whose values are all numbers are right-aligned, header included; columns with text stay left-aligned
 - Frontend variable FEASIBILITY_TABLE_WIDTH: compact (as wide as needed, at least 32rem, default), medium (at least 48rem) or full (whole card, number columns as narrow as their content) for the feasibility table
 - Frontend variable FEASIBILITY_TABLE_ALIGNMENT: standard (columns with only numbers right, with text left, default), left or right for the value columns of the feasibility table
+- Project state APPROVAL renamed CENTRAL_APPROVAL (needs the backend with the same rename); state labels show underscores as spaces ("Central approval")
 
 ### Removed
 - Application Form

@@ -242,7 +242,7 @@ export enum ProjectType {
 export enum ProjectState {
     DRAFT = "DRAFT",
     REVIEW = "REVIEW",
-    APPROVAL = "APPROVAL",
+    CENTRAL_APPROVAL = "CENTRAL_APPROVAL",
     DEVELOP = "DEVELOP",
     PILOT = "PILOT",
     FINAL = "FINAL",
@@ -251,11 +251,11 @@ export enum ProjectState {
     ARCHIVED = "ARCHIVED"
 }
 
-// "DRAFT" -> "Draft". Shared so ProjectDashboard.vue's filter dropdown and
+// "DRAFT" -> "Draft", "CENTRAL_APPROVAL" -> "Central approval". Shared so ProjectDashboard.vue's filter dropdown and
 // Phase column, and ProjectView.vue/PhasePill.vue's "At a Glance" Phase
 // cell, can't drift apart on the wording.
 export function projectStateLabel(state: ProjectState): string {
-    return state.charAt(0) + state.slice(1).toLowerCase();
+    return state.charAt(0) + state.slice(1).toLowerCase().replaceAll("_", " ");
 }
 
 export enum ProjectSortField {

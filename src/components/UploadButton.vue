@@ -74,6 +74,7 @@ export default class UploadButton extends Vue {
         },
         {immediate: true}
     );
+    watch(() => this.selectedBridgehead, () => this.updateIsActive());
     watch(
         () => this.projectManagerBackendService,
         () => {
@@ -88,8 +89,10 @@ export default class UploadButton extends Vue {
     this.visible = !this.toggleInput
   }
 
+  // With choices, as for the chosen one: an action that needs a bridgehead (e.g. a site's local approval) is not
+  // active without it
   updateIsActive() {
-    this.projectManagerBackendService.isModuleActionActive(this.module, this.uploadAction, this.context)
+    this.projectManagerBackendService.isModuleActionActive(this.module, this.uploadAction, this.uploadContext())
         .then(result => this.isActive = result && this.bridgeheadChoices?.length !== 0)
   }
 

@@ -16,6 +16,8 @@
         <div class="site-name">
           <span>{{ site.bridgehead.humanReadable ?? site.bridgehead.bridgehead }}</span>
           <BridgeheadContacts :contacts="site.bridgehead.contacts ?? []" />
+          <BridgeheadContacts v-if="localApprovals" :contacts="site.bridgehead.approvalContacts ?? []"
+                              title="Local approval contacts" icon-class="bi-patch-check" />
         </div>
         <div class="steps-area" :style="stepsGridStyle">
           <div v-for="(step, index) in visibleSteps(site.steps)" :key="step.key" class="t-step">
@@ -89,6 +91,7 @@ import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
 import {BatchEntry} from "@/services/actionsBatch";
 import {
   assignPipelineVisuals,
+  classifyLocalApproval,
   classifyStateCircle,
   creatorStatusOfBridgehead,
   describeCreatorStatus,
@@ -167,6 +170,15 @@ interface SiteTimeline {
     existsFinalReport: {
       type: Boolean,
       required: true
+    },
+    // Whether each site (bridgehead id) has its local approval; null: no local approval step (module disabled)
+    localApprovals: {
+      type: Object as PropType<Record<string, boolean> | null>,
+      default: null
+    },
+    localApprovalRequired: {
+      type: Boolean,
+      default: false
     }
   }
 })
@@ -179,6 +191,8 @@ export default class BridgeheadOverview extends Vue {
   readonly existsVotumForAllBridgeheads!: boolean;
   readonly existsFinalReport!: boolean;
   readonly existsPublication!: boolean;
+  readonly localApprovals!: Record<string, boolean> | null;
+  readonly localApprovalRequired!: boolean;
 
   Module = Module;
   Action = Action;
@@ -236,6 +250,7 @@ export default class BridgeheadOverview extends Vue {
   get stepDefs(): TimelineStepDef[] {
     const defs: TimelineStepDef[] = [
       {key: 'votum', label: BridgeheadOverviewHeader.VOTUM},
+      ...(this.localApprovals ? [{key: 'local_approval', label: BridgeheadOverviewHeader.LOCAL_APPROVAL}] : []),
       {key: 'teiler', label: BridgeheadOverviewHeader.TEILER}
     ];
     if (hasProjectType(this.project, ProjectType.DATASHIELD)) {
@@ -274,6 +289,16 @@ export default class BridgeheadOverview extends Vue {
           ? (hasOwnVotum ? Action.DOWNLOAD_VOTUM_ACTION : Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION)
           : undefined
     });
+
+    if (this.localApprovals) {
+      const exists = this.localApprovals[bridgehead.bridgehead] === true;
+      steps.push({
+        key: 'local_approval',
+        label: BridgeheadOverviewHeader.LOCAL_APPROVAL,
+        ...classifyLocalApproval(exists, this.project?.state, this.localApprovalRequired),
+        downloadAction: exists ? Action.DOWNLOAD_LOCAL_APPROVAL_ACTION : undefined
+      });
+    }
 
     // A project can query several project types at once for the same site,
     // each with its own state; one failure taints the step, "done" needs

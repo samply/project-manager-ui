@@ -5,6 +5,7 @@ export const FRONTEND_VARIABLES_PATH = "/frontend/variables";
 export enum BridgeheadOverviewHeader {
   SITES = 'Sites',
   VOTUM = 'Ethic vote',
+  LOCAL_APPROVAL = 'Local approval',
   TEILER = 'Data export authorised',
   USER_ACCESS = 'Data accessible',
   APPLICANT_RESULTS_ACCEPTANCE = 'Data received and accepted',

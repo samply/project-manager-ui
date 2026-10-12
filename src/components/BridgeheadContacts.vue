@@ -4,19 +4,19 @@
         ref="triggerRef"
         type="button"
         class="btn btn-link bridgehead-contacts-button"
-        title="Contact information"
-        aria-label="Contact information"
+        :title="title"
+        :aria-label="title"
         :aria-expanded="open"
         @click.stop="toggle"
     >
-      <i class="bi bi-person-vcard"></i>
+      <i class="bi" :class="iconClass"></i>
     </button>
     <!-- Teleported to <body> so it isn't clipped by an ancestor's
          overflow:hidden (e.g. the rounded-corner .panel-card it can sit
          inside) - positioned via JS-computed fixed coordinates instead of
          being absolutely positioned relative to a parent that might clip it. -->
     <Teleport to="body">
-      <div v-if="open" class="bridgehead-contacts-popover" role="dialog" aria-label="Contact information"
+      <div v-if="open" class="bridgehead-contacts-popover" role="dialog" :aria-label="title"
            :style="popoverStyle" @click.stop>
         <div v-for="(contact, index) in contacts" :key="`${contact.emailAddress ?? 'contact'}-${index}`"
              class="bridgehead-contact">
@@ -50,11 +50,16 @@ import {BridgeheadContact} from "@/services/projectManagerBackendService";
     contacts: {
       type: Array as PropType<BridgeheadContact[]>,
       required: true
-    }
+    },
+    // Another kind of contacts (e.g. the site's local approval) gets its own title and icon
+    title: {type: String, default: "Contact information"},
+    iconClass: {type: String, default: "bi-person-vcard"}
   }
 })
 export default class BridgeheadContacts extends Vue {
   readonly contacts!: BridgeheadContact[];
+  readonly title!: string;
+  readonly iconClass!: string;
 
   open = false;
   copiedEmail: string | null = null;

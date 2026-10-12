@@ -115,6 +115,13 @@ export interface FrontendConfig {
      * "Create request" button. The creator can change it afterwards in the project view.
      */
     CREATE_REQUEST_DEFAULT_QUERY_FORMAT?: string;
+    /**
+     * "true": every site needs its local approval (with the backend's module LOCAL_APPROVAL). The request is not
+     * offered to skip the local approval, a missing local approval is shown red, and a site's bridgehead admin is not
+     * offered to send the query before its local approval is there. Only in the UI: the backend does not enforce it.
+     * Any other value or absent: a missing local approval is shown as "not provided".
+     */
+    LOCAL_APPROVAL_REQUIRED?: string;
     [key: string]: unknown;
 }
 

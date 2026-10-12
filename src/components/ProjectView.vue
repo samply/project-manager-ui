@@ -34,7 +34,7 @@
                        :class="['stepper-line2', { 'stepper-line2--done': index < getProjectStates().indexOf(project?.state ?? projectState) }]"></div>
                 </div>
                 <div class="stepper-step-textbox" style="padding-top: 4px;">
-                  <div class="stepper-step-header">{{ projectState }}</div>
+                  <div class="stepper-step-header">{{ projectState.replaceAll('_', ' ') }}</div>
                 </div>
               </div>
             </div>
@@ -68,6 +68,13 @@
                       Check them in the Results section and accept them, or request changes.
                     </p>
                     <button type="button" class="btn btn-primary" @click="scrollToResults">Go to results</button>
+                  </div>
+                  <div v-if="sitesWaitingForLocalApproval.length > 0" class="next-step-item">
+                    <div class="next-step-title">Wait for the local approval</div>
+                    <p class="next-step-text">
+                      The query can be sent to <b>{{ sitesWaitingForLocalApproval.join(', ') }}</b> once the local
+                      approval of the site is uploaded.
+                    </p>
                   </div>
                   <!-- Ordered by nextStepEntries: the actions, inviting users, the remaining instructions (the
                        former TODO panel; the "#N" badges next to upload and download buttons point to their
@@ -222,6 +229,8 @@
                                       :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
                                       :exists-publication="existsPublication"
                                       :existsFinalReport="existsFinalReport"
+                                      :local-approvals="localApprovals"
+                                      :local-approval-required="localApprovalRequired"
                                       :bridgeheads="visibleBridgeheads"/>
                 </div>
             </div>
@@ -636,6 +645,19 @@
                           :is-file="false"/>
           </div>
         </div>
+        <!-- One document per site, uploaded by the applicant, the site's bridgehead admin or the project manager -->
+        <div class="documents data-container mt-12" v-if="showLocalApprovalCard && currentMenuStep === MenuStep.DOCUMENTS">
+          <div class="box-header"><span>Local approval</span></div>
+          <div class="panel-body panel-stack">
+            <UploadButton :context="context"
+                          :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE"
+                          :upload-action="Action.UPLOAD_LOCAL_APPROVAL_ACTION"
+                          :bridgehead-choices="localApprovalBridgeheadChoices"
+                          text="Upload local approval" :call-refresh-context="refreshContext"
+                          :is-file="true"/>
+          </div>
+        </div>
         <div class="documents data-container mt-12" v-if="currentMenuStep === MenuStep.DOCUMENTS" style="padding: 0">
           <div class="box-header"><span>Documents</span></div>
           <div class="panel-body">
@@ -777,6 +799,7 @@ import {
 import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
 import {
   assignPipelineVisuals,
+  classifyLocalApproval,
   classifyStateCircle,
   creatorStatusOfBridgehead,
   describeCreatorStatus,
@@ -787,7 +810,7 @@ import {
 
 // The actions of the "Next step" card (fetchButtons): their explanations are not repeated in the TODO panel.
 const NEXT_STEP_ACTIONS: Action[] = [
-  Action.ACCEPT_PROJECT_ACTION, Action.START_DEVELOP_STAGE_ACTION, Action.START_PILOT_STAGE_ACTION,
+  Action.ACCEPT_PROJECT_ACTION, Action.START_LOCAL_APPROVAL_STAGE_ACTION, Action.START_DEVELOP_STAGE_ACTION, Action.START_PILOT_STAGE_ACTION,
   Action.START_FINAL_STAGE_ACTION, Action.FINISH_PROJECT_ACTION,
   Action.ACCEPT_SCRIPT_ACTION, Action.REQUEST_SCRIPT_CHANGES_ACTION, Action.REJECT_SCRIPT_ACTION,
   Action.ACCEPT_PROJECT_ANALYSIS_ACTION, Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
@@ -915,7 +938,8 @@ export default defineComponent({
     },
     // Something in the "Next step" card for this user
     hasNextStep(): boolean {
-      return this.pendingReviewSites.length > 0 || this.nextStepGroupsVisible.includes(true) || !!this.inviteNote;
+      return this.pendingReviewSites.length > 0 || this.sitesWaitingForLocalApproval.length > 0
+          || this.nextStepGroupsVisible.includes(true) || !!this.inviteNote;
     },
     // Nothing for this user anywhere: no card action, no Actions card button, no remaining TODO. Not in a
     // closed request, where "you will be notified" would be wrong.
@@ -930,9 +954,36 @@ export default defineComponent({
     isOnlyCreator(): boolean {
       return this.projectRoles.length === 1 && this.projectRoles.includes(ProjectRole.CREATOR);
     },
-    // In CENTRAL_APPROVAL with the develop phase possible, the final phase is the exception
+    // In CENTRAL_APPROVAL or LOCAL_APPROVAL with the develop phase possible, the final phase is the exception
     skipsDevelopAndPilot(): boolean {
-      return this.project?.state === ProjectState.CENTRAL_APPROVAL && this.canStartDevelopPhase;
+      return [ProjectState.CENTRAL_APPROVAL, ProjectState.LOCAL_APPROVAL].includes(this.project?.state as ProjectState)
+          && this.canStartDevelopPhase;
+    },
+    // In CENTRAL_APPROVAL with the local approval possible, the next phases skip it; not offered if it is required
+    skipsLocalApproval(): boolean {
+      return this.project?.state === ProjectState.CENTRAL_APPROVAL && this.canStartLocalApproval;
+    },
+    // The request has the local approval step: the backend offers its state (module LOCAL_APPROVAL)
+    localApprovalEnabled(): boolean {
+      return this.projectStates.includes(ProjectState.LOCAL_APPROVAL);
+    },
+    showLocalApprovalCard(): boolean {
+      return this.localApprovalEnabled && [ProjectState.LOCAL_APPROVAL, ProjectState.DEVELOP, ProjectState.PILOT,
+        ProjectState.FINAL].includes(this.project?.state as ProjectState);
+    },
+    // The applicant and the project manager admin for every site, a bridgehead admin for their sites
+    localApprovalBridgeheadChoices(): Bridgehead[] {
+      return this.projectRoles.includes(ProjectRole.CREATOR)
+          ? this.visibleBridgeheads
+          : this.fetchActingBridgeheads([ProjectRole.BRIDGEHEAD_ADMIN]);
+    },
+    // A bridgehead admin's sites in the final phase that wait for their required local approval before the query
+    // can be sent (frontend variable LOCAL_APPROVAL_REQUIRED; the backend does not check it)
+    sitesWaitingForLocalApproval(): string[] {
+      if (this.project?.state !== ProjectState.FINAL) return [];
+      return actingBridgeheads(this.visibleBridgeheads, this.bridgeheadRoles, [], [ProjectRole.BRIDGEHEAD_ADMIN])
+          .filter(bridgehead => (bridgehead.executions ?? []).length > 0 && this.isQueryBlockedByLocalApproval(bridgehead))
+          .map(bridgehead => bridgehead.humanReadable ?? bridgehead.bridgehead);
     },
     showPeopleCard(): boolean {
       return !this.isOnlyCreator && (this.canInviteUsers || this.currentUsers.length > 0);
@@ -1036,6 +1087,17 @@ export default defineComponent({
             ? (this.existsVotum ? Action.DOWNLOAD_VOTUM_ACTION : Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION)
             : undefined
       });
+
+      // As in the bridgehead overview
+      if (this.localApprovals) {
+        const existsLocalApproval = this.localApprovals[this.statusBridgehead.bridgehead] === true;
+        classifiedSteps.push({
+          key: 'local_approval',
+          label: BridgeheadOverviewHeader.LOCAL_APPROVAL,
+          ...classifyLocalApproval(existsLocalApproval, this.project?.state, this.localApprovalRequired),
+          downloadAction: existsLocalApproval ? Action.DOWNLOAD_LOCAL_APPROVAL_ACTION : undefined
+        });
+      }
 
       // A project can query several project types at once, each with its own
       // state; one failure taints the step, "done" needs every type finished,
@@ -1259,6 +1321,10 @@ export default defineComponent({
       nextStepGroupsVisible: [] as boolean[],
       anyMoreActionVisible: false,
       canStartDevelopPhase: false,
+      canStartLocalApproval: false,
+      // Whether each site (bridgehead id) has its local approval; null without the local approval step
+      localApprovals: null as Record<string, boolean> | null,
+      localApprovalRequired: false,
       hasProjectAllMandatoryFields: false,
       tooltipTextForCreateButton: '',
       canShowBridgeheadAdminButtons: false,
@@ -1812,6 +1878,27 @@ export default defineComponent({
 
     // The bridgeheads, then the page's data (fetchVisibleBridgeheads refreshes the context). The polling service loads
     // the bridgeheads itself and then decides whether to keep polling.
+    // Whether each site has its local approval, in one request to the backend; a site whose answer is missing (not
+    // allowed yet or failed) has none. Shared by the bridgehead overview, the status and the bridgehead admin's buttons.
+    async loadLocalApprovals(): Promise<void> {
+      if (!this.localApprovalEnabled) {
+        this.localApprovals = null;
+        return;
+      }
+      const bridgeheads = this.visibleBridgeheads;
+      const results = await this.projectManagerBackendService.fetchBatch(bridgeheads.map(bridgehead => ({
+        id: bridgehead.bridgehead, module: Module.PROJECT_DOCUMENTS_MODULE, action: Action.EXISTS_LOCAL_APPROVAL_ACTION,
+        params: new Map<string, unknown>(), context: this.createContext(bridgehead)
+      })), this.context);
+      this.localApprovals = Object.fromEntries(bridgeheads.map(bridgehead =>
+          [bridgehead.bridgehead, results.get(bridgehead.bridgehead)?.response === true]));
+    },
+
+    isQueryBlockedByLocalApproval(bridgehead: Bridgehead): boolean {
+      return this.localApprovalRequired && this.localApprovals !== null
+          && this.localApprovals[bridgehead.bridgehead] !== true;
+    },
+
     refreshBridgeheadsAndContext() {
       void (this.pollingService ? this.pollingService.execute() : this.fetchVisibleBridgeheads());
     },
@@ -1939,6 +2026,7 @@ export default defineComponent({
       this.feasibilityPageSize = Number(config.FEASIBILITY_PAGE_SIZE ?? 10);
       this.feasibilityTableWidth = resolveFeasibilityTableWidth(config.FEASIBILITY_TABLE_WIDTH);
       this.feasibilityTableAlignment = resolveFeasibilityTableAlignment(config.FEASIBILITY_TABLE_ALIGNMENT);
+      this.localApprovalRequired = config.LOCAL_APPROVAL_REQUIRED === 'true';
     },
 
     async fetchCreatedAtDisplayFormat() {
@@ -2246,6 +2334,10 @@ export default defineComponent({
         // Decides where "Start final phase" goes (see moreActionButtons)
         this.canStartDevelopPhase = await this.projectManagerBackendService.isModuleActionActive(
             Module.PROJECT_STATE_MODULE, Action.START_DEVELOP_STAGE_ACTION, this.context);
+        // Decides where "Start final phase" and "Start develop phase" go, and whether they are offered
+        this.canStartLocalApproval = await this.projectManagerBackendService.isModuleActionActive(
+            Module.PROJECT_STATE_MODULE, Action.START_LOCAL_APPROVAL_STAGE_ACTION, this.context);
+        await this.loadLocalApprovals();
         this.fetchButtons()
         await this.checkButtonVisibility()
         this.explanations = this.projectManagerBackendService.fetchExplanations();
@@ -3280,7 +3372,8 @@ export default defineComponent({
         params: new Map<string, string>([
           [PmRequestParameter.PROJECT_TYPE, projectTypes.join(",")]
         ]),
-        visibilityCondition: this.canShowBridgeheadAdminButtons && executions.length > 0 && resend === hasFinishedExecution,
+        visibilityCondition: this.canShowBridgeheadAdminButtons && executions.length > 0 && resend === hasFinishedExecution
+            && !this.isQueryBlockedByLocalApproval(bridgehead),
         bridgehead
       });
       return {
@@ -3355,9 +3448,28 @@ export default defineComponent({
           module: Module.PROJECT_STATE_MODULE, action: Action.START_FINAL_STAGE_ACTION,
           refreshContextCallFunction: this.refreshContext as () => void,
           text: "Start final phase",
-          confirmation: true, confirmationText: "The request skips the develop and pilot phases and moves to the final phase.",
+          confirmation: true, confirmationText: this.skipsLocalApproval
+              ? "The request skips the local approval" + (this.canStartDevelopPhase ? ", the develop and pilot phases" : "")
+              + " and moves to the final phase."
+              : "The request skips the develop and pilot phases and moves to the final phase.",
           withMessage: false, cssClass: "menu-item",
-          visibilityCondition: this.skipsDevelopAndPilot
+          visibilityCondition: (this.skipsDevelopAndPilot || this.skipsLocalApproval)
+              && !(this.skipsLocalApproval && this.localApprovalRequired)
+        },
+        {
+          module: Module.PROJECT_STATE_MODULE, action: Action.START_DEVELOP_STAGE_ACTION,
+          refreshContextCallFunction: this.refreshContext as () => void,
+          text: "Start develop phase",
+          confirmation: true, confirmationText: "The request skips the local approval and moves to the develop phase.",
+          withMessage: false, cssClass: "menu-item",
+          visibilityCondition: this.skipsLocalApproval && !this.localApprovalRequired
+        },
+        {
+          module: Module.PROJECT_STATE_MODULE, action: Action.BACK_TO_REVIEW_ACTION,
+          refreshContextCallFunction: this.refreshContext as () => void,
+          text: "Back to review",
+          confirmation: true, confirmationText: "The request goes back to review, e.g. for a change before its approval.",
+          withMessage: false, cssClass: "menu-item"
         },
         {
           module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION,
@@ -3391,7 +3503,7 @@ export default defineComponent({
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
               text: "Accept request",
-              confirmation: true, confirmationText: "The request moves on to the approval phase.", withMessage: false, cssClass: "btn btn-primary"
+              confirmation: true, confirmationText: "The request moves on to the central approval phase.", withMessage: false, cssClass: "btn btn-primary"
             }
           ] as ActionButton[]
         },
@@ -3400,10 +3512,19 @@ export default defineComponent({
           description: "Move the request on to its next phase.",
           button: [
             {
+              module: Module.PROJECT_STATE_MODULE, action: Action.START_LOCAL_APPROVAL_STAGE_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Start local approval",
+              confirmation: true,
+              confirmationText: "The request moves to the local approval: the approval contacts of the sites and the applicant are informed.",
+              withMessage: false, cssClass: "btn btn-primary"
+            },
+            {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_DEVELOP_STAGE_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
               text: "Start develop phase",
-              confirmation: true, confirmationText: "The request moves to the develop phase.", withMessage: false, cssClass: "btn btn-primary"
+              confirmation: true, confirmationText: "The request moves to the develop phase.", withMessage: false, cssClass: "btn btn-primary",
+              visibilityCondition: !this.skipsLocalApproval
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_PILOT_STAGE_ACTION,
@@ -3416,7 +3537,7 @@ export default defineComponent({
               refreshContextCallFunction: this.refreshContext as () => void,
               text: "Start final phase",
               confirmation: true, confirmationText: "The request moves to the final phase.", withMessage: false, cssClass: "btn btn-primary",
-              visibilityCondition: !this.skipsDevelopAndPilot
+              visibilityCondition: !this.skipsDevelopAndPilot && !this.skipsLocalApproval
             }
           ] as ActionButton[]
         },
@@ -3603,7 +3724,10 @@ export default defineComponent({
     // The deployment's explanation of the group's first action that has one (as the TODO panel showed it),
     // otherwise the group's own description.
     nextStepDescription(group: ActionButtonGroup): string {
-      const explained = group.button.find(button => this.explanations?.get(button.action)?.message);
+      // Only a shown button: a hidden one (e.g. "Start final phase" while the local approval comes first) is not
+      // what the user is asked to do
+      const explained = group.button.find(button => button.visibilityCondition !== false
+          && this.explanations?.get(button.action)?.message);
       return explained ? this.explanations.get(explained.action)!.message : (group.description ?? '');
     },
 

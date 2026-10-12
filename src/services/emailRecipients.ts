@@ -10,6 +10,7 @@ const RECIPIENT_TEXTS: Record<EmailRecipientType, string> = {
     [EmailRecipientType.ALL_FINALS]: "the final users of this request",
     [EmailRecipientType.ALL_BRIDGEHEAD_ADMINS]: "the admins of all sites",
     [EmailRecipientType.BRIDGEHEAD_ADMIN]: "the admin of this site",
+    [EmailRecipientType.BRIDGEHEAD_APPROVAL_CONTACTS]: "the local approval contacts of the sites",
     [EmailRecipientType.BRIDGEHEAD_ADMINS_WHO_HAVE_NOT_ACCEPTED_NOR_REJECTED_THE_PROJECT]:
         "the site admins who have not decided yet",
     [EmailRecipientType.PROJECT_ALL]: "everyone involved in this request",

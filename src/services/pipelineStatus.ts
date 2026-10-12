@@ -1,4 +1,10 @@
-import {Bridgehead, Project, ProjectBridgeheadState, UserProjectState} from "@/services/projectManagerBackendService";
+import {
+  Bridgehead,
+  Project,
+  ProjectBridgeheadState,
+  ProjectState,
+  UserProjectState
+} from "@/services/projectManagerBackendService";
 
 // Shared classification for the "lifecycle pipeline" visual pattern used by
 // both ProjectView.vue's single-bridgehead Status card and
@@ -72,6 +78,23 @@ export function creatorStatusOfBridgehead(project?: Project, bridgehead?: Bridge
     return project.creatorState;
   }
   return bridgehead?.state === ProjectBridgeheadState.ACCEPTED ? bridgehead.creatorState : undefined;
+}
+
+// The states from which a site's local approval is expected: the local approval itself and everything after it (also
+// when the request skipped it)
+const LOCAL_APPROVAL_EXPECTED_STATES = [ProjectState.LOCAL_APPROVAL, ProjectState.DEVELOP, ProjectState.PILOT,
+  ProjectState.FINAL, ProjectState.FINISHED];
+
+// A site's local approval: done once uploaded; before the local approval phase not started yet; afterwards missing -
+// red if the deployment requires it (frontend variable LOCAL_APPROVAL_REQUIRED), else "not provided". The same for
+// the bridgehead overview and the single-bridgehead status.
+export function classifyLocalApproval(exists: boolean, projectState: ProjectState | undefined, required: boolean):
+    { classification: PipelineClassification, tooltip?: string } {
+  if (exists) return {classification: 'done'};
+  if (!projectState || !LOCAL_APPROVAL_EXPECTED_STATES.includes(projectState)) return {classification: 'grey'};
+  return required
+      ? {classification: 'failed', tooltip: 'Local approval missing'}
+      : {classification: 'not_required', tooltip: 'No local approval provided'};
 }
 
 // "Next" is the first still-grey (untouched) step found after the last step

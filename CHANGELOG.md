@@ -155,6 +155,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Draft: a stored value that is not one of its field's allowed values is shown as not valid and blocks creating the request
 - Ethics vote of a bridgehead: one row per bridgehead, each with its own bridgehead (no longer the bridgehead selected in the Status tab)
 - Documents: "For" in the upload (whole project or a bridgehead, by the user's roles); each document is downloaded and removed with its own bridgehead; a project without bridgeheads lists its documents
+- Local approval (backend module LOCAL_APPROVAL): state LOCAL_APPROVAL; "Start local approval" in the next step of the central approval, skipping it (final or develop phase) in More actions; "Back to review" in More actions
+- Local approval per site: step in the bridgehead overview and the single-bridgehead status (download), "Local approval" card in Documents (applicant and project manager for every site, bridgehead admin for their sites), approval contacts next to the site contacts
+- Frontend variable LOCAL_APPROVAL_REQUIRED: the request cannot skip the local approval, a missing one is red, and the bridgehead admin is not offered to send the query without it ("Wait for the local approval")
+- Upload buttons with a choice of sites check the action for the chosen site (an action that needs a site was never shown); the next step explains only shown buttons; the phase list shows CENTRAL APPROVAL without underscore; "An email is sent to" names the local approval contacts
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

@@ -9,7 +9,7 @@ the infrastructure are *bridgeheads*; a context is the project code plus the pro
 word bridgehead: for them a bridgehead is a *site* and a project is a *request*, so the texts on the screen (and the
 mockups below) say "site" and "request".
 
-- Plan and steps: `plans/2026-10-05-plan-site-context.md`.
+- Plan and steps: `project-manager-ops/plans/2026-10-05-plan-site-context.md`.
 - Decided with the user on 2026-10-05.
 
 ## What it was like before

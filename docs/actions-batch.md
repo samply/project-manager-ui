@@ -8,7 +8,7 @@ Use it wherever a component loads several things at once (a page's first load, o
 
 - Backend: `POST /actions/batch/results` (`ProjectManagerController.fetchActionsBatch`).
 - Frontend: `ProjectManagerBackendService.fetchBatch` and `runBatchLoads` in `src/services/actionsBatch.ts`.
-- Background and decisions: `project-manager/plans/2026-09-30-plan-batch-getter-endpoint.md`.
+- Background and decisions: `project-manager-ops/plans/2026-09-30-plan-batch-getter-endpoint.md`.
 
 ## The two levels
 

@@ -5,7 +5,22 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
-## [1.1.0 - 2026-10-01]
+## [Unreleased]
+First release. Until now the deployments ran `develop`; this version is what they run today.
+
+### Summary
+- Dashboard of requests: filters (state, applicant, site), sorting, creation of a request, notifications
+- Request view: form steps with summary, mandatory field checks, conditional fields and info, documents, per-site
+  overview (status, ethics vote, local approval, results), actions by role and state
+- Standalone page and single-spa microfrontend; no external scripts (runs in hospital networks); configurable display
+  formats and logo
+- Needs the backend (`samply/project-manager`) 1.0.0
+
+### Configuration
+- Nothing to change for deployments that already run `develop`.
+
+## [Before 1.0.0]
+Development history before the first release (never released as a version).
 ### Added
 - Form pre/post info is always taken from the backend, without keeping the previous text: a conditional info disappears when its condition no longer holds
 - Dockerfile

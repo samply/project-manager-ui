@@ -1,324 +1,701 @@
 <template>
-  <div class="main-container">
-    <div class="left-container">
-      <div class="box-header" style="padding-left:7%">Phase</div>
-      <div class="vertical-stepper">
-        <div v-for="(projectState, index) in getProjectStates()" :key="index" class="stepper-step">
-          <div style="display: flex; flex-flow: row" :class="{ 'active-step': project?.state === projectState }">
-            <div class="step-circle">
-              <span>{{ index + 1 }}</span>
-            </div>
-            <div class="step-title">{{ projectState }}</div>
-          </div>
-          <div v-if="index < getProjectStates().length - 1" class="stepper-line"></div>
-        </div>
-      </div>
-      <!--</div>-->
+  <div class="main-menu" :class="{ 'with-draft-stepper': showsDraftStepper }">
+    <router-link :to="{ name: 'ProjectDashboard' }" class="menu-item menu-back">
+      <i class="bi bi-arrow-left"></i> Requests
+    </router-link>
+    <div v-for="step in getMenuSteps()" class="menu-item" @click="currentMenuStep=step"
+         :class="{ 'active': currentMenuStep===step }">
+      {{ step }}
+      <span v-if="step === MenuStep.NOTIFICATIONS && unreadNotificationsCount > 0" class="menu-count"
+            :aria-label="`${unreadNotificationsCount} unread`">{{ unreadNotificationsCount }}</span>
     </div>
+  </div>
+  <div class="main-container">
 
-    <div class="right-container">
+
+    <div class="right-container" :class="{ 'with-draft-stepper': showsDraftStepper }">
       <div class="main-content">
-        <div v-if="project?.state !== 'DRAFT'" class="info-container">
-          <div class="box-header">Status</div>
-
-          <div style="padding: 2%">
-            <div style="display:flex; flex-flow:row; justify-content: center; margin-bottom:10px;">
-              <div class="card"
-                   v-if="project?.state !== 'DRAFT' && visibleBridgeheads && visibleBridgeheads.length === 1"
-                   style="padding: 3px 20px;height: fit-content">
-                <div class="card-body" style="padding: 0px 0px;">
-                  <span style="padding: 0px 0px;">{{ context.bridgehead?.humanReadable }}</span>
+        <div class="admin-view">
+          <aside class="left-container"
+                 v-if="projectRoles && projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN) && currentMenuStep === MenuStep.STATUS">
+            <div class="vertical-stepper2">
+              <div v-for="(projectState, index) in getProjectStates()" :key="index"
+                   class="stepper-step2"
+                   :class="{ 'active': project?.state === projectState }">
+                <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
+                  <div :class="[
+                         'step-circle',
+                         index < getProjectStates().indexOf(project?.state ?? projectState) ? 'step-circle--done' :
+                         project?.state === projectState ? 'step-circle--active' : 'step-circle--future'
+                       ]">
+                    <span>{{ index + 1 }}</span>
+                  </div>
+                  <div v-if="index < getProjectStates().length - 1"
+                       :class="['stepper-line2', { 'stepper-line2--done': index < getProjectStates().indexOf(project?.state ?? projectState) }]"></div>
+                </div>
+                <div class="stepper-step-textbox" style="padding-top: 4px;">
+                  <div class="stepper-step-header">{{ projectState.replaceAll('_', ' ') }}</div>
                 </div>
               </div>
             </div>
-            <BridgeheadOverview v-if="visibleBridgeheads.length > 1"
-                                :project-manager-backend-service="projectManagerBackendService"
-                                :call-update-active-bridgehead="updateActiveBridgehead"
-                                :context="context"
-                                :project="project"
-                                :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
-                                :bridgeheads="visibleBridgeheads"
-                                :activeBridgehead="activeBridgehead"/>
-            <br/>
-            <table class="table table-bordered table-overview" v-if="project?.state !== 'DRAFT' ">
-              <thead>
-              <tr>
-                <th class="status-table-header" scope="col">Data Request Number (DRN)</th>
-                <th v-if="visibleBridgeheads?.length == 1 && project?.state !== 'DRAFT'" class="status-table-header" scope="col">Votum</th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Teiler</th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">User Access</th>
-                <th class="status-table-header" v-if="visibleBridgeheads?.length == 1 && dataShieldStatus" scope="col">DataSHIELD Status</th>
-                <th class="status-table-header"
-                    v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')" scope="col">Files in Research Environment
-                </th>
-                <th v-if="visibleBridgeheads?.length == 1 && currentUser" class="status-table-header" scope="col">{{(project?.type == 'DATASHIELD' && project.state != 'FINAL') ? 'Script' : 'Results'}} Acceptance</th>
-                <th v-if="visibleBridgeheads?.length == 1" class="status-table-header" scope="col">Applicant Results Acceptance</th>
-                <th class="status-table-header" scope="col">Applicant</th>
-                <th class="status-table-header" scope="col">Created at</th>
-                <th class="status-table-header" scope="col">Expires at</th>
-                <th class="status-table-header" scope="col">Last modified</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr>
-                <td>{{ project ? project.code : '' }}</td>
-                <td v-if="visibleBridgeheads?.length == 1 && project?.state !== 'DRAFT'">
-                  <div>
-                    <div v-if="existsVotum" class="states-circle-container">
-                      <div class="state_circle green"></div>
-                      <DownloadButton
-                          :context="context"
-                          :project-manager-backend-service="projectManagerBackendService"
-                          icon-class="bi bi-download"
-                          button-class="download-button"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE"
-                          :action="Action.DOWNLOAD_VOTUM_ACTION"
-                      />
-                    </div>
-                    <div v-else-if="existsVotumForAllBridgeheads" class="states-circle-container">
-                      <div class="state_circle green"></div>
-                      <DownloadButton
-                          :context="context"
-                          :project-manager-backend-service="projectManagerBackendService"
-                          icon-class="bi bi-download"
-                          button-class="download-button"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE"
-                          :action="Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION"
-                      />
-                    </div>
-                    <div v-else class="states-circle-container"><div class="state_circle red"/></div>
+          </aside>
+          <div class="data-container mt-12" style="width:100%;height:auto">
+            <div v-if="project && project.state !== ProjectState.DRAFT && currentMenuStep === MenuStep.STATUS"
+                 class="info-container">
+              <!-- No panel title here: this whole area is the Status tab's content (already
+                   labeled by the tab itself), now split into its own "At a Glance" and "Status"
+                   cards below, each with their own header. A third "Status" label here would
+                   just repeat the tab name. -->
+              <div v-if="visibleBridgeheads && visibleBridgeheads.length === 1"
+                  style="display:flex; flex-flow:row; justify-content: center; margin-bottom: var(--space-4);">
+                <div class="card"
+                     style="padding: 3px 20px;height: fit-content">
+                  <div class="card-body" style="padding: 0 0;">
+                    <span style="padding: 0 0;">{{ statusBridgehead?.humanReadable }}</span>
+                    <BridgeheadContacts :contacts="statusBridgehead?.contacts ?? []" />
                   </div>
-                </td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div  class="state_circle" :class="activeBridgehead?.queryState?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="activeBridgehead?.queryState ?? undefined"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="activeBridgehead?.state?.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="activeBridgehead?.state ?? undefined"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && dataShieldStatus"><div  class="state_circle" :class="dataShieldStatus?.project_status.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="dataShieldStatus?.project_status"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && (project?.type == 'RESEARCH_ENVIRONMENT')">{{ areExportFilesTransferredToResearchEnvironment }}</td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead && currentUser"><div  class="state_circle" :class="currentUser?.projectState.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="currentUser.projectState"></div></td>
-                <td v-if="visibleBridgeheads?.length == 1 && activeBridgehead"><div class="state_circle" :class="creatorAcceptance.toLowerCase()" data-toggle="tooltip" data-placement="top" :title="creatorAcceptance ?? undefined"></div></td>
-                <td style="display:flex;">
-                  <UserAndEmail
-                      :first-name="project?.creatorName"
-                      :email="project?.creatorEmail"
-                  />
-                </td>
-                <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
-                <td>{{ project && project.expiresAt ? convertDate(project.expiresAt) : '' }}</td>
-                <td>{{ project && project.modifiedAt ? convertDate(project.modifiedAt) : '' }}</td>
-              </tr>
-              </tbody>
-            </table>
-
-          </div>
-        </div>
-        <div v-if="!(project?.state === 'DRAFT' && projectRoles.includes(ProjectRole.CREATOR)) && isAnyButtonVisible" class="project-actions">
-          <div class="box-header">Actions</div>
-          <div style="padding:2%">
-            <!-- Project State Module: Creator View -->
-            <!-- v-if="existsApplicationForm" entfernt - statt ganz ausblenden -> design ändern -->
-            <!-- Project State Module: PM-ADMIN View -->
-            <template v-for="(buttonGroup, index) in actionButtons" :key="index">
-              <div v-if="buttonGroups[index]" class="button-group-box">
-                <div class="button-group-label">
-                  {{buttonGroup.label}}
-                  <span style="display: flex">
-                    <span v-for="(explanationNumber, index3) in getExplanationsForButtonGroup(buttonGroup)" :key="index3" class="todo-circle-small">#{{explanationNumber}}</span>
-                  </span>
-                </div>
-                <div style="display: flex">
-                  <ProjectManagerButton v-for="(button, index2) in buttonGroup.button" :key="index2"
-                                        :module="button.module" :action="button.action"
-                                        :context="context" :call-refreh-context="button.refreshContextCallFunction" :text="button.text"
-                                        :button-class="button.cssClass" :with-message="button.withMessage"
-                                        :visibility="button.visibilityCondition"
-                                        :do-action-on-click="button.doActionOnClick"
-                                        :project-manager-backend-service="projectManagerBackendService"/>
                 </div>
               </div>
-            </template>
-          </div>
-          <div v-if="!existsDraftDialog || draftDialogStepper.currentStep === DialogStep.SUMMARY" class="inviteUser">
-            <UserInput :project="project" :context="context"
-                       :bridgeheads="visibleBridgeheads"
-                       :todos="extendedExplanations"
-                       :current-users="currentUsers"
-                       :project-manager-backend-service="projectManagerBackendService"
-                       :call-refreh-context="refreshContext"
-            />
-          </div>
-        </div>
-        <div class="documents" v-if="project?.state === 'FINAL' && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN))">
-          <div class="box-header">Results</div>
-          <div style="padding: 2%">
-            <ResultsBox :call-refreh-context="refreshContext"
-                        :project-manager-backend-service="projectManagerBackendService"
-                        :current-users="currentUsers"
-                        :context="context"
-                        :project="project"
-                        :project-roles="projectRoles"
-            />
-          </div>
-        </div>
-        <div class="data-container mt-12">
-          <div v-if="project">
-            <div class="box-header">Request</div>
-            <div class="table-responsive">
-
-              <div v-if="existsDraftDialog" class="container" style="width:100%">
-                <div class="row justify-content-center">
-                  <div class="col-auto" style="width:100%">
-                    <!-- Bootstrap Stepper -->
-                    <div class="stepper">
-                      <div v-for="(step, index) in draftDialogStepper.currentSteps" :key="index" class="stepper-item"
-                           :class="{ 'active': draftDialogStepper.currentStep === step }">
-                        <button style="background: none; border:none; color: black;"
-                                @click="draftDialogStepper.setCurrentStep(step)"
-                                :style="{ fontWeight: draftDialogStepper.currentStep === step ? 'bold' : 'normal' }">{{
-                            step
-                          }}
+              <!-- What this user has to do now. Replaces the Actions card's review and phase buttons and the
+                   matching TODOs (plans/2026-09-29-plan-project-actions-redesign.md, step 3.4). -->
+              <div v-if="hasNextStep || todoNotes.length > 0 || hasNothingToDo" class="panel-card next-step-card">
+                <div class="panel-header">Next step</div>
+                <div class="next-step-body">
+                  <div v-if="pendingReviewSites.length > 0" class="next-step-item">
+                    <div class="next-step-title">Review the results</div>
+                    <p class="next-step-text">
+                      The results of <b>{{ pendingReviewSites.join(', ') }}</b> are ready for your review.
+                      Check them in the Results section and accept them, or request changes.
+                    </p>
+                    <button type="button" class="btn btn-primary" @click="scrollToResults">Go to results</button>
+                  </div>
+                  <div v-if="sitesWaitingForLocalApproval.length > 0" class="next-step-item">
+                    <div class="next-step-title">Wait for the local approval</div>
+                    <p class="next-step-text">
+                      The query can be sent to <b>{{ sitesWaitingForLocalApproval.join(', ') }}</b> once the local
+                      approval of the site is uploaded.
+                    </p>
+                  </div>
+                  <!-- Ordered by nextStepEntries: the actions, inviting users, the remaining instructions (the
+                       former TODO panel; the "#N" badges next to upload and download buttons point to their
+                       numbers), and finishing the request last. -->
+                  <template v-for="entry in nextStepEntries" :key="entry.key">
+                    <div v-if="entry.group" class="next-step-item">
+                      <div class="next-step-title">{{ entry.group.label }}</div>
+                      <p class="next-step-text" v-html="nextStepDescription(entry.group)"></p>
+                      <div class="next-step-buttons">
+                        <ProjectManagerButton v-for="button in entry.group.button" :key="button.action"
+                                              :module="button.module" :action="button.action"
+                                              :context="buttonContext(button)"
+                                              :call-refresh-context="button.refreshContextCallFunction"
+                                              :text="button.text"
+                                              :button-class="button.cssClass"
+                                              :with-message="button.withMessage"
+                                              :message-required="button.messageRequired"
+                                              :confirmation="button.confirmation"
+                                              :confirmation-text="button.confirmationText"
+                                              :visibility="button.visibilityCondition"
+                                              :do-action-on-click="button.doActionOnClick"
+                                              :params="button.params"
+                                              :project-manager-backend-service="projectManagerBackendService"/>
+                      </div>
+                    </div>
+                    <div v-else-if="entry.invite" class="next-step-item">
+                      <div class="next-step-title">Invite users to the {{ project?.state?.toLowerCase() }} phase</div>
+                      <p class="next-step-text" v-html="entry.invite.message"></p>
+                      <div class="next-step-buttons">
+                        <button type="button" class="btn btn-primary" aria-haspopup="dialog" @click="openInviteDialog">
+                          <i class="bi bi-person-plus" aria-hidden="true"></i> Invite user
                         </button>
                       </div>
                     </div>
-                    <!-- Navigationstasten -->
-                    <div class="button-container mt-3">
-                      <button class="btn btn-primary me-2" @click="draftDialogStepper.previousStep()" :disabled="!draftDialogStepper.hasPreviousStep">
-                        Back
-                      </button>
-                      <button class="btn btn-primary me-2" @click="draftDialogStepper.nextStep()"
-                              v-if="draftDialogStepper.hasNextStep">
-                        Continue
-                      </button>
-                      <ProjectManagerButton v-if="draftDialogStepper.currentStep === DialogStep.SUMMARY"
-                                            :module="Module.PROJECT_STATE_MODULE"
-                                            :action="Action.CREATE_PROJECT_ACTION"
-                                            :context="context" :call-refreh-context="refreshContext" text="Create"
-                                            button-class="btn btn-success mr-2"
-                                            :with-message="false"
-                                            :is-disabled="!hasProjectAllMandatoryFields"
-                                            :tooltip-text="tooltipTextForCreateButton"
+                    <div v-else-if="entry.note" class="next-step-item next-step-note">
+                      <span class="todo-circle">#{{ entry.note.number }}</span>
+                      <p class="next-step-text" v-html="entry.note.message"></p>
+                    </div>
+                  </template>
+                  <p v-if="hasNothingToDo" class="next-step-text next-step-idle">
+                    No action is required at the moment. You will be notified, also by email, when there is
+                    something for you to do.
+                  </p>
+                </div>
+              </div>
+              <div class="panel-card at-a-glance-card">
+                  <div class="panel-header panel-header-with-actions">
+                    <span>At a Glance</span>
+                    <!-- Same temporary creator restriction as the Actions card
+                         (plans/2026-09-08-plan-restore-project-actions-for-creators.md). -->
+                    <MoreActionsMenu v-if="showMoreActionsMenu">
+                      <ProjectManagerButton v-for="button in moreActionButtons" :key="button.text"
+                                            :module="button.module" :action="button.action"
+                                            :context="buttonContext(button)"
+                                            :call-refresh-context="button.refreshContextCallFunction"
+                                            :text="button.text"
+                                            :button-class="button.cssClass"
+                                            button-role="menuitem"
+                                            :with-message="button.withMessage"
+                                            :message-required="button.messageRequired"
+                                            :confirmation="button.confirmation"
+                                            :confirmation-text="button.confirmationText"
+                                            :danger="button.cssClass.includes('danger')"
+                                            :visibility="button.visibilityCondition"
                                             :project-manager-backend-service="projectManagerBackendService"/>
-                      <ProjectManagerButton v-if="project?.state === 'DRAFT' "
-                                            :module="Module.PROJECT_STATE_MODULE"
-                                            :action="Action.REJECT_PROJECT_ACTION"
-                                            :context="context" :call-refreh-context="refreshContext" text="Discard"
-                                            button-class="btn btn-danger btn-secondary mr-2"
-                                            :with-message="true"
-                                            :project-manager-backend-service="projectManagerBackendService"/>
+                    </MoreActionsMenu>
+                  </div>
+                  <div class="at-a-glance-strip">
+                    <div class="glance-cell">
+                      <span class="glance-label">Title</span>
+                      <a class="glance-title clickable" @click="currentMenuStep = MenuStep.REQUEST">{{ project ? project.label : '' }}</a>
+                    </div>
+                    <div class="glance-cell">
+                      <span class="glance-label">Request ID</span>
+                      <span class="glance-value muted nowrap">{{ project ? project.code : '' }}</span>
+                    </div>
+                    <div class="glance-cell">
+                      <span class="glance-label">Applicant</span>
+                      <span class="glance-value">
+                        <UserAndEmail
+                            :first-name="project?.creatorName"
+                            :email="project?.creatorEmail"
+                        />
+                      </span>
+                    </div>
+                    <div class="glance-cell">
+                      <span class="glance-label">Created at</span>
+                      <span class="glance-value muted nowrap">{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</span>
+                    </div>
+                    <div class="glance-cell">
+                      <span class="glance-label">Phase</span>
+                      <PhasePill v-if="project" :state="project.state" />
                     </div>
                   </div>
                 </div>
+
+                <div class="panel-card status-pipeline-card" v-if="statusBridgehead">
+                  <div class="panel-header">Status</div>
+                  <div class="pipeline-row" :ref="setPipelineRowRef">
+                    <button v-if="statusPipelineSteps.length > pipelineStepsShown" type="button"
+                            class="pipeline-arrow" :disabled="effectivePipelineScrollIndex === 0"
+                            aria-label="Show earlier steps" @click="scrollPipeline('left')">
+                      <i class="bi bi-caret-left-fill"></i>
+                    </button>
+                    <div class="pipeline">
+                      <div v-for="(step, index) in visiblePipelineSteps" :key="step.key"
+                           class="pipeline-step" :class="step.visual">
+                        <div v-if="index > 0" class="pipeline-line" :class="{ done: step.visual === 'done' }"></div>
+                        <div v-if="step.visual === 'next'" class="pipeline-next-chip">Next</div>
+                        <!-- A step's status is usually one fact, one node. "Data export
+                             authorised" can be several project types at once, though - when
+                             they don't all share one state, show one small dot per group
+                             instead of a single node standing in for all of them. -->
+                        <div v-if="step.subSteps && step.subSteps.length > 1" class="pipeline-node-cluster"
+                             data-toggle="tooltip" data-placement="top" :title="step.tooltip ?? undefined">
+                          <div v-for="subStep in step.subSteps" :key="subStep.label"
+                               class="pipeline-node pipeline-node-mini" :class="subStep.classification"
+                               :title="subStep.tooltip ?? undefined"></div>
+                        </div>
+                        <div v-else class="pipeline-node" :class="step.visual"
+                             data-toggle="tooltip" data-placement="top" :title="step.tooltip ?? undefined">
+                          <svg v-if="step.visual === 'done'" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg>
+                          <svg v-else-if="step.visual === 'failed'" viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+                          <svg v-else-if="step.visual === 'warning'" viewBox="0 0 16 16" width="2" height="10" fill="#fff"><rect x="0" y="0" width="2" height="7"/><rect x="0" y="9" width="2" height="2"/></svg>
+                          <svg v-else-if="step.visual === 'not_required'" viewBox="0 0 16 16" width="10" height="10" fill="#fff"><rect x="3" y="7" width="10" height="2" rx="1"/></svg>
+                        </div>
+                        <div class="pipeline-label">{{ step.label }}</div>
+                        <DownloadButton
+                            v-if="step.downloadAction"
+                            :context="createContext(statusBridgehead)"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            icon-class="bi bi-download"
+                            button-class="pipeline-download-button"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE"
+                            :action="step.downloadAction"
+                        />
+                      </div>
+                    </div>
+                    <button v-if="statusPipelineSteps.length > pipelineStepsShown" type="button"
+                            class="pipeline-arrow"
+                            :disabled="effectivePipelineScrollIndex >= (statusPipelineSteps.length - pipelineStepsShown)"
+                            aria-label="Show later steps" @click="scrollPipeline('right')">
+                      <i class="bi bi-caret-right-fill"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="panel-card" v-if="visibleBridgeheads.length > 1">
+                  <div class="panel-header">Status</div>
+                  <BridgeheadOverview :project-manager-backend-service="projectManagerBackendService"
+                                      :context="context"
+                                      :project="project"
+                                      :exists-votum-for-all-bridgeheads="existsVotumForAllBridgeheads"
+                                      :exists-publication="existsPublication"
+                                      :existsFinalReport="existsFinalReport"
+                                      :local-approvals="localApprovals"
+                                      :local-approval-required="localApprovalRequired"
+                                      :bridgeheads="visibleBridgeheads"/>
+                </div>
+            </div>
+            <!-- Who takes part in the current phase, and inviting more. The inline invite form becomes a
+                 dialog in step 3.6 of plans/2026-09-29-plan-project-actions-redesign.md. -->
+            <div v-if="showPeopleCard && currentMenuStep === MenuStep.STATUS" class="project-people status-panel">
+              <div class="panel-header">People</div>
+              <div class="people-body">
+                <UserInput ref="userInput" :project="project" :context="context"
+                           :bridgeheads="visibleBridgeheads"
+                           :current-users="currentUsers"
+                           :project-manager-backend-service="projectManagerBackendService"
+                           :call-refresh-context="refreshContext"
+                />
               </div>
-
-            <br/>
-            <table class="table table-bordered custom-table  table-hover">
-              <tbody>
-              <template v-for="(projectField, index) in getProjectFields()" :key="index">
-                <ProjectFieldRow v-if="projectField.visibilityCondition && (!existsDraftDialog || projectField.isEditable && draftDialogStepper.currentStep !== DialogStep.SUMMARY || draftDialogStepper.currentStep === DialogStep.SUMMARY)"
-                                 :field-key="projectField.fieldKey"
-                                 :field-value="projectField.fieldValue"
-                                 :edit-project-param="projectField.editProjectParam"
-                                 :is-editable="projectField.isEditable"
-                                 :redirect-url="projectField.redirectUrl"
-                                 :transform-for-sending="projectField.transformForSending"
-                                 :possible-values="projectField.possibleValues"
-                                 :configurations="projectField.configurations"
-                                 :exists-file="projectField.existFile"
-                                 :upload-action="projectField.uploadAction"
-                                 :download-action="projectField.downloadAction"
-                                 :download-module="projectField.downloadModule"
-                                 :todos="extendedExplanations"
-                                 :visible-bridgeheads="visibleBridgeheads"
-                                 :call-refreh-context="refreshContext"
-                                 :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : NaN"
-                                 :context="context" :project-manager-backend-service="projectManagerBackendService"/>
-
-              </template>
-              </tbody>
-            </table>
-          </div>
+            </div>
+            <div class="documents status-panel"
+                 v-if="project?.state === ProjectState.FINAL && (projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.FINAL) || projectRoles.includes(ProjectRole.BRIDGEHEAD_ADMIN)) && currentMenuStep === MenuStep.STATUS">
+              <div class="panel-header">Results</div>
+              <div class="panel-body">
+                <!-- Results actions change the state of a site: reload the sites too, for the status timeline. -->
+                <ResultsBox :call-refresh-context="refreshBridgeheadsAndContext"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :current-users="currentUsers"
+                            :context="context"
+                            :bridgeheads="visibleBridgeheads"
+                            :project="project"
+                            :project-roles="projectRoles"
+                            @pending-review="pendingReviewSites = $event"
+                />
+              </div>
+            </div>
           </div>
         </div>
-        <div class="documents" v-if="project?.state === 'FINISHED'">
+        <div v-if="currentMenuStep === MenuStep.REQUEST" class="data-container mt-12"
+             :class="{ 'non-draft': !existsDraftDialog }">
+          <div v-if="project" style="height:100%">
+            <div v-if="!existsDraftDialog" class="box-header"><span>Request</span></div>
+            <div class="draft-layout-row" style="height:100%">
+
+              <aside v-if="existsDraftDialog" class="vertical-stepper-box">
+                <div class="vertical-stepper2">
+                  <div v-for="(step, index) in draftDialogStepper.currentSteps" :key="step.id"
+                       class="stepper-step2"
+                       :class="{ 'active': draftDialogStepper.currentStep === step, 'missing-fields': draftStepState(step, index) === 'missing' }"
+                  >
+                    <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
+                      <div :class="['step-circle', 'step-circle--' + draftStepState(step, index)]"
+                           :title="step.displayName"
+                           @click="draftDialogStepper.setCurrentStep(step.id)">
+                        <span>{{ draftStepState(step, index) === 'done' ? '✓' :
+                            draftStepState(step, index) === 'missing' ? '!' : index + 1 }}</span>
+                      </div>
+                      <div v-if="index < draftDialogStepper.currentSteps.length - 1"
+                           :class="['stepper-line2', isDraftStepReached(step, index) && isDraftStepReached(draftDialogStepper.currentSteps[index + 1], index + 1) ? 'stepper-line2--done' : '']">
+                      </div>
+                    </div>
+                    <div class="stepper-step-textbox"
+                         @click="draftDialogStepper.setCurrentStep(step.id)"
+                         style="padding-top: 4px;">
+                      <div class="stepper-step-header">{{ step.displayName }}</div>
+                      <div class="stepper-step-desc">{{ step.shortDescription ?? step.description }}</div>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+
+              <div class="draft-form-card" :class="{ 'summary-compact': summaryCompact }">
+                  <div v-if="existsDraftDialog" class="project-field-header">
+                    <div class="project-field-title">{{
+                        draftDialogStepper.currentStep?.displayName
+                      }}
+                    </div>
+                    <div class="project-field-notification">{{
+                        draftDialogStepper.currentStep?.description
+                      }}
+                    </div>
+                  </div>
+                <div id="draft-dialog-box" class="draft-dialog-content"
+                     :class="{ 'summary-layout': (!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY)) && !editMode, 'edit-layout': editMode }">
+                  <div v-if="!existsDraftDialog" class="form-switch-box">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" role="switch"
+                             id="flexSwitchCheckDefault"
+                             v-model="editMode" :class="{ 'inactive': !editMode }">
+                      <label class="form-check-label" for="flexSwitchCheckDefault">Edit Fields</label>
+                    </div>
+                  </div>
+                  <!-- Mandatory fields carry a *; "optional" is written only where a whole step or block
+                       is optional (docs/mandatory-fields.md). -->
+                  <div v-if="existsDraftDialog && !isCurrentStep(DialogStep.SUMMARY)" class="mandatory-legend"
+                       :class="{ 'field-missing': highlightMissingFields && isOutputsStep(draftDialogStepper.currentStep?.id) && !projectHasValidOutputs() }">
+                    {{ mandatoryLegend() }}
+                  </div>
+                  <ContextInfoBox
+                      v-if="existsDraftDialog && draftDialogStepper.currentStep?.preInfo"
+                      :content="draftDialogStepper.currentStep.preInfo"
+                  />
+
+                  <template v-for="(block, blockIndex) in projectFieldRenderBlock" :key="block.key">
+                    <template v-if="shouldShowFormCategoryStart(blockIndex)">
+                      <div
+                          class="project-field-header-inline project-field-category-header"
+                      >
+                        <div class="project-field-title-inline">
+                          {{ getDialogStep(block.category)?.displayName }}
+                        </div>
+                        <!--<div class="project-field-notification-inline">
+                          {{ getDialogStep(item.field.category)?.description }}
+                        </div>-->
+                      </div>
+                      <ContextInfoBox
+                          v-if="shouldShowFormCategoryPreInfo(blockIndex)"
+                          :content="getDialogStep(block.category)?.preInfo ?? ''"
+                      />
+                    </template>
+                    <template v-if="block.block">
+                      <div v-if="shouldShowHeaderOfBlockGroup(blockIndex)" class="input-field-header" >
+                        <div class="d-flex justify-content-between align-items-center">
+                          <span class="project-field-block-title">{{ block.block?.displayName ?? block.block?.label}}<span
+                              v-if="existsDraftDialog && !isCurrentStep(DialogStep.SUMMARY) && isOptionalBlock(block.block?.label)"
+                              class="optional-note">(optional)</span></span>
+                        </div>
+                        <div class="project-field-block-description"
+                             v-html="(!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY))
+                               ? (block.block?.shortDescription ?? block.block?.description)
+                               : block.block?.description"></div>
+                      </div>
+                    </template>
+                    <ContextInfoBox
+                        v-if="shouldShowBlockPreInfo(blockIndex)"
+                        :content="block.block?.preInfo ?? ''"
+                    />
+
+                    <template v-if="shouldRenderFieldBlockItems(block)">
+                      <div :class="{ 'project-field-block': shouldRenderBlock(block) }"  class="project-field-block-instance-wrapper" >
+                        <div v-if="shouldRenderBlock(block)" class="project-field-block-header" @click="toggleBlock(block?.block)">
+                          <i class="bi project-field-block-header-chevron" :class="isBlockCollapsed(block.block) ? 'bi-chevron-right' : 'bi-chevron-down'"></i>
+                          <div>{{ block.block?.displayName ?? block.block?.label }} #{{ getBlockNumber(block.block?.label, block.block?.instance) }}</div>
+                          <button
+                              v-if="!hasMinimumInstances(block.block?.label, block.block?.minInstances) && ((existsDraftDialog && !isCurrentStep(DialogStep.SUMMARY)) || (!existsDraftDialog && editMode))"
+                              type="button"
+                              class="btn btn-sm project-field-block-delete-button"
+                              @click.stop="deleteBlockInstance(block)"
+                              title="Delete block"
+                              style="color:var(--status-danger-color);">
+                            <i class="bi bi-x-lg"></i>
+                          </button>
+                        </div>
+                        <div v-if="!isBlockCollapsed(block.block)" class="project-field-block-body">
+                          <template v-for="row in block.items" :key="row.key">
+                            <template v-for="item in row.field">
+                            <template v-if="hasSection(item.section) && row.shouldRenderRow">
+                              <template v-for="newSection in item.section?.fetchNewSections()"
+                                        :key="`${newSection.level}-${newSection.displayName ?? 'root'}`">
+
+                                <!--<tr v-if="newSection.level === 1" class="section-row spacer-row">
+                                  <td colspan="100">&nbsp;</td>
+                                </tr>-->
+
+                                <!-- Regular section row -->
+                                <tr v-if="newSection.displayName" class="section-row" :class="`level-${Math.min(newSection.level ?? 0, 4)}`">
+                                  <td colspan="100" style="display: block;">
+                                    <div class="section-title"
+                                         :class="[`level-${Math.min(newSection.level ?? 0, 4)}`,{'section-underline': !(newSection.description || newSection.shortDescription)}]">
+                                      {{ newSection.displayName }}
+                                    </div>
+                                    <div v-if="newSection.description || newSection.shortDescription" class="section-description section-underline">
+                                      {{ (!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY)) ? (newSection.shortDescription ?? newSection.description) : newSection.description }}
+                                    </div>
+                                  </td>
+                                </tr>
+                              </template>
+                            </template>
+                            </template>
+
+
+
+
+                            <div :class="[row.field.length > 1 && !isStackedPairRow(row) ? 'project-field-grid' : '', optionalBooleanRunClasses.get(row.key) ?? '']">
+                            <template v-for="item in row.field">
+                            <div
+                                v-if="row.shouldRenderRow && feasibilityEnabled && item.fixedFieldKey === FixedFormFieldKey.QUERIED_SITES"
+                                class="project-feasibility"
+                            >
+                              <div class="project-feasibility-header">
+                                <span class="project-feasibility-title"
+                                      :class="{ 'field-missing': highlightMissingFields && item.mandatory && bridgeheads.length === 0 }">
+                                  {{ item.fieldKey }}
+                                  <MandatoryFieldMarker :mandatory="item.mandatory"/>
+                                </span>
+                                <div v-if="item.fieldDescription" class="project-feasibility-description"
+                                     v-html="item.fieldDescription"></div>
+                              </div>
+                              <FeasibilityTable
+                                  :bridgeheads="visibleBridgeheads"
+                                  :results="feasibilityResults"
+                                  :errors="feasibilityErrors"
+                                  :page-size="feasibilityPageSize"
+                                  :width="feasibilityTableWidth"
+                                  :alignment="feasibilityTableAlignment"
+                                  :editable="canEditSelectedSites()"
+                                  :has-query="!project || Boolean(project.query)"
+                                  :available-bridgeheads="allBridgeheads"
+                                  @update-bridgeheads="updateSelectedSites"
+                              />
+                            </div>
+                            <ProjectFieldRow
+                                v-else-if="row.shouldRenderRow"
+                                :field-key="item.fieldKey"
+                                :field-value="item.fieldValue"
+                                :field-description="item.fieldDescription"
+                                :field-short-description="item.fieldShortDescription"
+                                :description-collapsed-lines="formFieldDescriptionCollapsedLines"
+                                :placeholder="item.placeholder"
+                                :field-pre-info="isSummaryReview() ? undefined : item.fieldPreInfo"
+                                :field-post-info="isSummaryReview() ? undefined : item.fieldPostInfo"
+                                :bridgeheads="item.bridgeheads"
+                                :action="item.action"
+                                :module="item.module"
+                                :edit-project-param="item.editProjectParam"
+                                :is-editable="item.isEditable"
+                                :edit-mode="editMode"
+                                :redirect-url="item.redirectUrl"
+                                :transform-for-sending="item.transformForSending"
+                                :possible-values="item.possibleValues"
+                                :display-possible-value="item.displayPossibleValue"
+                                :configurations="item.configurations"
+                                :configuration-selection-type="item.configurationSelectionType"
+                                :exists-file="item.existFile"
+                                :project-document="item.projectDocument"
+                                :upload-action="item.uploadAction"
+                                :download-action="item.downloadAction"
+                                :download-module="item.downloadModule"
+                                :todos="existsDraftDialog ? undefined : extendedExplanations"
+                                :visible-bridgeheads="visibleBridgeheads"
+                                :mandatory="item.mandatory"
+                                :type="item.type"
+                                :display-format="item.displayFormat"
+                                :section="item.section"
+                                :block="item.block"
+                                :call-refresh-context="refreshContext"
+                                :call-refresh-bridgeheads="refreshBridgeheadsAndContext"
+                                :call-query-changed="queryChanged"
+                                :project-state="project?.state"
+                                :extra-params="item.extraParams"
+                                :delete-action="item.deleteAction"
+                                :delete-module="item.deleteModule"
+                                :draft-dialog-current-step="existsDraftDialog ? draftDialogStepper.currentStep : undefined"
+                                :highlight-missing="highlightMissingFields"
+                                :context="context"
+                                :properties="item.properties"
+                                :project-roles="projectRoles"
+                                :multiple="item.multiple"
+                                :instances="item.instances"
+                                :build-instance-transform="item.buildInstanceTransform"
+                                :project-manager-backend-service="projectManagerBackendService"/>
+                            </template>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+                    <template v-if="block.block">
+                      <div
+                          v-if="shouldShowAddButtonAfterBlockGroup(blockIndex)"
+                          type="button"
+                          class="btn btn-outline-secondary project-field-block-add-button"
+                          @click="addBlockInstance(block.block)">
+                        Add {{ block.block?.displayName ?? block.block?.label }}
+                      </div>
+                    </template>
+                    <ContextInfoBox
+                        v-if="shouldShowBlockPostInfo(blockIndex)"
+                        :content="block.block?.postInfo ?? ''"
+                    />
+                    <ContextInfoBox
+                        v-if="shouldShowFormCategoryPostInfo(blockIndex)"
+                        :content="getDialogStep(block.category)?.postInfo ?? ''"
+                    />
+                  </template>
+                  <ContextInfoBox
+                      v-if="existsDraftDialog && draftDialogStepper.currentStep?.postInfo"
+                      :content="draftDialogStepper.currentStep.postInfo"
+                  />
+                </div>
+
+                <div v-if="project?.state === ProjectState.DRAFT" class="button-container">
+                  <!-- Left: Delete Draft -->
+                  <ProjectManagerButton
+                      :module="Module.PROJECT_STATE_MODULE"
+                      :action="Action.DELETE_PROJECT_ACTION"
+                      :context="context"
+                      :call-refresh-context="() => redirectTo('/')"
+                      text="Delete draft"
+                      button-class="btn btn-delete-draft"
+                      icon-class="bi bi-x-lg"
+                      :with-message="false"
+                      :confirmation="true"
+                      confirmation-text="The draft and everything entered in it are deleted. This cannot be undone."
+                      :danger="true"
+                      :project-manager-backend-service="projectManagerBackendService"/>
+
+                  <!-- Right: step counter + navigation -->
+                  <div class="button-nav-right">
+                    <span class="step-counter">
+                      Step {{ draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) + 1 }} of {{ draftDialogStepper.currentSteps.length }}
+                    </span>
+                    <button class="btn btn-nav-back" @click="draftDialogStepper.previousStep()"
+                            :disabled="!draftDialogStepper.hasPreviousStep">
+                      <i class="bi bi-chevron-left"></i> Back
+                    </button>
+                    <button v-if="draftDialogStepper.hasNextStep"
+                            class="btn btn-nav-continue" @click="nextDraftDialogStep()">
+                      Next <i class="bi bi-chevron-right"></i>
+                    </button>
+                    <ProjectManagerButton v-if="!draftDialogStepper.hasNextStep"
+                                          :module="Module.PROJECT_STATE_MODULE"
+                                          :action="Action.CREATE_PROJECT_ACTION"
+                                          :context="context" :call-refresh-context="refreshContext"
+                                          text="Submit"
+                                          button-class="btn btn-create-request"
+                                          :with-message="false"
+                                          :is-disabled="!hasProjectAllMandatoryFields"
+                                          :tooltip-text="tooltipTextForCreateButton"
+                                          :project-manager-backend-service="projectManagerBackendService"/>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-if="currentMenuStep === MenuStep.SCRIPT" class="data-container mt-12 non-draft">
+          <div class="box-header"><span>Script</span></div>
+          <div class="panel-body panel-stack">
+            <UploadButton
+                :context="createContext(fetchScriptUploadBridgehead())"
+                :project-manager-backend-service="projectManagerBackendService"
+                :module="Module.PROJECT_DOCUMENTS_MODULE"
+                :upload-action="Action.UPLOAD_SCRIPT_ACTION"
+                text="Upload script"
+                :call-refresh-context="refreshContext"
+                :is-file="true"
+            />
+            <DownloadButton
+                :context="createContext(fetchScriptViewBridgehead())"
+                :project-manager-backend-service="projectManagerBackendService"
+                :module="Module.PROJECT_DOCUMENTS_MODULE"
+                :action="Action.DOWNLOAD_SCRIPT_ACTION"
+                :filename="scriptDescription.originalFilename"
+                text="Last uploaded script"
+            />
+            <!-- The authentication script of each bridgehead where the user is an invited user -->
+            <DownloadButton
+                v-for="bridgehead in fetchAuthenticationScriptBridgeheads()" :key="bridgehead.bridgehead"
+                :context="createContext(bridgehead)"
+                :project-manager-backend-service="projectManagerBackendService"
+                :module="Module.TOKEN_MANAGER_MODULE"
+                :action="Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION"
+                :text="fetchInvitedUserBridgeheads().length > 1
+                    ? `Authentication script (${bridgehead.humanReadable ?? bridgehead.bridgehead})` : 'Authentication script'"
+            />
+          </div>
+        </div>
+        <div class="documents"
+             v-if="project?.state === ProjectState.FINISHED && currentMenuStep === MenuStep.DOCUMENTS">
           <div class="box-header">Publications</div>
-          <div style="padding: 2%">
+          <div class="panel-body panel-stack">
             <DocumentsTable :context="context"
                             :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_PUBLICATION_ACTION"
                             :fetch-list-action="Action.FETCH_PUBLICATIONS_ACTION"
-                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Publications: "/>
-            <br/>
+                            :list-bridgeheads="documentListBridgeheads" icon-class="bi bi-download"
+                            text="Publications: " :project-manager-admin="isProjectManagerAdmin()"/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_PUBLICATION_ACTION"
-                          text="Upload publication" :call-refreh-context="refreshContext" :is-file="true"/>
-            <br/>
+                          :module="Module.PROJECT_DOCUMENTS_MODULE"
+                          :upload-action="Action.UPLOAD_PUBLICATION_ACTION"
+                          text="Upload publication" :call-refresh-context="refreshContext"
+                          :is-file="true"/>
             <UploadButton :context="context"
                           :project-manager-backend-service="projectManagerBackendService"
-                          :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_PUBLICATION_URL_ACTION"
-                          text="Upload publication URL" :call-refreh-context="refreshContext" :is-file="false"/>
+                          :module="Module.PROJECT_DOCUMENTS_MODULE"
+                          :upload-action="Action.ADD_PUBLICATION_URL_ACTION"
+                          text="Upload publication URL" :call-refresh-context="refreshContext"
+                          :is-file="false"/>
           </div>
         </div>
-        <div class="documents" v-if="!existsDraftDialog || draftDialogStepper.currentStep === DialogStep.SUMMARY">
-          <div class="box-header">Documents</div>
-          <div style="padding: 2%">
-            <div style="display:flex; flex-flow:row;  width:100% ">
-              <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
-                            text="Upload document" :call-refreh-context="refreshContext" :is-file="true"/>
+        <!-- Its own card, like Publications and Documents: two headers in one
+             card read as two cards glued together. -->
+        <div class="documents"
+             v-if="project?.state === ProjectState.FINISHED && currentMenuStep === MenuStep.DOCUMENTS">
+          <div class="box-header">Final Reports</div>
+          <div class="panel-body panel-stack">
+            <DocumentsTable :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :download-action="Action.DOWNLOAD_FINAL_REPORT_ACTION"
+                            :fetch-list-action="Action.FETCH_FINAL_REPORTS_ACTION"
+                            :list-bridgeheads="documentListBridgeheads" icon-class="bi bi-download"
+                            text="Final Reports: " :project-manager-admin="isProjectManagerAdmin()"/>
+            <UploadButton :context="context"
+                          :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE"
+                          :upload-action="Action.UPLOAD_FINAL_REPORT_ACTION"
+                          text="Upload final report" :call-refresh-context="refreshContext"
+                          :is-file="true"/>
+            <UploadButton :context="context"
+                          :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE"
+                          :upload-action="Action.ADD_FINAL_REPORT_URL_ACTION"
+                          text="Upload final report URL" :call-refresh-context="refreshContext"
+                          :is-file="false"/>
+          </div>
+        </div>
+        <!-- One document per site, uploaded by the applicant, the site's bridgehead admin or the project manager -->
+        <div class="documents data-container mt-12" v-if="showLocalApprovalCard && currentMenuStep === MenuStep.DOCUMENTS">
+          <div class="box-header"><span>Local approval</span></div>
+          <div class="panel-body panel-stack">
+            <UploadButton :context="context"
+                          :project-manager-backend-service="projectManagerBackendService"
+                          :module="Module.PROJECT_DOCUMENTS_MODULE"
+                          :upload-action="Action.UPLOAD_LOCAL_APPROVAL_ACTION"
+                          :bridgehead-choices="localApprovalBridgeheadChoices"
+                          text="Upload local approval" :call-refresh-context="refreshContext"
+                          :is-file="true"/>
+          </div>
+        </div>
+        <div class="documents data-container mt-12" v-if="currentMenuStep === MenuStep.DOCUMENTS" style="padding: 0">
+          <div class="box-header"><span>Documents</span></div>
+          <div class="panel-body">
+            <DownloadFormTemplatePdfButtons :form-templates="formTemplates" :context="context"
+                                            :project-manager-backend-service="projectManagerBackendService"/>
+          </div>
+          <div class="panel-body panel-stack">
+            <!-- File upload above URL upload, as in Publications and Final Reports. -->
+            <div style="display:flex; flex-direction:column; gap: var(--space-4); width:100%">
+              <UploadButton :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE"
+                            :upload-action="Action.UPLOAD_OTHER_DOCUMENT_ACTION"
+                            :bridgehead-choices="otherDocumentBridgeheadChoices"
+                            text="Upload document" :call-refresh-context="refreshContext"
+                            :is-file="true"/>
 
-              <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
-                            text="Upload document URL" :call-refreh-context="refreshContext" :is-file="false"/>
+              <UploadButton :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE"
+                            :upload-action="Action.ADD_OTHER_DOCUMENT_URL_ACTION"
+                            :bridgehead-choices="otherDocumentUrlBridgeheadChoices"
+                            text="Upload document URL" :call-refresh-context="refreshContext"
+                            :is-file="false"/>
             </div>
-            <br/>
-            <DocumentsTable :context="context" :project-manager-backend-service="projectManagerBackendService"
+            <DocumentsTable :context="context"
+                            :project-manager-backend-service="projectManagerBackendService"
                             :download-action="Action.DOWNLOAD_OTHER_DOCUMENT_ACTION"
                             :fetch-list-action="Action.FETCH_OTHER_DOCUMENTS_ACTION"
-                            :bridgeheads="visibleBridgeheads" icon-class="bi bi-download" text="Other documents: "/>
+                            :list-bridgeheads="documentListBridgeheads" icon-class="bi bi-download"
+                            text="Other documents: " :project-manager-admin="isProjectManagerAdmin()"/>
           </div>
         </div>
-      </div>
-    </div>
-
-
-    <div :class="showRightPanel ? 'custom-width-notifications' : 'open-right-panel'">
-      <button style="" @click="showRightPanel=true" class="btn" v-if="!showRightPanel" data-toggle="tooltip" data-placement="top" title="Show ToDos & Notifications">
-        <i style="font-size: 20px" class="bi bi-chevron-double-left"></i> <!-- Schließsymbol für Progress -->
-      </button>
-      <div v-if="showRightPanel">
-        <div class="box-header" style="display:flex; flex-flow:row; justify-content:space-between;padding-bottom:0px; ">
-          <div style="display:flex; flex-flow:row;">
-            <div class="notification-tab" :class="{ 'active': !showNotification }" @click="toggleNotification">TODO</div>
-            <div class="notification-tab" :class="{ 'active': showNotification }" @click="toggleNotification">Notifications</div>
-          </div>
-          <button style="padding: 0 15px 0 0; margin-bottom: 5px" @click="showRightPanel=false" class="btn" v-if="showRightPanel" data-toggle="tooltip" data-placement="top" title="Hide Panel">
-            <i style="font-size: 20px" class="bi bi-chevron-double-right"></i> <!-- Schließsymbol für Progress -->
-          </button>
-        </div>
-
-        <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
-                         :show-notification="showNotification" :call-toggle-notification="toggleNotification"
-                         :notifications="notifications" :call-update-notifications="fetchNotifications" :show-in-panel="false"
-        />
-
-        <div v-if="!showNotification">
-          <div v-if="extendedExplanations.size > 0" class="notification-box">
-            <div v-for="(explanation, index) in Array.from(extendedExplanations.values())" :key="index" class="card mb-3">
-              <div class="card-body">
-                <div style="display:flex; flex-flow: row;">
-                  <div class="todo-circle"><span>#{{ explanation.number }}</span></div>
-                  <h5 class="card-title">{{ explanation.message }}</h5>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div v-else-if="project?.state !== 'FINISH' && project?.state !== 'REJECTED' && project?.state !== 'ARCHIVED'" class="notification-box">
-            <div class="card mb-3">
-              <div class="card-body">
-                <h5 class="card-title">No action is required at the moment. Please wait for the next notification, which will
-                  also be sent to you via email.</h5>
-              </div>
-            </div>
-          </div>
+        <div v-if="currentMenuStep === MenuStep.NOTIFICATIONS" class="data-container mt-12">
+          <NotificationBox :context="context"
+                           :project-manager-backend-service="projectManagerBackendService"
+                           :notifications="notifications"
+                           :call-update-notifications="fetchNotifications"/>
         </div>
       </div>
     </div>
@@ -333,52 +710,509 @@ import {
   ActionButton,
   ActionButtonGroup,
   Bridgehead,
+  CUSTOM_PROJECT_CONFIGURATION,
+  NOT_SELECTED_PROJECT_CONFIGURATION,
   DataShieldProjectStatus,
-  EditProjectParam,
+  PmRequestParameter,
   Explanations,
+  FeasibilityResult,
+  FixedFormFieldKey,
+  FormDataType,
+  FormField,
+  FormFieldLayout,
+  FormFieldProperty,
+  FormFieldType,
+  FormTemplate,
+  FormTitle,
+  getAllProjectTypes,
+  getMergedQueryStates,
+  hasProjectType,
+  hasValidOutputs,
+  isQueryOnTheWay,
   Module,
   Notification,
   Project,
+  ProjectAndForms,
+  ProjectConfigurationSelectionType,
   ProjectDocument,
-  ProjectField,
+  ProjectBridgeheadState,
   ProjectManagerBackendService,
   ProjectManagerContext,
+  ProjectOutput,
   ProjectRole,
+  ProjectState,
+  ProjectType,
+  QueryState,
   Site,
-  User
+  User,
+  UserProjectState
 } from "@/services/projectManagerBackendService";
+import {fromFormControlValue} from "@/services/formValueCodec";
+import {ACTION_FEEDBACK_PARAM, fetchVisibleBridgeheads} from "@/services/projectManagerBackendService";
+import store, {ActionFeedbackType} from "@/services/store";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
-import {format} from "date-fns";
+import MoreActionsMenu from "@/components/MoreActionsMenu.vue";
+import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
 import ProjectFieldRow from "@/components/ProjectFieldRow.vue";
+import ContextInfoBox from "@/components/ContextInfoBox.vue";
 import NotificationBox from "@/components/Notification.vue";
 import UserInput from "@/components/UserInput.vue";
 import UploadButton from "@/components/UploadButton.vue";
 import DocumentsTable from "@/components/DocumentsTable.vue";
 import BridgeheadOverview from "@/components/BridgeheadOverview.vue";
-import keycloak from "@/services/keycloak";
-import {DialogStep, DialogStepper} from "@/services/dialogStep";
+import BridgeheadContacts from "@/components/BridgeheadContacts.vue";
+import FeasibilityTable from "@/components/FeasibilityTable.vue";
+import MandatoryFieldMarker from "@/components/MandatoryFieldMarker.vue";
+import PhasePill from "@/components/PhasePill.vue";
+import {
+  DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES,
+  FeasibilityTableAlignment,
+  FeasibilityTableWidth,
+  getConfig,
+  resolveFeasibilityTableAlignment,
+  resolveFeasibilityTableWidth,
+  SummarySpacing
+} from "@/services/configLoader";
+import {DialogStep, DialogStepper, FixedDialogStep} from "@/services/fixedDialogStep";
 import ResultsBox from "@/components/ResultsBox.vue";
 import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
+import {AuthService} from "@/services/auth";
+import {ActionFunction, Block, ProjectField, Section} from "@/services/utils";
+import {
+  buildFixedProjectFields,
+  buildVotumProjectFields,
+  FixedProjectFieldsContext
+} from "@/services/fixedProjectFields";
+import {ProjectViewMenuStep} from "@/services/projectViewMenuStep";
+import DownloadFormTemplatePdfButtons from "@/components/DownloadFormTemplatePdfButtons.vue";
+import {PollingService} from "@/services/PollingService";
+import {BatchLoad, runBatchLoads} from "@/services/actionsBatch";
+import {
+  actingBridgeheads,
+  BRIDGEHEAD_ROLES,
+  BridgeheadRoles,
+  canActForWholeProject,
+  toBridgeheadRoles
+} from "@/services/bridgeheadRoles";
+import {BridgeheadOverviewHeader} from "@/services/BridgeheadOverviewHeaders";
+import {
+  assignPipelineVisuals,
+  classifyLocalApproval,
+  classifyStateCircle,
+  creatorStatusOfBridgehead,
+  describeCreatorStatus,
+  describeQueryState,
+  PipelineClassification,
+  PipelineStepVisual
+} from "@/services/pipelineStatus";
 
+// The actions of the "Next step" card (fetchButtons): their explanations are not repeated in the TODO panel.
+const NEXT_STEP_ACTIONS: Action[] = [
+  Action.ACCEPT_PROJECT_ACTION, Action.START_LOCAL_APPROVAL_STAGE_ACTION, Action.START_DEVELOP_STAGE_ACTION, Action.START_PILOT_STAGE_ACTION,
+  Action.START_FINAL_STAGE_ACTION, Action.FINISH_PROJECT_ACTION,
+  Action.ACCEPT_SCRIPT_ACTION, Action.REQUEST_SCRIPT_CHANGES_ACTION, Action.REJECT_SCRIPT_ACTION,
+  Action.ACCEPT_PROJECT_ANALYSIS_ACTION, Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
+  Action.REJECT_PROJECT_ANALYSIS_ACTION,
+  Action.ACCEPT_PROJECT_RESULTS_ACTION, Action.REQUEST_CHANGES_IN_PROJECT_ACTION, Action.REJECT_PROJECT_RESULTS_ACTION,
+  Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION,
+  Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION, Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
+];
+
+interface ProjectFieldRenderItem {
+  key: string;
+  field: ProjectField[];
+  showSeparator: boolean;
+  shouldRenderRow: boolean;
+}
+
+interface ProjectFieldRenderBlock {
+  key: string;
+  category: string;
+  block?: ProjectField["block"];
+  items: ProjectFieldRenderItem[];
+  categoryPlaceholder?: boolean;
+}
+
+type BlockMetadata = ProjectField["block"];
+
+// The Status panel reads as a lifecycle pipeline rather than independent
+// facts: each step's own true color (done/failed/warning/grey) matches the
+// same state_circle.css classes used everywhere else in the app - see
+// statusPipelineSteps and pipelineStatus.ts (shared with
+// BridgeheadOverview.vue's per-site timelines). "next" vs. "future" only
+// distinguishes among grey (untouched) steps; done/failed/warning always
+// show as themselves.
+interface PipelineSubStep {
+  label: string;
+  classification: PipelineClassification;
+  tooltip?: string;
+}
+
+interface PipelineStep {
+  key: string;
+  label: string;
+  visual: PipelineStepVisual;
+  tooltip?: string;
+  downloadAction?: Action;
+  // Only set (and only rendered as a cluster) when a step's status is
+  // actually a merge of several independent facts - today just "Data export
+  // authorised" when a project queries more than one project type and they
+  // don't all share the same state. Kept optional/rare rather than a field
+  // every step carries, since it doesn't apply anywhere else.
+  subSteps?: PipelineSubStep[];
+}
+
+// Who may upload the request's script, and who may see it (as the backend's role constraints)
+const SCRIPT_UPLOAD_ROLES = [ProjectRole.DEVELOPER, ProjectRole.BRIDGEHEAD_ADMIN];
+const SCRIPT_ROLES = [ProjectRole.DEVELOPER, ProjectRole.PILOT, ProjectRole.FINAL, ProjectRole.BRIDGEHEAD_ADMIN];
+
+// What a bridgehead where the user is an invited user (developer, pilot, final) says about them
+interface BridgeheadUserData {
+  currentUser?: User;
+  existsAuthenticationScript?: boolean;
+  researchEnvironmentUrl?: string;
+  existsResearchEnvironmentWorkspace: boolean;
+}
 
 export default defineComponent({
   computed: {
+    // The bridgehead of the single-bridgehead status: the project's only visible bridgehead.
+    statusBridgehead(): Bridgehead | undefined {
+      return this.visibleBridgeheads.length === 1 ? this.visibleBridgeheads[0] : undefined;
+    },
+    // The user's roles in the project: those that do not depend on a bridgehead, and their roles at each bridgehead.
+    projectRoles(): ProjectRole[] {
+      return [...new Set([...this.bridgeheadIndependentRoles,
+        ...Array.from(this.bridgeheadRoles.values()).flatMap(roles => Array.from(roles))])];
+    },
+    // The invited user's state at the bridgehead of the single-bridgehead status
+    statusBridgeheadUser(): User | undefined {
+      return this.statusBridgehead && this.bridgeheadUserData.get(this.statusBridgehead.bridgehead)?.currentUser;
+    },
+    // The bridgeheads to list documents for (docs/bridgehead-context.md): without a bridgehead, i.e. everything, for
+    // whoever may act for the whole project; otherwise each bridgehead the user acts for.
+    documentListBridgeheads(): (Bridgehead | null)[] {
+      return this.canActForWholeProject() ? [null] : this.fetchActingBridgeheads();
+    },
+    // For whom a document can be uploaded: the whole project and/or the bridgeheads the user acts for.
+    otherDocumentBridgeheadChoices(): (Bridgehead | null)[] {
+      return [...(this.canActForWholeProject() ? [null] : []), ...this.fetchActingBridgeheads()];
+    },
+    // A document URL: only bridgehead admins among the bridgehead roles may add one (ADD_OTHER_DOCUMENT_URL).
+    otherDocumentUrlBridgeheadChoices(): (Bridgehead | null)[] {
+      return [...(this.canActForWholeProject() ? [null] : []),
+        ...this.fetchActingBridgeheads([ProjectRole.BRIDGEHEAD_ADMIN])];
+    },
+    ProjectState() {
+      return ProjectState
+    },
+    // The instructions left after the card's own items (numbered like the "#N" badges of the upload
+    // buttons). Not in the draft form, which shows its missing fields itself.
+    todoNotes(): { number: number, message: string }[] {
+      if (this.existsDraftDialog) return [];
+      return [...this.extendedExplanations.entries()]
+          .filter(([action]) => !this.inviteNote || action !== this.fetchInviteAction())
+          .map(([, note]) => note);
+    },
+    // The deployment's instruction to invite users, when it applies (the same rules as the former TODO
+    // panel) and this user can invite: an item with its button instead of a note.
+    inviteNote(): { number: number, message: string } | undefined {
+      if (this.existsDraftDialog || !this.canInviteUsers || !this.showPeopleCard) return undefined;
+      return this.extendedExplanations.get(this.fetchInviteAction());
+    },
+    // The card's entries in order. "Finish the request" is last: it is possible during the whole final
+    // phase, but only makes sense once everything else is done.
+    nextStepEntries(): { key: string, group?: ActionButtonGroup, invite?: { message: string },
+      note?: { number: number, message: string } }[] {
+      const visibleGroups = this.nextStepGroups.filter((_group, index) => this.nextStepGroupsVisible[index]);
+      const isFinish = (group: ActionButtonGroup) =>
+          group.button.some(button => button.action === Action.FINISH_PROJECT_ACTION);
+      return [
+        ...visibleGroups.filter(group => !isFinish(group)).map(group => ({key: group.label, group})),
+        ...(this.inviteNote ? [{key: 'invite', invite: this.inviteNote}] : []),
+        ...this.todoNotes.map(note => ({key: `note-${note.number}`, note})),
+        ...visibleGroups.filter(isFinish).map(group => ({key: group.label, group})),
+      ];
+    },
+    // Something in the "Next step" card for this user
+    hasNextStep(): boolean {
+      return this.pendingReviewSites.length > 0 || this.sitesWaitingForLocalApproval.length > 0
+          || this.nextStepGroupsVisible.includes(true) || !!this.inviteNote;
+    },
+    // Nothing for this user anywhere: no card action, no Actions card button, no remaining TODO. Not in a
+    // closed request, where "you will be notified" would be wrong.
+    hasNothingToDo(): boolean {
+      const closed = [ProjectState.FINISHED, ProjectState.REJECTED, ProjectState.ARCHIVED]
+          .includes(this.project?.state as ProjectState);
+      return !this.hasNextStep && !this.showMoreActionsMenu &&
+          this.extendedExplanations.size === 0 && !closed;
+    },
+    // Temporarily, a user who is only the request's creator gets no actions box or menu
+    // (plans/2026-09-08-plan-restore-project-actions-for-creators.md).
+    isOnlyCreator(): boolean {
+      return this.projectRoles.length === 1 && this.projectRoles.includes(ProjectRole.CREATOR);
+    },
+    // In CENTRAL_APPROVAL or LOCAL_APPROVAL with the develop phase possible, the final phase is the exception
+    skipsDevelopAndPilot(): boolean {
+      return [ProjectState.CENTRAL_APPROVAL, ProjectState.LOCAL_APPROVAL].includes(this.project?.state as ProjectState)
+          && this.canStartDevelopPhase;
+    },
+    // In CENTRAL_APPROVAL with the local approval possible, the next phases skip it; not offered if it is required
+    skipsLocalApproval(): boolean {
+      return this.project?.state === ProjectState.CENTRAL_APPROVAL && this.canStartLocalApproval;
+    },
+    // The request has the local approval step: the backend offers its state (module LOCAL_APPROVAL)
+    localApprovalEnabled(): boolean {
+      return this.projectStates.includes(ProjectState.LOCAL_APPROVAL);
+    },
+    showLocalApprovalCard(): boolean {
+      return this.localApprovalEnabled && [ProjectState.LOCAL_APPROVAL, ProjectState.DEVELOP, ProjectState.PILOT,
+        ProjectState.FINAL].includes(this.project?.state as ProjectState);
+    },
+    // The applicant and the project manager admin for every site, a bridgehead admin for their sites
+    localApprovalBridgeheadChoices(): Bridgehead[] {
+      return this.projectRoles.includes(ProjectRole.CREATOR)
+          ? this.visibleBridgeheads
+          : this.fetchActingBridgeheads([ProjectRole.BRIDGEHEAD_ADMIN]);
+    },
+    // A bridgehead admin's sites in the final phase that wait for their required local approval before the query
+    // can be sent (frontend variable LOCAL_APPROVAL_REQUIRED; the backend does not check it)
+    sitesWaitingForLocalApproval(): string[] {
+      if (this.project?.state !== ProjectState.FINAL) return [];
+      return actingBridgeheads(this.visibleBridgeheads, this.bridgeheadRoles, [], [ProjectRole.BRIDGEHEAD_ADMIN])
+          .filter(bridgehead => (bridgehead.executions ?? []).length > 0 && this.isQueryBlockedByLocalApproval(bridgehead))
+          .map(bridgehead => bridgehead.humanReadable ?? bridgehead.bridgehead);
+    },
+    showPeopleCard(): boolean {
+      return !this.isOnlyCreator && (this.canInviteUsers || this.currentUsers.length > 0);
+    },
+    showMoreActionsMenu(): boolean {
+      return !this.isOnlyCreator && this.anyMoreActionVisible;
+    },
+    // Red is for errors only: empty mandatory fields turn red once the user
+    // has left the step and come back, never on the first visit.
+    highlightMissingFields(): boolean {
+      const step = this.draftDialogStepper.currentStep;
+      if (!this.existsDraftDialog || !step || step.id === FixedDialogStep.SUMMARY) return false;
+      return this.isDraftStepPassed(step, this.draftDialogStepper.currentSteps.indexOf(step));
+    },
     DialogStep() {
-      return DialogStep
+      return FixedDialogStep
+    },
+    MenuStep() {
+      return ProjectViewMenuStep
+    },
+    unreadNotificationsCount(): number {
+      return this.notifications.filter(notification => !notification.read).length;
+    },
+    // The draft's step list is shown left of the content column, which then has to leave room for it
+    showsDraftStepper(): boolean {
+      return this.existsDraftDialog && !!this.project && this.currentMenuStep === this.MenuStep.REQUEST;
     },
     ProjectRole() {
       return ProjectRole
     },
-    EditProjectParam() {
-      return EditProjectParam
+    PmRequestParameter() {
+      return PmRequestParameter
+    },
+    FixedFormFieldKey() {
+      return FixedFormFieldKey
     },
     Action() {
       return Action
     },
     Module() {
       return Module
+    },
+    projectFieldRenderBlock(): ProjectFieldRenderBlock[] {
+      return this.fetchProjectFieldRenderBlocks();
+    },
+    // Consecutive optional BOOLEAN rows (each a single checkbox line) form a
+    // "run", rendered as one compact checklist (App.vue, .bool-run).
+    // A new section title, category or block ends a run. Keyed by row key:
+    // bool-run on every member, plus bool-run-first / bool-run-last.
+    optionalBooleanRunClasses(): Map<string, string> {
+      const rows = this.projectFieldRenderBlock.flatMap((group) =>
+          group.items
+              .filter((row) => row.shouldRenderRow)
+              .map((row) => ({row, category: group.category, block: group.block})));
+      const isMember = (index: number): boolean => {
+        const field = rows[index]?.row.field;
+        return field?.length === 1 && field[0].type === FormDataType.BOOLEAN && !field[0].mandatory && !field[0].block;
+      };
+      const startsNewGroup = (index: number): boolean =>
+          rows[index].category !== rows[index - 1]?.category ||
+          !!rows[index].row.field[0].section?.fetchNewSections().some((section) => section.displayName);
+      const result = new Map<string, string>();
+      rows.forEach(({row}, index) => {
+        if (!isMember(index)) return;
+        const classes = ['bool-run'];
+        if (!isMember(index - 1) || startsNewGroup(index)) classes.push('bool-run-first');
+        if (!isMember(index + 1) || startsNewGroup(index + 1)) classes.push('bool-run-last');
+        result.set(row.key, classes.join(' '));
+      });
+      return result;
+    },
+    // Same underlying data and v-if conditions as the old single-row status
+    // table - see the Classification comment below for the color mapping.
+    statusPipelineSteps(): PipelineStep[] {
+      if (!this.statusBridgehead) return [];
+      // As in the bridgehead overview
+      const creatorAcceptance = creatorStatusOfBridgehead(this.project, this.statusBridgehead);
+
+      // Five colors: grey (not started yet), warning/amber (actively in
+      // progress - never anything else), not_required/slate (this step
+      // doesn't apply here), done/green, failed/red. Every field is
+      // classified into these exact buckets via the shared
+      // classifyStateCircle() for raw backend states - nothing here invents
+      // a new color rule, it mirrors the existing state_circle.css classes.
+      // assignPipelineVisuals() then does the shared
+      // done/failed/warning/not_required -> next/future pass (see
+      // pipelineStatus.ts for both).
+      const classifiedSteps: { key: string; label: string; classification: PipelineClassification; tooltip?: string; downloadAction?: Action; subSteps?: PipelineSubStep[] }[] = [];
+
+      // The ethics vote has no failure state, only "not required" vs.
+      // "received" - classified separately from warning/amber (which is
+      // reserved for "actively in progress") since these mean opposite
+      // things: nothing to do here vs. something's happening, check on it.
+      const votumDone = this.existsVotum || this.existsVotumForAllBridgeheads;
+      classifiedSteps.push({
+        key: 'votum',
+        label: BridgeheadOverviewHeader.VOTUM,
+        classification: votumDone ? 'done' : 'not_required',
+        tooltip: votumDone ? undefined : 'No ethics vote required',
+        downloadAction: votumDone
+            ? (this.existsVotum ? Action.DOWNLOAD_VOTUM_ACTION : Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION)
+            : undefined
+      });
+
+      // As in the bridgehead overview
+      if (this.localApprovals) {
+        const existsLocalApproval = this.localApprovals[this.statusBridgehead.bridgehead] === true;
+        classifiedSteps.push({
+          key: 'local_approval',
+          label: BridgeheadOverviewHeader.LOCAL_APPROVAL,
+          ...classifyLocalApproval(existsLocalApproval, this.project?.state, this.localApprovalRequired),
+          downloadAction: existsLocalApproval ? Action.DOWNLOAD_LOCAL_APPROVAL_ACTION : undefined
+        });
+      }
+
+      // A project can query several project types at once, each with its own
+      // state; one failure taints the step, "done" needs every type finished,
+      // any type actively in progress makes the whole step amber.
+      const teilerClassifications = this.mergedQueryStates.map(group => classifyStateCircle(group.state));
+      let teilerClassification: PipelineClassification;
+      if (teilerClassifications.includes('failed')) teilerClassification = 'failed';
+      else if (teilerClassifications.includes('warning')) teilerClassification = 'warning';
+      else if (teilerClassifications.length > 0 && teilerClassifications.every(c => c === 'done')) teilerClassification = 'done';
+      else teilerClassification = 'grey';
+      classifiedSteps.push({
+        key: 'teiler',
+        label: BridgeheadOverviewHeader.TEILER,
+        classification: teilerClassification,
+        tooltip: this.mergedQueryStates.map(group => `${group.types.join(', ')}: ${describeQueryState(group.state)}`).join(' | ') || undefined,
+        // Only worth breaking out as a cluster of sub-dots when the project
+        // types don't all agree on one state - a single shared state already
+        // reads fine as one node, matching the common case visually.
+        subSteps: this.mergedQueryStates.length > 1
+            ? this.mergedQueryStates.map(group => ({
+              label: group.types.join(', '),
+              classification: classifyStateCircle(group.state),
+              tooltip: `${group.types.join(', ')}: ${describeQueryState(group.state)}`
+            }))
+            : undefined
+      });
+
+      classifiedSteps.push({
+        key: 'user_access',
+        label: BridgeheadOverviewHeader.USER_ACCESS,
+        classification: classifyStateCircle(this.statusBridgehead?.state),
+        tooltip: this.statusBridgehead?.state ?? undefined
+      });
+
+      if (this.dataShieldStatus) {
+        classifiedSteps.push({
+          key: 'datashield',
+          label: 'DataSHIELD Status',
+          classification: classifyStateCircle(this.dataShieldStatus.project_status),
+          tooltip: this.dataShieldStatus.project_status
+        });
+      }
+
+      if (hasProjectType(this.project, ProjectType.RESEARCH_ENVIRONMENT)) {
+        classifiedSteps.push({
+          key: 'research_environment_files',
+          label: 'Files in Research Environment',
+          classification: this.areExportFilesTransferredToResearchEnvironment ? 'done' : 'grey'
+        });
+      }
+
+      if (this.statusBridgeheadUser) {
+        classifiedSteps.push({
+          key: 'user_acceptance',
+          label: (hasProjectType(this.project, ProjectType.DATASHIELD) && this.project?.state !== ProjectState.FINAL)
+              ? 'Script Acceptance' : 'Results Acceptance',
+          classification: classifyStateCircle(this.statusBridgeheadUser.projectState),
+          tooltip: this.statusBridgeheadUser.projectState
+        });
+      }
+
+      classifiedSteps.push({
+        key: 'creator_acceptance',
+        label: BridgeheadOverviewHeader.APPLICANT_RESULTS_ACCEPTANCE,
+        classification: classifyStateCircle(creatorAcceptance),
+        tooltip: creatorAcceptance ? describeCreatorStatus(creatorAcceptance) : undefined
+      });
+
+      const reportDone = this.existsFinalReport || this.existsPublication;
+      classifiedSteps.push({
+        key: 'report',
+        label: BridgeheadOverviewHeader.REPORT_OR_PUBLICATION,
+        classification: reportDone ? 'done' : 'grey',
+        downloadAction: reportDone
+            ? (this.existsPublication ? Action.DOWNLOAD_PUBLICATION_ACTION : Action.DOWNLOAD_FINAL_REPORT_ACTION)
+            : undefined
+      });
+
+      return assignPipelineVisuals(classifiedSteps).map(step => ({
+        key: step.key, label: step.label, visual: step.visual, tooltip: step.tooltip,
+        downloadAction: step.downloadAction, subSteps: step.subSteps
+      }));
+    },
+    visiblePipelineSteps(): PipelineStep[] {
+      const start = this.effectivePipelineScrollIndex;
+      return this.statusPipelineSteps.slice(start, start + this.pipelineStepsShown);
+    },
+    // pipelineScrollIndex is null until the user clicks an arrow - until then,
+    // the window auto-centers on the "Next" step, so overflow never hides the
+    // one thing the user actually needs to see (see the plan's scrolling decision).
+    effectivePipelineScrollIndex(): number {
+      const steps = this.statusPipelineSteps;
+      const maxStart = Math.max(0, steps.length - this.pipelineStepsShown);
+      if (this.pipelineScrollIndex !== null) {
+        return Math.min(this.pipelineScrollIndex, maxStart);
+      }
+      const nextIndex = steps.findIndex(step => step.visual === 'next');
+      if (nextIndex === -1) return 0;
+      const centered = nextIndex - Math.floor((this.pipelineStepsShown - 1) / 2);
+      return Math.min(Math.max(centered, 0), maxStart);
+    },
+    // How many pipeline steps fit the "Status" card's current width, so the
+    // arrows only appear when steps would actually overflow - mirrors
+    // .pipeline-row/.pipeline-step's own CSS constants (kept in sync there).
+    pipelineStepsShown(): number {
+      const totalSteps = this.statusPipelineSteps.length;
+      if (totalSteps === 0) return 0;
+      if (this.pipelineRowWidth === 0) return Math.min(totalSteps, 5); // not measured yet
+      const STEP_MIN_WIDTH = 84; // .pipeline-step's min-width
+      const ROW_HORIZONTAL_PADDING = 40; // .pipeline-row's own 20px left/right padding
+      const ARROWS_RESERVED_WIDTH = 72; // 2 * 30px arrow buttons + 2 * 6px row gap
+      const availableForSteps = this.pipelineRowWidth - ROW_HORIZONTAL_PADDING;
+      if (totalSteps * STEP_MIN_WIDTH <= availableForSteps) return totalSteps;
+      const availableWithArrows = availableForSteps - ARROWS_RESERVED_WIDTH;
+      return Math.max(1, Math.floor(availableWithArrows / STEP_MIN_WIDTH));
     }
   },
   props: {
@@ -388,297 +1222,1568 @@ export default defineComponent({
     }
   },
   components: {
+    MandatoryFieldMarker,
+    MoreActionsMenu,
+    FeasibilityTable,
+    DownloadFormTemplatePdfButtons,
     DownloadButton,
     UserAndEmail,
     ResultsBox,
     BridgeheadOverview,
+    BridgeheadContacts,
     DocumentsTable,
     UploadButton,
     UserInput,
     NotificationBox,
+    ContextInfoBox,
     ProjectFieldRow,
-    ProjectManagerButton
+    ProjectManagerButton,
+    PhasePill
   },
 
   data() {
+    // The bridgeheads the user may see, loaded directly: the page's first service loads the actions of these
+    // bridgeheads, so that the page asks for the actions once (docs/bridgehead-context.md)
+    const visibleBridgeheadsLoad = fetchVisibleBridgeheads(this.projectCode);
     return {
-      activeBridgehead: undefined as Bridgehead | undefined,
-      activeBridgeheadIndex: 0,
+      visibleBridgeheadsLoad,
+      // Whether the page's data was loaded once (fetchVisibleBridgeheads)
+      pageDataLoaded: false,
+      // The user's bridgehead roles at each visible bridgehead (docs/bridgehead-context.md)
+      bridgeheadRoles: new Map() as BridgeheadRoles,
+      bridgeheadUserData: new Map<string, BridgeheadUserData>(),
       bridgeheads: [] as Bridgehead[],
+      // Until the project's sites have arrived, an empty bridgeheads list means
+      // "not loaded", not "no sites selected".
+      bridgeheadsLoaded: false,
       visibleBridgeheads: [] as Bridgehead[],
+      feasibilityEnabled: false,
+      feasibilityResults: new Map<string, FeasibilityResult>(),
+      feasibilityErrors: new Set<string>(),
+      feasibilityPageSize: 10,
+      feasibilityTableWidth: FeasibilityTableWidth.COMPACT,
+      feasibilityTableAlignment: FeasibilityTableAlignment.STANDARD,
+      formFieldDescriptionCollapsedLines: DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES,
+      // Frontend variable SUMMARY_SPACING: the summary and the request view with half the gap of the draft
+      summaryCompact: false,
+      createdAtDisplayFormat: DisplayFormatKey.DATE_TIME_FORMAT as DisplayFormatKey,
+      pollingService: null as PollingService | null,
+      // The project as a whole: the page has no bridgehead (docs/bridgehead-context.md). Calls with a bridgehead get
+      // their own context (createContext); where only a bridgehead role allows a call without one, the service sends
+      // one of the user's bridgeheads for the role. A new object reloads the page's data (refreshContext).
       context: new ProjectManagerContext(this.projectCode, undefined),
-      projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined), Site.PROJECT_VIEW_SITE),
+      projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(this.projectCode, undefined),
+          Site.PROJECT_VIEW_SITE, visibleBridgeheadsLoad
+              .then(bridgeheads => bridgeheads.map(bridgehead => bridgehead.bridgehead)).catch(() => [])),
       project: undefined as Project | undefined,
       projectTypes: [] as string[],
-      outputFormats: [] as string[],
+      outputFormats: {} as Record<ProjectType, string[]>,
       queryFormats: [] as string[],
-      exporterTemplateIds: [] as string[],
+      exporterTemplateIds: {} as Record<ProjectType, string[]>,
       allBridgeheads: [] as Bridgehead[],
-      projectStates: [] as string[],
+      projectStates: [] as ProjectState[],
       dataShieldStatus: undefined as DataShieldProjectStatus | undefined,
       site: Site.PROJECT_VIEW_SITE,
       notifications: [] as Notification[],
-      showNotification: false,
-      showExplanations: true,
-      showRightPanel: true,
+      existsPublication: false,
+      existsFinalReport: false,
+      // Sites whose results wait for this user's review (from ResultsBox).
+      pendingReviewSites: [] as string[],
       existsVotum: false,
+      mergedQueryStates: [] as { state: string; types: ProjectType[] }[],
+      pipelineScrollIndex: null as number | null,
+      pipelineRowWidth: 0,
+      pipelineResizeObserver: undefined as ResizeObserver | undefined,
+      observedPipelineRow: undefined as HTMLElement | undefined,
+      existsProjectDescription: false,
       existsVotumForAllBridgeheads: false,
-      existsAuthenticationScript: false,
-      existsApplicationForm: false,
       existsScript: false,
-      projectConfigurations: new Map() as Map<string, Project>,
+      projectConfigurations: new Map<string, ProjectAndForms>(),
       projectConfigurationLabels: [] as string[],
-      currentProjectConfiguration: '',
+      currentProjectConfiguration: [] as string[],
       currentProjectConfigurationFields: [] as string[],
-      projectRoles: [] as ProjectRole[],
-      draftDialogStepper: new DialogStepper() as DialogStepper,
+      projectConfigurationSelectionType: ProjectConfigurationSelectionType.SINGLE,
+      // The user's roles in the project that do not depend on a bridgehead (see projectRoles)
+      bridgeheadIndependentRoles: [] as ProjectRole[],
+      draftDialogStepper: new DialogStepper(() => this.updateProjectFields()) as DialogStepper,
       existsDraftDialog: false,
-      applicationFormDescription: {} as ProjectDocument,
       scriptDescription: {} as ProjectDocument,
       votumDescription: {} as ProjectDocument,
+      projectDescription: {} as ProjectDocument,
       votumForAllBridgeheadsDescription: {} as ProjectDocument,
       existInvitedUsers: false,
       areExportFilesTransferredToResearchEnvironment: false,
       explanations: new Map() as Explanations,
       extendedExplanations: new Map() as Explanations,
-      buttonGroups: [] as boolean[],
-      isAnyButtonVisible: false,
-      actionButtons: [] as ActionButtonGroup[],
-      currentUser: undefined as User | undefined,
+      canInviteUsers: false,
+      moreActionButtons: [] as ActionButton[],
+      nextStepGroups: [] as ActionButtonGroup[],
+      nextStepGroupsVisible: [] as boolean[],
+      anyMoreActionVisible: false,
+      canStartDevelopPhase: false,
+      canStartLocalApproval: false,
+      // Whether each site (bridgehead id) has its local approval; null without the local approval step
+      localApprovals: null as Record<string, boolean> | null,
+      localApprovalRequired: false,
       hasProjectAllMandatoryFields: false,
       tooltipTextForCreateButton: '',
       canShowBridgeheadAdminButtons: false,
       currentUsers: [] as User[],
-      creatorAcceptance: 'CREATED',
-      existsResearchEnvironmentWorkspace: false,
-      researchEnvironmentUrl: undefined as string | undefined
+      formTemplates: [] as FormTemplate[],
+      formTitleCanonicalOrder: [] as FormTitle[],
+      formTitles: [] as FormTitle[],
+      formFields: [] as FormField[],
+      layouts: {} as Record<string, FormFieldLayout[]>,
+      selectedForms: [] as FormTitle[],
+      projectFields: [] as ProjectField[],
+      isScriptTabAvailable: false,
+      isDocumentsTabAvailable: false,
+      groupedMissingFields: {} as Record<string, string[]>,
+      currentMenuStep: ProjectViewMenuStep.STATUS,
+      editMode: false,
+      blockCollapse: new Map<string, boolean>()
     };
   },
   watch: {
-    activeBridgehead(newValue, oldValue) {
-      this.activeBridgeheadIndex = this.visibleBridgeheads.findIndex(bridgehead => bridgehead === newValue);
-      this.context = new ProjectManagerContext(this.projectCode, newValue);
-      this.creatorAcceptance = (this.project?.creatorState) ? this.project.creatorState : (this.activeBridgehead?.creatorState) ? this.activeBridgehead.creatorState : 'CREATED';
+    visibleBridgeheads(newValue: Bridgehead[], oldValue: Bridgehead[]) {
+      this.pipelineScrollIndex = null;
+      const visibleBridgeheadIds = new Set(newValue.map(bridgehead => bridgehead.bridgehead));
+      const previousBridgeheadIds = new Set(oldValue.map(bridgehead => bridgehead.bridgehead));
+
+      // Feasibility requests are cost-bearing, so refresh only added bridgeheads
+      // and retain results for bridgeheads that are unchanged.
+      previousBridgeheadIds.forEach(bridgehead => {
+        if (!visibleBridgeheadIds.has(bridgehead)) this.feasibilityResults.delete(bridgehead);
+      });
+
+      if (!this.feasibilityEnabled) return;
+
+      newValue
+          .filter(bridgehead => !previousBridgeheadIds.has(bridgehead.bridgehead))
+          .forEach(bridgehead => {
+            void this.initializeFeasibilityResult(bridgehead).catch(() => undefined);
+          });
     },
-    context(newValue, oldValue) {
-      this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
-      this.fetchProject();
+    context(newValue, _oldValue) {
+      this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE,
+          this.visibleBridgeheads.map(bridgehead => bridgehead.bridgehead));
+      this.loadPageData();
     },
-    async project(newValue, oldValue) {
-      await this.initializeProjectRelatedData();
+    async project() {
+      try {
+        await this.initializeProjectRelatedData();
+      } catch (error) {
+        console.error('Failed to initialize project-related data:', error);
+      }
     },
-    'draftDialogStepper.currentStep': function(newValue, oldValue) {
+    'draftDialogStepper.currentStep': function () {
+      this.extendedExplanations = this.fetchExtendedExplanations();
+
+      const scrollBox = document.getElementById("draft-dialog-box")
+
+      if (!scrollBox) return
+      scrollBox.scrollTop = 0
+    },
+    existsScript() {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    existsScript(newValue, oldValue){
+    existsVotum() {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    existsAuthenticationScript(newValue, oldValue){
+    existInvitedUsers() {
       this.extendedExplanations = this.fetchExtendedExplanations();
     },
-    existsApplicationForm(newValue, oldValue){
-      this.extendedExplanations = this.fetchExtendedExplanations();
-      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
-      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
-    },
-    existsVotum(newValue, oldValue){
-      this.extendedExplanations = this.fetchExtendedExplanations();
-    },
-    existInvitedUsers(newValue, oldValue){
-      this.extendedExplanations = this.fetchExtendedExplanations();
-    },
-    currentUser(newValue, oldValue){
-      this.extendedExplanations = this.fetchExtendedExplanations();
-    },
-    currentProjectConfiguration(newValue, oldValue){
-      if (newValue !== 'CUSTOM'){
-        this.draftDialogStepper.filterStep(DialogStep.OUTPUT);
+    currentProjectConfiguration(newValue, _oldValue) {
+      if (!newValue.includes(CUSTOM_PROJECT_CONFIGURATION) || !this.isProjectManagerAdmin() ) {
+        this.draftDialogStepper.filterStep(FixedDialogStep.CUSTOM);
       } else {
-        this.draftDialogStepper.removeFilteredStep(DialogStep.OUTPUT);
+        this.draftDialogStepper.removeFilteredStep(FixedDialogStep.CUSTOM);
       }
     }
   },
-  mounted() {
-    this.fetchVisibleBridgeheads();
+
+  created() {
+    // Created here (not mounted()) so the observer already exists by the time
+    // setPipelineRowRef can first fire - the "Status" card only appears once
+    // project data has loaded asynchronously, which is always after created().
+    if (typeof ResizeObserver !== 'undefined') {
+      // Next frame, not inside the callback: the width decides how many steps
+      // are shown, which resizes the row again ("ResizeObserver loop").
+      this.pipelineResizeObserver = new ResizeObserver(() => requestAnimationFrame(() => this.updatePipelineRowWidth()));
+    }
   },
 
+  mounted() {
+    this.initializePollingService();
+    this.pollingService?.execute();
+    this.fetchFeasibilityConfig();
+    this.fetchFormFieldDescriptionCollapsedLines();
+    this.fetchSummarySpacing();
+    this.fetchCreatedAtDisplayFormat();
+    // Backstop alongside the ResizeObserver above: a plain window resize
+    // (dragging the browser narrower/wider) always changes the row's width
+    // too, so this re-measures independently of whether the observer is
+    // currently attached to anything.
+    window.addEventListener('resize', this.updatePipelineRowWidth);
+  },
+
+  beforeUnmount() {
+    this.pollingService?.stop();
+    this.pipelineResizeObserver?.disconnect();
+    window.removeEventListener('resize', this.updatePipelineRowWidth);
+  },
 
   methods: {
+    hasProjectType,
+    getMergedQueryStates,
 
-    toggleNotification() {
-      this.showNotification = !this.showNotification;
-      this.showExplanations = !this.showNotification;
+    updatePipelineRowWidth() {
+      this.pipelineRowWidth = this.observedPipelineRow ? this.observedPipelineRow.clientWidth : 0;
     },
 
-    toggleExplanations() {
-      this.showExplanations = !this.showExplanations;
-      if (this.showNotification) {
-        this.showNotification = false;
+    // Bound as a Vue function :ref on .pipeline-row, so it fires exactly when
+    // that element (which only exists while the "Status" card's v-if is true)
+    // is inserted or removed - more reliable than guessing which data change
+    // (bridgehead switch, tab switch, initial async load, ...) should trigger
+    // a re-measure, since this fires for all of them automatically.
+    setPipelineRowRef(el: Element | null) {
+      const htmlEl = (el as HTMLElement | null) ?? undefined;
+      if (htmlEl === this.observedPipelineRow) return;
+      this.pipelineResizeObserver?.disconnect();
+      this.observedPipelineRow = htmlEl;
+      if (htmlEl) this.pipelineResizeObserver?.observe(htmlEl);
+      this.updatePipelineRowWidth();
+    },
+
+    scrollPipeline(direction: 'left' | 'right') {
+      const maxStart = Math.max(0, this.statusPipelineSteps.length - this.pipelineStepsShown);
+      const current = this.effectivePipelineScrollIndex;
+      this.pipelineScrollIndex = direction === 'left'
+          ? Math.max(0, current - 1)
+          : Math.min(maxStart, current + 1);
+    },
+
+    sortProjectFieldsByLayout(): ProjectField[][] {
+      const projectFields = this.projectFields as ProjectField[];
+      const result: ProjectField[][] = [];
+      const consumedFieldIndexes = new Set<number>();
+
+      projectFields.forEach((currentField, currentIndex) => {
+        if (consumedFieldIndexes.has(currentIndex)) {
+          return;
+        }
+
+        const layoutRow = this.getFormFieldLayout(
+            currentField.category,
+            currentField.label as string
+        )?.rows.find(row => row.fields.includes(currentField.label as string));
+
+        if (!layoutRow) {
+          result.push([currentField]);
+          consumedFieldIndexes.add(currentIndex);
+          return;
+        }
+
+        const groupElements: ProjectField[] = [];
+        layoutRow.fields.forEach((label) => {
+          const matchingIndex = projectFields.findIndex((candidate, candidateIndex) =>
+              !consumedFieldIndexes.has(candidateIndex) &&
+              candidate.category === currentField.category &&
+              candidate.label === label &&
+              candidate.block?.instance === currentField.block?.instance
+          );
+          if (matchingIndex !== -1) {
+            groupElements.push(projectFields[matchingIndex]);
+            consumedFieldIndexes.add(matchingIndex);
+          }
+        });
+
+        // A malformed/incomplete layout must never make the current field
+        // disappear. It is always present in a correctly matched row, but keep
+        // this fallback so rendering remains lossless when backend data drifts.
+        if (!consumedFieldIndexes.has(currentIndex)) {
+          groupElements.push(currentField);
+          consumedFieldIndexes.add(currentIndex);
+        }
+        result.push(groupElements);
+      });
+      //console.log('original: ', projectFields)
+      //console.log('test: ', result)
+      return result
+    },
+
+    fetchProjectFieldRenderBlocks(): ProjectFieldRenderBlock[] {
+      const groups: ProjectFieldRenderBlock[] = [];
+      const layoutedProjectFields = this.sortProjectFieldsByLayout()
+
+      layoutedProjectFields.forEach((field, index) => {
+        const item = this.buildProjectFieldRenderItem(field, layoutedProjectFields[index-1], index);
+        const currentGroup = groups[groups.length - 1];
+
+        if (field[0].block && currentGroup && this.areSameBlock(currentGroup.block, field[0].block)) {
+          currentGroup.items.push(item);
+          return;
+        }
+
+        groups.push({
+          key: field[0].block
+              ? `block-${field[0].block.label}-${field[0].block.instance ?? 0}-${index}`
+              : `field-${index}`,
+          category: field[0].category,
+          block: field[0].block,
+          items: [item]
+        });
+      });
+
+      if (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY)) {
+        const visibleCategories = new Set(
+            groups
+                .filter((group) => this.isFormCategoryRenderGroupVisible(group))
+                .map((group) => group.category)
+        );
+
+        // Active steps come from fixed steps plus selected/configured forms.
+        // Canonical title metadata only reorders/updates those steps and can
+        // never create an informational-only category by itself.
+        if (!this.existsDraftDialog) {
+          this.draftDialogStepper.currentSteps
+              .filter((step) =>
+                  (step.preInfo || step.postInfo) &&
+                  !visibleCategories.has(step.id)
+              )
+              .forEach((step) => groups.push({
+                key: `category-${step.id}`,
+                category: step.id,
+                items: [],
+                categoryPlaceholder: true
+              }));
+        }
+
+        groups.sort((first, second) =>
+            this.getCategorySortValue(first.category) - this.getCategorySortValue(second.category)
+        );
+      }
+      //console.log('projectfields: ', this.projectFields)
+      //console.log('groups: ', groups)
+      return groups;
+    },
+
+    buildProjectFieldRenderItem(field: ProjectField[], previousField: ProjectField[], index: number): ProjectFieldRenderItem {
+      const startsCategory = index === 0 || previousField[0]?.category !== field[0].category;
+      const showStructuralElement = field[0].visibilityCondition && field[0].fieldKey !== 'DescriptionUpload';
+
+      return {
+        key: `field-${index}`,
+        field,
+        showSeparator: !startsCategory && showStructuralElement,
+        shouldRenderRow: field[0].visibilityCondition &&
+            (!this.existsDraftDialog ||
+                field[0].isEditable && !this.isCurrentStep(FixedDialogStep.SUMMARY) ||
+                this.isCurrentStep(FixedDialogStep.SUMMARY))
+      };
+    },
+
+    isFormCategoryRenderGroupVisible(group: ProjectFieldRenderBlock): boolean {
+      if (group.categoryPlaceholder) {
+        return true;
+      }
+      return group.items.some((item) =>
+          item.shouldRenderRow && item.field.some((field) => field.fieldKey !== 'DescriptionUpload')
+      );
+    },
+
+    shouldShowFormCategoryStart(groupIndex: number): boolean {
+      if (this.existsDraftDialog && !this.isCurrentStep(FixedDialogStep.SUMMARY)) {
+        return false;
+      }
+      const groups = this.projectFieldRenderBlock;
+      const currentGroup = groups[groupIndex];
+      if (!currentGroup || !this.isFormCategoryRenderGroupVisible(currentGroup)) {
+        return false;
+      }
+      const previousVisibleGroup = groups
+          .slice(0, groupIndex)
+          .reverse()
+          .find((group) => this.isFormCategoryRenderGroupVisible(group));
+
+      return previousVisibleGroup?.category !== currentGroup.category;
+    },
+
+    shouldShowFormCategoryPreInfo(groupIndex: number): boolean {
+      if (this.isSummaryReview()) {
+        return false;
+      }
+      const group = this.projectFieldRenderBlock[groupIndex];
+      return this.shouldShowFormCategoryStart(groupIndex) &&
+          !(this.existsDraftDialog && this.draftDialogStepper.currentStep?.id === group?.category) &&
+          Boolean(this.getDialogStep(group?.category ?? '')?.preInfo);
+    },
+
+    shouldShowFormCategoryPostInfo(groupIndex: number): boolean {
+      if (this.isSummaryReview()) {
+        return false;
+      }
+      if (this.existsDraftDialog && !this.isCurrentStep(FixedDialogStep.SUMMARY)) {
+        return false;
+      }
+      const groups = this.projectFieldRenderBlock;
+      const currentGroup = groups[groupIndex];
+      if (!currentGroup ||
+          !this.isFormCategoryRenderGroupVisible(currentGroup) ||
+          (this.existsDraftDialog && this.draftDialogStepper.currentStep?.id === currentGroup.category) ||
+          !this.getDialogStep(currentGroup.category)?.postInfo) {
+        return false;
+      }
+      const nextVisibleGroup = groups
+          .slice(groupIndex + 1)
+          .find((group) => this.isFormCategoryRenderGroupVisible(group));
+
+      return nextVisibleGroup?.category !== currentGroup.category;
+    },
+
+    deleteBlockInstance(block: ProjectFieldRenderBlock): void {
+      // remove all fields belonging to this block instance
+      if (block.block){
+        const params = new Map<string, string>();
+        const formField: FormField = {
+          title: block.block.formTitle,
+          label: '', // it needs at least one value, although it is ignored in the backend
+          block: block.block.label,
+          blockInstance: block.block?.instance
+        };
+        params.set(PmRequestParameter.FORM_FIELD, JSON.stringify(formField));
+        this.projectManagerBackendService
+            .fetchData(Module.PROJECT_EDITION_MODULE, Action.DELETE_FORM_FIELD_BLOCK_ACTION, this.context, params)
+            .then(() => this.refreshContext());
+        this.blockCollapse.delete(block?.block.label+'#'+block?.block.instance)
       }
     },
 
+    areSameBlock(first?: ProjectField["block"], second?: ProjectField["block"]): boolean {
+      if (!first || !second) {
+        return false;
+      }
+
+      return first.formTitle === second.formTitle &&
+          first.label === second.label &&
+          first.instance === second.instance
+    },
+
+    areSameBlockType(first?: ProjectField["block"], second?: ProjectField["block"]): boolean {
+      if (!first || !second) {
+        return false;
+      }
+
+      return first.formTitle === second.formTitle && first.label === second.label
+    },
+
+    isLastVisibleBlockGroup(groupIndex: number): boolean {
+      const groups = this.projectFieldRenderBlock;
+      const currentGroup = groups[groupIndex];
+
+      if (!currentGroup?.block || !this.isProjectFieldBlockVisible(currentGroup)) {
+        return false;
+      }
+      const nextVisibleGroup = groups
+          .slice(groupIndex + 1)
+          .find((group) => this.isProjectFieldBlockVisible(group));
+
+      return !this.areSameBlockType(currentGroup.block, nextVisibleGroup?.block);
+    },
+
+    shouldShowBlockPreInfo(groupIndex: number): boolean {
+      if (this.isSummaryReview()) {
+        return false;
+      }
+      const group = this.projectFieldRenderBlock[groupIndex];
+      return this.shouldShowHeaderOfBlockGroup(groupIndex) && Boolean(group?.block?.preInfo);
+    },
+
+    shouldShowBlockPostInfo(groupIndex: number): boolean {
+      if (this.isSummaryReview()) {
+        return false;
+      }
+      const group = this.projectFieldRenderBlock[groupIndex];
+      return this.isLastVisibleBlockGroup(groupIndex) && Boolean(group?.block?.postInfo);
+    },
+
+    shouldShowAddButtonAfterBlockGroup(groupIndex: number): boolean {
+      const groups = this.projectFieldRenderBlock;
+      const currentGroup = groups[groupIndex];
+
+      if (!currentGroup?.block || !this.isProjectFieldBlockVisible(currentGroup)) {
+        return false;
+      }
+      if (currentGroup.block.multiple === false && this.hasBlockInstance(currentGroup.block)) {
+        return false;
+      }
+      if (this.isCurrentStep(FixedDialogStep.SUMMARY) || (!this.existsDraftDialog && !this.editMode)) {
+        return false
+      }
+      return this.isLastVisibleBlockGroup(groupIndex);
+    },
+
+    shouldShowHeaderOfBlockGroup(groupIndex: number): boolean {
+      const groups = this.projectFieldRenderBlock;
+      const currentGroup = groups[groupIndex];
+
+      if (!currentGroup?.block || !this.isProjectFieldBlockVisible(currentGroup)) {
+        return false;
+      }
+
+      const firstGroup = groups.find((group) =>
+          this.areSameBlockType(group.block, currentGroup.block) &&
+          this.isProjectFieldBlockVisible(group)
+      );
+
+      if (this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY) && !firstGroup?.block?.instance) {
+        return false
+      }
+      return currentGroup.key === firstGroup?.key
+    },
+
+    // In the summary and the request view, an enum-plus-text pair (CSS_ENUM +
+    // CSS_ENUM_VALUE) is shown as two ordinary rows: side by side, each title
+    // column would be a share of a 40%/60% column and the values would leave
+    // the summary's common value column.
+    isStackedPairRow(row: ProjectFieldRenderItem): boolean {
+      return (!this.existsDraftDialog || this.isCurrentStep(FixedDialogStep.SUMMARY)) &&
+          row.field.some((field) => field.properties?.includes(FormFieldProperty.CSS_ENUM));
+    },
+
+    shouldRenderBlock(group: ProjectFieldRenderBlock): boolean {
+      if (!group.block) {
+        return false;
+      }
+
+      return this.isProjectFieldBlockVisible(group) &&
+          group.block.instance != null;
+    },
+
+    shouldRenderFieldBlockItems(group: ProjectFieldRenderBlock): boolean {
+      return group.items.length > 0 && (!group.block || this.shouldRenderBlock(group));
+    },
+
+    isProjectFieldBlockVisible(group: ProjectFieldRenderBlock): boolean {
+      return group.items.some((item) => item.field[0].visibilityCondition);
+    },
+
+    addBlockInstance(block?: BlockMetadata) {
+      if (!block) {
+        return;
+      }
+
+      const fieldToSend = this.formFields.find((field) =>
+          this.isDynamicFormField(field) &&
+          field.block === block.label && field.blockInstance === block.instance
+      );
+      if (!fieldToSend) {
+        return;
+      }
+
+      this.addFormFieldBlockInstance(fieldToSend);
+    },
+
+    addFormFieldBlockInstance(formField: FormField) {
+      const nextBlockInstance = this.formFields
+          .filter((field) => this.isDynamicFormField(field) &&
+              field.title === formField.title && field.block === formField.block)
+          .map((field) => field.blockInstance)
+          .filter((instance): instance is number => instance != null)
+          .reduce((max, instance) => Math.max(max, instance), 0) + 1;
+
+      const newFormField: FormField = {
+        ...formField,
+        blockInstance: nextBlockInstance
+      };
+      delete newFormField.value;
+
+      const params = new Map<string, FormField[]>();
+      params.set(PmRequestParameter.FORM_FIELDS, [newFormField]);
+
+      this.projectManagerBackendService
+          .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_FORM_FIELDS_ACTION, this.context, params)
+          .then(() => this.refreshContext());
+    },
+
+    hasBlockInstance(block: BlockMetadata): boolean {
+      return this.formFields.some((field) =>
+          this.isDynamicFormField(field) &&
+          field.title === block?.formTitle &&
+          field.block === block?.label &&
+          field.blockInstance != null
+      );
+    },
+
+    scrollToResults() {
+      this.currentMenuStep = ProjectViewMenuStep.STATUS;
+      this.$nextTick(() => document.querySelector('.documents.status-panel')
+          ?.scrollIntoView({behavior: 'smooth', block: 'start'}));
+    },
+
+    initializePollingService() {
+      this.pollingService = new PollingService(
+          () => this.fetchVisibleBridgeheads(),
+          () => this.visibleBridgeheads.some(b =>
+              b.executions?.some(e => isQueryOnTheWay(e.queryState))
+          ),
+          5000
+      );
+    },
+
+    // The user's bridgehead roles at every visible bridgehead, in one request: the backend answers the roles for one
+    // bridgehead at a time.
+    async loadBridgeheadRoles(): Promise<void> {
+      const bridgeheads = this.visibleBridgeheads;
+      const entries = bridgeheads.map((bridgehead, index) => ({
+        id: `roles-${index}`, module: Module.USER_MODULE, action: Action.FETCH_PROJECT_ROLES_ACTION,
+        params: new Map<string, unknown>(), context: new ProjectManagerContext(this.projectCode, bridgehead)
+      }));
+      try {
+        const results = entries.length > 0
+            ? await this.projectManagerBackendService.fetchBatch(entries, this.context)
+            : new Map();
+        // The bridgeheads changed meanwhile: their own load applies
+        if (bridgeheads !== this.visibleBridgeheads) return;
+        this.bridgeheadRoles = toBridgeheadRoles(new Map(bridgeheads.map((bridgehead, index) =>
+            [bridgehead.bridgehead, results.get(`roles-${index}`)?.response as ProjectRole[] | undefined])));
+        await this.updateBridgeheadActions();
+      } catch (error) {
+        console.error('Error loading the bridgehead roles:', error);
+      }
+    },
+
+    // The bridgeheads where the user has a bridgehead role: their actions are shown per bridgehead.
+    fetchBridgeheadsWithBridgeheadRoles(): Bridgehead[] {
+      return actingBridgeheads(this.visibleBridgeheads, this.bridgeheadRoles, []);
+    },
+
+    // What the user's bridgeheads say about them, then the buttons of those bridgeheads: again with every new context
+    // of the page (an action can change what is allowed).
+    async updateBridgeheadActions(): Promise<void> {
+      await this.loadBridgeheadUserData();
+      this.fetchButtons();
+      await this.checkButtonVisibility();
+    },
+
+    // The bridgeheads the user may act for with one of the allowed bridgehead roles (all of them by default).
+    fetchActingBridgeheads(allowedRoles?: ProjectRole[]): Bridgehead[] {
+      return actingBridgeheads(this.visibleBridgeheads, this.bridgeheadRoles, this.projectRoles, allowedRoles);
+    },
+
+    // Whether the user may act for the whole project, without a bridgehead: creator or project manager admin.
+    canActForWholeProject(): boolean {
+      return canActForWholeProject(this.projectRoles);
+    },
+
+    // The bridgeheads, then the page's data (fetchVisibleBridgeheads refreshes the context). The polling service loads
+    // the bridgeheads itself and then decides whether to keep polling.
+    // Whether each site has its local approval, in one request to the backend; a site whose answer is missing (not
+    // allowed yet or failed) has none. Shared by the bridgehead overview, the status and the bridgehead admin's buttons.
+    async loadLocalApprovals(): Promise<void> {
+      if (!this.localApprovalEnabled) {
+        this.localApprovals = null;
+        return;
+      }
+      const bridgeheads = this.visibleBridgeheads;
+      const results = await this.projectManagerBackendService.fetchBatch(bridgeheads.map(bridgehead => ({
+        id: bridgehead.bridgehead, module: Module.PROJECT_DOCUMENTS_MODULE, action: Action.EXISTS_LOCAL_APPROVAL_ACTION,
+        params: new Map<string, unknown>(), context: this.createContext(bridgehead)
+      })), this.context);
+      this.localApprovals = Object.fromEntries(bridgeheads.map(bridgehead =>
+          [bridgehead.bridgehead, results.get(bridgehead.bridgehead)?.response === true]));
+    },
+
+    isQueryBlockedByLocalApproval(bridgehead: Bridgehead): boolean {
+      return this.localApprovalRequired && this.localApprovals !== null
+          && this.localApprovals[bridgehead.bridgehead] !== true;
+    },
+
     refreshBridgeheadsAndContext() {
-      const activeBridgehead = this.activeBridgehead;
-      this.fetchVisibleBridgeheads().then(result => {
-        if (this.activeBridgehead === activeBridgehead) {
-          this.refreshContext();
-        }
-      })
+      void (this.pollingService ? this.pollingService.execute() : this.fetchVisibleBridgeheads());
     },
 
     refreshContext() {
-      this.context = new ProjectManagerContext(this.context.projectCode, this.context.bridgehead);
+      this.context = new ProjectManagerContext(this.context.projectCode, undefined);
+    },
+
+    queryChanged(query?: string) {
+      // Feasibility results belong to the query, so none remain valid after
+      // the query changes (by the project-manager admin in REVIEW, or by the
+      // creator of a draft without explorer). Bridgehead executions are
+      // intentionally untouched because the query is not sent to the sites yet.
+      if (query !== undefined && this.project) {
+        this.project.query = query;
+      }
+      this.feasibilityResults.clear();
+      this.feasibilityErrors.clear();
+      if (this.feasibilityEnabled) {
+        this.visibleBridgeheads.forEach(bridgehead => {
+          void this.initializeFeasibilityResult(bridgehead).catch(() => undefined);
+        });
+      }
+      this.refreshContext();
+    },
+
+    redirectTo(site: string) {
+      this.$router.push(site)
+    },
+
+    isProjectManagerAdmin(){
+      return this.projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN);
     },
 
     async fetchVisibleBridgeheads() {
       try {
-        return await this.projectManagerBackendService.fetchData(
-            Module.PROJECT_BRIDGEHEAD_MODULE,
-            Action.FETCH_VISIBLE_PROJECT_BRIDGEHEADS_ACTION,
-            this.context,
-            new Map()
-        ).then(bridgeheads => {
-          this.visibleBridgeheads = bridgeheads;
-          this.activeBridgehead = bridgeheads[this.activeBridgeheadIndex];
-        });
+        // The first time, those the page's first service was created with; afterwards (an action, the polling) again
+        const firstLoad = !this.pageDataLoaded;
+        this.visibleBridgeheads = await (firstLoad ? this.visibleBridgeheadsLoad : fetchVisibleBridgeheads(this.projectCode));
+        // The first service already has the actions of these bridgeheads. Afterwards their states may allow other
+        // actions: a new context loads them and the page's data again.
+        if (firstLoad) {
+          this.loadPageData();
+        } else {
+          this.refreshContext();
+        }
       } catch (error) {
         console.error('Error loading BridgeheadList:', error);
       }
     },
 
-    async fetchProject() {
-      const params = new Map<string, string>();
-      // TODO: Control page size
-      params.set('page', '' + 0);
-      params.set('page-size', '' + 10);
-      await this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_ACTION, params, 'project');
-    },
-
-    fetchIfProjectHasAllMandatoryFields(): boolean {
-      return Boolean(this.project && this.project.label && this.project.query && this.bridgeheads && this.project.type &&
-          this.project.queryFormat && this.project.outputFormat && this.project.templateId && this.existsApplicationForm);
-    },
-
-    fetchTooltipTextForCreateButton() {
-      let result = '';
-      if (this.project){
-        result = this.addMissingField(result, 'title', this.project.label);
-        result = this.addMissingField(result, 'query', this.project.query);
-        result = this.addMissingField(result, 'bridgeheads', this.bridgeheads);
-        result = this.addMissingField(result, 'type', this.project.type);
-        result = this.addMissingField(result, 'query format', this.project.queryFormat);
-        result = this.addMissingField(result, 'output format', this.project.outputFormat);
-        result = this.addMissingField(result, 'template id', this.project.templateId);
-        result = this.addMissingField(result, 'application form', this.existsApplicationForm);
-      }
-      return (result.length > 0) ? 'missing fields: ' + result : result;
-    },
-
-    addMissingField(result: string, field: string, value: any): string{
-      return (!value) ? result + ((result.length > 0) ? ', ' : '') + field : result;
-    },
-
-    convertDate(date: Date) {
-      return format(date, 'yyyy-MM-dd HH:mm')
-    },
-
-    async initializeProjectRelatedData() {
-      if (this.project) {
-        this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
-        this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
-        this.existsDraftDialog = (this.project.state === 'DRAFT' && keycloak.getEmail() === this.project.creatorEmail);
-        await Promise.all([
-          this.initializeDataInCallback(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_BRIDGEHEADS_ACTION, new Map(), async (result: Bridgehead[]) => {
-            this.bridgeheads = result;
-          }),
-          this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_STATES_ACTION, new Map(), 'projectStates'),
-          this.fetchNotifications(),
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, new Map(), 'projectTypes'),
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, new Map(), 'queryFormats'),
-          this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, new Map(), 'outputFormats'),
-          this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_CONFIGURATIONS_ACTION, new Map(), async (result: any) => {
-            this.projectConfigurations = new Map(Object.entries(result));
-            this.projectConfigurationLabels = Array.from(this.projectConfigurations?.keys());
-          }),
-          this.initializeCurrentProjectConfiguration(),
-          this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, new Map(), 'allBridgeheads'),
-          this.initializeData(Module.USER_MODULE, Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION, new Map(), 'existsResearchEnvironmentWorkspace'),
-          this.initializeData(Module.USER_MODULE, Action.FETCH_RESEARCH_ENVIRONMENT_URL_ACTION, new Map(), 'researchEnvironmentUrl'),
-          this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, new Map(), 'currentUsers'),
-          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, new Map(), async (result: boolean) => {
-            this.existsVotum = result;
-            if (this.existsVotum) {
-              await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_DESCRIPTION_ACTION, new Map(), 'votumDescription');
-            } else {
-              this.votumDescription = {} as ProjectDocument
-            }
-          }),
-          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION, new Map(), async (result: boolean) => {
-            this.existsVotumForAllBridgeheads = result;
-            if (this.existsVotumForAllBridgeheads) {
-              await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION_ACTION, new Map(), 'votumForAllBridgeheadsDescription');
-            }
-          }),
-          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_APPLICATION_FORM_ACTION, new Map(), async (result: boolean) => {
-            this.existsApplicationForm = result;
-            if (this.existsApplicationForm) {
-              await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_APPLICATION_FORM_DESCRIPTION_ACTION, new Map(), 'applicationFormDescription');
-            }
-          }),
-          this.initializeDataInCallback(Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, new Map(), async (result: boolean) => {
-            this.existsScript = result;
-            if (this.existsScript) {
-              await this.initializeData(Module.PROJECT_DOCUMENTS_MODULE, Action.FETCH_SCRIPT_DESCRIPTION_ACTION, new Map(), 'scriptDescription');
-            }
-          }),
-          this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION, new Map(), 'existsAuthenticationScript'),
-          this.initializeData(Module.USER_MODULE, Action.FETCH_PROJECT_ROLES_ACTION, new Map(), 'projectRoles'),
-          this.initializeDataInCallback(Module.USER_MODULE, Action.EXIST_INVITED_USERS_ACTION, new Map(), async result => {
-            this.existInvitedUsers = result;
-            this.canShowBridgeheadAdminButtons = this.fetchIfCanShowBridgeheadAdminButtons();
-          }),
-          this.initializeData(Module.USER_MODULE, Action.FETCH_CURRENT_USER_ACTION, new Map(), 'currentUser'),
-          this.initializeData(Module.EXPORT_MODULE, Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, new Map(), 'areExportFilesTransferredToResearchEnvironment')
-        ]);
-        if (this.project.type) {
-          const params = new Map<string, string>;
-          params.set('project-type', this.project.type)
-          await this.initializeData(Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, params, 'exporterTemplateIds');
-          if (this.project.type == 'DATASHIELD') {
-            await this.initializeData(Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, new Map(), 'dataShieldStatus');
-          }
-        }
-        this.fetchButtons()
-        this.checkButtonVisibility()
-        this.explanations = this.projectManagerBackendService.fetchExplanations();
-        this.extendedExplanations = this.fetchExtendedExplanations();
-      }
-    },
-
-    async fetchNotifications() {
-      return this.initializeData(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(), 'notifications');
-    },
-
-    initializeCurrentProjectConfiguration() {
-      this.initializeDataInCallback(Module.PROJECT_EDITION_MODULE, Action.FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION, new Map(), async (result: Record<string, Project>) => {
-        if (result) {
-          const currentProjectConfigKeys = Object.keys(result);
-          if (currentProjectConfigKeys && currentProjectConfigKeys.length > 0) {
-            this.currentProjectConfiguration = currentProjectConfigKeys[0];
-            const currentProjectConfig = result[this.currentProjectConfiguration];
-            if (currentProjectConfig) {
-              this.currentProjectConfigurationFields = Object.keys(currentProjectConfig).filter(key => (currentProjectConfig as any)[key] !== null)
-            }
-          }
-        } else {
-          this.currentProjectConfiguration = '';
-          this.currentProjectConfigurationFields = [];
+    // The page's data with the page's service: the user's roles at each bridgehead, then the project and what follows
+    // from it
+    loadPageData() {
+      this.pageDataLoaded = true;
+      void this.loadBridgeheadRoles();
+      this.fetchProject().then(() => {
+        if (this.statusBridgehead) {
+          this.mergedQueryStates = this.getMergedQueryStates(this.statusBridgehead, getAllProjectTypes(this.project));
         }
       });
     },
 
+    canEditSelectedSites(): boolean {
+      return (this.existsDraftDialog && !this.isCurrentStep(FixedDialogStep.SUMMARY)) ||
+          (!this.existsDraftDialog && this.editMode);
+    },
+
+    updateSelectedSites(bridgeheads: Bridgehead[]): void {
+      const params = new Map<string, string>();
+      params.set(PmRequestParameter.BRIDGEHEADS, bridgeheads.map(bridgehead => bridgehead.bridgehead).join(','));
+      // Sent even when empty: removing the last site sends an empty list
+      this.projectManagerBackendService
+          .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params, true)
+          .then(() => this.refreshBridgeheadsAndContext());
+    },
+
+    // backendEnabled: the answer of IS_FEASIBILITY_ENABLED; false when it may not be asked or could not be loaded
+    async applyFeasibilityAvailability(backendEnabled: boolean): Promise<void> {
+      const wasEnabled = this.feasibilityEnabled;
+      // Allowed, not callable: this is decided before any site exists; each site is then fetched with its own context
+      const fetchActionActive = await this.projectManagerBackendService.isModuleActionAllowed(
+          Module.PROJECT_BRIDGEHEAD_MODULE,
+          Action.FETCH_FEASIBILITY_ACTION
+      );
+      this.feasibilityEnabled = backendEnabled && fetchActionActive;
+
+      if (!this.feasibilityEnabled) {
+        this.feasibilityResults.clear();
+        this.feasibilityErrors.clear();
+      } else if (!wasEnabled) {
+        this.visibleBridgeheads.forEach(bridgehead => {
+          void this.initializeFeasibilityResult(bridgehead).catch(() => undefined);
+        });
+      }
+    },
+
+    initializeFeasibilityResult(bridgehead: Bridgehead): Promise<void> {
+      // A loaded project with an empty query (created from the dashboard) has nothing to count yet
+      if (!this.feasibilityEnabled || (this.project && !this.project.query)) return Promise.resolve();
+
+      const bridgeheadId = bridgehead.bridgehead;
+      const bridgeheadContext = new ProjectManagerContext(this.projectCode, bridgehead);
+      this.feasibilityErrors.delete(bridgeheadId);
+      return this.initializeDataInCallback(
+          Module.PROJECT_BRIDGEHEAD_MODULE,
+          Action.FETCH_FEASIBILITY_ACTION,
+          new Map(),
+          async (results: FeasibilityResult) => {
+            if (!this.visibleBridgeheads.some(current => current.bridgehead === bridgeheadId)) return;
+
+            this.feasibilityResults.set(bridgeheadId, results);
+          },
+          bridgeheadContext
+      ).catch(error => {
+        if (this.visibleBridgeheads.some(current => current.bridgehead === bridgeheadId)) {
+          this.feasibilityErrors.add(bridgeheadId);
+        }
+        throw error;
+      });
+    },
+
+    async fetchFeasibilityConfig() {
+      const config = await getConfig();
+      this.feasibilityPageSize = Number(config.FEASIBILITY_PAGE_SIZE ?? 10);
+      this.feasibilityTableWidth = resolveFeasibilityTableWidth(config.FEASIBILITY_TABLE_WIDTH);
+      this.feasibilityTableAlignment = resolveFeasibilityTableAlignment(config.FEASIBILITY_TABLE_ALIGNMENT);
+      this.localApprovalRequired = config.LOCAL_APPROVAL_REQUIRED === 'true';
+    },
+
+    async fetchCreatedAtDisplayFormat() {
+      const config = await getConfig();
+      this.createdAtDisplayFormat = resolveDisplayFormatKey(
+          config.PROJECT_DETAIL_CREATED_AT_DISPLAY_FORMAT, DisplayFormatKey.DATE_TIME_FORMAT);
+    },
+
+    async fetchFormFieldDescriptionCollapsedLines() {
+      const config = await getConfig();
+      const configuredLines = Number(config.FORM_FIELD_DESCRIPTION_COLLAPSED_LINES);
+      this.formFieldDescriptionCollapsedLines = Number.isInteger(configuredLines) && configuredLines > 0
+          ? configuredLines
+          : DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES;
+    },
+
+    async fetchSummarySpacing() {
+      this.summaryCompact = (await getConfig()).SUMMARY_SPACING === SummarySpacing.COMPACT;
+    },
+
+    async fetchProject() {
+      const params = new Map<string, string>();
+      // TODO: Control page size
+      params.set(PmRequestParameter.PAGE, '' + 0);
+      params.set(PmRequestParameter.PAGE_SIZE, '' + 10);
+      return await this.initializeData(Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_ACTION, params, 'project');
+    },
+
+    fetchIfProjectHasAllMandatoryFields(): boolean {
+      const selectedSitesValid = this.isMandatoryFixedProjectFieldValid(
+          FixedFormFieldKey.QUERIED_SITES,
+          this.bridgeheads
+      );
+      const baseFieldsValid = Boolean(
+          this.project &&
+          (this.hasConfiguredInactiveFixedField(FixedFormFieldKey.PROJECT_TITLE) || this.hasMeaningfulValue(this.project.label)) &&
+          this.hasMeaningfulValue(this.project.query) &&
+          selectedSitesValid &&
+          this.hasMeaningfulValue(this.project.queryFormat) &&
+          hasValidOutputs(this.project)
+      );
+
+      // Every applicable mandatory dynamic field needs a persisted, non-blank value.
+      const mandatoryFormFieldsValid = this.formFields
+          ?.filter(field => this.isApplicableMandatoryFormField(field))
+          .every(field => this.hasMeaningfulValue(field.value));
+
+      return baseFieldsValid && mandatoryFormFieldsValid &&
+          !this.formFields?.some(field => this.hasNotAllowedValue(field));
+    },
+
+    isMandatoryFixedProjectFieldValid(key: FixedFormFieldKey, value: unknown): boolean {
+      const field = this.projectFields.find(projectField => projectField.fixedFieldKey === key);
+      return !field?.mandatory || this.hasFieldValue(value);
+    },
+
+    isApplicableMandatoryFormField(field: FormField): boolean {
+      return Boolean(field.mandatory) && this.isApplicableFormField(field);
+    },
+
+    isApplicableFormField(field: FormField): boolean {
+      const belongsToExistingBlock = !field.block || field.blockInstance != null;
+
+      return this.isDynamicFormField(field) &&
+          belongsToExistingBlock &&
+          this.selectedForms.some(form => form.title === field.title);
+    },
+
+    // A stored value that is not one of the field's allowed values (e.g. the
+    // config changed, or a condition chose another instance of the field). It
+    // is kept, but the request cannot be created with it; mandatory or not.
+    hasNotAllowedValue(field: FormField): boolean {
+      return this.isApplicableFormField(field) &&
+          (field.allowedValues?.length ?? 0) > 0 &&
+          this.hasMeaningfulValue(field.value) &&
+          !field.allowedValues!.some(allowedValue => allowedValue.label === field.value);
+    },
+
+    hasMeaningfulValue(value: unknown): boolean {
+      return typeof value === 'string' && value.trim().length > 0;
+    },
+
+    fetchTooltipTextForCreateButton() {
+      let result = '';
+
+      if (this.project) {
+        // ✅ project-level fields stay inline
+        if (!this.hasConfiguredInactiveFixedField(FixedFormFieldKey.PROJECT_TITLE)) {
+          result = this.addMissingField(result, 'title', this.project.label);
+        }
+        result = this.addMissingField(result, 'query', this.project.query);
+        if (!this.isMandatoryFixedProjectFieldValid(FixedFormFieldKey.QUERIED_SITES, this.bridgeheads)) {
+          result = this.addMissingField(result, 'sites', this.bridgeheads);
+        }
+        result = this.addMissingField(result, 'query format', this.project.queryFormat);
+
+        this.project?.outputs?.forEach(o => {
+          result = this.addMissingField(
+              result,
+              `output format (${o.projectType})`,
+              o.outputFormat
+          );
+
+          result = this.addMissingField(
+              result,
+              `template id (${o.projectType})`,
+              o.templateId
+          );
+        });
+
+        // 👇 group missing mandatory form fields
+        this.groupedMissingFields = this.formFields
+            ?.filter(field => (this.isApplicableMandatoryFormField(field) && !this.hasMeaningfulValue(field.value)) ||
+                this.hasNotAllowedValue(field))
+            .reduce((acc, field) => {
+              const title = field.titleDisplayName ?? field.title;
+              const label = (field.labelDisplayName ?? field.label) +
+                  (this.hasNotAllowedValue(field) ? ' (value not allowed)' : '');
+
+              if (!acc[title]) acc[title] = [];
+              acc[title].push(label);
+              return acc;
+            }, {} as Record<string, string[]>);
+
+        // Create blocks for each title
+        const blocks = Object.entries(this.groupedMissingFields ?? {}).map(
+            ([title, fields]) => `<strong>${title}</strong>: ${fields.join(', ')}`
+        );
+
+        // If there are blocks, append them with two line-breaks between
+        if (blocks.length > 0) {
+          result += (result.length > 0 ? '<br><br>' : '') + blocks.join('<br><br>');
+        }
+      }
+
+      return result.length > 0 ? 'missing fields:<br><br>' + result : result;
+    },
+
+    // Whether the user has entered anything in this step. Saved values survive
+    // a reload, unlike the stepper's in-memory list of visited steps.
+    draftStepHasData(step: DialogStep): boolean {
+      if (step.id === FixedDialogStep.QUERY && this.project?.query) return true;
+      return this.formFields.some(field =>
+          field.title === step.id && this.isDynamicFormField(field) && this.hasFieldValue(field.value));
+    },
+
+    // A step is reached when it was visited in this session, or when it lies at
+    // or before the furthest step holding data: the wizard is walked forward with
+    // "Next", so the steps before that one were passed, even the ones left empty.
+    // The first time a draft is opened, only the imported query holds data.
+    isDraftStepReached(step: DialogStep, index: number): boolean {
+      if (this.draftDialogStepper.visitedSteps.has(step.id)) return true;
+      const steps = this.draftDialogStepper.currentSteps;
+      for (let i = steps.length - 1; i >= index; i--) {
+        if (this.draftStepHasData(steps[i])) return true;
+      }
+      return false;
+    },
+
+    // Left at least once before: visited earlier in this session, or a later
+    // step holds data. Unlike isDraftStepReached, the step's own data does not
+    // count, so typing in the first field does not flag the others at once.
+    isDraftStepPassed(step: DialogStep, index: number): boolean {
+      if (this.draftDialogStepper.visitedSteps.has(step.id)) return true;
+      return this.draftDialogStepper.currentSteps.slice(index + 1).some(later => this.draftStepHasData(later));
+    },
+
+    currentStepHasMandatoryFields(): boolean {
+      const stepId = this.draftDialogStepper.currentStep?.id;
+      const rendered = this.projectFieldRenderBlock.some(block => block.items.some(row =>
+          row.shouldRenderRow && row.field.some(item => item.mandatory)));
+      // Also blocks without instances yet: their fields are not rendered.
+      return rendered || this.formFields.some(field =>
+          field.title === stepId && this.isDynamicFormField(field) && Boolean(field.mandatory));
+    },
+
+    // A block of the current step that can be left out: no entry is required
+    // (its mandatory fields only apply to an entry once it is added), or none
+    // of its fields is mandatory.
+    isOptionalBlock(blockLabel?: string): boolean {
+      if (!blockLabel) return false;
+      const stepId = this.draftDialogStepper.currentStep?.id;
+      const fields = this.formFields.filter(field =>
+          field.title === stepId && field.block === blockLabel && this.isDynamicFormField(field));
+      if (fields.length === 0) return false;
+      const requiredEntries = Math.max(...fields.map(field => field.minBlockInstances ?? 0));
+      return requiredEntries === 0 || fields.every(field => !field.mandatory);
+    },
+
+    // active: the step on screen; done / missing: reached, with all or not all
+    // of its mandatory fields filled; future: not reached yet. Independent of
+    // where the user is now, so jumping back to a step keeps the later ones done.
+    draftStepState(step: DialogStep, index: number): 'active' | 'done' | 'missing' | 'future' {
+      if (this.draftDialogStepper.currentStep === step) return 'active';
+      if (step.id === FixedDialogStep.SUMMARY || !this.isDraftStepReached(step, index)) return 'future';
+      const missing = this.groupedMissingFields[step.displayName]?.length > 0 ||
+          this.fetchMissingFixedFieldSteps().has(step.id);
+      return missing ? 'missing' : 'done';
+    },
+
+    // The steps holding a missing mandatory fixed field: the same checks as
+    // fetchIfProjectHasAllMandatoryFields, each on the step where the field is
+    // shown (it can be configured onto another step). Kept apart from
+    // groupedMissingFields, which also feeds the Create button's tooltip.
+    fetchMissingFixedFieldSteps(): Set<string> {
+      const steps = new Set<string>();
+      const project = this.project;
+      if (!project) return steps;
+      const addIfMissing = (missing: boolean, key: FixedFormFieldKey, defaultStep: string) => {
+        if (missing) steps.add(this.getFixedFieldDialogStep(key, defaultStep));
+      };
+
+      addIfMissing(!this.hasConfiguredInactiveFixedField(FixedFormFieldKey.PROJECT_TITLE) &&
+          !this.hasMeaningfulValue(project.label), FixedFormFieldKey.PROJECT_TITLE, FixedDialogStep.PROJECT);
+      addIfMissing(!this.hasMeaningfulValue(project.query), FixedFormFieldKey.SELECTED_COHORT, FixedDialogStep.QUERY);
+      addIfMissing(this.bridgeheadsLoaded &&
+          !this.isMandatoryFixedProjectFieldValid(FixedFormFieldKey.QUERIED_SITES, this.bridgeheads),
+          FixedFormFieldKey.QUERIED_SITES, FixedDialogStep.QUERY);
+      addIfMissing(!this.hasMeaningfulValue(project.queryFormat), FixedFormFieldKey.QUERY_FORMAT, FixedDialogStep.QUERY);
+
+      if (!hasValidOutputs(project)) steps.add(this.fetchOutputsStepId());
+      return steps;
+    },
+
+    // The outputs are edited in the Custom step, which only a PM admin with a
+    // custom configuration gets. Everyone else sets them by choosing a
+    // configuration, so they belong to the configuration's step then.
+    fetchOutputsStepId(): string {
+      const outputStep = this.getFixedFieldDialogStep(FixedFormFieldKey.OUTPUT_FORMAT, FixedDialogStep.CUSTOM);
+      return this.draftDialogStepper.hasCurrentStep(outputStep) ? outputStep :
+          this.getFixedFieldDialogStep(FixedFormFieldKey.PROJECT_CONFIGURATION, FixedDialogStep.SERVICES);
+    },
+
+    // The configuration step is required even though the configuration field
+    // carries no star (it is a set of option cards without a title): a request
+    // cannot be created without outputs.
+    isOutputsStep(stepId?: string): boolean {
+      return stepId !== undefined && stepId === this.fetchOutputsStepId() &&
+          stepId === this.getFixedFieldDialogStep(FixedFormFieldKey.PROJECT_CONFIGURATION, FixedDialogStep.SERVICES);
+    },
+
+    projectHasValidOutputs(): boolean {
+      return hasValidOutputs(this.project);
+    },
+
+    mandatoryLegend(): string {
+      const hasStars = this.currentStepHasMandatoryFields();
+      if (this.isOutputsStep(this.draftDialogStepper.currentStep?.id)) {
+        return 'Select at least one option.' + (hasStars ? ' Fields marked with * are required.' : '');
+      }
+      return hasStars ? 'Fields marked with * are required.' : 'All fields in this step are optional.';
+    },
+
+    nextDraftDialogStep(): void {
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
+      this.draftDialogStepper.nextStep();
+    },
+
+    addMissingField(result: string, field: string, value: any): string {
+      return (!this.hasFieldValue(value)) ? result + ((result.length > 0) ? ', ' : '') + field : result;
+    },
+
+    hasFieldValue(value: unknown): boolean {
+      return Array.isArray(value)
+          ? value.length > 0
+          : typeof value === 'string'
+              ? this.hasMeaningfulValue(value)
+              : Boolean(value);
+    },
+
+    convertDate(date: string | Date) {
+      return formatDisplayDate(date, this.createdAtDisplayFormat)
+    },
+
+    async initializeProjectRelatedData() {
+      if (this.project) {
+        this.existsDraftDialog = (this.project.state === ProjectState.DRAFT && AuthService.getEmail() === this.project.creatorEmail);
+        // Jump straight to the Request tab for draft projects before any of the
+        // async initialization below runs (and before Vue re-renders), so the
+        // Status tab/phase-stepper never flashes on screen while a draft
+        // project is loading.
+        if (this.project.state === ProjectState.DRAFT && this.currentMenuStep === ProjectViewMenuStep.STATUS) {
+          this.currentMenuStep = ProjectViewMenuStep.REQUEST;
+        }
+
+        // Everything the view reads for this project goes to the backend in as few requests as the dependencies
+        // between the loads allow (see projectRelatedLoads). A failed load is reported on the console and does
+        // not keep the rest of the view from loading.
+        this.formTitleCanonicalOrder = [];
+        await Promise.all([
+          this.initializeScriptTabAvailability(),
+          this.initializeDocumentsTabAvailability(),
+          runBatchLoads(this.projectRelatedLoads(),
+              entries => this.projectManagerBackendService.fetchBatch(entries, this.context))
+        ]);
+        // If the only predefined configuration is assigned automatically, the refreshed context performs a clean
+        // initialization.
+        if (await this.selectOnlyAvailableProjectConfiguration()) {
+          // Reload the project because assigning a configuration changes its fields.
+          this.refreshContext();
+          return;
+        }
+        this.applyProjectConfigurationVisibility();
+        this.updateProjectFields()
+        // Decides where "Start final phase" goes (see moreActionButtons)
+        this.canStartDevelopPhase = await this.projectManagerBackendService.isModuleActionActive(
+            Module.PROJECT_STATE_MODULE, Action.START_DEVELOP_STAGE_ACTION, this.context);
+        // Decides where "Start final phase" and "Start develop phase" go, and whether they are offered
+        this.canStartLocalApproval = await this.projectManagerBackendService.isModuleActionActive(
+            Module.PROJECT_STATE_MODULE, Action.START_LOCAL_APPROVAL_STAGE_ACTION, this.context);
+        await this.loadLocalApprovals();
+        this.fetchButtons()
+        await this.checkButtonVisibility()
+        this.explanations = this.projectManagerBackendService.fetchExplanations();
+        this.extendedExplanations = this.fetchExtendedExplanations();
+        await this.showActionFeedbackFromUrl();
+      }
+    },
+
+    // After a redirect (from the explorer, the dashboard or another client), the backend marks the URL with the
+    // action that led here. Its success message is shown once, and the marker is removed so that a reload or a
+    // copied link does not show it again.
+    async showActionFeedbackFromUrl() {
+      const action = this.$route.query[ACTION_FEEDBACK_PARAM];
+      if (typeof action !== 'string') return;
+      const query = {...this.$route.query};
+      delete query[ACTION_FEEDBACK_PARAM];
+      await this.$router.replace({query});
+      const {successMessage} = await this.projectManagerBackendService.getActionFeedbackMessagesOfAction(action);
+      if (successMessage) {
+        store.commit('showActionFeedback', {type: ActionFeedbackType.SUCCESS, message: successMessage});
+      }
+    },
+
+    /**
+     * What the view loads for its project. Loads without `dependsOn` go to the backend in one request; the others
+     * follow in a second one. The answers are applied in the order of this list.
+     */
+    projectRelatedLoads(): BatchLoad<Module, Action, ProjectManagerContext>[] {
+      type ProjectLoad = BatchLoad<Module, Action, ProjectManagerContext>;
+      // The response becomes the value of a data variable
+      const set = (id: string, module: Module, action: Action, dataVariable: string): ProjectLoad =>
+          ({id, module, action, apply: response => { (this.$data as any)[dataVariable] = response; }});
+      // Loads of the single-bridgehead status: with its bridgehead, and only if there is one
+      const statusBridgeheadLoad = {
+        context: () => this.createContext(this.statusBridgehead),
+        when: () => !!this.statusBridgehead
+      };
+      // A document's description is fetched only if the document exists
+      const documentDescription = (id: string, existsId: string, action: Action, dataVariable: string): ProjectLoad => ({
+        id, module: Module.PROJECT_DOCUMENTS_MODULE, action,
+        dependsOn: [existsId],
+        when: responses => responses[existsId] === true,
+        apply: response => { (this.$data as any)[dataVariable] = response; },
+        otherwise: () => { (this.$data as any)[dataVariable] = {} as ProjectDocument; }
+      });
+      const resetForms = () => {
+        console.warn('Failed to load project form definitions.');
+        this.selectedForms = [];
+        this.formFields = [];
+        this.formTitles = [];
+        this.layouts = {};
+      };
+
+      return [
+        // The configuration first: the loads after it and the steps after the batch build on it
+        {
+          id: 'currentProjectConfiguration', module: Module.PROJECT_EDITION_MODULE,
+          action: Action.FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION,
+          apply: (response: string[] | Record<string, ProjectAndForms>) => this.applyCurrentProjectConfiguration(response)
+        },
+        {
+          // Keep the loaded configurations until the replacement arrives. Project refreshes overlap (e.g. saving
+          // a form field twice in a row); clearing the map before let an earlier refresh run
+          // applyProjectConfigurationVisibility against an empty map, briefly showing the Services step.
+          id: 'projectConfigurations', module: Module.PROJECT_EDITION_MODULE,
+          action: Action.FETCH_PROJECT_CONFIGURATIONS_ACTION,
+          apply: (response: Record<string, ProjectAndForms> | undefined) => {
+            this.projectConfigurations = new Map(Object.entries(response ?? {}));
+          }
+        },
+        {
+          id: 'isFeasibilityEnabled', module: Module.PROJECT_BRIDGEHEAD_MODULE,
+          action: Action.IS_FEASIBILITY_ENABLED_ACTION,
+          apply: response => this.applyFeasibilityAvailability(Boolean(response)),
+          otherwise: () => this.applyFeasibilityAvailability(false)
+        },
+        {
+          id: 'bridgeheads', module: Module.PROJECT_BRIDGEHEAD_MODULE, action: Action.FETCH_PROJECT_BRIDGEHEADS_ACTION,
+          apply: (response: Bridgehead[]) => {
+            this.bridgeheads = response;
+            this.bridgeheadsLoaded = true;
+          }
+        },
+        set('projectStates', Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_PROJECT_STATES_ACTION, 'projectStates'),
+        set('notifications', Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, 'notifications'),
+        set('projectTypes', Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_TYPES_ACTION, 'projectTypes'),
+        set('queryFormats', Module.PROJECT_EDITION_MODULE, Action.FETCH_QUERY_FORMATS_ACTION, 'queryFormats'),
+        set('outputFormats', Module.PROJECT_EDITION_MODULE, Action.FETCH_OUTPUT_FORMATS_ACTION, 'outputFormats'),
+        set('projectConfigurationSelectionType', Module.PROJECT_EDITION_MODULE,
+            Action.FETCH_PROJECT_CONFIGURATION_SELECTION_TYPE_ACTION, 'projectConfigurationSelectionType'),
+        set('allBridgeheads', Module.PROJECT_BRIDGEHEAD_MODULE, Action.FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION, 'allBridgeheads'),
+        set('existsPublication', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_PUBLICATION_ACTION, 'existsPublication'),
+        set('existsFinalReport', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_FINAL_REPORT_ACTION, 'existsFinalReport'),
+        set('currentUsers', Module.USER_MODULE, Action.FETCH_PROJECT_USERS_ACTION, 'currentUsers'),
+        set('existsDescription', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_DESCRIPTION_ACTION, 'existsProjectDescription'),
+        documentDescription('projectDescription', 'existsDescription', Action.FETCH_DESCRIPTION_ACTION, 'projectDescription'),
+        // The single-bridgehead status: its bridgehead's vote
+        {
+          ...set('existsVotum', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_VOTUM_ACTION, 'existsVotum'),
+          ...statusBridgeheadLoad,
+          otherwise: () => { this.existsVotum = false; }
+        },
+        {
+          ...documentDescription('votumDescription', 'existsVotum', Action.FETCH_VOTUM_DESCRIPTION_ACTION, 'votumDescription'),
+          context: statusBridgeheadLoad.context
+        },
+        set('existsVotumForAllBridgeheads', Module.PROJECT_DOCUMENTS_MODULE,
+            Action.EXISTS_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION, 'existsVotumForAllBridgeheads'),
+        documentDescription('votumForAllBridgeheadsDescription', 'existsVotumForAllBridgeheads',
+            Action.FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION_ACTION, 'votumForAllBridgeheadsDescription'),
+        {
+          ...set('existsScript', Module.PROJECT_DOCUMENTS_MODULE, Action.EXISTS_SCRIPT_ACTION, 'existsScript'),
+          context: () => this.createContext(this.fetchScriptViewBridgehead())
+        },
+        {
+          ...documentDescription('scriptDescription', 'existsScript', Action.FETCH_SCRIPT_DESCRIPTION_ACTION, 'scriptDescription'),
+          context: () => this.createContext(this.fetchScriptViewBridgehead())
+        },
+        {
+          // Asked without a bridgehead: a user with only bridgehead roles gets those of one of their bridgeheads too
+          // (the service sends one), which are left out here - their roles at every bridgehead come from
+          // loadBridgeheadRoles.
+          id: 'projectRoles', module: Module.USER_MODULE, action: Action.FETCH_PROJECT_ROLES_ACTION,
+          apply: (response: ProjectRole[]) => {
+            this.bridgeheadIndependentRoles = response.filter(role => !BRIDGEHEAD_ROLES.includes(role));
+          },
+          otherwise: () => { this.bridgeheadIndependentRoles = []; }
+        },
+        {
+          id: 'existInvitedUsers', module: Module.USER_MODULE, action: Action.EXIST_INVITED_USERS_ACTION,
+          apply: response => {
+            this.existInvitedUsers = response;
+            this.canShowBridgeheadAdminButtons = this.fetchIfCanShowBridgeheadAdminButtons();
+          }
+        },
+        {
+          ...set('areExportFilesTransferredToResearchEnvironment', Module.EXPORT_MODULE,
+              Action.ARE_EXPORT_FILES_TRANSFERRED_TO_RESEARCH_ENVIRONMENT_ACTION, 'areExportFilesTransferredToResearchEnvironment'),
+          ...statusBridgeheadLoad,
+          otherwise: () => { this.areExportFilesTransferredToResearchEnvironment = false; }
+        },
+        set('formTemplates', Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_TEMPLATES_ACTION, 'formTemplates'),
+        set('exporterTemplateIds', Module.PROJECT_EDITION_MODULE, Action.FETCH_EXPORTER_TEMPLATES_ACTION, 'exporterTemplateIds'),
+        {
+          ...set('dataShieldStatus', Module.TOKEN_MANAGER_MODULE, Action.FETCH_DATASHIELD_STATUS_ACTION, 'dataShieldStatus'),
+          context: statusBridgeheadLoad.context,
+          when: () => !!this.statusBridgehead && hasProjectType(this.project, ProjectType.DATASHIELD),
+          otherwise: () => { this.dataShieldStatus = undefined; }
+        },
+        // Without the canonical order the frontend's fallback order is used (the list was emptied before)
+        set('formTitleCanonicalOrder', Module.PROJECT_EDITION_MODULE,
+            Action.FETCH_PROJECT_FORM_TITLE_ORDER_ACTION, 'formTitleCanonicalOrder'),
+        {
+          ...set('selectedForms', Module.PROJECT_EDITION_MODULE, Action.FETCH_SELECTED_PROJECT_FORMS_ACTION, 'selectedForms'),
+          otherwise: resetForms
+        },
+        {
+          id: 'formFields', module: Module.PROJECT_EDITION_MODULE, action: Action.FETCH_PROJECT_FORM_FIELDS_ACTION,
+          dependsOn: ['selectedForms'],
+          when: responses => 'selectedForms' in responses,
+          apply: (response: FormField[]) => this.addFormFields(response)
+        },
+        {
+          ...set('layouts', Module.PROJECT_EDITION_MODULE, Action.FETCH_PROJECT_FORM_LAYOUTS_ACTION, 'layouts'),
+          dependsOn: ['selectedForms'],
+          when: responses => 'selectedForms' in responses
+        }
+      ];
+    },
+
+    async initializeScriptTabAvailability(): Promise<void> {
+      const [canUploadScript, canDownloadScript] = await Promise.all([
+        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE,
+            Action.UPLOAD_SCRIPT_ACTION, this.createContext(this.fetchScriptUploadBridgehead())),
+        this.projectManagerBackendService.isModuleActionActive(Module.PROJECT_DOCUMENTS_MODULE,
+            Action.DOWNLOAD_SCRIPT_ACTION, this.createContext(this.fetchScriptViewBridgehead()))
+      ]);
+
+      // The backend action catalogue is context-aware and is the sole source
+      // of truth for whether the Script area belongs in this project view.
+      this.isScriptTabAvailable = canUploadScript || canDownloadScript;
+      if (!this.isScriptTabAvailable && this.currentMenuStep === ProjectViewMenuStep.SCRIPT) {
+        this.currentMenuStep = this.project?.state === ProjectState.DRAFT
+            ? ProjectViewMenuStep.REQUEST
+            : ProjectViewMenuStep.STATUS;
+      }
+    },
+
+    async initializeDocumentsTabAvailability(): Promise<void> {
+      const documentActions: Array<[Module, Action]> = [
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.UPLOAD_PUBLICATION_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.DOWNLOAD_PUBLICATION_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.UPLOAD_FINAL_REPORT_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.DOWNLOAD_FINAL_REPORT_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.UPLOAD_OTHER_DOCUMENT_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.DOWNLOAD_OTHER_DOCUMENT_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.ADD_PUBLICATION_URL_ACTION],
+        [Module.PROJECT_DOCUMENTS_MODULE, Action.ADD_OTHER_DOCUMENT_URL_ACTION],
+        [Module.PROJECT_EDITION_MODULE, Action.DOWNLOAD_FORM_AS_PDF_ACTION]
+      ];
+      const activeActions = await Promise.all(documentActions.map(([module, action]) =>
+          this.projectManagerBackendService.isModuleActionActive(module, action, this.context)));
+
+      this.isDocumentsTabAvailable = activeActions.some(Boolean);
+      if ((!this.isDocumentsTabAvailable || this.project?.state === ProjectState.DRAFT) &&
+          this.currentMenuStep === ProjectViewMenuStep.DOCUMENTS) {
+        this.currentMenuStep = this.project?.state === ProjectState.DRAFT
+            ? ProjectViewMenuStep.REQUEST
+            : ProjectViewMenuStep.STATUS;
+      }
+    },
+
+    getFormFieldLayout(formTitle: string, formFieldLabel: string): FormFieldLayout | undefined {
+      return this.layouts[formTitle]?.find(layout =>
+          layout.rows.some(row => row.fields.includes(formFieldLabel))
+      );
+    },
+
+    /**
+     * Determines whether the "custom service" option should be hidden.
+     *
+     * Business rules:
+     *
+     * - Admin users can always see and select the custom service.
+     *
+     * - For non-admin users:
+     *   - If `isCustomConfigSelected` is `undefined`, the custom option must be hidden.
+     *     → This means no explicit decision has been made yet, so custom is not allowed.
+     *
+     *   - If `isCustomConfigSelected === true`, the custom option is visible.
+     *     → An admin has explicitly enabled or selected a custom configuration before.
+     *
+     *   - If `isCustomConfigSelected === false`, the custom option is only visible
+     *     if the current configuration no longer matches any predefined service
+     *     (i.e., it has effectively become "custom" due to user modifications).
+     *
+     * In short:
+     * - `undefined` → never show (for non-admins)
+     * - `false` → show only if config became custom
+     * - `true` → always show
+     */
+    shouldHideCustomService() {
+      const isAdmin = this.projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN);
+      const customFlag = this.project?.isCustomConfigSelected;
+
+      return !isAdmin &&
+          (customFlag === undefined || (!customFlag && !this.currentProjectConfiguration.includes(CUSTOM_PROJECT_CONFIGURATION)));
+    },
+
+    /**
+     * Assigns the sole predefined configuration to a newly created project.
+     *
+     * NOT_SELECTED means that no configuration decision has been made yet, so it
+     * may be replaced automatically when exactly one predefined option exists.
+     * CUSTOM is an explicit user choice and must never be replaced automatically.
+     *
+     * @returns true when the configuration was changed and a context refresh started
+     */
+    async selectOnlyAvailableProjectConfiguration(): Promise<boolean> {
+      const availableConfigurations = Array.from(this.projectConfigurations.keys())
+          .filter(configuration => configuration !== CUSTOM_PROJECT_CONFIGURATION &&
+              configuration !== NOT_SELECTED_PROJECT_CONFIGURATION);
+      // Only the transient NOT_SELECTED state is eligible for automatic selection.
+      // In particular, never treat an explicitly selected CUSTOM configuration as unassigned.
+      const isCurrentConfigurationNotSelected =
+          this.currentProjectConfiguration.length === 1 &&
+          this.currentProjectConfiguration[0] === NOT_SELECTED_PROJECT_CONFIGURATION;
+      const isCurrentUserCreator = AuthService.getEmail() === this.project?.creatorEmail;
+
+      if (!isCurrentConfigurationNotSelected ||
+          !isCurrentUserCreator ||
+          availableConfigurations.length !== 1) {
+        return false;
+      }
+
+      const params = new Map<string, string>();
+      params.set(PmRequestParameter.PROJECT_CONFIGURATION, availableConfigurations[0]);
+      await this.projectManagerBackendService.fetchData(
+          Module.PROJECT_EDITION_MODULE,
+          Action.SET_PROJECT_CONFIGURATION_ACTION,
+          this.context,
+          params
+      );
+      return true;
+    },
+
+    updateProjectFields() {
+      if (this.project) {
+        this.projectFields = this.fetchProjectFields();
+        this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+        this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
+      }
+    },
+
+    // CHECK_BOX renders as one checkbox list manipulating a set of values, so
+    // it only makes sense with multiple: true. RADIO_BUTTON picks exactly one
+    // value, so it only makes sense with multiple: false. Force both,
+    // overriding whatever the backend configured, so the two are never out
+    // of sync with their rendering.
+    normalizeMultipleForFieldProperty(field: FormField): FormField {
+      if (field.properties?.includes(FormFieldProperty.CHECK_BOX)) {
+        return {...field, multiple: true};
+      }
+      if (field.properties?.includes(FormFieldProperty.RADIO_BUTTON)) {
+        return {...field, multiple: false};
+      }
+      return field;
+    },
+
+    addFormFields(formFieldArray: FormField[]): void {
+      this.formFields = formFieldArray.map((field) => this.normalizeMultipleForFieldProperty(field));
+      this.formTitles = [];
+
+      const seenTitles = new Set<string>(); // <-- move outside the loop
+
+      for (const field of formFieldArray) {
+        const key = field.title;
+
+        // ---- Titles list ----
+        if (!seenTitles.has(key)) {
+          seenTitles.add(key);
+
+          this.formTitles.push({
+            title: field.title,
+            titleDisplayName: field.titleDisplayName,
+            titleDescription: field.titleDescription,
+            titleShortDescription: field.titleShortDescription,
+            titlePreInfo: field.titlePreInfo,
+            titlePostInfo: field.titlePostInfo,
+          });
+        }
+
+      }
+
+      // Recalculate even when the last block removal leaves no form fields.
+      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
+
+      const formTitlesByTitle = new Map(
+          this.formTitles.map((formTitle) => [formTitle.title, formTitle])
+      );
+
+      this.selectedForms = this.selectedForms.map((selectedForm) => ({
+        ...selectedForm,
+        titleDisplayName: formTitlesByTitle.get(selectedForm.title)?.titleDisplayName ?? selectedForm.titleDisplayName,
+        titleDescription: formTitlesByTitle.get(selectedForm.title)?.titleDescription ?? selectedForm.titleDescription,
+        titleShortDescription: formTitlesByTitle.get(selectedForm.title)?.titleShortDescription ?? selectedForm.titleShortDescription,
+        titlePreInfo: formTitlesByTitle.get(selectedForm.title)?.titlePreInfo ?? selectedForm.titlePreInfo,
+        titlePostInfo: formTitlesByTitle.get(selectedForm.title)?.titlePostInfo ?? selectedForm.titlePostInfo,
+      }));
+
+      if (!this.draftDialogStepper.hasSameFormTitles(this.selectedForms)) {
+        this.draftDialogStepper.resetFormTitles();
+      }
+      this.draftDialogStepper.addFormTitles(this.selectedForms);
+      this.draftDialogStepper.applyFormTitleCanonicalOrder(this.formTitleCanonicalOrder);
+    },
+
+    async fetchNotifications() {
+      return this.initializeDataInCallback(Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, new Map(),
+          async result => {
+            this.notifications = result;
+          });
+    },
+
+    applyProjectConfigurationVisibility(): void {
+      // Count predefined options independently of CUSTOM: visibility filtering
+      // below removes CUSTOM from this map, and overlapping project refreshes
+      // can apply this method again before the configurations are reloaded.
+      const predefinedConfigurations = Array.from(this.projectConfigurations.keys())
+          .filter(configuration => configuration !== CUSTOM_PROJECT_CONFIGURATION &&
+              configuration !== NOT_SELECTED_PROJECT_CONFIGURATION);
+      const hasOnlyOnePredefinedConfiguration = predefinedConfigurations.length === 1;
+      if (!this.isProjectManagerAdmin() && hasOnlyOnePredefinedConfiguration) {
+        this.draftDialogStepper.filterStep(FixedDialogStep.SERVICES);
+      } else {
+        this.draftDialogStepper.removeFilteredStep(FixedDialogStep.SERVICES);
+      }
+
+      if (this.shouldHideCustomService()) {
+        this.projectConfigurations.delete(CUSTOM_PROJECT_CONFIGURATION);
+      }
+      this.projectConfigurationLabels = Array.from(this.projectConfigurations.keys())
+          .filter(configuration => configuration !== NOT_SELECTED_PROJECT_CONFIGURATION);
+      this.refreshCurrentProjectConfigurationFields();
+    },
+
+    // result: the answer of FETCH_CURRENT_PROJECT_CONFIGURATION
+    applyCurrentProjectConfiguration(result: string[] | Record<string, ProjectAndForms> | undefined): void {
+      if (result) {
+        if (Array.isArray(result)) {
+          this.currentProjectConfiguration = result;
+        } else {
+          const keys = Object.keys(result);
+          if (keys.length > 0) {
+            this.currentProjectConfiguration = keys;
+          } else {
+            this.resetCurrentProjectConfiguration();
+          }
+        }
+
+        if (this.currentProjectConfiguration.length > 0) {
+          this.refreshCurrentProjectConfigurationFields();
+        } else {
+          this.resetCurrentProjectConfiguration();
+        }
+      } else {
+        this.resetCurrentProjectConfiguration();
+      }
+    },
+
+    resetCurrentProjectConfiguration() {
+      this.currentProjectConfiguration = [];
+      this.currentProjectConfigurationFields = [];
+    },
+
+    refreshCurrentProjectConfigurationFields() {
+      const selectedConfigurations = this.currentProjectConfiguration
+          .map((configuration) => this.projectConfigurations.get(configuration))
+          .filter((configuration): configuration is ProjectAndForms => configuration != null);
+
+      this.currentProjectConfigurationFields = selectedConfigurations.flatMap((configuration) => {
+        const project = configuration.project;
+
+        if (!project) {
+          return [];
+        }
+
+        return [
+          ...Object.keys(project).filter(
+              key => key !== 'outputs' && (project as any)[key] !== null
+          ),
+          ...(project.outputs ?? []).flatMap(output => {
+            const prefix = output.projectType;
+            return [
+              `${prefix}.projectType`,
+              ...(output.outputFormat ? [`${prefix}.outputFormat`] : []),
+              ...(output.templateId ? [`${prefix}.templateId`] : [])
+            ];
+          })
+        ];
+      });
+    },
+
     isNotIncludedInCurrentProjectConfiguration(field: string) {
-      return this.currentProjectConfiguration === 'CUSTOM' || !this.currentProjectConfigurationFields.includes(field);
+      return this.currentProjectConfiguration.includes(CUSTOM_PROJECT_CONFIGURATION) || this.currentProjectConfigurationFields.includes(field);
     },
 
     async initializeData(module: Module, action: Action, params: Map<string, unknown>, dataVariable: string): Promise<any> {
@@ -687,12 +2792,18 @@ export default defineComponent({
       });
     },
 
-
-    async initializeDataInCallback(module: Module, action: Action, params: Map<string, unknown>, callback: (result: any) => Promise<any>) {
+    async initializeDataInCallback(
+        module: Module,
+        action: Action,
+        params: Map<string, unknown>,
+        callback: (result: any) => Promise<any>,
+        context?: ProjectManagerContext) {
       try {
-        const condition = await this.projectManagerBackendService.isModuleActionActive(module, action);
+        const requestContext = context ?? this.context;
+        // Skips actions that are not allowed, or that need a site when the context has none (project without sites)
+        const condition = await this.projectManagerBackendService.isModuleActionActive(module, action, requestContext);
         if (condition) {
-          const result = await this.projectManagerBackendService.fetchData(module, action, this.context, params);
+          const result = await this.projectManagerBackendService.fetchData(module, action, requestContext, params);
           await callback(result); // Await the callback to handle any async operations inside it
         }
       } catch (error: any) {
@@ -705,24 +2816,381 @@ export default defineComponent({
       }
     },
 
-    updateActiveBridgehead(bridgehead: Bridgehead) {
-      this.activeBridgehead = bridgehead;
-    },
-
     fetchIfCanShowBridgeheadAdminButtons(): boolean {
-      return (this.project && (this.project.state == 'DEVELOP' || this.project.state == 'PILOT')) ? this.existInvitedUsers : true;
+      return (this.project && (this.project.state == ProjectState.DEVELOP || this.project.state == ProjectState.PILOT)) ? this.existInvitedUsers : true;
+    },
+    isDynamicFormField(formField: FormField): boolean {
+      // Missing fieldType is the rolling-upgrade/default DYNAMIC case.
+      return formField.fieldType !== FormFieldType.FIXED;
     },
 
-    getProjectStates(): string[] {
-      let visibleProjectStates: string[] = this.projectStates.slice();
-      if (this.projectStates.length > 0) {
-        if (this.project?.state === 'REJECTED') {
-          visibleProjectStates = visibleProjectStates.filter(item => !['FINISHED', 'ARCHIVED'].includes(item));
-        } else {
-          if (this.project?.state === 'ARCHIVED') {
-            visibleProjectStates = visibleProjectStates.filter(item => !['FINISHED', 'REJECTED'].includes(item));
+    isKnownFixedFormFieldKey(label: string): label is FixedFormFieldKey {
+      return Object.values(FixedFormFieldKey).includes(label as FixedFormFieldKey);
+    },
+
+    getConfiguredFixedField(key: FixedFormFieldKey): FormField | undefined {
+      const matches = this.formFields.filter((field) =>
+          field.fieldType === FormFieldType.FIXED && field.label === key);
+      return matches.length === 1 ? matches[0] : undefined;
+    },
+
+    hasConfiguredInactiveFixedField(key: FixedFormFieldKey): boolean {
+      return this.getConfiguredFixedField(key)?.active === false;
+    },
+
+    isFixedFieldConfigured(key: FixedFormFieldKey): boolean {
+      return this.getConfiguredFixedField(key) !== undefined;
+    },
+
+    getFixedFieldDialogStep(key: FixedFormFieldKey, defaultDialogStep: string): string {
+      return this.getConfiguredFixedField(key)?.title || defaultDialogStep;
+    },
+
+    isFixedFieldVisibleInCurrentStep(
+        key: FixedFormFieldKey, defaultDialogStep: string): boolean {
+      return !this.existsDraftDialog ||
+          this.isCurrentStep(this.getFixedFieldDialogStep(key, defaultDialogStep)) ||
+          this.isCurrentStep(FixedDialogStep.SUMMARY);
+    },
+
+    resolveConfiguredFixedFields(fixedFields: ProjectField[]): {
+      unconfiguredFixedFields: ProjectField[];
+      configuredFixedFields: ProjectField[];
+    } {
+      // FIXED configuration is metadata for an existing native frontend field.
+      // The UI applies active=false, display name/description overrides, order,
+      // and KEEP_FIXED_FIELD_ORDER. Conditional visibility is already resolved
+      // by the backend and arrives as active=false. Fixed fields do not use the
+      // dynamic value/persistence or condition-filtering path.
+      const metadataByLabel = new Map<string, FormField[]>();
+      this.formFields
+          .filter((field) => field.fieldType === FormFieldType.FIXED)
+          .forEach((field) => {
+            const entries = metadataByLabel.get(field.label) ?? [];
+            entries.push(field);
+            metadataByLabel.set(field.label, entries);
+          });
+
+      const nativeFieldsByKey = new Map<FixedFormFieldKey, ProjectField[]>();
+      fixedFields
+          .filter((field): field is ProjectField & {fixedFieldKey: FixedFormFieldKey} =>
+              field.fixedFieldKey != null)
+          .forEach((field) => {
+            const entries = nativeFieldsByKey.get(field.fixedFieldKey) ?? [];
+            entries.push(field);
+            nativeFieldsByKey.set(field.fixedFieldKey, entries);
+          });
+      const matchedKeys = new Set<FixedFormFieldKey>();
+      const configuredFixedFields: ProjectField[] = [];
+      const nativeOrderOverrides = new Map<ProjectField, ProjectField>();
+
+      metadataByLabel.forEach((metadataEntries, label) => {
+        if (!this.isKnownFixedFormFieldKey(label)) {
+          console.warn(`Ignoring unknown FIXED form-field key "${label}".`);
+          return;
+        }
+        if (metadataEntries.length !== 1) {
+          console.warn(`Ignoring duplicate FIXED form-field key "${label}".`);
+          return;
+        }
+
+        const metadata = metadataEntries[0];
+        const nativeFields = nativeFieldsByKey.get(label);
+        if (!nativeFields?.length) {
+          console.warn(`Ignoring FIXED form-field key "${label}" because no native field exists in this context.`);
+          return;
+        }
+
+        matchedKeys.add(label);
+        if (metadata.active === false) {
+          return;
+        }
+
+        // Selected sites belong to the Query step because they are part of
+        // the query/feasibility view. Older configurations may still define
+        // QUERIED_SITES in a Project form file, so retain its native placement.
+        const keepFixedFieldOrder = label === FixedFormFieldKey.QUERIED_SITES ||
+            (metadata.properties?.includes(FormFieldProperty.KEEP_FIXED_FIELD_ORDER) ?? false);
+        nativeFields.forEach((nativeField) => {
+          const configuredField: ProjectField = {
+            ...nativeField,
+            // A metadata-only override can explicitly stay in the native fixed
+            // group. Keeping the native category also retains its dialog step;
+            // otherwise title/order move it into the configured group as before.
+            category: keepFixedFieldOrder ? nativeField.category : metadata.title,
+            configurationOrder: keepFixedFieldOrder
+                ? nativeField.configurationOrder
+                : metadata.order,
+            // Empty display metadata intentionally clears the native text.
+            // Only absent metadata should fall back to the native defaults.
+            fieldKey: metadata.labelDisplayName != null
+                ? metadata.labelDisplayName + (nativeField.fixedFieldDisplayNameSuffix ?? "")
+                : nativeField.fieldKey,
+            fieldDescription: metadata.labelDescription ?? nativeField.fieldDescription,
+            fieldShortDescription: metadata.labelShortDescription ?? nativeField.fieldShortDescription,
+            placeholder: metadata.placeholder ?? nativeField.placeholder
+          };
+          if (keepFixedFieldOrder) {
+            nativeOrderOverrides.set(nativeField, configuredField);
           } else {
-            visibleProjectStates = visibleProjectStates.filter(item => !['ARCHIVED', 'REJECTED'].includes(item));
+            configuredFixedFields.push(configuredField);
+          }
+        });
+      });
+
+      return {
+        // Iterate the native list itself so KEEP_FIXED_FIELD_ORDER replaces a
+        // field in place. A matched inactive or normally configured field has
+        // no in-place replacement and is therefore removed from this group.
+        unconfiguredFixedFields: fixedFields.flatMap((field) => {
+          if (field.fixedFieldKey == null || !matchedKeys.has(field.fixedFieldKey)) {
+            return [field];
+          }
+          const nativeOrderOverride = nativeOrderOverrides.get(field);
+          return nativeOrderOverride ? [nativeOrderOverride] : [];
+        }),
+        configuredFixedFields
+      };
+    },
+
+    sortConfiguredProjectFields(fields: ProjectField[]): ProjectField[] {
+      interface IndexedField {
+        field: ProjectField;
+        sourceIndex: number;
+      }
+
+      interface FieldOrderingUnit {
+        category: string;
+        configurationOrder: number;
+        sourceIndex: number;
+        fields: IndexedField[];
+      }
+
+      const units: FieldOrderingUnit[] = [];
+      const blockUnits = new Map<string, FieldOrderingUnit>();
+
+      fields.forEach((field, sourceIndex) => {
+        const configurationOrder = field.configurationOrder ?? Number.MAX_SAFE_INTEGER;
+        if (!field.block) {
+          units.push({
+            category: field.category,
+            configurationOrder,
+            sourceIndex,
+            fields: [{field, sourceIndex}]
+          });
+          return;
+        }
+
+        // A repeatable block is one ordering unit. Sorting every block field
+        // independently by configuration order would interleave instances as
+        // F1.1, F1.2, F2.1, F2.2 instead of keeping each instance together.
+        const blockKey = `${field.category}#${field.block.formTitle}#${field.block.label}`;
+        let unit = blockUnits.get(blockKey);
+        if (!unit) {
+          unit = {
+            category: field.category,
+            configurationOrder,
+            sourceIndex,
+            fields: []
+          };
+          blockUnits.set(blockKey, unit);
+          units.push(unit);
+        }
+        unit.configurationOrder = Math.min(unit.configurationOrder, configurationOrder);
+        unit.sourceIndex = Math.min(unit.sourceIndex, sourceIndex);
+        unit.fields.push({field, sourceIndex});
+      });
+
+      units.sort((first, second) => {
+        const categoryComparison =
+            this.getCategorySortValue(first.category) - this.getCategorySortValue(second.category);
+        if (categoryComparison !== 0) {
+          return categoryComparison;
+        }
+        return first.configurationOrder - second.configurationOrder ||
+            first.sourceIndex - second.sourceIndex;
+      });
+
+      return units.flatMap((unit) => unit.fields
+          .sort((first, second) => {
+            const firstInstance = first.field.block?.instance ?? Number.MAX_SAFE_INTEGER;
+            const secondInstance = second.field.block?.instance ?? Number.MAX_SAFE_INTEGER;
+            return firstInstance - secondInstance ||
+                (first.field.configurationOrder ?? Number.MAX_SAFE_INTEGER) -
+                (second.field.configurationOrder ?? Number.MAX_SAFE_INTEGER) ||
+                first.sourceIndex - second.sourceIndex;
+          })
+          .map(({field}) => field));
+    },
+
+    // A multiple field (formField.multiple, ignored for BOOLEAN) arrives here
+    // as several FormFields sharing the same title+label+blockInstance, one
+    // per fieldInstance - mirroring how blocks arrive as several FormFields
+    // sharing the same block+blockInstance. They're grouped back into a
+    // single ProjectField per (title, label, blockInstance) here, same as a
+    // block's fields stay one ProjectField each: everything downstream
+    // (sortProjectFieldsByLayout, fetchProjectFieldRenderBlocks) keeps
+    // assuming exactly one ProjectField per (label, blockInstance), and
+    // ProjectFieldRow.vue is responsible for rendering/editing the several
+    // instances via its own "instances" prop instead. Context information is
+    // therefore stored once on that logical ProjectField, not on each value.
+    buildDynamicProjectFieldsFromFormFields(formFields: FormField[]): ProjectField[] {
+      interface FieldGroup {
+        representativeIndex: number;
+        instances: FormField[];
+      }
+
+      const groups: FieldGroup[] = [];
+      const groupIndexByKey = new Map<string, number>();
+
+      formFields.forEach((formField, index) => {
+        const isMultiple = formField.multiple && formField.type !== FormDataType.BOOLEAN;
+        if (isMultiple) {
+          const key = `${formField.title}#${formField.label}#${formField.blockInstance ?? ''}`;
+          const existingGroupIndex = groupIndexByKey.get(key);
+          if (existingGroupIndex !== undefined) {
+            groups[existingGroupIndex].instances.push(formField);
+            return;
+          }
+          groupIndexByKey.set(key, groups.length);
+        }
+        groups.push({representativeIndex: index, instances: [formField]});
+      });
+
+      return groups.map(({representativeIndex, instances}) => {
+        const formField = formFields[representativeIndex];
+        const isMultiple = formField.multiple && formField.type !== FormDataType.BOOLEAN;
+
+        return {
+          fieldKey: formField.labelDisplayName ?? formField.label,
+          configurationOrder: formField.order,
+          fieldValue: formField.value != null ? [formField.value] : [],
+          editProjectParam: [PmRequestParameter.FORM_FIELDS],
+          mandatory: formField.mandatory,
+          fieldDescription: formField.labelDescription,
+          fieldShortDescription: formField.labelShortDescription,
+          placeholder: formField.placeholder,
+          // The backend already applies project-state restrictions. Structural
+          // visibility remains a UI concern, so every returned value is carried
+          // with the logical field and rendered only when that field is visible.
+          fieldPreInfo: formField.labelPreInfo,
+          fieldPostInfo: formField.labelPostInfo,
+          type: formField.type,
+          displayFormat: formField.displayFormat,
+          isEditable: true,
+          editMode: this.editMode,
+          possibleValues: formField.allowedValues?.map(value => value.label),
+          displayPossibleValue: formField.allowedValues?.length
+              ? (label: string) => {
+                const field = formField.allowedValues!.find(v => v.label === label)
+                return {
+                  name: field?.displayName ?? label,
+                  description: field?.description ?? "",
+                  shortDescription: field?.shortDescription
+                }
+              }
+              : undefined,
+          action: Action.EDIT_PROJECT_FORM_FIELDS_ACTION,
+          transformForSending: this.buildTransformForSendingFormField(formField),
+          category: formField.title,
+          visibilityCondition:
+              this.selectedForms.some(f => f.title === formField.title) && // only if the field is already selected
+              (!this.existsDraftDialog ||
+                  this.draftDialogStepper.currentStep?.id === formField.title ||
+                  this.isCurrentStep(FixedDialogStep.SUMMARY)),
+          block: formField.block ? {
+            formTitle: formField.title,
+            label: formField.block,
+            instance: formField.blockInstance,
+            multiple: formField.multipleBlock,
+            minInstances: formField.minBlockInstances,
+            displayName: formField.blockDisplayName,
+            description: formField.blockDescription,
+            shortDescription: formField.blockShortDescription,
+            preInfo: formField.blockPreInfo,
+            postInfo: formField.blockPostInfo
+          } : undefined,
+          section: new Section(formFields, representativeIndex),
+          label: formField.label,
+          properties: formField.properties ? formField.properties : [],
+          multiple: isMultiple,
+          instances: isMultiple
+              ? instances
+                  .slice()
+                  .sort((a, b) => (a.fieldInstance ?? 0) - (b.fieldInstance ?? 0))
+                  .map(instance => ({fieldInstance: instance.fieldInstance ?? 1, value: instance.value}))
+              : undefined,
+          buildInstanceTransform: isMultiple
+              ? (fieldInstance: number) => this.buildTransformForSendingFormField({
+                ...formField,
+                fieldInstance,
+                value: instances.find(instance => instance.fieldInstance === fieldInstance)?.value
+              })
+              : undefined
+        };
+      });
+    },
+
+    buildDynamicProjectFieldsFromFormTitles(formTitles: FormTitle[]): ProjectField[] {
+      return formTitles.map((formTitle) => ({
+        fieldKey: formTitle.titleDisplayName ?? formTitle.title,
+        fieldValue: [this.selectedForms.some(f => f.title === formTitle.title) ? "true" : "false"],
+        editProjectParam: [PmRequestParameter.FORM_TITLE],
+        mandatory: false,
+        fieldDescription: formTitle.titleDescription,
+        fieldShortDescription: formTitle.titleShortDescription,
+        type: FormDataType.BOOLEAN,
+        isEditable: true,
+        editMode: this.editMode,
+        action: new ActionFunction((input: string[]) => {
+          if (input && input.length > 0 && input[0] === "false") {
+            return Action.REMOVE_SELECTED_PROJECT_FORM_ACTION;
+          } else {
+            return Action.ADD_SELECTED_PROJECT_FORM_ACTION;
+          }
+        }),
+        transformForSending: () => formTitle.title,
+        category: FixedDialogStep.CUSTOM,
+        visibilityCondition:
+            this.isProjectManagerAdmin() &&
+            (!this.existsDraftDialog ||
+            this.isCurrentStep(FixedDialogStep.CUSTOM) || this.isCurrentStep(FixedDialogStep.SUMMARY))
+      }));
+    },
+
+    buildTransformForSendingFormField(formField: FormField): (input: string) => any {
+      return (input: string) => {
+        return [{
+          title: formField.title,
+          label: formField.label,
+          value: fromFormControlValue(input, formField.type, formField.value),
+          ...(formField.multiple ? {
+            multiple: true,
+            fieldInstance: formField.fieldInstance
+          } : {}),
+          ...(formField.block ? {
+            block: formField.block,
+            blockInstance: formField.blockInstance,
+            multipleBlock: formField.multipleBlock,
+            minBlockInstances: formField.minBlockInstances,
+            blockDisplayName: formField.blockDisplayName,
+            blockDescription: formField.blockDescription,
+            blockShortDescription: formField.blockShortDescription
+          } : {})
+        }];
+      };
+    },
+
+    getProjectStates(): ProjectState[] {
+      let visibleProjectStates: ProjectState[] = this.projectStates.slice();
+      if (this.projectStates.length > 0) {
+        if (this.project?.state === ProjectState.REJECTED) {
+          visibleProjectStates = visibleProjectStates.filter(item => ![ProjectState.FINISHED, ProjectState.ARCHIVED].includes(item));
+        } else {
+          if (this.project?.state === ProjectState.ARCHIVED) {
+            visibleProjectStates = visibleProjectStates.filter(item => ![ProjectState.FINISHED, ProjectState.REJECTED].includes(item));
+          } else {
+            visibleProjectStates = visibleProjectStates.filter(item => ![ProjectState.ARCHIVED, ProjectState.REJECTED].includes(item));
           }
         }
       }
@@ -731,32 +3199,29 @@ export default defineComponent({
 
     fetchExtendedExplanations(): Explanations {
       const extendedExplanations = new Map(this.explanations)
-      if (this.existsApplicationForm){
-        this.removeActionExplanation(Action.UPLOAD_APPLICATION_FORM_ACTION, extendedExplanations);
-      } else {
-        this.removeActionExplanation(Action.DOWNLOAD_APPLICATION_FORM_ACTION, extendedExplanations);
-      }
-      if (this.existsVotum){
+      // Shown in the "Next step" card instead
+      NEXT_STEP_ACTIONS.forEach(action => this.removeActionExplanation(action, extendedExplanations));
+      if (this.existsVotum) {
         this.removeActionExplanation(Action.UPLOAD_VOTUM_ACTION, extendedExplanations);
       } else {
         this.removeActionExplanation(Action.DOWNLOAD_VOTUM_ACTION, extendedExplanations);
       }
-      if (this.existsScript){
+      if (this.existsScript) {
         this.removeActionExplanation(Action.UPLOAD_SCRIPT_ACTION, extendedExplanations);
-      } else{
+      } else {
         this.removeActionExplanation(Action.DOWNLOAD_SCRIPT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.ACCEPT_SCRIPT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.REJECT_SCRIPT_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.REQUEST_SCRIPT_CHANGES_ACTION, extendedExplanations);
       }
-      if (!this.currentUser){
+      if (!Array.from(this.bridgeheadUserData.values()).some(data => data.currentUser)) {
         this.removeActionExplanation(Action.DOWNLOAD_SCRIPT_ACTION, extendedExplanations);
       }
-      if (!this.existsAuthenticationScript){
+      if (this.fetchAuthenticationScriptBridgeheads().length === 0) {
         this.removeActionExplanation(Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION, extendedExplanations);
       }
-      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN)){
-        if (!this.canShowBridgeheadAdminButtons){
+      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN)) {
+        if (!this.canShowBridgeheadAdminButtons) {
           this.removeActionExplanation(Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
           this.removeActionExplanation(Action.REJECT_BRIDGEHEAD_PROJECT_ACTION, extendedExplanations);
           this.removeActionExplanation(Action.REQUEST_CHANGES_IN_PROJECT_ACTION, extendedExplanations);
@@ -768,412 +3233,612 @@ export default defineComponent({
           this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
         }
       }
-      if (!this.existInvitedUsers && !this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN)){
+      if (!this.existInvitedUsers && !this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN)) {
         this.removeActionExplanation(Action.SET_DEVELOPER_USER_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SET_PILOT_USER_ACTION, extendedExplanations);
         this.removeActionExplanation(Action.SET_FINAL_USER_ACTION, extendedExplanations);
       }
       let count = extendedExplanations.size + 1;
-      if (this.existsDraftDialog) {
-        if (this.draftDialogStepper.currentStep === DialogStep.PROJECT) { // Project
+      // For each bridgehead the user administrates; named when there are several.
+      const adminBridgeheads = this.fetchBridgeheadsWithBridgeheadRoles()
+          .filter(bridgehead => this.bridgeheadRoles.get(bridgehead.bridgehead)?.has(ProjectRole.BRIDGEHEAD_ADMIN));
+      adminBridgeheads.forEach(bridgehead => {
+        const pendingTypes = (bridgehead.executions ?? [])
+            .filter(exec => ![QueryState.CREATED, QueryState.FINISHED, QueryState.ERROR].includes(exec.queryState))
+            .map(exec => exec.projectType);
+        if (pendingTypes.length) {
+          const teiler = adminBridgeheads.length > 1
+              ? `the Teiler of ${bridgehead.humanReadable ?? bridgehead.bridgehead}` : 'the Teiler';
           extendedExplanations.set(count.toString(), {
             number: count,
-            message: "Please provide the general project information to proceed."
+            message: `Please access ${teiler} for project types "${pendingTypes.join(", ")}", review the queries, and execute them. Note that the queries may take some time to arrive at the Teiler. Once execution is complete, return here for further instructions.`
           });
-          count ++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.SERVICES) { // Services
-          extendedExplanations.set(count.toString(), {
-            number: count,
-            message: "Please select one of the predefined configurations for the project. If none of the options meet your requirements, choose 'CUSTOM' to create a custom configuration."
-          });
-          count ++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.QUERY && !this.project?.query) { // Query
-          extendedExplanations.set(count.toString(), {
-            number: count,
-            message: "Please set the query and specify the query format if they have not been previously configured in the Federated Explorer."
-          });
-          count ++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.OUTPUT && (!this.project?.outputFormat || !this.project?.templateId) ) { // Output
-          extendedExplanations.set(count.toString(), {
-            number: count,
-            message: "Please select the output format and the template ID for the Teiler Exporter. For advanced configuration of the template, please add the necessary environment variables."
-          });
-          count ++;
-        } else if (this.draftDialogStepper.currentStep === DialogStep.SUMMARY) { // Summary
-          extendedExplanations.set(count.toString(), {
-            number: count,
-            message: "Please check all of the fields in the summary and click 'Create' if everything seems OK."
-          });
-          count ++;
-          if (this.tooltipTextForCreateButton?.length > 0){
-            extendedExplanations.set(count.toString(), {
-              number: count,
-              message: 'To proceed with creating the project, kindly fill in the following ' + this.tooltipTextForCreateButton
-            });
-            count ++;
-          }
+          count++;
         }
-      }
-      if (this.projectRoles?.includes(ProjectRole.BRIDGEHEAD_ADMIN) &&
-          this.activeBridgehead?.queryState != 'CREATED' &&
-          this.activeBridgehead?.queryState != 'FINISHED' &&
-          this.activeBridgehead?.queryState != 'ERROR'){
-        extendedExplanations.set(count.toString(), {
-          number: count,
-          message: "Please access the Teiler, review the query, and execute it. Note that the query may take some time to arrive at the Teiler. You can find the query in the Exporter app of the Teiler. Once the execution is complete, return here for further instructions."
-        });
-        count ++;
-      }
+      });
       return extendedExplanations
     },
 
     removeActionExplanation(action: Action, explanations: Explanations) {
       const explanation = explanations.get(action);
-      if (explanation){
+      if (explanation) {
         const explanationNumber = explanation.number;
         explanations.delete(action);
-        explanations.forEach((value, key) => {
-          if (value.number > explanationNumber){
+        explanations.forEach((value, _key) => {
+          if (value.number > explanationNumber) {
             value.number--;
           }
         })
       }
     },
 
-    getExplanationsForButtonGroup(buttonGroup: ActionButtonGroup): number[] {
-      return buttonGroup.button?.map((button) => this.explanations?.get(button.action)?.number).filter((number): number is number => number !== undefined) || []
-    },
 
-    goToReseachEnvironment() {
-      if (this.researchEnvironmentUrl){
-        window.open(this.researchEnvironmentUrl, '_blank');
-      }
-    },
-
-    getProjectFields(): ProjectField[] {
-      return [
-        {
-          fieldKey: "Title",
-          fieldValue: [this.project?.label],
-          editProjectParam: [EditProjectParam.LABEL],
-          isEditable: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Description",
-          fieldValue: [this.project?.description],
-          editProjectParam: [EditProjectParam.DESCRIPTION],
-          isEditable: true,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Sites",
-          fieldValue: [this.bridgeheads.map(bridghead => bridghead.humanReadable), this.allBridgeheads.map(bridghead => bridghead.humanReadable)],
-          editProjectParam: [EditProjectParam.BRIDGEHEADS],
-          isEditable: true,
-          redirectUrl: this.project?.explorerUrl,
-          transformForSending: (humanReadable: string) => this.allBridgeheads.find(bridgehead => bridgehead.humanReadable === humanReadable)?.bridgehead || humanReadable,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Configuration",
-          fieldValue: [this.currentProjectConfiguration],
-          editProjectParam: [EditProjectParam.PROJECT_CONFIGURATION],
-          isEditable: true,
-          possibleValues: this.projectConfigurationLabels,
-          configurations: this.projectConfigurations,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SERVICES || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Type",
-          fieldValue: [this.project?.type],
-          editProjectParam: [EditProjectParam.PROJECT_TYPE],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration('type'),
-          possibleValues: this.projectTypes,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.OUTPUT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Query",
-          fieldValue: [this.project?.humanReadable, this.project?.query],
-          editProjectParam: [EditProjectParam.HUMAN_READABLE],
-          isEditable: true,
-          redirectUrl: this.project?.explorerUrl,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.QUERY || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Query Format",
-          fieldValue: [this.project?.queryFormat],
-          editProjectParam: [EditProjectParam.QUERY_FORMAT],
-          isEditable: true,
-          redirectUrl: this.project?.explorerUrl,
-          possibleValues: this.queryFormats,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.QUERY || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Output Format",
-          fieldValue: [this.project?.outputFormat],
-          editProjectParam: [EditProjectParam.OUTPUT_FORMAT],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration('outputFormat'),
-          possibleValues: this.outputFormats,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.OUTPUT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Template ID",
-          fieldValue: [this.project?.templateId],
-          editProjectParam: [EditProjectParam.TEMPLATE_ID],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration('templateId'),
-          possibleValues: this.exporterTemplateIds,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.OUTPUT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Environment Variables",
-          fieldValue: [this.project?.queryContext],
-          editProjectParam: [EditProjectParam.QUERY_CONTEXT],
-          isEditable: this.isNotIncludedInCurrentProjectConfiguration('queryContext'),
-          visibilityCondition: !this.existsDraftDialog || this.currentProjectConfiguration === 'CUSTOM' && this.draftDialogStepper.currentStep === DialogStep.OUTPUT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Application form",
-          fieldValue: [this.applicationFormDescription.label, this.applicationFormDescription.originalFilename],
-          isEditable: true,
-          existFile: this.existsApplicationForm,
-          uploadAction: this.Action.UPLOAD_APPLICATION_FORM_ACTION,
-          downloadAction: this.Action.DOWNLOAD_APPLICATION_FORM_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: !this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.PROJECT || this.draftDialogStepper.currentStep === DialogStep.SUMMARY
-        },
-        {
-          fieldKey: "Votum",
-          fieldValue: [this.votumDescription.label, this.votumDescription.originalFilename],
-          isEditable: true,
-          existFile: this.existsVotum,
-          uploadAction: this.Action.UPLOAD_VOTUM_ACTION,
-          downloadAction: this.Action.DOWNLOAD_VOTUM_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.project?.state !== 'DRAFT' && (!this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SUMMARY)
-        },
-        {
-          fieldKey: "Votum for all bridgeheads",
-          fieldValue: [this.votumForAllBridgeheadsDescription.label, this.votumForAllBridgeheadsDescription.originalFilename],
-          isEditable: true,
-          existFile: this.existsVotumForAllBridgeheads,
-          uploadAction: this.Action.UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
-          downloadAction: this.Action.DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.project?.state !== 'DRAFT' && (!this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SUMMARY)
-        },
-        {
-          fieldKey: "Script",
-          fieldValue: [this.scriptDescription.label, this.scriptDescription.originalFilename],
-          isEditable: true,
-          existFile: this.existsScript,
-          uploadAction: this.Action.UPLOAD_SCRIPT_ACTION,
-          downloadAction: this.Action.DOWNLOAD_SCRIPT_ACTION,
-          downloadModule: this.Module.PROJECT_DOCUMENTS_MODULE,
-          visibilityCondition: this.dataShieldStatus && (!this.existsDraftDialog || this.draftDialogStepper.currentStep === DialogStep.SUMMARY)
-        },
-        {
-          fieldKey: "Authentication Script",
-          fieldValue: [],
-          isEditable: false,
-          existFile: this.existsAuthenticationScript,
-          downloadAction: this.Action.DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION,
-          downloadModule: this.Module.TOKEN_MANAGER_MODULE,
-          visibilityCondition: this.dataShieldStatus && this.dataShieldStatus.project_status === 'WITH_DATA' && this.existsAuthenticationScript
+    fetchExtraParamsForProjectOutput(currentPmRequestParameter: PmRequestParameter, output: ProjectOutput) {
+      let result = new Map<string, string>();
+      if (currentPmRequestParameter === PmRequestParameter.PROJECT_TYPE) {
+        if (output.outputFormat) {
+          result.set(PmRequestParameter.OUTPUT_FORMAT, output.outputFormat);
         }
-      ] as ProjectField[]
+        if (output.templateId) {
+          result.set(PmRequestParameter.TEMPLATE_ID, output.templateId);
+        }
+      } else if (currentPmRequestParameter === PmRequestParameter.OUTPUT_FORMAT) {
+        if (output.projectType) {
+          result.set(PmRequestParameter.PROJECT_TYPE, output.projectType);
+        }
+        if (output.templateId) {
+          result.set(PmRequestParameter.TEMPLATE_ID, output.templateId);
+        }
+      } else if (currentPmRequestParameter === PmRequestParameter.TEMPLATE_ID) {
+        if (output.projectType) {
+          result.set(PmRequestParameter.PROJECT_TYPE, output.projectType);
+        }
+        if (output.outputFormat) {
+          result.set(PmRequestParameter.OUTPUT_FORMAT, output.outputFormat);
+        }
+      }
+      return result;
+    },
+
+    fetchProjectFields(): ProjectField[] {
+      const context: FixedProjectFieldsContext = {
+        project: this.project,
+        editMode: this.editMode,
+        existsDraftDialog: this.existsDraftDialog,
+        projectDescription: this.projectDescription,
+        existsProjectDescription: this.existsProjectDescription,
+        bridgeheads: this.bridgeheads,
+        allBridgeheads: this.allBridgeheads,
+        currentProjectConfiguration: this.currentProjectConfiguration,
+        projectConfigurationLabels: this.projectConfigurationLabels,
+        projectConfigurations: this.projectConfigurations,
+        projectConfigurationSelectionType: this.projectConfigurationSelectionType,
+        queryFormats: this.queryFormats,
+        projectTypes: this.projectTypes,
+        outputFormats: this.outputFormats,
+        exporterTemplateIds: this.exporterTemplateIds,
+        votumDescription: this.votumDescription,
+        existsVotum: this.existsVotum,
+        votumForAllBridgeheadsDescription: this.votumForAllBridgeheadsDescription,
+        existsVotumForAllBridgeheads: this.existsVotumForAllBridgeheads,
+        isProjectManagerAdmin: () => this.isProjectManagerAdmin(),
+        isFixedFieldConfigured: (key) => this.isFixedFieldConfigured(key),
+        getFixedFieldDialogStep: (key, defaultStep) =>
+            this.getFixedFieldDialogStep(key, defaultStep),
+        isFixedFieldVisibleInCurrentStep: (key, defaultStep) =>
+            this.isFixedFieldVisibleInCurrentStep(key, defaultStep),
+        isCurrentStep: (step) => this.isCurrentStep(step),
+        isNotIncludedInCurrentProjectConfiguration: (field) =>
+            this.isNotIncludedInCurrentProjectConfiguration(field),
+        fetchExtraParamsForProjectOutput: (editProjectParam, output) =>
+            this.fetchExtraParamsForProjectOutput(editProjectParam, output)
+      };
+      const fixedFields = buildFixedProjectFields(context);
+      const votumFields = buildVotumProjectFields(context);
+      const {unconfiguredFixedFields, configuredFixedFields} =
+          this.resolveConfiguredFixedFields([...fixedFields, ...votumFields]);
+      const dynamicFields = this.buildDynamicProjectFieldsFromFormFields(
+          this.formFields.filter((field) => this.isDynamicFormField(field)));
+      const dynamicSelectedForms = this.buildDynamicProjectFieldsFromFormTitles(
+          this.formTitles.filter(formTitle => {
+            this.draftDialogStepper.hasCurrentStep(formTitle.title)
+          }));
+
+      const configuredFields = this.sortConfiguredProjectFields([
+        ...configuredFixedFields,
+        ...dynamicFields
+      ]);
+
+      return [...unconfiguredFixedFields, ...dynamicSelectedForms, ...configuredFields].sort((a, b) =>
+          this.getCategorySortValue(a.category) - this.getCategorySortValue(b.category))
+    },
+
+    // The bridgehead admin's operations for one bridgehead: what moves it forward (Next step) and the occasional ones
+    // (menu).
+    fetchBridgeheadButtons(bridgehead: Bridgehead):
+        { nextStepGroups: ActionButtonGroup[], menuButtons: ActionButton[] } {
+      const executions = bridgehead.executions ?? [];
+      const projectTypes = [...new Set(executions.map(exec => exec.projectType))];
+      const hasFinishedExecution = executions.some(exec => exec.queryState === QueryState.FINISHED);
+      const hasResearchEnvironment = projectTypes.includes(ProjectType.RESEARCH_ENVIRONMENT);
+      const bridgeheadName = bridgehead.humanReadable ?? bridgehead.bridgehead;
+      const sendQueryButton = (resend: boolean): ActionButton => ({
+        module: Module.EXPORT_MODULE,
+        action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
+        refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+        text: resend ? `Resend query (${bridgeheadName})` : "Send query",
+        withMessage: false,
+        cssClass: resend ? "menu-item" : "btn btn-primary",
+        params: new Map<string, string>([
+          [PmRequestParameter.PROJECT_TYPE, projectTypes.join(",")]
+        ]),
+        visibilityCondition: this.canShowBridgeheadAdminButtons && executions.length > 0 && resend === hasFinishedExecution
+            && !this.isQueryBlockedByLocalApproval(bridgehead),
+        bridgehead
+      });
+      return {
+        nextStepGroups: [
+          {
+            label: `Send the query to ${bridgeheadName}`,
+            description: "Send the request's query to your site, where the data for this request is prepared.",
+            button: [sendQueryButton(false)]
+          },
+          {
+            label: `Authorize access for ${bridgeheadName}`,
+            description: "Once your site's data is ready, authorize access to it for this request.",
+            button: [{
+              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
+              refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+              text: "Authorize access", withMessage: false, cssClass: "btn btn-primary",
+              visibilityCondition: bridgehead.state !== ProjectBridgeheadState.ACCEPTED && this.canShowBridgeheadAdminButtons,
+              bridgehead
+            }]
+          },
+        ],
+        menuButtons: [
+          sendQueryButton(true),
+          ...(hasResearchEnvironment
+              ? [{
+                module: Module.EXPORT_MODULE,
+                action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,
+                refreshContextCallFunction: this.refreshContext as () => void,
+                text: `Resend export files (${bridgeheadName})`,
+                withMessage: false,
+                params: new Map<string, string>([
+                  [PmRequestParameter.PROJECT_TYPE, ProjectType.RESEARCH_ENVIRONMENT]
+                ]),
+                cssClass: "menu-item",
+                bridgehead
+              }]
+              : []),
+          {
+            module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION,
+            refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
+            text: `Revoke access (${bridgeheadName})`,
+            confirmationText: "This site's data is no longer available for this request.", withMessage: true,
+            cssClass: "menu-item menu-item-danger",
+            visibilityCondition: bridgehead.state !== ProjectBridgeheadState.REJECTED && this.canShowBridgeheadAdminButtons,
+            bridgehead
+          },
+        ]
+      };
     },
 
     fetchButtons(): void {
-      this.actionButtons = [
+      // Bridgehead operations: once per bridgehead where the user has a bridgehead role, each with that bridgehead and
+      // its permissions (docs/bridgehead-context.md). The first send of the query and authorizing access are the
+      // bridgehead admin's next steps (the "Next step" card); resending and revoking are occasional, so they are in the
+      // "More actions" menu. Both name the bridgehead. Not in the Status card: it shows where things stand, not what to
+      // do.
+      const bridgeheadButtons = this.fetchBridgeheadsWithBridgeheadRoles()
+          .map(bridgehead => this.fetchBridgeheadButtons(bridgehead));
+      const bridgeheadNextStepGroups = bridgeheadButtons.flatMap(buttons => buttons.nextStepGroups);
+      const bridgeheadMenuButtons = bridgeheadButtons.flatMap(buttons => buttons.menuButtons);
+      // Reviews and research environment of invited users: once per bridgehead where they are invited
+      const invitedUserGroups = this.fetchInvitedUserBridgeheads()
+          .map(bridgehead => this.fetchInvitedUserGroups(bridgehead));
+
+      // Rare or destructive request-level actions: the "More actions" menu of the At a Glance card, out of the
+      // way of the main action. "Start final phase" is here only when it skips develop and pilot, which are
+      // possible (DataSHIELD, research environment); otherwise (from PILOT, or an export request in CENTRAL_APPROVAL)
+      // it is the main action of the "Next step" card.
+      this.moreActionButtons = [
+        ...bridgeheadMenuButtons,
         {
-          label: "Project",
+          module: Module.PROJECT_STATE_MODULE, action: Action.START_FINAL_STAGE_ACTION,
+          refreshContextCallFunction: this.refreshContext as () => void,
+          text: "Start final phase",
+          confirmation: true, confirmationText: this.skipsLocalApproval
+              ? "The request skips the local approval" + (this.canStartDevelopPhase ? ", the develop and pilot phases" : "")
+              + " and moves to the final phase."
+              : "The request skips the develop and pilot phases and moves to the final phase.",
+          withMessage: false, cssClass: "menu-item",
+          visibilityCondition: (this.skipsDevelopAndPilot || this.skipsLocalApproval)
+              && !(this.skipsLocalApproval && this.localApprovalRequired)
+        },
+        {
+          module: Module.PROJECT_STATE_MODULE, action: Action.START_DEVELOP_STAGE_ACTION,
+          refreshContextCallFunction: this.refreshContext as () => void,
+          text: "Start develop phase",
+          confirmation: true, confirmationText: "The request skips the local approval and moves to the develop phase.",
+          withMessage: false, cssClass: "menu-item",
+          visibilityCondition: this.skipsLocalApproval && !this.localApprovalRequired
+        },
+        {
+          module: Module.PROJECT_STATE_MODULE, action: Action.BACK_TO_REVIEW_ACTION,
+          refreshContextCallFunction: this.refreshContext as () => void,
+          text: "Back to review",
+          confirmation: true, confirmationText: "The request goes back to review, e.g. for a change before its approval.",
+          withMessage: false, cssClass: "menu-item"
+        },
+        {
+          module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION,
+          refreshContextCallFunction: this.refreshContext as () => void,
+          text: "Archive request",
+          confirmationText: "The request is archived. A project manager can accept it again later.",
+          withMessage: true, cssClass: "menu-item"
+        },
+        {
+          module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ACTION,
+          refreshContextCallFunction: this.refreshContext as () => void,
+          text: "Reject request",
+          messageRequired: true, confirmationText: "The request is rejected and closed. This cannot be undone.",
+          withMessage: true, cssClass: "menu-item menu-item-danger",
+          visibilityCondition: this.project?.state !== ProjectState.DRAFT
+        },
+      ] as ActionButton[];
+
+      // Button hierarchy: the action that moves things forward is the primary button; requesting changes is
+      // secondary (outline); rejecting and revoking are outlined in red, and their dialog confirms in red.
+
+      // What the user has to do now: the "Next step" card at the top of the Status tab. Each group is one thing
+      // to do, with the deployment's explanation of its first action (the backend's action messages) or, without
+      // one, the description here.
+      this.nextStepGroups = [
+        {
+          label: "Review the request",
+          description: "Check the application form. If everything is in order, accept the request; to reject or archive it, use More actions.",
           button: [
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2"
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Reject", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
-              visibilityCondition: this.project?.state !== 'DRAFT'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.FINISH_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Finish", withMessage: false, cssClass: "btn btn-primary mr-2"
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Archive", withMessage: true, cssClass: "btn btn-secondary"
+              text: "Accept request",
+              confirmation: true, confirmationText: "The request moves on to the central approval phase.", withMessage: false, cssClass: "btn btn-primary"
             }
           ] as ActionButton[]
         },
         {
-          label: "Phase",
+          label: "Start the next phase",
+          description: "Move the request on to its next phase.",
           button: [
+            {
+              module: Module.PROJECT_STATE_MODULE, action: Action.START_LOCAL_APPROVAL_STAGE_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Start local approval",
+              confirmation: true,
+              confirmationText: "The request moves to the local approval: the approval contacts of the sites and the applicant are informed.",
+              withMessage: false, cssClass: "btn btn-primary"
+            },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_DEVELOP_STAGE_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Start Develop Phase", withMessage: false, cssClass: "btn btn-primary mr-2"
+              text: "Start develop phase",
+              confirmation: true, confirmationText: "The request moves to the develop phase.", withMessage: false, cssClass: "btn btn-primary",
+              visibilityCondition: !this.skipsLocalApproval
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_PILOT_STAGE_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Start Pilot Phase", withMessage: false, cssClass: "btn btn-primary mr-2"
+              text: "Start pilot phase",
+              confirmation: true, confirmationText: "The request moves to the pilot phase.", withMessage: false, cssClass: "btn btn-primary"
             },
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_FINAL_STAGE_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Start Final Phase", withMessage: false, cssClass: "btn btn-primary mr-2"
+              text: "Start final phase",
+              confirmation: true, confirmationText: "The request moves to the final phase.", withMessage: false, cssClass: "btn btn-primary",
+              visibilityCondition: !this.skipsDevelopAndPilot && !this.skipsLocalApproval
             }
           ] as ActionButton[]
         },
         {
-          label: "User Access",
+          label: "Finish the request",
+          description: "Once everything has been delivered and accepted, finish the request.",
           button: [
             {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_BRIDGEHEAD_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: "Authorize", withMessage: false, cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.activeBridgehead?.state !== 'ACCEPTED' && this.canShowBridgeheadAdminButtons
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_BRIDGEHEAD_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: "Revoke", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
-              visibilityCondition: this.activeBridgehead?.state !== 'REJECTED' && this.canShowBridgeheadAdminButtons
+              module: Module.PROJECT_STATE_MODULE, action: Action.FINISH_PROJECT_ACTION,
+              refreshContextCallFunction: this.refreshContext as () => void,
+              text: "Finish request",
+              confirmation: true, confirmationText: "The request is finished and closed.", withMessage: false, cssClass: "btn btn-primary"
             }
           ] as ActionButton[]
         },
-        {
-          label: "Script",
-          button: [
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_SCRIPT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_SCRIPT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
-              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_SCRIPT_CHANGES_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Request Changes", withMessage: true, cssClass: "btn btn-primary mr-2"
-            }
-          ] as ActionButton[]
-        },
-        {
-          label: "Result",
-          button: [
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_RESULTS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_RESULTS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
-              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Request Changes", withMessage: true, cssClass: "btn btn-primary mr-2"
-            }
-          ] as ActionButton[]
-        },
-        {
-          label: "Analysis",
-          button: [
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ANALYSIS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Accept", withMessage: false, cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.currentUser?.projectState !== 'ACCEPTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REJECT_PROJECT_ANALYSIS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Block", withMessage: true, cssClass: "btn btn-danger btn-secondary mr-2",
-              visibilityCondition: this.currentUser?.projectState !== 'REJECTED'
-            },
-            {
-              module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Request Changes", withMessage: true, cssClass: "btn btn-primary mr-2"
-            }
-          ] as ActionButton[]
-        },
-        {
-          label: "Research Environment",
-          button: [
-            {
-              module: Module.USER_MODULE, action: Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Go", withMessage: false, cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.researchEnvironmentUrl !== undefined && this.existsResearchEnvironmentWorkspace,
-              doActionOnClick: this.goToReseachEnvironment as () => void
-            }
-          ] as ActionButton[]
-        },
-        {
-          label: "Teiler",
-          button: [
-            {
-              module: Module.EXPORT_MODULE, action: Action.SAVE_QUERY_IN_BRIDGEHEAD_ACTION,
-              refreshContextCallFunction: this.refreshBridgeheadsAndContext as () => void,
-              text: (this.activeBridgehead?.queryState === 'FINISHED') ? "Resend Query" : "Send Query", withMessage: false, cssClass: "btn btn-primary mr-2",
-              visibilityCondition: this.canShowBridgeheadAdminButtons
-            },
-            {
-              module: Module.EXPORT_MODULE, action: Action.SEND_EXPORT_FILES_TO_RESEARCH_ENVIRONMENT_ACTION,
-              refreshContextCallFunction: this.refreshContext as () => void,
-              text: "Resend Export Files to Research Environment", withMessage: false, cssClass: "btn btn-primary mr-2"
-            }
-          ] as ActionButton[]
-        },
-      ] as ActionButtonGroup[]
+        ...invitedUserGroups.flatMap(groups => groups.reviewGroups),
+        ...bridgeheadNextStepGroups,
+        ...invitedUserGroups.flatMap(groups => groups.environmentGroups)
+      ] as ActionButtonGroup[];
+    },
+
+    // The bridgeheads where the user is an invited user: developer, pilot or final.
+    fetchInvitedUserBridgeheads(): Bridgehead[] {
+      return this.fetchBridgeheadsWithBridgeheadRoles().filter(bridgehead =>
+          [ProjectRole.DEVELOPER, ProjectRole.PILOT, ProjectRole.FINAL]
+              .some(role => this.bridgeheadRoles.get(bridgehead.bridgehead)?.has(role)));
+    },
+
+    // The invited user's state and research environment at each of their bridgeheads, each asked with that bridgehead's
+    // permissions (one request per bridgehead).
+    async loadBridgeheadUserData(): Promise<void> {
+      const bridgeheads = this.fetchInvitedUserBridgeheads();
+      const answers = await Promise.all(bridgeheads.map(async (bridgehead): Promise<[string, BridgeheadUserData]> => {
+        const context = new ProjectManagerContext(this.projectCode, bridgehead);
+        const entry = (id: string, action: Action) =>
+            ({id, module: Module.USER_MODULE, action, params: new Map<string, unknown>(), context});
+        try {
+          const results = await this.projectManagerBackendService.fetchBatch([
+            entry('currentUser', Action.FETCH_CURRENT_USER_ACTION),
+            entry('url', Action.FETCH_RESEARCH_ENVIRONMENT_URL_ACTION),
+            entry('workspace', Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION),
+            {...entry('authenticationScript', Action.EXISTS_AUTHENTICATION_SCRIPT_ACTION), module: Module.TOKEN_MANAGER_MODULE}
+          ], context);
+          return [bridgehead.bridgehead, {
+            currentUser: results.get('currentUser')?.response as User | undefined,
+            researchEnvironmentUrl: results.get('url')?.response as string | undefined,
+            existsResearchEnvironmentWorkspace: results.get('workspace')?.response === true,
+            existsAuthenticationScript: results.get('authenticationScript')?.response === true
+          }];
+        } catch (error) {
+          console.error(`Error loading the user's data at ${bridgehead.bridgehead}:`, error);
+          return [bridgehead.bridgehead, {existsResearchEnvironmentWorkspace: false}];
+        }
+      }));
+      this.bridgeheadUserData = new Map(answers);
+      this.extendedExplanations = this.fetchExtendedExplanations();
+    },
+
+    // An invited user's reviews (script, analysis, results) and research environment at one bridgehead. Named with the
+    // bridgehead when the user has bridgehead roles at several bridgeheads.
+    fetchInvitedUserGroups(bridgehead: Bridgehead):
+        { reviewGroups: ActionButtonGroup[], environmentGroups: ActionButtonGroup[] } {
+      const data = this.bridgeheadUserData.get(bridgehead.bridgehead);
+      const state = data?.currentUser?.projectState;
+      const named = (label: string) => this.fetchBridgeheadsWithBridgeheadRoles().length > 1
+          ? `${label} (${bridgehead.humanReadable ?? bridgehead.bridgehead})` : label;
+      const button = (action: Action, text: string, cssClass: string, more: Partial<ActionButton> = {}): ActionButton => ({
+        module: Module.PROJECT_STATE_MODULE, action,
+        refreshContextCallFunction: this.refreshContext as () => void,
+        text, withMessage: false, cssClass, bridgehead, ...more
+      });
+      const review = (label: string, description: string, accept: Action, acceptText: string, changes: Action,
+                      changesText: string, reject: Action, rejectText: string): ActionButtonGroup => ({
+        label: named(label),
+        description,
+        button: [
+          button(accept, acceptText, "btn btn-primary", {visibilityCondition: state !== UserProjectState.ACCEPTED}),
+          button(changes, changesText, "btn btn-outline-primary", {messageRequired: true, withMessage: true}),
+          button(reject, rejectText, "btn btn-outline-danger",
+              {messageRequired: true, withMessage: true, visibilityCondition: state !== UserProjectState.REJECTED})
+        ]
+      });
+      const url = data?.researchEnvironmentUrl;
+      return {
+        reviewGroups: [
+          review("Review the script", "Check the script: accept it, request changes, or reject it.",
+              Action.ACCEPT_SCRIPT_ACTION, "Accept script", Action.REQUEST_SCRIPT_CHANGES_ACTION,
+              "Request script changes", Action.REJECT_SCRIPT_ACTION, "Reject script"),
+          review("Review the analysis", "Check the analysis: accept it, request changes, or reject it.",
+              Action.ACCEPT_PROJECT_ANALYSIS_ACTION, "Accept analysis", Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
+              "Request changes to analysis", Action.REJECT_PROJECT_ANALYSIS_ACTION, "Reject analysis"),
+          review("Review the results", "Check the results: accept them, request changes, or reject them.",
+              Action.ACCEPT_PROJECT_RESULTS_ACTION, "Accept results", Action.REQUEST_CHANGES_IN_PROJECT_ACTION,
+              "Request changes to results", Action.REJECT_PROJECT_RESULTS_ACTION, "Reject results")
+        ],
+        environmentGroups: [{
+          label: named("Research environment"),
+          description: "Your workspace in the research environment is ready.",
+          button: [{
+            module: Module.USER_MODULE,
+            action: Action.EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION,
+            refreshContextCallFunction: this.refreshContext as () => void,
+            text: "Open research environment ↗",
+            withMessage: false,
+            cssClass: "btn btn-outline-primary",
+            visibilityCondition: url !== undefined && data?.existsResearchEnvironmentWorkspace === true,
+            doActionOnClick: () => window.open(url, '_blank'),
+            bridgehead
+          }]
+        }]
+      };
+    },
+
+    // The context of the project and a bridgehead; without a bridgehead, the page's. The page's service checks every
+    // call against the actions of the call's bridgehead.
+    createContext(bridgehead?: Bridgehead): ProjectManagerContext {
+      return bridgehead ? new ProjectManagerContext(this.projectCode, bridgehead) : this.context;
+    },
+    buttonContext(button: ActionButton): ProjectManagerContext {
+      return this.createContext(button.bridgehead);
+    },
+
+    // The project has one script; a bridgehead is only sent so that the backend knows the user's role. The project
+    // manager admin needs none; anyone else uses a bridgehead where they have one of the allowed roles.
+    fetchScriptBridgehead(allowedRoles: ProjectRole[]): Bridgehead | undefined {
+      if (this.projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)) return undefined;
+      return this.fetchBridgeheadsWithBridgeheadRoles()
+          .find(bridgehead => allowedRoles.some(role => this.bridgeheadRoles.get(bridgehead.bridgehead)?.has(role)));
+    },
+
+    fetchScriptUploadBridgehead(): Bridgehead | undefined {
+      return this.fetchScriptBridgehead(SCRIPT_UPLOAD_ROLES);
+    },
+    fetchScriptViewBridgehead(): Bridgehead | undefined {
+      return this.fetchScriptBridgehead(SCRIPT_ROLES);
+    },
+
+    // The bridgeheads with an authentication script for the user (DataSHIELD; invited users only).
+    fetchAuthenticationScriptBridgeheads(): Bridgehead[] {
+      return this.fetchInvitedUserBridgeheads()
+          .filter(bridgehead => this.bridgeheadUserData.get(bridgehead.bridgehead)?.existsAuthenticationScript);
+    },
+
+    async isButtonVisible(button: ActionButton): Promise<boolean> {
+      return (button.visibilityCondition ?? true) &&
+          await this.projectManagerBackendService.isModuleActionActive(button.module, button.action, this.buttonContext(button));
+    },
+
+    async isAnyButtonOfGroupVisible(buttonGroup: ActionButtonGroup): Promise<boolean> {
+      return (await Promise.all(buttonGroup.button.map(button => this.isButtonVisible(button)))).includes(true);
     },
 
     async checkButtonVisibility() {
-      let flagChanged = false;  // Track if the flag changes
-      await Promise.all(
-          this.actionButtons.map(async (buttonGroup, index) => {
-            const statusArray = await Promise.all(
-                buttonGroup.button.map(async (button) => {
-                  const visibility1 = button.visibilityCondition !== undefined ? button.visibilityCondition : true;
-                  const visibility2 = await this.projectManagerBackendService.isModuleActionActive(button.module, button.action);
-                  // Check if a button is visible and the flag hasn't been set to true yet
-                  if (visibility1 && visibility2 && !this.isAnyButtonVisible) {
-                    this.isAnyButtonVisible = true; // Set flag to true immediately if a visible button is found
-                    flagChanged = true;  // Mark the flag as changed
-                  }
-                  return visibility1 && visibility2;
-                })
-            );
-            // Update the visibility for the button group
-            this.buttonGroups[index] = statusArray.includes(true);
-          })
+      // Recomputed on every check: after an action the last visible button of a card or bar can disappear,
+      // and the empty card or bar has to go with it.
+      const [nextStepGroups, moreActions, canInvite] = await Promise.all([
+        Promise.all(this.nextStepGroups.map(group => this.isAnyButtonOfGroupVisible(group))),
+        Promise.all(this.moreActionButtons.map(button => this.isButtonVisible(button))),
+        this.canInviteAtAnyBridgehead(),
+      ]);
+      this.nextStepGroupsVisible = nextStepGroups;
+      this.anyMoreActionVisible = moreActions.includes(true);
+      this.canInviteUsers = canInvite;
+    },
+
+    // Invitations are per bridgehead: whether the user may invite at any visible bridgehead.
+    async canInviteAtAnyBridgehead(): Promise<boolean> {
+      return (await Promise.all(this.visibleBridgeheads.map(bridgehead => this.projectManagerBackendService
+          .isModuleActionActive(Module.USER_MODULE, this.fetchInviteAction(), this.createContext(bridgehead)))))
+          .includes(true);
+    },
+
+    openInviteDialog() {
+      (this.$refs.userInput as InstanceType<typeof UserInput> | undefined)?.openInviteDialog();
+    },
+
+    // The invitation's action depends on the phase (as in UserInput).
+    fetchInviteAction(): Action {
+      if (this.project?.state === ProjectState.PILOT) return Action.SET_PILOT_USER_ACTION;
+      if (this.project?.state === ProjectState.FINAL) return Action.SET_FINAL_USER_ACTION;
+      return Action.SET_DEVELOPER_USER_ACTION;
+    },
+
+    // The deployment's explanation of the group's first action that has one (as the TODO panel showed it),
+    // otherwise the group's own description.
+    nextStepDescription(group: ActionButtonGroup): string {
+      // Only a shown button: a hidden one (e.g. "Start final phase" while the local approval comes first) is not
+      // what the user is asked to do
+      const explained = group.button.find(button => button.visibilityCondition !== false
+          && this.explanations?.get(button.action)?.message);
+      return explained ? this.explanations.get(explained.action)!.message : (group.description ?? '');
+    },
+
+    getMenuSteps(): ProjectViewMenuStep[] {
+      // Before the project has loaded, its state is unknown - treat it the
+      // same as DRAFT (fewest tabs) rather than defaulting to non-draft, so
+      // the Status tab doesn't briefly appear for a project that turns out
+      // to be a draft.
+      const isNonDraft = !!this.project && this.project.state !== ProjectState.DRAFT;
+      const steps: ProjectViewMenuStep[] = isNonDraft
+          ? [ProjectViewMenuStep.STATUS, ProjectViewMenuStep.REQUEST]
+          : [ProjectViewMenuStep.REQUEST];
+      if (this.isScriptTabAvailable) {
+        steps.splice(
+            steps.indexOf(ProjectViewMenuStep.REQUEST) + 1,
+            0,
+            ProjectViewMenuStep.SCRIPT
+        );
+      }
+      if (isNonDraft && this.isDocumentsTabAvailable) {
+        steps.push(ProjectViewMenuStep.DOCUMENTS);
+      }
+      if (isNonDraft && this.isProjectManagerAdmin()) {
+        steps.push(ProjectViewMenuStep.NOTIFICATIONS);
+      }
+      return steps;
+    },
+
+    getDialogStep(stepId: string): DialogStep | undefined {
+      const step = this.draftDialogStepper.fetchStep(stepId)
+      return step ? step : {
+        id: "",
+        displayName: stepId.charAt(0).toUpperCase() + stepId.slice(1),
+        description: ""
+      }
+    },
+
+    toggleBlock(block: Block | undefined): void {
+      const bool = this.blockCollapse.get((block?.label+'#'+block?.instance))
+      this.blockCollapse.set((block?.label+'#'+block?.instance),!bool)
+    },
+
+    isBlockCollapsed(block: Block | undefined): boolean {
+      if (block && !this.blockCollapse.has(block?.label+'#'+block?.instance)) {
+        this.blockCollapse.set((block?.label+'#'+block?.instance),false)
+      }
+      return <boolean>this.blockCollapse.get((block?.label + '#' + block?.instance))
+    },
+
+    getBlockNumber(blockLabel: string | undefined, instance: number | undefined): number {
+      let counter: number = 0;
+      let key, value;
+      for ([key, value] of this.blockCollapse) {
+        if (key.split('#')[0] === blockLabel) {
+          counter++;
+          if (parseInt(key.split('#')[1]) === instance) {
+            return counter
+          }
+        }
+      }
+      return 1
+    },
+    hasMinimumInstances(blockLabel: string | undefined, minInstances: number | undefined): boolean {
+      let counter: number = 0;
+      let key, value;
+      for ([key, value] of this.blockCollapse) {
+        if (key.split('#')[0] === blockLabel) {
+          counter++;
+        }
+      }
+      return minInstances ? counter <= minInstances : false
+    },
+
+    isCurrentStep(step: string): boolean {
+      return this.draftDialogStepper.currentStep?.id === step
+    },
+
+    isSummaryReview(): boolean {
+      return this.existsDraftDialog && this.isCurrentStep(FixedDialogStep.SUMMARY);
+    },
+
+    getCategorySortValue(category: string): number {
+      const normalizedCategory = category.toLowerCase();
+      const configuredIndex = this.formTitleCanonicalOrder.findIndex(
+          formTitle => formTitle.title.toLowerCase() === normalizedCategory
       );
 
-      // If the flag changed, trigger watcher by updating the property
-      if (flagChanged) {
-        // You can put any additional logic to notify the watcher if necessary here
+      if (configuredIndex !== -1) return configuredIndex;
+
+      if (this.formTitleCanonicalOrder.length > 0) {
+        // Categories omitted from configuration follow configured categories in
+        // their existing encounter order. Array.prototype.sort is stable.
+        return this.formTitleCanonicalOrder.length + 1000;
       }
+
+      const fallbackOrder = [
+        FixedDialogStep.QUERY,
+        FixedDialogStep.SERVICES,
+        FixedDialogStep.PROJECT,
+        FixedDialogStep.CUSTOM,
+        FixedDialogStep.SUMMARY,
+      ];
+      const fallbackIndex = fallbackOrder.findIndex(step => step === normalizedCategory);
+
+      return fallbackIndex !== -1 ? fallbackIndex : fallbackOrder.length + 1000;
+    },
+
+    hasSection(section:Section | undefined): boolean {
+      const groups = section?.fetchGroups();
+      return !!(groups && groups.length > 0);
     }
-
-
   }
 
 });
@@ -1184,176 +3849,677 @@ export default defineComponent({
 <style scoped>
 
 .box-header {
-  padding: 12px 0 12px 2%;
-  background-color: #95c8dc;
-  color: black;
-  font-size: large;
-  font-weight: bold;
-  border-top: 1px solid #95c8dc;
+  padding: 17px 28px;;
+  background-color: #2655a2;
+  color: white;
+  font-size: 19px;
+  font-weight: 600;
+  /*border-top: 1px solid #95c8dc;
   border-left: 1px solid #95c8dc;
-  border-right: 1px solid #95c8dc;
-  border-radius: 10px 10px 0 0;
-}
-.stepper {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  align-items: center;
+  border-right: 1px solid #95c8dc;*/
+  /*background-image: linear-gradient(to right, #e1edf5, #bed7e9);*/
+  border-radius: 6px 6px 0 0;
 }
 
-.stepper-item {
-  flex: 1;
-  text-align: center;
-  padding: 10px;
-  border-bottom: 2px solid #ddd;
-}
-
-.stepper-item.active {
-  font-weight: bold;
-  color: #333;
-}
 
 .info-container {
   display: flex;
   flex-direction: column;
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
-  margin-bottom: 1.5%;
+  margin-bottom: var(--space-4);
 }
+
+/*
+ * "At a Glance" + "Status" panels (2026-09-22): see
+ * project-manager-ui/plans/2026-09-21-plan-unify-table-design.md, Step 3.
+ * Each is its own rounded/shadowed panel-card (deliberately not Bootstrap's
+ * .card, which the bridgehead-info card above already uses with its own
+ * defaults) with a dark-blue header matching .box-header's #2655a2.
+ */
+.panel-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(31, 42, 55, .08);
+  overflow: hidden;
+}
+.at-a-glance-card {
+  margin-bottom: var(--space-4);
+}
+/* Actions and Results below At a Glance / Status: same card look and the
+ * same gap between cards. Not .panel-card itself: its overflow:hidden would
+ * clip the user autocomplete inside Actions. */
+.status-panel {
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(31, 42, 55, .08);
+}
+.project-people.status-panel,
+.documents.status-panel {
+  margin-bottom: var(--space-4);
+}
+.status-panel > .panel-header {
+  border-radius: 10px 10px 0 0;
+}
+.next-step-card {
+  margin-bottom: var(--space-4);
+}
+.next-step-body {
+  padding: 16px 22px;
+}
+.next-step-item + .next-step-item {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid #d7e2ed;
+}
+.next-step-title {
+  font-weight: 600;
+  color: #00489cf2;
+  margin-bottom: var(--space-1);
+}
+.next-step-text {
+  margin: 0 0 var(--space-3);
+  font-size: 14px;
+}
+.next-step-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.next-step-note .next-step-text {
+  margin: 2px 0 0;
+}
+.next-step-idle {
+  margin: 0;
+  color: #5b6b7c;
+}
+.next-step-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.next-step-buttons :deep(.pm-button) {
+  margin-right: 0;
+}
+.panel-header-with-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+.panel-header-with-actions :deep(.more-actions-toggle) {
+  line-height: 1.3;
+}
+.panel-card .panel-header,
+.status-panel > .panel-header {
+  /* Same height and title size as .box-header (Request, Documents, the
+   * dashboard); the side inset stays with the cards' 22px content inset. */
+  padding: 17px 22px;
+  background: #2655a2;
+  color: #fff;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+/* One row on wide cards; on narrower ones the cells wrap onto more rows
+ * (at least 150px each) instead of scrolling, so every value stays visible.
+ * Each cell draws its separator lines to the right and below as a 1px shadow;
+ * the ones on the card's outer edge fall outside it and are clipped by the
+ * card (.panel-card overflow: hidden). */
+.at-a-glance-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.glance-cell {
+  min-width: 0;
+  padding: 16px 22px;
+  box-shadow: 1px 0 0 0 #d7e2ed, 0 1px 0 0 #d7e2ed;
+}
+.glance-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #5b6b7c;
+  margin-bottom: 4px;
+}
+.glance-value {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.glance-value.muted {
+  color: #5b6b7c;
+}
+/* IDs and dates read as one unit: never "2026-09-24" / "16:06" on two lines. */
+.glance-value.nowrap {
+  white-space: nowrap;
+}
+.glance-title {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #1f2a37;
+  text-decoration: none;
+}
+.glance-title:hover {
+  color: #2655a2;
+  text-decoration: underline;
+}
+
+/* Status pipeline: sequential milestones (done -> next -> future), not
+   independent facts - a flat grid loses that sense of order/progress. */
+.pipeline-row {
+  display: flex;
+  align-items: center;
+  padding: 22px 20px;
+  gap: 6px;
+}
+.pipeline {
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+.pipeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 84px;
+  position: relative;
+}
+.pipeline-line {
+  position: absolute;
+  top: 13px;
+  left: -50%;
+  width: 100%;
+  height: 2px;
+  background: #e3e6ea;
+  z-index: 0;
+}
+.pipeline-line.done {
+  background: #3f8f45;
+}
+.pipeline-node {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  box-sizing: border-box;
+}
+.pipeline-node.done {
+  background: #3f8f45;
+}
+.pipeline-node.failed {
+  background: #c0504d;
+}
+.pipeline-node.warning {
+  background: #e0ab18;
+}
+.pipeline-node.not_required {
+  background: #7a8699;
+}
+.pipeline-node.next {
+  background: #fff;
+  border: 2px solid #2655a2;
+  box-shadow: 0 0 0 4px #e9eef8;
+}
+.pipeline-node.future {
+  background: #e3e6ea;
+}
+.pipeline-node-cluster {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  z-index: 1;
+}
+.pipeline-node-mini {
+  width: 10px;
+  height: 10px;
+}
+.pipeline-node-mini.grey {
+  background: #e3e6ea;
+}
+.pipeline-next-chip {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #2655a2;
+  background: #dce9f4;
+  padding: 1px 7px;
+  border-radius: 999px;
+  margin-bottom: 5px;
+}
+.pipeline-label {
+  margin-top: 9px;
+  font-size: 10.5px;
+  text-align: center;
+  color: #5b6b7c;
+  line-height: 1.35;
+  max-width: 92px;
+}
+.pipeline-step.next .pipeline-label {
+  color: #2655a2;
+  font-weight: 700;
+}
+.pipeline-arrow {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid #d7e2ed;
+  background: #fff;
+  color: #5b6b7c;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.pipeline-arrow:hover:not(:disabled) {
+  border-color: #2655a2;
+  color: #2655a2;
+}
+.pipeline-arrow:disabled {
+  opacity: .4;
+  cursor: default;
+}
+.pipeline-step :deep(.pipeline-download-button) {
+  margin-top: 4px;
+  padding: 0 !important;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  color: #5b6b7c !important;
+}
+.pipeline-step :deep(.pipeline-download-button:hover) {
+  color: #2655a2 !important;
+}
+
 .data-container {
   display: flex;
   flex-direction: column;
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  background-color: transparent;
   height: 100%;
-  margin-bottom: 1.5%;
+  padding: 0;
 }
-.project-actions {
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
-  margin-bottom: 1.5%;
+
+.data-container.non-draft {
+  padding: 0;
 }
+
+.data-container.documents {
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+  height: auto;
+}
+.vertical-stepper-box {
+  width: 208px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+
 .documents {
   background-color: white;
-  border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
-  margin-bottom: 1.5%;
+  /*border-radius: 10px;
+  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);*/
+  margin-bottom: var(--space-5);
 }
+
+.main-menu {
+  width: 100%;
+  background-color: rgba(0, 72, 156, .95);
+  display: flex;
+  /* In a narrow window the tabs continue on a second line instead of making
+     the page scroll sideways. */
+  flex-wrap: wrap;
+  /* Tabs start at the content column's left edge, as on the dashboard. */
+  padding-left: calc((100% - var(--content-width)) / 2);
+}
+
+.menu-item {
+  padding: 1.2rem 2rem;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Back to the dashboard: a way out, not a section of this request, so it is
+ * lighter than the tabs and set off from them. */
+.menu-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: normal;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.25);
+  margin: 0.6rem 0.5rem 0.6rem 0;
+  padding: 0.6rem 1.5rem 0.6rem 2rem;
+}
+.menu-back:hover {
+  color: #fff;
+}
+
+.menu-item.active {
+  background-color: rgb(0, 56, 124);
+}
+
+/* Unread notifications on the Notifications tab */
+.menu-count {
+  display: inline-block;
+  min-width: 20px;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: #fff;
+  color: #2655a2;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .main-container {
   display: flex;
   flex-flow: row;
+  position: relative;
   width: 100%;
+  min-height: 88vh;
 }
 
+/* PM-Admin phase stepper: beside the content column, as wide as its labels
+ * ("CENTRAL_APPROVAL", "FINISHED"), so it sits a fixed gap from the cards instead of
+ * drifting off into the margin. */
 .left-container {
   display: flex;
   flex-flow: column;
-  width: 14%;
-  min-height: 800px;
-  margin-top: 1.5%;
-  margin-left: 1.5%;
-  margin-bottom: 5%;
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  position: absolute;
+  right: calc(100% + var(--space-4));
+  top: 0;
+  width: max-content;
+  padding-top: 2px;
+}
+/* The content column keeps the same size and position across every project
+ * tab. The optional status stepper is positioned beside it, never within it. */
+.admin-view > .data-container {
+  flex: 0 0 100%;
+  width: 100%;
 }
 
 .right-container {
-  flex: 3;
+  flex: 0 0 var(--content-width);
   display: flex;
   flex-flow: row;
-  margin: 1.5% 1.5% 4% 1.5%;
+  margin: 28px auto 0;
+  width: var(--content-width);
+  max-width: var(--content-width);
+  /*align-self: flex-start;*/
+}
+
+/* Draft dialog: the step list sits in the left margin of the content column.
+ * When the window is too narrow for that margin to hold it, the column moves
+ * right just enough (and the tabs with it) instead of staying centred with
+ * the step list cut off. It keeps its width while that fits and otherwise
+ * ends one gap before the window's right edge. */
+.with-draft-stepper {
+  --draft-stepper-width: 208px;
+  --draft-stepper-space: calc(var(--draft-stepper-width) + 2 * var(--space-4));
+  --draft-column-left: max((100% - var(--content-width)) / 2, var(--draft-stepper-space));
+}
+.main-menu.with-draft-stepper {
+  padding-left: var(--draft-column-left);
+}
+.right-container.with-draft-stepper {
+  --draft-column-width: min(var(--content-width), 100% - var(--draft-stepper-space) - var(--space-4));
+  flex-basis: var(--draft-column-width);
+  width: var(--draft-column-width);
+  max-width: var(--draft-column-width);
+  margin-left: var(--draft-column-left);
+}
+.with-draft-stepper .vertical-stepper-box {
+  width: var(--draft-stepper-width);
+}
+/* Small windows: the step list shrinks to its circles (the name is the
+ * circle's tooltip and the card's header), and the form takes the rest. */
+@media (max-width: 760px) {
+  .with-draft-stepper {
+    --draft-stepper-width: 42px;
+    --draft-column-left: var(--draft-stepper-space);
+  }
+  .right-container.with-draft-stepper {
+    --draft-column-width: calc(100% - var(--draft-stepper-space) - var(--space-4));
+  }
+  .with-draft-stepper .vertical-stepper-box .stepper-step-textbox {
+    display: none;
+  }
 }
 
 .main-content {
-  display:flex;
+  display: flex;
   flex-flow: column;
   width: 100%;
+}
+
+/* Draft form layout */
+.draft-layout-row {
+  display: flex;
+  flex-flow: row;
+  position: relative;
+  width: 100%;
+  padding: 0 0 20px;
+  align-items: flex-start;
+}
+
+.draft-form-card {
+  flex: 0 0 100%;
+  width: 100%;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  min-height: 580px;
+  overflow: hidden;
+  height:100%;
+}
+
+/* The draft stepper is a navigation aid, not part of the form column. Keeping
+ * it outside the flex flow gives the Draft stage the same fixed content area
+ * as Status, Documents, and the regular Request view. */
+.draft-layout-row > .vertical-stepper-box {
+  position: absolute;
+  right: calc(100% + var(--space-4));
+  top: 0;
+}
+
+.draft-dialog-content {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 260px);
+  /* With the first/last element's own half gap: one field gap to the card edge. */
+  padding: calc(var(--field-gap) / 2) 0;
+}
+/* SUMMARY_SPACING = compact: the summary rhythm is half the draft's. Set on the card, not on the content below: the
+ * content redefines --field-gap with --field-gap-summary, which would refer to itself on the same element. */
+.draft-form-card.summary-compact {
+  --field-gap-summary: calc(var(--field-gap) * 0.5);
+}
+/* Summary step and request view: every gap in the form (fields, headers,
+ * sections, blocks, info boxes) switches to the summary rhythm. */
+.draft-dialog-content.summary-layout {
+  --field-gap: var(--field-gap-summary);
+}
+/* "Edit Fields" in the request view: inputs to fill in, so the draft rhythm,
+ * although titles stay beside their inputs. */
+.draft-dialog-content.edit-layout {
+  --field-gap-summary: var(--field-gap);
 }
 
 .button-container-right button {
   margin-bottom: 8px;
 }
 
-.table-responsive {
-  overflow-x: auto;
-  padding: 2%;
-}
-
-.custom-table td.bold-text {
-  font-weight: bold;
-}
-
-.thinner-column {
-  width: 30%; /* Adjust the width as needed */
-}
-
-.wider-column {
-  width: 70%; /* Adjust the width as needed */
+.admin-view {
+  display: flex;
+  flex-flow: row;
+  background-color: transparent;
+  position: relative;
+  width: 100%;
 }
 
 .vertical-stepper {
-  margin: 20% 0 0 28%;
+  /* A fixed distance from the first card's top edge (a % top margin follows
+   * the window width, not the cards). */
+  margin: var(--space-3) 0 0 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
+.vertical-stepper2 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-top: 8px;
+}
+
 .stepper-line {
   width: 2px;
-  height: 30px;
+  height: 50px;
   background-color: #9e9e9e;
   margin-left: 14px;
   margin-top: 10px;
   align-items: flex-start;
 }
 
+.stepper-line2 {
+  width: 2px;
+  height: 28px;
+  background-color: #cbd5e1;
+  margin: 3px 0;
+}
+
+/* noinspection CssUnusedSymbol */
+.stepper-line2--done {
+  background-color: #2655a2;
+}
+
 .stepper-step {
   display: flex;
-  align-items: center;
   margin-bottom: 10px;
   flex-flow: column;
   align-content: flex-start;
   align-items: flex-start;
 }
 
+.stepper-step2 {
+  display: flex;
+  flex-flow: row;
+  gap: 11px;
+  cursor: pointer;
+  padding: 8px 6px;
+  border-radius: 6px;
+  margin-bottom: 0;
+}
+
+.stepper-step2:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.stepper-step-textbox {
+  min-width: 0;
+}
+
+.stepper-step-header {
+  /* noinspection CssNonIntegerLengthInPixels */
+  font-size: 13.5px;
+  font-weight: 400;
+  color: #64748b;
+  line-height: 1.3;
+}
+
+.stepper-step2.active .stepper-step-header {
+  font-weight: 600;
+  color: #e05c2a;
+}
+
+.stepper-step-desc {
+  /* noinspection CssNonIntegerLengthInPixels */
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.stepper-step2.active .stepper-step-desc {
+  color: #c04a1a;
+}
+
+/* Step circles */
 .step-circle {
   width: 30px;
   height: 30px;
-  background-color: #9e9e9e;
-  color: #fff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background-color: #d1d5db;
+}
+
+/* noinspection CssUnusedSymbol */
+.step-circle--done {
+  background-color: #2655a2;
+}
+
+/* noinspection CssUnusedSymbol */
+.step-circle--active {
+  background-color: #e05c2a;
+}
+
+/* noinspection CssUnusedSymbol */
+.step-circle--future {
+  background-color: #d1d5db;
 }
 
 .step-circle span {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .step-title {
   font-size: 16px;
-  padding-top: 2px;
+  padding-top: 3px;
+  margin-left: 5px;
+  color: #00489c;
 }
+
 .active-step {
   font-weight: bold;
 }
+
 .active-step .step-circle {
-  background-color: #007bff;
+  background-color: #e05c2a;
 }
-.notification-box {
-  padding: 2%;
-  font-family: "Calibri Light";
-}
+
+
 .todo-circle {
   min-width: 32px;
   height: 32px;
-  background-color:gold;
+  background-color: gold;
   color: #000;
   border: 1px solid black;
   border-radius: 50%;
@@ -1364,10 +4530,11 @@ export default defineComponent({
   font-size: 12pt;
   font-weight: bold;
 }
+
 .todo-circle-small {
   min-width: 22px;
   height: 22px;
-  background-color:gold;
+  background-color: gold;
   color: #000;
   border: 1px solid black;
   border-radius: 50%;
@@ -1378,131 +4545,479 @@ export default defineComponent({
   font-weight: bold;
   font-size: 9pt;
 }
-.custom-width-notifications {
-  width: 22%;
-  background-color: white;
-  color: black;
-  order: 2;
-  position: relative;
-  z-index: 1;
-  overflow-y: auto;
-  transition: transform 0.3s ease-in-out;
-  border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
-  margin-top: 1.5%;
-  margin-bottom: 5%;
-  margin-right: 0.5%;
-}
-.open-right-panel {
-  margin-top: 1.5%;
-}
 
-.custom-width-notifications h2 {
-  margin-bottom: 15px;
-}
+
+
 
 .card {
   border-radius: 10px;
   background-color: rgba(149, 200, 220, 0.1);
 }
+
 .button-container {
   display: flex;
-  justify-content: flex-end;
-  text-align: center;
-}
-.inviteUser {
-  padding: 2%;
-  display: flex;
-}
-.status-table-header {
-  background-color: #f2f2f2;
-  vertical-align: middle;
-}
-.explanation-box {
-  border: 1px solid red;
-  padding: 10px;
-  border-radius: 5px;
-  background-color: #ffe6e6; /* Light red background */
-  max-width: 100%; /* Adjust width as needed */
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
+  flex-shrink: 0;
 }
 
-.explanation-line {
-  color: red;
-  font-weight: bold;
-  margin: 5px 0;
-}
-.button-group-box {
-  border: 1px solid lightgrey;
-  border-radius: 5px;
-  padding: 0 0 18px 18px;
-  width: fit-content;
-  display: inline-block;
-  margin-right: 2%;
-  margin-top: 1%;
-}
-.button-group-label {
-  border: 1px solid lightgrey;
-  border-radius: 5px;
-  width: fit-content;
-  padding: 4px 10px;
-  position: relative;
-  top: -18px;
-  background-color: #95c8dc;
-  font-weight: bold;
-  margin-right: 15px;
+.button-nav-right {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
 }
-.explanation-button {
-  background-color: #007bff;
+
+/* Zoomed in, the card gets narrow: keep the counter and every navigation
+ * button on one line instead of breaking their labels. */
+.step-counter,
+.button-container .btn,
+.button-container :deep(.btn) {
+  white-space: nowrap;
+}
+.step-counter {
+  font-size: 12px;
+  color: #94a3b8;
+  /* noinspection CssNonIntegerLengthInPixels */
+  letter-spacing: 0.4px;
+  user-select: none;
+  margin-right: 4px;
+}
+
+/* Delete Draft button */
+/* noinspection CssUnusedSymbol */
+:deep(.btn-delete-draft) {
+  background: transparent;
+  /* noinspection CssNonIntegerLengthInPixels */
+  border: 1.5px solid #dc2626;
+  color: #dc2626;
+  padding: 9px 18px;
+  border-radius: 5px;
+  /* noinspection CssNonIntegerLengthInPixels */
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+/* noinspection CssUnusedSymbol */
+:deep(.btn-delete-draft:hover) {
+  background: #fef2f2;
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+/* Back button */
+.btn-nav-back {
+  background: #fff;
+  /* noinspection CssNonIntegerLengthInPixels */
+  border: 1.5px solid #2655a2;
+  color: #2655a2;
+  padding: 9px 20px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-nav-back:hover:not(:disabled) {
+  background: #eff4ff;
+}
+
+.btn-nav-back:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Continue button */
+.btn-nav-continue {
+  background: #2655a2;
+  border: none;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(38, 85, 162, 0.28);
+}
+
+.btn-nav-continue:hover {
+  background: #1e4491;
+  box-shadow: 0 2px 6px rgba(38, 85, 162, 0.38);
   color: white;
-  width:auto;
-  font-size: x-large;
-  padding: 0 1px;
-  height: 22px;
 }
+
+/* Create Request button */
+/* noinspection CssUnusedSymbol */
+:deep(.btn-create-request) {
+  background: #16a34a;
+  border: none;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.3);
+}
+
+/* noinspection CssUnusedSymbol */
+:deep(.btn-create-request:hover:not(:disabled)) {
+  background: #15803d;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.4);
+}
+
+/* noinspection CssUnusedSymbol */
+:deep(.btn-create-request:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Content of a status/actions/results/documents panel below its box-header. */
+.panel-body {
+  padding: var(--space-5) var(--form-inset);
+}
+.panel-body + .panel-body {
+  padding-top: 0;
+}
+/* Tables and upload/download buttons stacked in one panel. */
+.panel-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+.panel-stack > * {
+  max-width: 100%;
+}
+/* The invite form and the users table, inset like the other cards' content */
+.people-body {
+  padding: 0 var(--form-inset) var(--space-4);
+}
+
+
 .explanation-button i {
   position: relative;
   top: -9px;
 }
-.explanation-button:hover {
-  background-color: black;
-  color:white;
+
+
+.project-field-header {
+  background-color: #2655a2;
+  padding: 17px var(--form-inset);
+  flex-shrink: 0;
 }
-.notification-button {
-  background: none;
-  border: none;
-  color: #007bff;
-  width: auto;
-  font-size: x-large;
-  padding: 0 0 0 15px;
+/* Category header: one and a half gaps above, half a gap to its first field,
+ * so a new step stands apart more than a new field does. */
+/* A step's title in the summary and the request view: a left-aligned heading
+ * on a tinted band across the card, instead of a centred title between two
+ * lines. Half a gap above and below; the neighbouring fields add their half. */
+.project-field-header-inline {
+  margin: calc(var(--field-gap) / 2) 0;
+  padding: var(--space-3) var(--form-inset);
+  background: #f1f5fb;
 }
-.table-overview td {
-  vertical-align: middle;
+.project-field-title {
+  font-size: 19px;
+  font-weight: 600;
+  color: #fff;
 }
-.copy-button {
-  background: none;
-  border: none;
-  color: black;
+.project-field-title-inline {
+  font-size: 18px;
+  font-weight: 600;
+  color: #00489cf2;
 }
-.state_circle {
-  margin: 10px auto;
+.project-field-notification {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.82);
+  margin-top: 4px;
 }
 
-.notification-tab {
-  padding: 5px 8% 5px 8%;
-  background-color: #e8f8fd;
-  margin: 0 2%;
-  border-radius: 5px 5px 0 0;
+.mandatory-legend {
+  font-size: 13px;
+  color: #5b6b7c;
+  padding: 0 var(--form-inset);
+  margin-bottom: var(--space-3);
+}
+
+.optional-note {
+  margin-left: 6px;
   font-weight: normal;
+  font-size: 0.85em;
+  color: #5b6b7c;
+}
+
+.project-feasibility-title.field-missing,
+.mandatory-legend.field-missing {
+  color: var(--status-danger-color);
+}
+
+.missing-fields, .missing-fields .stepper-step-header {
+  color: var(--status-danger-color);
+}
+
+.missing-fields .step-circle {
+  background-color: var(--status-danger-color) !important;
+}
+
+.form-switch {
+  background-color: white;
+  box-shadow: 0 0 25px 25px #FFF;
+}
+.form-switch input {
   cursor: pointer;
 }
-.notification-tab.active {
-  font-weight: bold;
-  background-color: white;
-}
-.states-circle-container {
-  display: flex;
-  justify-content: center;
+
+.form-switch label {
+  padding: 0 0.3rem;
+  cursor: pointer;
+  color: #00489c;
 }
 
+.form-switch-box {
+  display: flex;
+  justify-content: end;
+  margin: var(--space-4) var(--form-inset) 0;
+  position: sticky;
+  top: 1rem;
+  z-index:100;
+}
+
+.form-switch .form-check-input.inactive {
+  background-color: #EEEEEE;
+}
+
+.project-field-block {
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  margin: 0 var(--form-inset) calc(var(--field-gap) / 2);
+}
+
+.project-field-block-add-button {
+  margin: 0 var(--form-inset) calc(var(--field-gap) / 2);
+  display: block;
+  border: 1px dashed #00489cf2;
+  color: #00489cf2;
+}
+.project-field-block-add-button:hover {
+  background-color: #00489cf2;
+  color:white;
+}
+
+.clickable {
+  cursor: pointer;
+  color: rgb(51, 142, 195);
+}
+
+.clickable:hover {
+  text-decoration: underline;
+}
+/* Block group header: like a field header, its description leads straight
+ * into the block instances below. */
+.input-field-header {
+  padding: calc(var(--field-gap) / 2) var(--form-inset) var(--header-gap);
+}
+.project-field-block-title {
+  font-weight: bold;
+  color: #00489cf2;
+}
+.project-field-block-description {
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.project-field-block-instance-wrapper {
+  position: relative;
+}
+
+/* With the rows' own half gaps: the same distance to the block's top and
+ * bottom edge as to its sides. */
+.project-field-block .project-field-block-body {
+  padding: var(--space-2) 0;
+}
+
+.project-field-block-delete-button {
+  position: absolute;
+  top: 4px;
+  right: 0;
+}
+.project-field-block-header {
+  display: flex;
+  background-color: #d0d7de;
+  height:39px;
+  align-items: center;
+  cursor: pointer;
+}
+.project-field-block-header-chevron {
+  margin: 0 10px;
+  font-weight: bold;
+}
+.project-field-block-header > div {
+  font-weight: bold;
+}
+.project-field-grid {
+  /* A configured multi-field row is a single flex row. Individual property
+   * classes below determine each field's share of the available width. */
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  box-sizing: border-box;
+  width: 100%;
+}
+.project-field-grid > .css-enum {
+  /* Selector portion of an enum-plus-text pair. */
+  flex: 0 0 40%;
+  max-width: 40%;
+  min-width: 0;
+}
+.project-field-grid > .css-enum-value {
+  /* Free-text continuation portion of an enum-plus-text pair. */
+  flex: 0 0 60%;
+  max-width: 60%;
+  min-width: 0;
+}
+
+.project-feasibility {
+  padding: calc(var(--field-gap) / 2) var(--form-inset);
+}
+
+.project-feasibility-header {
+  margin-bottom: var(--header-gap);
+}
+
+.project-feasibility-title {
+  font-weight: bold;
+  color: #00489cf2;
+}
+
+.project-feasibility-description {
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+/* Regular section rows */
+.section-row {
+  color: white;
+  display:block;
+  width: 100%;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-row.level-1 {
+  border: none;
+}
+
+.section-row.level-1 td {
+  /*background-image: linear-gradient(to right, #eaf0f4, #aed0e6);*/
+  border-left: none;
+  border-right: none;
+}
+
+.section-row.empty-row td {
+  background-color: transparent; /* no color */
+  height: 0; /* smaller vertical space */
+  border-left: none;
+  border-right: none;
+  padding: 0; /* remove padding */
+}
+
+/* Section titles */
+.section-title {
+  font-weight: 600;
+  line-height: 1.4;
+  /* One and a half gaps above (with the previous field's half), half a gap
+   * below: the title belongs to the fields it introduces and stands apart
+   * more than a field does. */
+  margin: var(--field-gap) 2rem 0 var(--form-inset);
+  color: #00489c;
+  background: none;
+}
+
+/* Prefix arrows for levels */
+.section-title::before {
+  display: inline-block;
+  margin-right: 0.5rem;
+  opacity: 0.8;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-0::before {
+  content: "";
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-1::before {
+  content: "";
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-2::before {
+  content: "❯";
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-3::before {
+  content: "❯❯";
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-4::before {
+  content: "❯❯❯";
+}
+
+/* Font sizes & weights per level */
+/*noinspection CssUnusedSymbol*/
+.section-title.level-0 {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-1 {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-3 {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/*noinspection CssUnusedSymbol*/
+.section-title.level-4 {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Section description styling */
+.section-description {
+  font-size: 12px;
+  color: #212529;
+  margin-top: var(--space-1);
+  margin-left: calc(var(--form-inset) + 0.5rem);
+}
+
+.section-underline {
+  border: 0 solid;
+  border-bottom-width: 1px;
+  border-image-slice: 1;
+  border-image-source: linear-gradient(to right, #818078, transparent);
+}
 </style>

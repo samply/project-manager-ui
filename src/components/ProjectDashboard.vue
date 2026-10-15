@@ -1,167 +1,342 @@
 <template>
-  <div style="display: flex; min-height: 100vh;">
-    <div class="container custom-width-projects">
-      <div class="row box-header">
-        <div class="col-md-8">
-          <div>Requests</div>
-        </div>
-        <div class="col-md-4 text-end">
-          <button @click="toggleNotification" class="btn btn-dark notification-button"
-                  style="padding-right:2%; background:none; border:none; color:#007bff"><i style="font-size: x-large"
-              class="bi bi-chat-right-text-fill"></i></button>
-        </div>
+  <div class="main-menu">
+    <template v-if="canSeeNotifications">
+      <div class="menu-item" :class="{ active: currentTab === DashboardTab.REQUESTS }"
+           @click="currentTab = DashboardTab.REQUESTS">{{ DashboardTab.REQUESTS }}
       </div>
-
+      <div class="menu-item" :class="{ active: currentTab === DashboardTab.NOTIFICATIONS }"
+           @click="currentTab = DashboardTab.NOTIFICATIONS">{{ DashboardTab.NOTIFICATIONS }}
+        <span v-if="unreadNotificationsCount > 0" class="menu-count"
+              :aria-label="`${unreadNotificationsCount} unread`">{{ unreadNotificationsCount }}</span>
+      </div>
+    </template>
+  </div>
+  <div style="display: flex; min-height: 100vh;">
+    <div v-show="currentTab === DashboardTab.REQUESTS" class="container custom-width-projects">
+      <div class="box-header">
+        <span>Requests</span>
+        <button v-if="canCreateRequest" type="button" class="btn btn-outline-light create-request-button"
+                :disabled="isCreatingRequest" :aria-busy="isCreatingRequest" @click="createRequest">
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>
+          <span>{{ isCreatingRequest ? 'Creating…' : 'Create request' }}</span>
+        </button>
+      </div>
+      <div v-if="projectStates.length > 1 || applicants.length > 1 || bridgeheads.length > 1" class="filter-box">
+        <select v-if="projectStates.length > 1" v-model="selectedState" class="form-select" @change="changeState()">
+          <option value="">All Phases</option>
+          <option v-for="value in projectStates" :key="value" :value="value">{{ projectStateLabel(value) }}</option>
+        </select>
+        <select v-if="applicants.length > 1" v-model="selectedApplicant" class="form-select" @change="changeApplicant()">
+          <option value="">All Applicants</option>
+          <option v-for="applicant in applicants" :key="applicant.email" :value="applicant.email">
+            {{ applicantLabel(applicant) }}
+          </option>
+        </select>
+        <select v-if="bridgeheads.length > 1" v-model="selectedBridgehead" class="form-select" @change="changeBridgehead()">
+          <option value="">All Sites</option>
+          <option v-for="bridgehead in bridgeheads" :key="bridgehead.bridgehead" :value="bridgehead.bridgehead">
+            {{ bridgehead.humanReadable || bridgehead.bridgehead }}
+          </option>
+        </select>
+      </div>
       <div class="table-box">
-        <table class="table table-bordered table-striped table-hover">
+        <table class="pm-table requests-table">
           <thead>
           <tr>
-            <th scope="col">Data Request Number (DRN)</th>
-            <th scope="col">Title</th>
-            <th scope="col">Applicant</th>
-            <th scope="col">Created at</th>
-            <th scope="col" style="display: flex;justify-content: space-between;align-items: baseline">
-              <span>Phase</span><span class="filter">
-                <select v-model="selectedState" class="form-select" @change="changeState()">
-                  <option v-for="value in projectStates" :key="value" :value="value">{{ value }}</option>
-                </select>
-              </span>
+            <th scope="col" @click="toggleSort(ProjectSortField.TITLE)" :class="{ active: sortBy === ProjectSortField.TITLE }">
+              <span class="th-label">Title<svg v-if="sortBy === ProjectSortField.TITLE" class="sort-caret" :class="{ desc: sortDesc }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
             </th>
-            <th scope="col">Action</th>
+            <th scope="col" @click="toggleSort(ProjectSortField.REQUEST_ID)" :class="{ active: sortBy === ProjectSortField.REQUEST_ID }">
+              <span class="th-label">Request ID<svg v-if="sortBy === ProjectSortField.REQUEST_ID" class="sort-caret" :class="{ desc: sortDesc }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
+            </th>
+            <th scope="col" @click="toggleSort(ProjectSortField.PROJECT_CREATOR)" :class="{ active: sortBy === ProjectSortField.PROJECT_CREATOR }">
+              <span class="th-label">Applicant<svg v-if="sortBy === ProjectSortField.PROJECT_CREATOR" class="sort-caret" :class="{ desc: sortDesc }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
+            </th>
+            <th scope="col" @click="toggleSort(ProjectSortField.CREATED)" :class="{ active: sortBy === ProjectSortField.CREATED }">
+              <span class="th-label">Created on<svg v-if="sortBy === ProjectSortField.CREATED" class="sort-caret" :class="{ desc: sortDesc }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
+            </th>
+            <th scope="col" @click="toggleSort(ProjectSortField.STATUS)" :class="{ active: sortBy === ProjectSortField.STATUS }">
+              <span class="th-label">Phase<svg v-if="sortBy === ProjectSortField.STATUS" class="sort-caret" :class="{ desc: sortDesc }" viewBox="0 0 10 10" fill="currentColor"><path d="M5 1l4 5H1z"/></svg></span>
+            </th>
           </tr>
           </thead>
           <tbody>
           <tr v-for="(project, index) in projects" :key="index">
+            <td><router-link :to="{ name: 'ProjectView', query: { [ProjectViewQueryParameter.PROJECT_CODE]: project.code } }" class="label-link" :class="{ 'label-placeholder': project?.label?.length === 0 }">{{
+                (project?.label?.length ?? 0) > 0 ? project.label : "New Request"
+              }}</router-link></td>
             <td>{{ project.code }}</td>
-            <td>{{ project.label }}</td>
             <td>
               <UserAndEmail
                   :first-name="project?.creatorName"
                   :email="project?.creatorEmail"
               />
             </td>
-            <td>{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
-            <td>{{ project.state }}</td>
-            <td>
-              <router-link :to="{ name: 'ProjectView', query: { 'project-code': project.code } }">
-                <i class="bi bi-folder-fill"></i>
-              </router-link>
-            </td>
+            <td class="created-cell">{{ project && project.createdAt ? convertDate(project.createdAt) : '' }}</td>
+            <td><PhasePill :state="project.state" /></td>
           </tr>
           </tbody>
         </table>
         <div class="pager">
-          <button @click="firstPage" class="btn btn-primary">
-            <i class="bi bi-skip-start-fill" style="font-size: medium"></i>
+          <button @click="firstPage" class="pager-btn" aria-label="First page">
+            <i class="bi bi-skip-start-fill"></i>
           </button>
-          <button @click="previousPage" class="btn btn-primary" style="rotate: 180deg">
-            <i class="bi bi-play-fill" style="font-size: medium"></i>
+          <button @click="previousPage" class="pager-btn" style="rotate: 180deg" aria-label="Previous page">
+            <i class="bi bi-play-fill"></i>
           </button>
-          <span>{{currentPage}} / {{totalPages}}</span>
-          <button @click="nextPage" class="btn btn-primary">
-            <i class="bi bi-play-fill" style="font-size: medium"></i>
+          <span>{{ currentPage }} / {{ totalPages }}</span>
+          <button @click="nextPage" class="pager-btn" aria-label="Next page">
+            <i class="bi bi-play-fill"></i>
           </button>
-          <button @click="lastPage" class="btn btn-primary">
-            <i class="bi bi-skip-end-fill" style="font-size: medium"></i>
+          <button @click="lastPage" class="pager-btn" aria-label="Last page">
+            <i class="bi bi-skip-end-fill"></i>
           </button>
         </div>
       </div>
     </div>
-    <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
-                     :show-notification="showNotification" :call-toggle-notification="toggleNotification"
-                     :notifications="notifications" :call-update-notifications="fetchNotifications" :show-in-panel="true"
-    />
+    <div v-if="canSeeNotifications && currentTab === DashboardTab.NOTIFICATIONS" class="container notifications-tab">
+      <NotificationBox :context="context" :project-manager-backend-service="projectManagerBackendService"
+                       :notifications="notifications" :call-update-notifications="fetchNotifications"
+                       :show-project="true"/>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import {defineComponent} from 'vue';
+import '@/assets/styles/table.css'
 import {
   Action,
+  Bridgehead,
   Module,
+  Notification,
+  OrganisationRole,
+  PmRequestParameter,
   Project,
-  ProjectManagerContext,
   ProjectManagerBackendService,
-  Site
+  ProjectManagerContext,
+  ProjectSortField,
+  ProjectState,
+  projectStateLabel,
+  Site,
+  User
 } from "@/services/projectManagerBackendService";
+import {ProjectViewQueryParameter} from "@/services/frontendRoutes";
 import NotificationBox from "@/components/Notification.vue";
-import {format} from "date-fns";
+import PhasePill from "@/components/PhasePill.vue";
+import {DisplayFormatKey, formatDisplayDate, resolveDisplayFormatKey} from "@/services/displayFormatService";
+import {getConfig} from "@/services/configLoader";
 import UserAndEmail from "@/components/UserAndEmail.vue";
+import store, {ActionFeedbackType} from "@/services/store";
+import {runBatchLoads} from "@/services/actionsBatch";
+
+// The dashboard's tabs; Notifications only for the project manager admin
+enum DashboardTab {
+  REQUESTS = "Requests",
+  NOTIFICATIONS = "Notifications"
+}
 
 export default defineComponent({
-  components: {UserAndEmail, NotificationBox},
+  computed: {
+    projectStates(): ProjectState[] {
+      return this.availableProjectStates
+    },
+    unreadNotificationsCount(): number {
+      return this.notifications.filter(notification => !notification.read).length;
+    },
+
+  },
+  components: {UserAndEmail, NotificationBox, PhasePill},
 
   data() {
     return {
+      ProjectSortField,
+      ProjectViewQueryParameter,
       site: Site.PROJECT_DASHBOARD_SITE,
       context: new ProjectManagerContext(undefined, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.PROJECT_DASHBOARD_SITE),
       projects: [] as Project[],
-      notifications: [],
-      showNotification: false,
+      DashboardTab,
+      currentTab: DashboardTab.REQUESTS,
+      notifications: [] as Notification[],
       currentPage: 1,
       totalPages: 1,
-      projectStates: ["ALL"],
-      selectedState: "ALL"
+      selectedState: "" as "" | ProjectState,
+      availableProjectStates: [] as ProjectState[],
+      canSeeNotifications: false,
+      applicants: [] as User[],
+      bridgeheads: [] as Bridgehead[],
+      selectedApplicant: "",
+      selectedBridgehead: "",
+      sortBy: ProjectSortField.CREATED,
+      sortDesc: true,
+      createdAtDisplayFormat: DisplayFormatKey.DATE_TIME_FORMAT as DisplayFormatKey,
+      canCreateRequest: false,
+      isCreatingRequest: false
     };
   },
   watch: {
-    context(newValue, oldValue) {
-      this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_VIEW_SITE);
+    context(newValue, _oldValue) {
+      this.projectManagerBackendService = new ProjectManagerBackendService(newValue, Site.PROJECT_DASHBOARD_SITE);
+      this.fetchFilterOptions();
       this.fetchProjects();
+      this.updateCanSeeNotifications();
+      this.updateCanCreateRequest();
     },
-    projects(newValue, oldValue) {
-      this.fetchNotifications();
+    // The notifications are loaded once, when the tab becomes available. They are not reloaded with the requests
+    // table (filters, sorting, paging): nothing on the dashboard creates notifications.
+    canSeeNotifications(canSee: boolean) {
+      if (canSee) {
+        this.fetchNotifications();
+      } else {
+        this.currentTab = DashboardTab.REQUESTS;
+      }
     }
   },
-  mounted() {
-    this.fetchProjects();
-    this.fetchProjectStates();
+  async mounted() {
+    await this.fetchCreatedAtDisplayFormat();
+    await this.initializeCurrentData();
+    await this.updateCanCreateRequest();
   },
   methods: {
-    toggleExpand(item: { isExpanded: boolean }) {
-      item.isExpanded = !item.isExpanded;
+    async fetchCreatedAtDisplayFormat() {
+      const config = await getConfig();
+      this.createdAtDisplayFormat = resolveDisplayFormatKey(
+          config.PROJECT_DASHBOARD_CREATED_AT_DISPLAY_FORMAT, DisplayFormatKey.DATE_TIME_FORMAT);
     },
-    toggleNotification() {
-      this.showNotification = !this.showNotification;
-    },
-    removeNotification(index: number): void {
-      this.notifications.splice(index, 1);
-    },
-    changeState() {
-      this.fetchProjects()
+    // The backend action permits request creation; this setting controls only dashboard button visibility.
+    async updateCanCreateRequest() {
+      this.canCreateRequest = false;
+      const config = await getConfig();
+      const visibleRoles = (config.CREATE_REQUEST_ORGANISATION_ROLES ?? '')
+          .split(',')
+          .map(role => role.trim())
+          .filter((role): role is OrganisationRole => Object.values(OrganisationRole).includes(role as OrganisationRole));
+      if (visibleRoles.length === 0 ||
+          !await this.projectManagerBackendService.isModuleActionActive(
+              Module.PROJECTS_MODULE, Action.CREATE_QUERY_AND_DESIGN_PROJECT_ACTION, this.context) ||
+          !await this.projectManagerBackendService.isModuleActionActive(
+              Module.USER_MODULE, Action.FETCH_ORGANISATION_ROLES_ACTION, this.context)) {
+        return;
+      }
+      const userRoles: OrganisationRole[] = await this.projectManagerBackendService.fetchData(
+          Module.USER_MODULE, Action.FETCH_ORGANISATION_ROLES_ACTION, this.context, new Map());
+      this.canCreateRequest = userRoles.some(role => visibleRoles.includes(role));
     },
 
-    convertDate(date: Date) {
-      return format(date, 'yyyy-MM-dd HH:mm')
+    // Creates a draft request with an empty query (in the configured format) and no sites, like the explorer does
+    // with its query and sites. The creator defines the query in the project view afterwards.
+    async createRequest() {
+      const config = await getConfig();
+      const feedbackMessages = await this.projectManagerBackendService.getActionFeedbackMessages(
+          Module.PROJECTS_MODULE, Action.CREATE_QUERY_AND_DESIGN_PROJECT_ACTION);
+      const params = new Map<string, string>();
+      // The backend needs a query together with its format: the query is intentionally empty
+      params.set(PmRequestParameter.QUERY, '');
+      params.set(PmRequestParameter.QUERY_FORMAT, config.CREATE_REQUEST_DEFAULT_QUERY_FORMAT ?? '');
+      this.isCreatingRequest = true;
+      try {
+        // Same response as for the explorer: one entry whose value is the project view URL
+        const response: Record<string, string> = await this.projectManagerBackendService.fetchData(
+            Module.PROJECTS_MODULE, Action.CREATE_QUERY_AND_DESIGN_PROJECT_ACTION, this.context, params, true);
+        const projectViewUrl = Object.values(response ?? {})[0] ?? '';
+        const query = Object.fromEntries(new URL(projectViewUrl, window.location.href).searchParams);
+        if (!query[ProjectViewQueryParameter.PROJECT_CODE]) {
+          throw new Error(`No project code in ${projectViewUrl}`);
+        }
+        // Like the explorer, follow the returned URL: its action-feedback marker makes the project view show the
+        // success message. Staying in the single-page app avoids reloading it.
+        await this.$router.push({name: 'ProjectView', query});
+      } catch (error) {
+        console.error('Error creating request:', error);
+        const message = feedbackMessages.errorMessage ||
+            await this.projectManagerBackendService.getDefaultErrorMessageForUserActions();
+        if (message) {
+          store.commit('showActionFeedback', {type: ActionFeedbackType.ERROR, message});
+        }
+      } finally {
+        this.isCreatingRequest = false;
+      }
+    },
+
+    changeState() {
+      this.currentPage = 1;
+      this.fetchProjects()
+    },
+    changeApplicant() {
+      this.currentPage = 1;
+      this.fetchProjects()
+    },
+    changeBridgehead() {
+      this.currentPage = 1;
+      this.fetchProjects()
+    },
+    toggleSort(sortBy: ProjectSortField) {
+      if (this.sortBy === sortBy) this.sortDesc = !this.sortDesc;
+      else {
+        this.sortBy = sortBy;
+        this.sortDesc = false;
+      }
+      this.currentPage = 1;
+      this.fetchProjects();
+    },
+    projectStateLabel,
+
+    applicantLabel(applicant: User) {
+      const name = [applicant.firstName, applicant.lastName].filter(Boolean).join(' ');
+      return name ? `${name} (${applicant.email})` : applicant.email;
+    },
+
+    convertDate(date: string | Date) {
+      return formatDisplayDate(date, this.createdAtDisplayFormat)
     },
 
 
     // TODO: Fetch several pages of projects
     async fetchProjects() {
       try {
-        const params = new Map<string, string>();
-        if (this.selectedState !== "ALL") { params.set('project-state', this.selectedState)}
-        params.set('page', (this.currentPage - 1).toString());
-        params.set('page-size', '10');
-        params.set('site', Site.PROJECT_DASHBOARD_SITE);
         this.projectManagerBackendService.fetchData(
             Module.PROJECTS_MODULE,
             Action.FETCH_PROJECTS_ACTION,
             this.context,
-            params
-        ).then(projects => {
-          this.projects = projects.content;
-          this.totalPages = projects.totalPages;
-        });
+            this.projectsParams()
+        ).then(projects => this.applyProjects(projects));
       } catch (error) {
         console.error('Error loading projects:', error);
       }
     },
+    // The page of requests that the filters, the sorting and the pager ask for
+    projectsParams(): Map<string, string> {
+      const params = new Map<string, string>();
+      if (this.selectedState) {
+        params.set(PmRequestParameter.PROJECT_STATE, this.selectedState)
+      }
+      if (this.selectedApplicant) {
+        params.set(PmRequestParameter.PROJECT_CREATOR_EMAIL, this.selectedApplicant)
+      }
+      if (this.selectedBridgehead) {
+        params.set(PmRequestParameter.BRIDGEHEAD, this.selectedBridgehead)
+      }
+      params.set(PmRequestParameter.PAGE, (this.currentPage - 1).toString());
+      params.set(PmRequestParameter.PAGE_SIZE, '10');
+      params.set(PmRequestParameter.SORT_BY, this.sortBy);
+      params.set(PmRequestParameter.SORT_DESC, this.sortDesc.toString());
+      params.set(PmRequestParameter.SITE, Site.PROJECT_DASHBOARD_SITE);
+      return params;
+    },
+    applyProjects(projects: { content: Project[], totalPages: number }) {
+      this.projects = projects.content;
+      this.totalPages = projects.totalPages === 0 ? 1 : projects.totalPages;
+    },
+    // The Notifications tab: only for users allowed to fetch notifications (the project manager admin)
+    async updateCanSeeNotifications() {
+      this.canSeeNotifications = await this.projectManagerBackendService.isModuleActionActive(
+          Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, this.context);
+    },
 
     async fetchNotifications() {
       try {
-        const response = await this.projectManagerBackendService.fetchData(
+        await this.projectManagerBackendService.fetchData(
             Module.NOTIFICATIONS_MODULE,
             Action.FETCH_NOTIFICATIONS_ACTION,
             this.context,
@@ -172,140 +347,265 @@ export default defineComponent({
         throw error;
       }
     },
-    async fetchProjectStates() {
-      try {
-        const response = await this.projectManagerBackendService.fetchData(
-            Module.PROJECT_BRIDGEHEAD_MODULE,
-            Action.FETCH_PROJECT_STATES_ACTION,
-            this.context,
-            new Map()
-        ).then(projectStates => this.projectStates.push(...projectStates));
-      } catch (error) {
-        console.error('Error loading notifications:', error);
-        throw error;
+    applyProjectStates(states: unknown) {
+      this.availableProjectStates = Array.isArray(states) ? states : [];
+      if (this.selectedState && !this.availableProjectStates.includes(this.selectedState)) {
+        this.selectedState = "";
       }
     },
-    firstPage() {this.currentPage = 1;this.fetchProjects()},
-    previousPage() {if (this.currentPage > 1) {this.currentPage--} this.fetchProjects()},
-    nextPage() {if (this.currentPage < this.totalPages) {this.currentPage++} this.fetchProjects()},
-    lastPage() {this.currentPage = this.totalPages; this.fetchProjects()}
+    applyApplicants(applicants: unknown) {
+      this.applicants = Array.isArray(applicants) ? applicants : [];
+      if (this.applicants.length <= 1) this.selectedApplicant = "";
+    },
+    applyBridgeheads(bridgeheads: unknown) {
+      this.bridgeheads = Array.isArray(bridgeheads) ? bridgeheads : [];
+      if (this.bridgeheads.length <= 1) this.selectedBridgehead = "";
+    },
+    // The first load of the dashboard: the filter options and the first page of requests in one request to the
+    // backend. A part that fails is reported on the console and leaves its filter empty.
+    async initializeCurrentData() {
+      await this.updateCanSeeNotifications();
+      await runBatchLoads<Module, Action, ProjectManagerContext>([
+        {
+          id: 'projectStates', module: Module.PROJECTS_MODULE, action: Action.FETCH_VISIBLE_PROJECT_STATES_ACTION,
+          apply: states => this.applyProjectStates(states), otherwise: () => this.applyProjectStates([])
+        },
+        {
+          id: 'applicants', module: Module.PROJECTS_MODULE, action: Action.FETCH_PROJECT_CREATORS_ACTION,
+          apply: applicants => this.applyApplicants(applicants), otherwise: () => this.applyApplicants([])
+        },
+        {
+          id: 'bridgeheads', module: Module.PROJECTS_MODULE, action: Action.FETCH_VISIBLE_BRIDGEHEADS_ACTION,
+          apply: bridgeheads => this.applyBridgeheads(bridgeheads), otherwise: () => this.applyBridgeheads([])
+        },
+        {
+          id: 'projects', module: Module.PROJECTS_MODULE, action: Action.FETCH_PROJECTS_ACTION,
+          params: () => this.projectsParams(),
+          apply: projects => this.applyProjects(projects)
+        }
+      ], entries => this.projectManagerBackendService.fetchBatch(entries, this.context));
+    },
+    async fetchFilterOptions() {
+      const [applicants, bridgeheads] = await Promise.all([
+        this.projectManagerBackendService.fetchData(
+            Module.PROJECTS_MODULE,
+            Action.FETCH_PROJECT_CREATORS_ACTION,
+            this.context,
+            new Map()
+        ).catch(error => {
+          console.error('Error loading project creators:', error);
+          return [];
+        }),
+        this.projectManagerBackendService.fetchData(
+            Module.PROJECTS_MODULE,
+              Action.FETCH_VISIBLE_BRIDGEHEADS_ACTION,
+            this.context,
+            new Map()
+        ).catch(error => {
+          console.error('Error loading project sites:', error);
+          return [];
+        })
+      ]);
+      this.applyApplicants(applicants);
+      this.applyBridgeheads(bridgeheads);
+    },
+    firstPage() {
+      this.currentPage = 1;
+      this.fetchProjects()
+    },
+    previousPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--
+      }
+      this.fetchProjects()
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++
+      }
+      this.fetchProjects()
+    },
+    lastPage() {
+      this.currentPage = this.totalPages;
+      this.fetchProjects()
+    }
   },
 });
 </script>
 
 <style scoped>
+/*
+ * Table design unification (2026-09-22): see
+ * project-manager-ui/plans/2026-09-21-plan-unify-table-design.md.
+ * Panel header now reuses ProjectView.vue's .box-header blue (#2655a2)
+ * instead of this component's own light gradient. Column header tint and
+ * the "brand" accent used throughout are derived from that same blue,
+ * rather than introducing a second, slightly different one.
+ */
 .custom-width-projects {
-  flex: 1;
-  margin-top: 2%;
-  border-radius: 10px!important;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
+  /* Keep the Requests card on the same fixed, centered column as the
+   * project-view cards. Bootstrap's responsive .container would otherwise
+   * make this area narrower on wide screens. */
+  flex: 0 0 var(--content-width);
+  width: var(--content-width);
+  max-width: var(--content-width);
+  margin: var(--page-top) auto 0;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 1px -1px rgba(0, 0, 0, 0.2),
+  0 1px 1px 0 rgba(0, 0, 0, 0.14),
+  0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+
   background-color: white;
   height: 100%;
 }
+/* .custom-width-projects is still a Bootstrap .container, which adds its
+   own 0.75rem side padding/gutter. Cancel just that gutter here so the
+   header/filters/table reach the card's rounded edges flush, without
+   touching the container's own width-capping/centering behavior. */
 .box-header {
-  padding: 12px 0 0 2%;
-  background-color: #95c8dc;
-  color: black;
-  font-size: large;
+  margin: 0 -0.75rem;
+  /* Same height as a text-only card header in the project view (17px padding
+   * around a 19px title); the Create request button must not make it taller. */
+  min-height: 62.5px;
+  padding: 0 28px;
+  color: #fff;
+  font-size: 19px;
+  font-weight: 600;
+  background-color: #2655a2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.box-header span {
+  font-size: inherit;
+}
+.create-request-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 14px;
+}
+
+.main-menu {
+  width: 100%;
+  height: 62px;
+  background-color: rgba(0,72,156,.95);
+  display: flex;
+  /* Tabs start at the content column's left edge, as in the project view. */
+  padding-left: calc((100% - var(--content-width)) / 2);
+}
+/* Same tabs as the project view */
+.menu-item {
+  padding: 1.2rem 2rem;
+  color: white;
+  cursor: pointer;
   font-weight: bold;
-  border: 1px solid #95c8dc;
-  border-radius: 10px 10px 0 0;
 }
-.custom-width-notifications {
-  width: 22%;
-  background-color: white;
-  color: black;
-  order: 2;
-  position: relative;
-  z-index: 1;
-  overflow-y: auto;
-  transition: transform 0.3s ease-in-out;
+.menu-item.active {
+  background-color: rgb(0, 56, 124);
+}
+.menu-count {
+  display: inline-block;
+  min-width: 20px;
+  margin-left: 6px;
+  padding: 1px 6px;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2),0px 1px 1px 0px rgba(0,0,0,0.14),0px 1px 3px 0px rgba(0,0,0,0.12);
-  margin-top: 1.5%;
-  margin-bottom: 4%;
-  margin-right: 0.5%;
+  background: #fff;
+  color: #2655a2;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+/* Same fixed, centered column as the Requests card and the project view. */
+.notifications-tab {
+  flex: 0 0 var(--content-width);
+  width: var(--content-width);
+  max-width: var(--content-width);
+  margin: var(--page-top) auto 0;
+  padding: 0;
 }
 
-.sidebar-closed {
-  transform: translateX(100%);
+.table-box {
+  margin: 0 -0.75rem;
+  overflow-x: auto;
 }
 
-.card {
-  border: none;
-  border-radius: 10px;
+/* Every column of the requests table is sortable */
+.requests-table thead th {
+  cursor: pointer;
+  user-select: none;
+}
+.created-cell {
+  font-variant-numeric: tabular-nums;
+  color: #5b6b7c;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
-.notification-header {
+.pager {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 10px;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 22px;
+  border-top: 1px solid #d7e2ed;
 }
-
-.custom-width-notifications h2 {
-  margin-bottom: 15px;
+.pager span {
+  font-size: 13px;
+  color: #5b6b7c;
+  font-variant-numeric: tabular-nums;
+  padding: 0 6px;
 }
-
-.custom-width-notifications .card {
-  margin-bottom: 15px;
-}
-
-.card-body.expanded {
-  height: 300px;
-}
-
-.expand-icon {
-  display: flex;
-  align-items: flex-end;
+.pager-btn {
+  border: 1px solid #d7e2ed;
+  background: #fff;
+  color: #5b6b7c;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
   cursor: pointer;
 }
-
-.expand-icon i.rotate {
-  transform: rotate(180deg);
-}
-.pager {
-  display: flex;
-  justify-content: end;
-}
-.pager span {
-  display: flex;
-  border: 1px solid #cccccc;
-  border-radius: 5px;
-  padding: 0 10px 1px 10px;
-  background-color: white;
-}
-.pager button {
-  padding-top: 3px;
-  padding-bottom: 3px;
-}
-.pager button, .pager span {
-  margin-left: 10px;
-  align-items: center;
+.pager-btn:hover {
+  border-color: #2655a2;
+  color: #2655a2;
 }
 
-.notification-button:hover {
-  color:black!important;
-}
-.table-box {
-  margin: 3% 2% 5% 2%;
-}
-th {
-  background-color: #95c8dc!important;
-  vertical-align: middle;
-}
-
-.copy-button {
-  background: none;
-  border: none;
-  color: black;
-}
 .form-select {
-  background-color: transparent;
-  border:none;
-  height:35px;
-  font-size: smaller;
-  text-align: left;
+  width:20%;
   cursor: pointer;
+}
+
+.form-select option:hover {
+  color: #2655a2;
+}
+.label-link {
+  text-decoration: none;
+  color: #2655a2;
+  font-weight: 600;
+}
+.label-link:hover {
+  text-decoration: underline;
+}
+
+.filter-box {
+  background-color: #e9eef8;
+  margin: 0 -0.75rem;
+  padding: 14px 22px;
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid #d7e2ed;
+}
+.filter-box select {
+  margin-right:2%
+}
+.label-placeholder {
+  font-style: italic;
 }
 </style>

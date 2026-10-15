@@ -1,0 +1,58 @@
+/*
+ * Shared look of the data tables: documents, feasibility, results, users and requests dashboard.
+ * Use it as <table class="pm-table ..."> and keep only what differs in the component.
+ *
+ * Every row, including the last one, ends with a line: the tables are not inside a bordered
+ * box, so this line is what shows where a table ends.
+ */
+.pm-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.pm-table thead th {
+    background: #e9eef8;
+    color: #2655a2;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 12px 22px;
+    border-bottom: 1px solid #d7e2ed;
+    white-space: nowrap;
+}
+
+.pm-table tbody td {
+    padding: 14px 22px;
+    border-bottom: 1px solid #d7e2ed;
+    vertical-align: middle;
+}
+
+.pm-table tbody tr:hover td {
+    background: #e9eef8;
+}
+
+/* Sortable columns: <th class="pm-table-sortable"><span class="th-label">Title<svg class="sort-caret"/></span></th> */
+.pm-table .pm-table-sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.pm-table .th-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pm-table .sort-caret {
+    width: 9px;
+    height: 9px;
+    opacity: .7;
+    transition: transform .15s ease-in-out;
+}
+
+.pm-table .sort-caret.desc {
+    transform: rotate(180deg);
+}

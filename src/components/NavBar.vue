@@ -1,20 +1,23 @@
 <template>
   <div>
-    <nav class="navbar navbar-dark bg-dark custom-navbar">
+    <nav class="navbar navbar-dark custom-navbar">
+      <div class="navbar__logo">
+        <a :href="projectUrl" class="navbar-brand dk-logo" target="_blank" rel="noopener noreferrer">
+          <span v-if="logoUrl" class="dk-logo__sign"><img :src="logoUrl" :alt="logoText"></span>
+          <span v-if="logoHtml" v-html="logoHtml"></span>
+        </a>
+      </div>
       <router-link class="navbar-brand" to="/">
-        <i class="bi bi-boxes navbar-icon"></i> Data Science Orchestrator
+        <span class="navbar-title" v-html="frontendName"></span>
       </router-link>
       <div class="user-logout-container">
-        <!-- User information -->
-        <span class="user-info" :title="keycloak.getEmail()">
+        <span class="user-info" :title="auth.getEmail()">
           <i class="bi bi-person-fill user-icon"></i>
-          {{ keycloak.getFirstName() + " " + keycloak.getLastName() }}
+          {{ auth.getFirstName() + " " + auth.getLastName() }}
         </span>
-        <!-- PM-Admin Config  -->
         <router-link v-if="isProjectManagerAdmin" class="btn admin-button" to="/config">
           <i class="bi bi-gear"></i>
         </router-link>
-        <!-- Logout button -->
         <button @click="logout" class="btn btn-outline-danger">
           <i class="bi bi-box-arrow-right"></i> logout
         </button>
@@ -24,7 +27,6 @@
 </template>
 
 <script lang="ts">
-import keycloak from "../services/keycloak";
 import {
   Action,
   Module,
@@ -34,11 +36,13 @@ import {
   Site
 } from "@/services/projectManagerBackendService";
 import {defineComponent} from "vue";
+import {AuthService} from "@/services/auth";
+import {getConfig} from "@/services/configLoader";
 
 export default defineComponent({
   computed: {
-    keycloak() {
-      return keycloak;
+    auth() {
+      return AuthService;
     },
     ProjectRole() {
       return ProjectRole;
@@ -47,22 +51,34 @@ export default defineComponent({
   data() {
     return {
       isProjectManagerAdmin: false,
+      frontendName: '<b>Samply</b>.Requester',
+      logoUrl: "",
+      logoText: "",
+      logoHtml: "",
+      projectUrl: "#",
+      logoStyleElement: null as HTMLStyleElement | null,
       context: new ProjectManagerContext(undefined, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.NAVIGATION_BAR_SITE),
     };
   },
 
   mounted() {
-    this.fetchProjectRoles()
+    this.fetchProjectRoles();
+    this.fetchFrontendConfig();
   },
+
+  beforeUnmount() {
+    this.removeLogoStyle();
+  },
+
   methods: {
     logout() {
-      keycloak.logout();
+      this.auth.logout();
     },
 
     async fetchProjectRoles() {
       try {
-        this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, Action.IS_PROJECT_MANAGER_ADMIN_ACTION).then(condition => {
+        this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, Action.IS_PROJECT_MANAGER_ADMIN_ACTION, this.context).then(condition => {
           this.isProjectManagerAdmin = false;
           if (condition) {
             this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.IS_PROJECT_MANAGER_ADMIN_ACTION, this.context, new Map()).then(isProjectManagerAdmin => {
@@ -75,6 +91,52 @@ export default defineComponent({
       }
     },
 
+    async fetchFrontendConfig() {
+      const config = await getConfig();
+      this.frontendName = config.FRONTEND_NAME ?? this.frontendName;
+      this.logoUrl = config.LOGO_URL ?? "";
+      this.logoText = config.LOGO_TEXT ?? "";
+      this.projectUrl = config.PROJECT_URL ?? "#";
+      this.logoHtml = await this.fetchTextAsset(config.LOGO_HTML);
+      this.applyLogoCss(await this.fetchTextAsset(config.LOGO_CSS));
+    },
+
+    async fetchTextAsset(url?: unknown): Promise<string> {
+      if (typeof url !== "string" || !url) {
+        return "";
+      }
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          console.warn(`Failed to load asset ${url}: request returned status ${response.status}`);
+          return "";
+        }
+        return await response.text();
+      } catch (error) {
+        console.warn(`Failed to load asset ${url}:`, error);
+        return "";
+      }
+    },
+
+    applyLogoCss(cssText: string) {
+      this.removeLogoStyle();
+
+      if (!cssText) {
+        return;
+      }
+
+      const style = document.createElement("style");
+      style.textContent = cssText;
+      style.setAttribute("data-navbar-logo-style", "true");
+      document.head.appendChild(style);
+      this.logoStyleElement = style;
+    },
+
+    removeLogoStyle() {
+      this.logoStyleElement?.remove();
+      this.logoStyleElement = null;
+    },
   },
 });
 </script>
@@ -84,12 +146,12 @@ export default defineComponent({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-left: 5%;
+  padding-left: 2%;
 }
 
-.navbar-icon {
-  margin-right: 5px;
-  color: white;
+.navbar-title {
+  color: #00489c;
+  font-size: larger;
 }
 
 .user-logout-container {
@@ -102,7 +164,8 @@ export default defineComponent({
   display: flex;
   align-items: center;
   margin-right: 10px;
-  color: white;
+  color: #00489c;
+  font-weight: bold;
 }
 
 .user-icon {
@@ -110,12 +173,46 @@ export default defineComponent({
 }
 
 .admin-button {
-  color: white;
+  color: #00489c;
   margin-right: 10px;
 }
+
 .admin-button:hover {
   color: white;
   font-size: large;
-  padding:0.3rem 0.68rem;
+  padding: 0.3rem 0.68rem;
 }
+
+.btn-outline-danger {
+  color: #fa7b26 !important;
+  border: none !important;
+  font-weight: bold;
+}
+
+.dk-logo {
+  align-items: center;
+  color: #00489c;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: Open Sans, serif;
+  font-weight: 200;
+  height: auto;
+}
+
+.dk-logo__sign {
+  display: inline-block;
+  margin-right: 15px;
+  vertical-align: top;
+}
+
+.dk-logo__sign img {
+  vertical-align: middle;
+  width: 100%;
+}
+
+/* noinspection CssUnusedSymbol */
+div.ccm-page {
+  letter-spacing: -2px;
+}
+
 </style>

@@ -1,40 +1,104 @@
 import {createApp, h} from 'vue';
 import singleSpaVue from 'single-spa-vue';
 import App from './App.vue';
-import KeyCloakService from "@/services/keycloak";
-import router from './router';
-
+import {createAppRouter} from './router';
+import store from './services/store';
+import type {Router} from "vue-router";
+import {getConfig, getDisplayFormatsConfig} from "@/services/configLoader";
+import {configureDisplayFormats, getDisplayLocale} from "@/services/displayFormatService";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap';
-import store from './services/store';
 
+import {AuthService, finishLoginFlow, tryLoadUserFromStorage} from "@/services/auth";
 
-const app = createApp(App);
+let router: Router | null = null;
 
+function setFavicon(faviconUrl?: string) {
+    if (!faviconUrl) return;
+
+    let favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!favicon) {
+        favicon = document.createElement('link');
+        favicon.rel = 'icon';
+        document.head.appendChild(favicon);
+    }
+    favicon.href = faviconUrl;
+}
+
+// The language of the page, for screen readers, hyphenation and spell checking (see docs/date-input.md). The app's root
+// element always gets it (App.vue). The document only when it has none: as a micro frontend the host page owns it.
+function setDocumentLanguage(locale: string) {
+    if (!document.documentElement.lang) {
+        document.documentElement.lang = locale;
+    }
+}
+
+async function handleOidcRedirect(appRouter: Router) {
+    const url = new URL(window.location.href);
+
+    if (url.searchParams.has("code")) {
+        // finishLoginFlow now returns the saved target URL
+        const targetUrl = await finishLoginFlow();
+        await appRouter.replace(targetUrl);
+    }
+}
+
+// noinspection JSUnusedGlobalSymbols
+/**
+ * These lifecycle functions (bootstrap, mount, unmount) are intentionally
+ * not referenced within this project.
+ *
+ * They are required entry points for Single-SPA. The root-config application
+ * dynamically loads this micro frontend and invokes these exports at runtime.
+ *
+ * Because the usage happens externally, IntelliJ and TypeScript mark them
+ * as "unused". The `// noinspection JSUnusedGlobalSymbols` suppression is
+ * therefore intentional and should not be removed.
+ */
+
+// noinspection JSUnusedGlobalSymbols
 const vueLifecycles = singleSpaVue({
-    createApp: () => app,
+    createApp,
     appOptions: {
         render() {
             return h(App);
         },
     },
+    handleInstance(app) {
+        if (!router) {
+            throw new Error('Router has not been initialized');
+        }
+        app.use(router);
+        app.use(store);
+    },
 });
 
-app.use(router);
-app.use(store);
+// noinspection JSUnusedGlobalSymbols
+export const bootstrap = [
+    async () => {
+        const config = await getConfig();
+        configureDisplayFormats(await getDisplayFormatsConfig());
+        setDocumentLanguage(getDisplayLocale());
+        setFavicon(config.FAVICON_URL);
+        router = createAppRouter(config.VUE_APP_FRONTEND_URL, config.PAGE_TITLE ?? 'Data Request Tool');
 
+        await handleOidcRedirect(router);
+        await tryLoadUserFromStorage();
 
-export const bootstrap = async () => {
-    return new Promise((resolve) => {
-        const onAuthenticatedCallback = () => {
-            resolve(vueLifecycles.bootstrap);
-        };
+        if (!AuthService.isLoggedIn()) {
+            try {
+                await AuthService.getToken();
+            } catch {
+                await AuthService.login();
+            }
+        }
+    },
+    vueLifecycles.bootstrap,
+];
 
-        KeyCloakService.CallLogin(onAuthenticatedCallback);
-    });
-};
-
+// noinspection JSUnusedGlobalSymbols
 export const mount = vueLifecycles.mount;
+// noinspection JSUnusedGlobalSymbols
 export const unmount = vueLifecycles.unmount;

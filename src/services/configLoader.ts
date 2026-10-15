@@ -1,13 +1,170 @@
 // configLoader.ts
-let config: any = null;
+import {FRONTEND_VARIABLES_PATH} from "@/services/BridgeheadOverviewHeaders";
+
+export const DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES = 2;
+export const DISPLAY_FORMATS_PATH = '/frontend/display-formats';
+
+/** Spacing between the fields of the summary and the request view (frontend variable SUMMARY_SPACING). */
+export enum SummarySpacing {
+    /** Half the gap of the draft, as before 2026-09-30 */
+    COMPACT = "compact",
+    /** The gap of the draft (default) */
+    AIRY = "airy"
+}
+
+/** Width of the feasibility table in the request view (frontend variable FEASIBILITY_TABLE_WIDTH). */
+export enum FeasibilityTableWidth {
+    /** As wide as its columns need, at least 32rem (default, also when absent or invalid): for few value columns */
+    COMPACT = "compact",
+    /** As wide as its columns need, at least 48rem: more room when the values are longer */
+    MEDIUM = "medium",
+    /** The whole card; the number columns only as wide as their content: for many columns */
+    FULL = "full"
+}
+
+export const resolveFeasibilityTableWidth = (value: unknown): FeasibilityTableWidth =>
+    (Object.values(FeasibilityTableWidth) as unknown[]).includes(value)
+        ? value as FeasibilityTableWidth
+        : FeasibilityTableWidth.COMPACT;
+
+/** Alignment of the value columns of the feasibility table (frontend variable FEASIBILITY_TABLE_ALIGNMENT). */
+export enum FeasibilityTableAlignment {
+    /** By content (default, also when absent or invalid): columns with only numbers right, columns with text left */
+    STANDARD = "standard",
+    /** Every value column left */
+    LEFT = "left",
+    /** Every value column right */
+    RIGHT = "right"
+}
+
+export const resolveFeasibilityTableAlignment = (value: unknown): FeasibilityTableAlignment =>
+    (Object.values(FeasibilityTableAlignment) as unknown[]).includes(value)
+        ? value as FeasibilityTableAlignment
+        : FeasibilityTableAlignment.STANDARD;
+
+export enum DisplayFormatKey {
+    DATE_FORMAT = 'DATE_FORMAT',
+    LONG_DATE_FORMAT = 'LONG_DATE_FORMAT',
+    DATE_TIME_FORMAT = 'DATE_TIME_FORMAT',
+    DATE_TIME_WITH_SECONDS_FORMAT = 'DATE_TIME_WITH_SECONDS_FORMAT'
+}
+
+export interface ResolvedDisplayFormat {
+    language: string;
+    pattern: string;
+}
+
+/**
+ * The backend already resolves each key to the pattern/language for the
+ * requested (or its own default) language - see DisplayFormatService.resolve.
+ * The frontend never chooses between languages itself.
+ */
+export interface DisplayFormatsConfig {
+    /** Locale resolved by the backend for the requested language. */
+    locale?: string;
+    /** Compatibility field exposed by older backends. */
+    numberFormat?: {locale: string};
+    defaultDateDisplayFormat: DisplayFormatKey;
+    defaultTimestampDisplayFormat: DisplayFormatKey;
+    formats: Record<DisplayFormatKey, ResolvedDisplayFormat>;
+}
+
+export interface FrontendConfig {
+    VUE_APP_BACKEND_URL: string;
+    VUE_APP_FRONTEND_URL: string;
+    VUE_APP_OIDC_URL: string;
+    VUE_APP_OIDC_CLIENT_ID: string;
+    VUE_APP_LOGO_URL?: string;
+    FRONTEND_NAME?: string;
+    PAGE_TITLE?: string;
+    FAVICON_URL?: string;
+    LOGO_TEXT?: string;
+    LOGO_URL?: string;
+    PROJECT_URL?: string;
+    LOGO_HTML?: string;
+    LOGO_CSS?: string;
+    FEASIBILITY_PAGE_SIZE?: string;
+    /** Width of the feasibility table: "compact" (default, also when absent or invalid), "medium" or "full", see FeasibilityTableWidth. */
+    FEASIBILITY_TABLE_WIDTH?: string;
+    /** Alignment of the feasibility table's value columns: "standard" (default, also when absent or invalid), "left" or "right", see FeasibilityTableAlignment. */
+    FEASIBILITY_TABLE_ALIGNMENT?: string;
+    /**
+     * Number of lines shown for a normal form-field description when the field
+     * value is rendered beside it. Overflowing descriptions can be expanded by
+     * the user. The UI defaults to two lines when this value is absent or invalid.
+     */
+    FORM_FIELD_DESCRIPTION_COLLAPSED_LINES?: string;
+    /** Spacing between the fields of the summary and the request view: "compact" or "airy" (default, also when absent or invalid). */
+    SUMMARY_SPACING?: string;
+    /** Fallback feedback for failed actions initiated directly by the user. */
+    DEFAULT_ERROR_MESSAGE_FOR_USER_ACTIONS?: string;
+    /** Display format key for the project dashboard's "created at" column. Falls back to DATE_TIME_FORMAT when absent/invalid. */
+    PROJECT_DASHBOARD_CREATED_AT_DISPLAY_FORMAT?: string;
+    /** Display format key for the project detail view's "created at" field. Falls back to DATE_TIME_FORMAT when absent/invalid. */
+    PROJECT_DETAIL_CREATED_AT_DISPLAY_FORMAT?: string;
+    /** Display format key for a document's "created at" column. Falls back to DATE_TIME_FORMAT when absent/invalid. */
+    DOCUMENT_CREATED_AT_DISPLAY_FORMAT?: string;
+    /** Display format key for a notification's timestamp. Falls back to DATE_TIME_WITH_SECONDS_FORMAT when absent/invalid. */
+    NOTIFICATION_TIMESTAMP_DISPLAY_FORMAT?: string;
+    /** Comma-separated organisation roles allowed to see the dashboard's "Create request" button. */
+    CREATE_REQUEST_ORGANISATION_ROLES?: string;
+    /** "true" offers the Credentials Sharing Tool in the Results section. Hidden when absent or any other value. */
+    CREDENTIALS_SHARING_TOOL_ENABLED?: string;
+    /**
+     * Query format (e.g. AST_DATA) of the empty query of a request created with the dashboard's
+     * "Create request" button. The creator can change it afterwards in the project view.
+     */
+    CREATE_REQUEST_DEFAULT_QUERY_FORMAT?: string;
+    /**
+     * "true": every site needs its local approval (with the backend's module LOCAL_APPROVAL). The request is not
+     * offered to skip the local approval, a missing local approval is shown red, and a site's bridgehead admin is not
+     * offered to send the query before its local approval is there. Only in the UI: the backend does not enforce it.
+     * Any other value or absent: a missing local approval is shown as "not provided".
+     */
+    LOCAL_APPROVAL_REQUIRED?: string;
+    [key: string]: unknown;
+}
+
+let config: FrontendConfig | null = null;
+let displayFormatsConfig: DisplayFormatsConfig | null = null;
 let isLoading = false; // Track whether the config is being loaded
+
+
+const fetchJson = async <T>(url: string, cache: RequestCache = 'default'): Promise<T> => {
+    const response = await fetch(url, {cache});
+    if (!response.ok) {
+        throw new Error(`Request failed for ${url} with status ${response.status}`);
+    }
+    return await response.json() as T;
+};
 
 const loadConfig = async () => {
     if (!isLoading) {
         isLoading = true; // Prevent multiple concurrent loads
         try {
-            const response = await fetch('/config.json');
-            config = await response.json();
+            // This must remain relative: config.json is needed before the
+            // configured frontend URL is available.
+            const frontendConfig = await fetchJson<FrontendConfig>('config.json', 'no-store');
+
+            let backendConfig: Partial<FrontendConfig> = {};
+            try {
+                backendConfig = await fetchJson<Partial<FrontendConfig>>(
+                    `${frontendConfig.VUE_APP_BACKEND_URL}${FRONTEND_VARIABLES_PATH}`,
+                    'no-store'
+                );
+            } catch (error) {
+                console.warn('Failed to load backend config:', error);
+            }
+
+            displayFormatsConfig = await fetchJson<DisplayFormatsConfig>(
+                `${frontendConfig.VUE_APP_BACKEND_URL}${DISPLAY_FORMATS_PATH}`,
+                'no-store'
+            );
+
+            config = {
+                ...frontendConfig,
+                ...backendConfig,
+            };
         } catch (error) {
             console.error('Failed to load config.json:', error);
             throw new Error('Configuration loading failed');
@@ -22,9 +179,24 @@ const loadConfig = async () => {
     }
 };
 
-export const getConfig = async () => {
+export const getConfig = async (): Promise<FrontendConfig> => {
     if (config === null) {
         await loadConfig(); // Load the config if it's not already loaded
     }
+
+    if (config === null) {
+        throw new Error('Configuration loading failed');
+    }
+
     return config;
+};
+
+export const getDisplayFormatsConfig = async (): Promise<DisplayFormatsConfig> => {
+    if (config === null) {
+        await loadConfig();
+    }
+    if (displayFormatsConfig === null) {
+        throw new Error('Display-format configuration loading failed');
+    }
+    return displayFormatsConfig;
 };

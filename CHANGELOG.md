@@ -4,8 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.1.0 - 2025-02-07]
+
+## [Unreleased]
+
+## [1.0.0] - 2026-10-13
+First release. Until now the deployments ran `develop`; this version is what they run today.
+
+### Summary
+- Dashboard of requests: filters (state, applicant, site), sorting, creation of a request, notifications
+- Request view: form steps with summary, mandatory field checks, conditional fields and info, documents, per-site
+  overview (status, ethics vote, local approval, results), actions by role and state
+- Standalone page and single-spa microfrontend; no external scripts (runs in hospital networks); configurable display
+  formats and logo
+- Needs the backend (`samply/project-manager`) 1.0.0
+
+### Configuration
+- Nothing to change for deployments that already run `develop`.
+
+## [Before 1.0.0]
+Development history before the first release (never released as a version).
 ### Added
+- Form pre/post info is always taken from the backend, without keeping the previous text: a conditional info disappears when its condition no longer holds
 - Dockerfile
 - Single Spa
 - Keycloak
@@ -16,32 +35,35 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Token Bearer to doHttpRequest
 - Project Manager Button
 - Project Manager Button: Developer, Pilot, Final and BK-Admin Views
-- Project information in project view
-- Notifications in project view
+- Project information in the project view
+- Notifications in the project view
 - Project Field Row
-- Notifications in project dashboard
+- Notifications in the project dashboard
 - Fetch project states
 - DataSHIELD status
 - Filter draft projects to project manager admin
-- If type is DataSHIELD, use template opal-ccp and output format Opal
-- Creator in main dashboard
-- Invite users to project
+- If the type is DataSHIELD, use template opal-ccp and output format Opal
+- Creator in the main dashboard
+- Invite users to a project
 - Downloads
 - Upload Button
 - Download Button
 - Download authentication script
 - Exists Votum and Application Form
-- Exists Script
+- There exists Script
 - Fetch publications and other documents
 - Documents Table
-- project-code as parameter in project-view
+- project-code as a parameter in project-view
 - Bridgehead state
 - Add URL to publications and other documents
 - User State
 - Keycloak profile
-- Bridgehead for profile with only one bridgehead in project view
+- Bridgehead for profile with only one bridgehead in the project view
 - Project configuration
 - Fetch visible bridgeheads and fetch project bridgeheads
+- Fetch feasibility results independently for each visible bridgehead
+- Display feasibility totals in the single-site and multi-site bridgehead overviews
+- Display available feasibility totals after queried sites for draft and review projects
 - Refresh Keycloak token
 - Redirect to explorer Url for editing bridgeheads or query
 - Keycloak logout
@@ -50,68 +72,180 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Documents Table for visible bridgeheads
 - DataSHIELD Status in bridgehead overview
 - Fetch project roles
-- Show Draft Dialog only if user is CREATOR and the state is DRAFT
+- Show Draft Dialog only if the user is CREATOR and the state is DRAFT
 - EditProjectParam
 - Bridgeheads list for adding new bridgeheads to a project
 - Bridgehead can accept only if not accepted and reject only if not rejected
 - Fetch labels of script, application form and votum
-- Update active bridgehead after clicking on bridgehead in bridgehead overview
-- Exist invited users -> can show bridgehead admin buttons
-- Buttons with message
+- Update the active bridgehead after clicking on the bridgehead in bridgehead overview
+- There exist invited users → can show bridgehead admin buttons
+- Buttons with a message
 - Query State
 - Research environment buttons
-- Query execution as checkbox
+- Query execution as a checkbox
 - Github CI
 - VUE_APP_PUBLIC_PATH
 - Nginx conf
 - Config Loader
 - Human Readable to bridgehead
-- Show minimal information in project form
+- Show minimal information in the project form
 - Show User TODOs
 - Extended explanations
 - Extended explanations Messages for draft
 - First and Last Name in User
 - Show query state, project bridgehead state, datashield state and coder state only for one bridgehead
 - Creator Name and creator email button
-- User name and email button
-- Hide project rows in dialog if they are not editable except on summary
+- Username and email button
+- Hide project rows in the dialog if they are not editable except on summary
 - Resend query to bridgehead button
 - Explanation priority
-- Cancel Reject button
-- Archive button requires message too
+- Cancel the Reject button
+- Archive button requires a message too
 - Current User in Project View
-- Press create button only if mandatory fields are not empty
+- Press the creation button only if mandatory fields are not empty
 - Missing fields list as todo
-- Logo in navbar
-- Mailing Black List
-- Email while hovering on user
+- Logo in the navbar
+- Mailing Blacklist
+- Email while hovering on a user
 - Results
 - Password Sharing Tool for different templates
 - Fetch email message and subject
-- Generate eml and html files for Password Sharing Tool
-- Results URL in project
-- Results already sent button
+- Generate eml and HTML files for Password Sharing Tool
+- Result URL in a project
+- Result already sent button
 - Votum in project view overview with only one bridgehead
 - Votum for all
-- Show email while hovering on user
+- Show email while hovering on a user
 - Check email validity
-- Go to research environment link
+- Go to a research environment link
 - Long Description to options of credential sharing tools
 - Advantages and use cases to options of credential sharing tools
+- General OIDC configuration instead of Keycloak
+- OIDC silent renew
+- Check the expired token
+- Form actions
+- Form fields and templates
+- Dynamic and Fixed dialog steps
+- View and edit form fields
+- Form Field New Groups to generate titles in the project field row
+- Sections in project field rows
+- Download Form Template PDF Buttons
+- Selected Forms as Project View Row
+- Frontend Name
+- Project and Forms Configuration
+- Use PUT and DELETE HTTP methods
+- Filter custom configuration for no project manager admin users
+- Default output for a query if no project type is specified
+- Allowed values in project form
+- Send queries of all project types to bridgehead with only one button
+- Fetch best form templates
+- Project description services
+- Polling Service for visible bridgeheads
+- Project field row category
+- Final Report
+- Form field blocks
+- Button for removing project and form field blocks
+- External logo
+- External Backend Configuration
+- Multiple selected configurations
+- Frontend URL
+- NOT SELECTED configuration
+- Unique feasibility statistics table
+- Bridgehead contact data
+- Multiple form fields
+- Form title canonical order
+- Pre_info and post_info
+- Enum description
+- Override fixed form fields
+- Missing fields representation for summary in view mode
+- Calendar picker for form field of type date or timestamp
+- Filter applicants and bridgeheads
+- Cache config
+- German translations for action explanations and user-action feedback messages
+- Accessible success and error popups for configured action messages
+- Common table format
+- Create request button in the dashboard
+- Creator edits the query of a draft without explorer
+- Success message after a redirect (action feedback marker)
+- Projects without sites: isModuleActionActive also checks that an action needing a site has one (isModuleActionAllowed: permission only); the last site can be removed
+- Embed external URL's
+- Draft: a stored value that is not one of its field's allowed values is shown as not valid and blocks creating the request
+- Ethics vote of a bridgehead: one row per bridgehead, each with its own bridgehead (no longer the bridgehead selected in the Status tab)
+- Documents: "For" in the upload (whole project or a bridgehead, by the user's roles); each document is downloaded and removed with its own bridgehead; a project without bridgeheads lists its documents
+- Local approval (backend module LOCAL_APPROVAL): state LOCAL_APPROVAL; "Start local approval" in the next step of the central approval, skipping it (final or develop phase) in More actions; "Back to review" in More actions
+- Local approval per site: step in the bridgehead overview and the single-bridgehead status (download), "Local approval" card in Documents (applicant and project manager for every site, bridgehead admin for their sites), approval contacts next to the site contacts
+- Frontend variable LOCAL_APPROVAL_REQUIRED: the request cannot skip the local approval, a missing one is red, and the bridgehead admin is not offered to send the query without it ("Wait for the local approval")
+- Upload buttons with a choice of sites check the action for the chosen site (an action that needs a site was never shown); the next step explains only shown buttons; the phase list shows CENTRAL APPROVAL without underscore; "An email is sent to" names the local approval contacts
 
 ### Changed
+- Display feasibility results based only on non-empty backend results
 - Rename accept and reject bridgehead state buttons (authorize/revoke)
-- Rename reject project bridgehead user state as block
-- Copy query to clipboard always active, as long as it has a value
+- Rename reject project bridgehead user state as a block
+- Copy query to clipboard is always active, as long as it has a value
 - Alignment of user in navbar
-- Result acceptance in user input as circle
-- Separate Publication and other documents in new section
+- Result acceptance in user input as a circle
+- Separate Publication and other documents in a new section
 - Rename bridgeheads to sites for being displayed
 - Rename Password Sharing Tool to Credentials Sharing Tool
-- Improvements in resutls box
+- Improvements in the result box
 - Rename creator to applicant
 - Rename profiles to services
-- Don't show votum during draft phase
+- Don't show votum during the draft phase
 - Get Votum status in Bridgehead Overview
 - Show actions as soon as possible
 - In initializeDataInCallback: Just log in the console if 404, but not throw an error
+- Upgrade libraries 
+- Rename Data Science Orchestrator to Samply.Requester
+- Notifications and phases only for project admin in the project view
+- Services in the first place
+- Project Type
+- Filter boolean form fields for creation rules
+- Cohort definition in a query
+- Query Details
+- Rename overview headers
+- Filter services and auto-select service if only one
+- Form field layouts
+- Short description
+- Page name as a backend variable
+- Configuration editable in Review
+- Form field placeholder
+- Mandatory field marker
+- Description collapse rules
+- Favicon as backend environment variable
+- Configurable localized date and time display formats
+- Subtle colors
+- Uniform number format
+- Clean spaces in draft dialog
+- Actions batch
+- No selected bridgehead in the project view: the bridgehead overview is read only; bridgehead actions, results, invitations and the single-bridgehead status use each bridgehead's own permissions, everything else is asked for the whole project (the user's bridgehead sent only for their role where needed)
+- Frontend variable SUMMARY_SPACING: compact (half the draft's field gap, as before 2026-09-30) or airy (the draft's gap, default) for the summary and the request view
+- Feasibility table: columns whose values are all numbers are right-aligned, header included; columns with text stay left-aligned
+- Frontend variable FEASIBILITY_TABLE_WIDTH: compact (as wide as needed, at least 32rem, default), medium (at least 48rem) or full (whole card, number columns as narrow as their content) for the feasibility table
+- Frontend variable FEASIBILITY_TABLE_ALIGNMENT: standard (columns with only numbers right, with text left, default), left or right for the value columns of the feasibility table
+- Project state APPROVAL renamed CENTRAL_APPROVAL (needs the backend with the same rename); state labels show underscores as spaces ("Central approval")
+
+### Removed
+- Application Form
+- Bootstrap Vue (Vue 2)
+
+### Fixed
+- Update the dialog stepper only if necessary
+- consider only selected forms for mandatory fields in the project view
+- Render project fields on time
+- Add a project type as a parameter to the button for save query in bridgehead
+- Cache issue in browser
+- Refresh draft-project feasibility statistics after adding or removing bridgeheads without repeating feasibility requests for unchanged bridgeheads
+- Edit query
+- Form fields being omitted when using multi-row field layouts
+- Results table of the final user: one person column, so every column has its cells (Applicant Acceptance was empty)
+- Refreshing the bridgeheads (e.g. after adding a bridgehead or an action) loaded the page twice
+- Feasibility table: the line below each row was interrupted under the Site column
+- Page language: the app's root element (and the document, if it has none) gets the display locale of the backend (`lang` was empty); docs/date-input.md explains why date inputs still follow the browser's language
+- Status of a project with one bridgehead: "Data received and accepted" shows the applicant's acceptance of that bridgehead's results, as the bridgehead overview does (it only showed the project's acceptance, so without a final user it stayed open for the bridgehead admin)
+
+### Changed
+- Notification only if the project manager admin
+- Forms in custom or implicit
+- Redesign of draft formular
+- Custom configuration only visible for project manager admin
+- Bridgeheads in query form

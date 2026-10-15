@@ -1,21 +1,39 @@
 //projectManagerBackendService.ts
 import axios, {AxiosInstance, AxiosRequestConfig, AxiosResponse} from 'axios';
 import axiosRetry from "axios-retry";
-import KeyCloakService from "@/services/keycloak";
-import {getConfig} from "@/services/configLoader";
+import {getConfig, DisplayFormatKey} from "@/services/configLoader";
+import {AuthService} from "@/services/auth";
+import {BatchEntry, BatchResult} from "@/services/actionsBatch";
 
 
-const bridgeheadParam = 'bridgehead'
-const projectCodeParam = 'project-code'
-const siteParam = 'site'
+/** Marker the backend adds to a redirect URL: the success message of this action is shown once in the target page. */
+export const ACTION_FEEDBACK_PARAM = 'action-feedback'
 
 const actionsPath = '/actions'
+// Open to every user, without an action: the project view needs the bridgeheads before it loads their actions
+const visibleBridgeheadsPath = '/bridgeheads/visible'
+
+export const CUSTOM_PROJECT_CONFIGURATION = 'CUSTOM';
+export const NOT_SELECTED_PROJECT_CONFIGURATION = 'NOT_SELECTED';
+
+export enum ProjectConfigurationSelectionType {
+    SINGLE = "SINGLE",
+    MULTIPLE = "MULTIPLE"
+}
 
 export enum ProjectRole {
+    // These values are defined in the backend and come from the backend. Therefore, we suppress the warning:
+    // noinspection JSUnusedGlobalSymbols
     CREATOR = "CREATOR",
     DEVELOPER = "DEVELOPER",
     PILOT = "PILOT",
     FINAL = "FINAL",
+    BRIDGEHEAD_ADMIN = "BRIDGEHEAD_ADMIN",
+    PROJECT_MANAGER_ADMIN = "PROJECT_MANAGER_ADMIN"
+}
+
+export enum OrganisationRole {
+    RESEARCHER = "RESEARCHER",
     BRIDGEHEAD_ADMIN = "BRIDGEHEAD_ADMIN",
     PROJECT_MANAGER_ADMIN = "PROJECT_MANAGER_ADMIN"
 }
@@ -31,13 +49,15 @@ export enum Module {
     PROJECTS_MODULE = "PROJECTS",
     USER_MODULE = "USER",
     PROJECT_STATE_MODULE = "PROJECT_STATE",
-    PROJECT_RESULTS_MODULE= "PROJECT_RESULTS",
+    PROJECT_RESULTS_MODULE = "PROJECT_RESULTS",
     PROJECT_BRIDGEHEAD_MODULE = "PROJECT_BRIDGEHEAD",
     PROJECT_EDITION_MODULE = "PROJECT_EDITION",
     PROJECT_DOCUMENTS_MODULE = "PROJECT_DOCUMENTS",
     NOTIFICATIONS_MODULE = "NOTIFICATIONS",
     EXPORT_MODULE = "EXPORT",
-    TOKEN_MANAGER_MODULE = "TOKEN_MANAGER"
+    TOKEN_MANAGER_MODULE = "TOKEN_MANAGER",
+    // Actions about the actions themselves, e.g. calling several of them in one request
+    ACTIONS_MODULE = "ACTIONS"
 }
 
 function getModuleFromString(value: string): Module | undefined {
@@ -52,11 +72,12 @@ export enum Action {
     ACCEPT_PROJECT_ACTION = "ACCEPT_PROJECT",
     REJECT_PROJECT_ACTION = "REJECT_PROJECT",
     ARCHIVE_PROJECT_ACTION = "ARCHIVE_PROJECT",
+    START_LOCAL_APPROVAL_STAGE_ACTION = "START_LOCAL_APPROVAL_STAGE",
+    BACK_TO_REVIEW_ACTION = "BACK_TO_REVIEW",
     START_DEVELOP_STAGE_ACTION = "START_DEVELOP_STAGE",
     START_PILOT_STAGE_ACTION = "START_PILOT_STAGE",
     START_FINAL_STAGE_ACTION = "START_FINAL_STAGE",
     FINISH_PROJECT_ACTION = "FINISH_PROJECT",
-    DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION = "DOWNLOAD_APPLICATION_FORM_TEMPLATE",
     SAVE_QUERY_IN_BRIDGEHEAD_ACTION = "SAVE_QUERY_IN_BRIDGEHEAD",
     SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD_ACTION = "SAVE_AND_EXECUTE_QUERY_IN_BRIDGEHEAD",
     DOWNLOAD_AUTHENTICATION_SCRIPT_ACTION = "DOWNLOAD_AUTHENTICATION_SCRIPT",
@@ -64,20 +85,26 @@ export enum Action {
     FETCH_EXPORTER_TEMPLATES_ACTION = "EXPORTER_TEMPLATES",
     FETCH_QUERY_FORMATS_ACTION = "FETCH_QUERY_FORMATS",
     FETCH_OUTPUT_FORMATS_ACTION = "FETCH_OUTPUT_FORMATS",
+    UPLOAD_DESCRIPTION_ACTION = "UPLOAD_DESCRIPTION",
     UPLOAD_VOTUM_ACTION = "UPLOAD_VOTUM",
+    UPLOAD_LOCAL_APPROVAL_ACTION = "UPLOAD_LOCAL_APPROVAL",
+    DOWNLOAD_LOCAL_APPROVAL_ACTION = "DOWNLOAD_LOCAL_APPROVAL",
+    FETCH_LOCAL_APPROVAL_DESCRIPTION_ACTION = "FETCH_LOCAL_APPROVAL_DESCRIPTION",
+    EXISTS_LOCAL_APPROVAL_ACTION = "EXISTS_LOCAL_APPROVAL",
     UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION = "UPLOAD_VOTUM_FOR_ALL_BRIDGEHEADS",
-    UPLOAD_APPLICATION_FORM_ACTION = "UPLOAD_APPLICATION_FORM",
     UPLOAD_PUBLICATION_ACTION = "UPLOAD_PUBLICATION",
     UPLOAD_SCRIPT_ACTION = "UPLOAD_SCRIPT",
     UPLOAD_OTHER_DOCUMENT_ACTION = "UPLOAD_OTHER_DOCUMENT",
+    REMOVE_DOCUMENT_ACTION = "REMOVE_DOCUMENT",
     ADD_PUBLICATION_URL_ACTION = "ADD_PUBLICATION_URL",
     ADD_OTHER_DOCUMENT_URL_ACTION = "ADD_OTHER_DOCUMENT_URL",
+    DOWNLOAD_DESCRIPTION_ACTION = "DOWNLOAD_DESCRIPTION",
     DOWNLOAD_VOTUM_ACTION = "DOWNLOAD_VOTUM",
     DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION = "DOWNLOAD_VOTUM_FOR_ALL_BRIDGEHEADS",
+    EXISTS_DESCRIPTION_ACTION = "EXISTS_DESCRIPTION",
+    FETCH_DESCRIPTION_ACTION = "FETCH_DESCRIPTION",
     EXISTS_VOTUM_ACTION = "EXISTS_VOTUM",
     EXISTS_VOTUM_FOR_ALL_BRIDGEHEADS_ACTION = "EXISTS_VOTUM_FOR_ALL_BRIDGEHEADS",
-    EXISTS_APPLICATION_FORM_ACTION = "EXISTS_APPLICATION_FORM",
-    DOWNLOAD_APPLICATION_FORM_ACTION = "DOWNLOAD_APPLICATION_FORM",
     DOWNLOAD_PUBLICATION_ACTION = "DOWNLOAD_PUBLICATION",
     DOWNLOAD_SCRIPT_ACTION = "DOWNLOAD_SCRIPT",
     EXISTS_SCRIPT_ACTION = "EXISTS_SCRIPT",
@@ -90,27 +117,34 @@ export enum Action {
     FETCH_PROJECT_BRIDGEHEADS_ACTION = "FETCH_PROJECT_BRIDGEHEADS",
     FETCH_PROJECT_TYPES_ACTION = "FETCH_PROJECT_TYPES",
     FETCH_PROJECTS_ACTION = "FETCH_PROJECTS",
+    CREATE_QUERY_AND_DESIGN_PROJECT_ACTION = "CREATE_QUERY_AND_DESIGN_PROJECT",
+    FETCH_PROJECT_CREATORS_ACTION = "FETCH_PROJECT_CREATORS",
     FETCH_PUBLICATIONS_ACTION = "FETCH_PUBLICATIONS",
     FETCH_OTHER_DOCUMENTS_ACTION = "FETCH_OTHER_DOCUMENTS",
     ACCEPT_PROJECT_RESULTS_ACTION = "ACCEPT_PROJECT_RESULTS",
     REJECT_PROJECT_RESULTS_ACTION = "REJECT_PROJECT_RESULTS",
     REQUEST_CHANGES_IN_PROJECT_ACTION = "REQUEST_CHANGES_IN_PROJECT",
     FETCH_NOTIFICATIONS_ACTION = "FETCH_NOTIFICATIONS",
+    FETCH_ACTIONS_BATCH_ACTION = "FETCH_ACTIONS_BATCH",
     SET_NOTIFICATION_AS_READ_ACTION = "SET_NOTIFICATION_AS_READ",
     FETCH_PROJECT_ACTION = "FETCH_PROJECT",
     FETCH_PROJECT_STATES_ACTION = "FETCH_PROJECT_STATES",
+    FETCH_VISIBLE_PROJECT_STATES_ACTION = "FETCH_VISIBLE_PROJECT_STATES",
     FETCH_ALL_REGISTERED_BRIDGEHEADS_ACTION = "FETCH_ALL_REGISTERED_BRIDGEHEADS",
     FETCH_DATASHIELD_STATUS_ACTION = "FETCH_DATASHIELD_STATUS",
     FETCH_USERS_FOR_AUTOCOMPLETE_ACTION = "FETCH_USERS_FOR_AUTOCOMPLETE",
     FETCH_PROJECT_USERS_ACTION = "FETCH_PROJECT_USERS",
     FETCH_CURRENT_USER_ACTION = "FETCH_CURRENT_USER",
     FETCH_PROJECT_CONFIGURATIONS_ACTION = "FETCH_PROJECT_CONFIGURATIONS",
+    FETCH_PROJECT_CONFIGURATION_SELECTION_TYPE_ACTION = "FETCH_PROJECT_CONFIGURATION_SELECTION_TYPE",
     FETCH_CURRENT_PROJECT_CONFIGURATION_ACTION = "FETCH_CURRENT_PROJECT_CONFIGURATION",
     EXISTS_AUTHENTICATION_SCRIPT_ACTION = "EXISTS_AUTHENTICATION_SCRIPT",
     SET_PROJECT_CONFIGURATION_ACTION = "SET_PROJECT_CONFIGURATION",
-    FETCH_VISIBLE_PROJECT_BRIDGEHEADS_ACTION = "FETCH_VISIBLE_PROJECT_BRIDGEHEADS",
+    FETCH_VISIBLE_BRIDGEHEADS_ACTION = "FETCH_VISIBLE_BRIDGEHEADS",
+    IS_FEASIBILITY_ENABLED_ACTION = "IS_FEASIBILITY_ENABLED",
+    FETCH_FEASIBILITY_ACTION = "FETCH_FEASIBILITY",
     FETCH_PROJECT_ROLES_ACTION = "FETCH_PROJECT_ROLES",
-    FETCH_APPLICATION_FORM_DESCRIPTION_ACTION = "FETCH_APPLICATION_FORM_DESCRIPTION",
+    FETCH_ORGANISATION_ROLES_ACTION = "FETCH_ORGANISATION_ROLES",
     FETCH_VOTUM_DESCRIPTION_ACTION = "FETCH_VOTUM_DESCRIPTION",
     FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION_ACTION = "FETCH_VOTUM_FOR_ALL_BRIDGEHEADS_DESCRIPTION",
     FETCH_SCRIPT_DESCRIPTION_ACTION = "FETCH_SCRIPT_DESCRIPTION",
@@ -124,7 +158,7 @@ export enum Action {
     REMOVE_USER_FROM_MAILING_BLACK_LIST_ACTION = "REMOVE_USER_FROM_MAILING_BLACK_LIST",
     FETCH_MAILING_BLACK_LIST_ACTION = "FETCH_MAILING_BLACK_LIST",
     FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST_ACTION = "FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST",
-    ADD_PROJECT_BRIDGHEAD_RESULTS_URL_ACTION = "ADD_PROJECT_BRIDGHEAD_RESULTS_URL",
+    ADD_PROJECT_BRIDGEHEAD_RESULTS_URL_ACTION = "ADD_PROJECT_BRIDGEHEAD_RESULTS_URL",
     ADD_PROJECT_RESULTS_URL_ACTION = "ADD_PROJECT_RESULTS_URL",
     ACCEPT_PROJECT_RESULTS_URL_ACTION = "ACCEPT_PROJECT_RESULTS_URL",
     REJECT_PROJECT_RESULTS_URL_ACTION = "REJECT_PROJECT_RESULTS_URL",
@@ -138,10 +172,29 @@ export enum Action {
     FETCH_EMAIL_MESSAGE_AND_SUBJECT_ACTION = "FETCH_EMAIL_MESSAGE_AND_SUBJECT",
     IS_PROJECT_MANAGER_ADMIN_ACTION = "IS_PROJECT_MANAGER_ADMIN",
     FETCH_RESEARCH_ENVIRONMENT_URL_ACTION = "FETCH_RESEARCH_ENVIRONMENT_URL",
-    EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION = "EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE"
+    EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE_ACTION = "EXISTS_RESEARCH_ENVIRONMENT_WORKSPACE",
+    FETCH_PROJECT_FORM_TITLE_ORDER_ACTION = "FETCH_PROJECT_FORM_TITLE_ORDER",
+    FETCH_PROJECT_FORM_FIELDS_ACTION = "FETCH_PROJECT_FORM_FIELDS",
+    FETCH_PROJECT_FORM_LAYOUTS_ACTION = "FETCH_PROJECT_FORM_LAYOUTS",
+    FETCH_PROJECT_FORM_TEMPLATES_ACTION = "FETCH_FORM_TEMPLATES",
+    EDIT_PROJECT_FORM_FIELDS_ACTION = "EDIT_PROJECT_FORM_FIELDS",
+    DOWNLOAD_FORM_AS_PDF_ACTION = "DOWNLOAD_FORM_AS_PDF",
+    FETCH_SELECTED_PROJECT_FORMS_ACTION = "FETCH_SELECTED_PROJECT_FORMS",
+    ADD_SELECTED_PROJECT_FORM_ACTION = "ADD_SELECTED_PROJECT_FORM",
+    REMOVE_SELECTED_PROJECT_FORM_ACTION = "REMOVE_SELECTED_PROJECT_FORM",
+    REMOVE_PROJECT_OUTPUT_ACTION = "REMOVE_PROJECT_OUTPUT",
+    EXISTS_PUBLICATION_ACTION = "EXISTS_PUBLICATION",
+    UPLOAD_FINAL_REPORT_ACTION = "UPLOAD_FINAL_REPORT",
+    ADD_FINAL_REPORT_URL_ACTION = "ADD_FINAL_REPORT_URL",
+    EXISTS_FINAL_REPORT_ACTION = "EXISTS_FINAL_REPORT",
+    DOWNLOAD_FINAL_REPORT_ACTION = "DOWNLOAD_FINAL_REPORT",
+    FETCH_FINAL_REPORTS_ACTION = "FETCH_FINAL_REPORTS",
+    DELETE_PROJECT_ACTION = "DELETE_PROJECT",
+    DELETE_FORM_FIELD_BLOCK_ACTION = "DELETE_FORM_FIELD_BLOCK",
+    DELETE_FORM_FIELD_VALUE_ACTION = "DELETE_FORM_FIELD_VALUE"
 }
 
-export enum EditProjectParam {
+export enum PmRequestParameter {
     PROJECT_CONFIGURATION = "project-configuration",
     QUERY_FORMAT = "query-format",
     BRIDGEHEADS = "bridgeheads",
@@ -149,55 +202,154 @@ export enum EditProjectParam {
     DESCRIPTION = "description",
     OUTPUT_FORMAT = "output-format",
     TEMPLATE_ID = "template-id",
+    QUERY = "query",
     HUMAN_READABLE = "human-readable",
     PROJECT_TYPE = "project-type",
-    QUERY_CONTEXT = "query-context"
+    QUERY_CONTEXT = "query-context",
+    FORM_FIELDS = "form-fields",
+    FORM_FIELD = "form-field",
+    FORM_TEMPLATE = "form-template",
+    FORM_TITLE = "form-title",
+    COHORT_DEFINITION = "cohort-definition",
+    RESULTS_URL = "results-url",
+    PROJECT_STATE = "project-state",
+    PROJECT_CREATOR_EMAIL = "project-creator-email",
+    BRIDGEHEAD = "bridgehead",
+    PAGE = "page",
+    PAGE_SIZE = "page-size",
+    SORT_BY = "sort-by",
+    SORT_DESC = "sort-desc",
+    SITE = "site",
+    QUERY_DETAILS = "query-details",
+    PROJECT_CODE = "project-code",
+    EMAIL = "email",
+    PARTIAL_EMAIL = "partial-email",
+    FILENAME = "filename",
+    NOTIFICATION_ID = "notification-id",
+    MESSAGE = "message",
+    PROJECT_ROLE = "project-role",
+    EMAIL_TEMPLATE_TYPE = "email-template-type",
+    DOCUMENT = "document",
+    DOCUMENT_URL = "document-url",
+    DOCUMENT_ID = "document-id",
+    // The read actions called by the actions batch
+    ACTIONS_BATCH_REQUESTS = "requests"
+}
+
+export enum ProjectType {
+    // These values are defined in the backend and come from the backend. Therefore, we suppress the warning:
+    // noinspection JSUnusedGlobalSymbols
+    EXPORT = "EXPORT",
+    SAMPLES = "SAMPLES", // Interacts with Negotiator
+    DATASHIELD = "DATASHIELD",
+    RESEARCH_ENVIRONMENT = "RESEARCH_ENVIRONMENT"
+}
+
+export enum ProjectState {
+    DRAFT = "DRAFT",
+    REVIEW = "REVIEW",
+    CENTRAL_APPROVAL = "CENTRAL_APPROVAL",
+    LOCAL_APPROVAL = "LOCAL_APPROVAL",
+    DEVELOP = "DEVELOP",
+    PILOT = "PILOT",
+    FINAL = "FINAL",
+    FINISHED = "FINISHED",
+    REJECTED = "REJECTED",
+    ARCHIVED = "ARCHIVED"
+}
+
+// "DRAFT" -> "Draft", "CENTRAL_APPROVAL" -> "Central approval". Shared so ProjectDashboard.vue's filter dropdown and
+// Phase column, and ProjectView.vue/PhasePill.vue's "At a Glance" Phase
+// cell, can't drift apart on the wording.
+export function projectStateLabel(state: ProjectState): string {
+    return state.charAt(0) + state.slice(1).toLowerCase().replaceAll("_", " ");
+}
+
+export enum ProjectSortField {
+    TITLE = "title",
+    REQUEST_ID = "request-id",
+    PROJECT_CREATOR = "project-creator",
+    STATUS = "status",
+    CREATED = "created",
+    MODIFIED_AT = "modified-at"
+}
+
+export enum UserProjectState {
+    CREATED = "CREATED",
+    REQUEST_CHANGES = "REQUEST_CHANGES",
+    ACCEPTED = "ACCEPTED",
+    REJECTED = "REJECTED"
 }
 
 export interface Project {
-    code: string | null;
-    creatorEmail: string | null | undefined;
-    creatorName: string | null;
-    createdAt: Date | null;
-    expiresAt: Date | null;
-    archivedAt: Date | null;
-    modifiedAt: Date | null;
-    state: string | null;
-    type: string | null;
-    query: string | null;
-    humanReadable: string | null;
-    queryFormat: string | null;
-    outputFormat: string | null;
-    templateId: string | null;
-    label: string | null;
-    description: string | null;
-    explorerUrl: string | null;
-    queryContext: string | null;
-    isCustomConfig: boolean | null;
-    creatorState: string;
-    resultsUrl: string | null | undefined;
+    code?: string;
+    creatorEmail?: string;
+    creatorName?: string;
+    createdAt?: string;
+    expiresAt?: string;
+    archivedAt?: string;
+    modifiedAt?: string;
+    state?: ProjectState;
+    query?: string;
+    humanReadable?: string;
+    queryFormat?: string;
+    queryDetails?: string;
+    label?: string;
+    description?: string;
+    explorerUrl?: string;
+    queryContext?: string;
+    isCustomConfigSelected?: boolean;
+    creatorState?: UserProjectState;
+    resultsUrl?: string;
+    cohortDefinition?: string;
+    outputs?: ProjectOutput[];
+}
+
+export interface ProjectOutput {
+    projectType: ProjectType;
+    outputFormat?: string;
+    templateId?: string;
+}
+
+export function getAllProjectTypes(project?: Project): ProjectType[] {
+    return project?.outputs?.map(o => o.projectType) ?? [];
+}
+
+export function getAllProjectTypesFromBridgehead(bridgehead?: Bridgehead): ProjectType[] {
+    return bridgehead?.executions?.map(e => e.projectType) ?? [];
+}
+
+export function hasProjectType(project?: Project, type?: ProjectType): boolean {
+    if (!type) return false; // nothing to check
+    return project?.outputs?.some(o => o.projectType === type) ?? false;
 }
 
 export interface Notification {
-    id: number | null;
-    email: string | null;
-    timestamp: Date | null;
-    projectCode: string | null;
-    bridgehead: string | null;
-    humanReadableBridgehead: string | null;
-    operationType: string | null;
-    details: string | null;
-    error: string | null;
-    httpStatus: number | null;
-    read: boolean | null;
+    id?: number;
+    email?: string;
+    // Full name of the user behind the email, if the backend knows it
+    userName?: string;
+    timestamp?: string;
+    projectCode?: string;
+    // Title of the request
+    projectLabel?: string;
+    // Current phase of the request, not the phase at the time of the notification
+    projectState?: ProjectState;
+    bridgehead?: string;
+    humanReadableBridgehead?: string;
+    operationType?: string;
+    details?: string;
+    error?: string;
+    httpStatus?: number;
+    read?: boolean;
 }
 
 export interface User {
     email: string;
-    firstName: string | null;
-    lastName: string | null;
+    firstName?: string;
+    lastName?: string;
     bridgehead: string;
-    humanReadableBridgehead: string | null;
+    humanReadableBridgehead?: string;
     projectRole: string;
     projectState: string;
 }
@@ -208,18 +360,100 @@ export interface MessageSubject {
     emailTo: string; // This field is not included in the backend
 }
 
+export enum ProjectBridgeheadState {
+    CREATED = "CREATED",
+    ACCEPTED = "ACCEPTED",
+    REJECTED = "REJECTED"
+}
 
 export interface Bridgehead {
-    projectCode: string | null | undefined;
     bridgehead: string;
-    humanReadable: string | null | undefined;
-    state: string | null | undefined;
-    modifiedAt: string | null | undefined;
-    queryState: string | null | undefined;
-    creatorState: string | null | undefined;
+    humanReadable?: string;
+    contacts?: BridgeheadContact[];
+    // The people of the site's local approval (not users of the project manager); only in a request's bridgeheads
+    approvalContacts?: BridgeheadContact[];
+    projectCode?: string;
+    modifiedAt?: string;
+    creatorState?: UserProjectState;
+    state?: ProjectBridgeheadState;
+    executions?: BridgeheadExecution[];
+}
+
+export interface BridgeheadContact {
+    name?: string;
+    description?: string;
+    emailAddress?: string;
+}
+
+export enum QueryState {
+    CREATED = "CREATED",
+    TO_BE_SENT = "TO_BE_SENT",
+    TO_BE_SENT_AND_EXECUTED = "TO_BE_SENT_AND_EXECUTED",
+    SENDING = "SENDING",
+    SENDING_AND_EXECUTING = "SENDING_AND_EXECUTING",
+    EXPORT_RUNNING_1 = "EXPORT_RUNNING_1",
+    EXPORT_RUNNING_2 = "EXPORT_RUNNING_2",
+    ERROR = "ERROR",
+    FINISHED = "FINISHED"
+}
+
+export function isQueryOnTheWay(queryState: QueryState) {
+    return [QueryState.TO_BE_SENT, QueryState.TO_BE_SENT_AND_EXECUTED, QueryState.SENDING, QueryState.SENDING_AND_EXECUTING].includes(queryState);
+}
+
+export interface BridgeheadExecution {
+    projectType: ProjectType;
+    queryState: QueryState;
+}
+
+export function hasExecution(bridgehead?: Bridgehead, projectType?: ProjectType, queryState?: QueryState): boolean {
+    if (!bridgehead?.executions?.length) return false; // no executions at all
+
+    return bridgehead.executions.some(exec => {
+        // if projectType is defined, it must match
+        const typeMatches = projectType ? exec.projectType === projectType : true;
+        // if queryState is defined, it must match
+        const stateMatches = queryState ? exec.queryState === queryState : true;
+
+        return typeMatches && stateMatches;
+    });
+}
+
+export function getQueryState(bridgehead: Bridgehead, projectType?: ProjectType): string | undefined {
+    return projectType
+        ? bridgehead.executions?.find(e => e.projectType === projectType)?.queryState
+        : undefined;
+}
+
+export function getMergedQueryStates(
+    bridgehead: Bridgehead,
+    types: ProjectType[]
+): { state: string; types: ProjectType[] }[] {
+    const stateMap = new Map<string, ProjectType[]>();
+
+    for (const type of types) {
+        const state = getQueryState(bridgehead, type) ?? 'unknown';
+        if (!stateMap.has(state)) {
+            stateMap.set(state, []);
+        }
+        stateMap.get(state)!.push(type);
+    }
+
+    return Array.from(stateMap.entries()).map(([state, types]) => ({ state, types }));
+}
+
+export function hasValidOutputs(project?: Project): boolean {
+    return (
+        (project?.outputs?.length ?? 0) > 0 &&
+        project!.outputs!.every(
+            o => [o.templateId, o.outputFormat, o.projectType].every(
+                value => typeof value === 'string' && value.trim().length > 0)
+        )
+    );
 }
 
 export interface ProjectDocument {
+    id?: number;
     projectCode: string;
     originalFilename: string;
     url: string;
@@ -227,26 +461,21 @@ export interface ProjectDocument {
     bridgehead: string;
     humanReadableBridgehead: string | null;
     creatorEmail: string;
+    creatorName?: string;
     label: string;
     type: string;
 }
 
-export interface ProjectField {
-    fieldKey: string
-    editProjectParam: EditProjectParam[]
-    fieldValue: string[]
-    redirectUrl?: string
-    isEditable: boolean
-    possibleValues?: string[]
-    configurations?: Map<string, Project>
-    uploadAction?: Action
-    downloadAction?: Action
-    downloadModule?: Module
-    todos?: Explanations
-    existFile?: boolean
-    transformForSending?: (input: string) => string
-    draftDialogCurrentStep: number
-    visibilityCondition: boolean
+export interface FeasibilityItem {
+    label: string;
+    value: number;
+    breakdown?: FeasibilityItem[];
+}
+
+export type FeasibilityResult = FeasibilityItem[];
+
+export function hasFeasibilityResult(result: FeasibilityResult | undefined): result is FeasibilityResult {
+    return result !== undefined && result.length > 0;
 }
 
 export interface Results {
@@ -267,13 +496,10 @@ export interface DataShieldProjectStatus {
     project_status: string;
 }
 
-export interface ActionModule {
-    module: Module
-    action: Action
-}
-
 export interface ActionButtonGroup {
     label: string
+    // What the user is asked to do, when the deployment has no explanation for the group's actions
+    description?: string
     button: ActionButton[]
 }
 
@@ -283,9 +509,169 @@ export interface ActionButton {
     refreshContextCallFunction: () => void
     text: string
     withMessage: boolean
+    // The message is required (reject, request changes); see ProjectManagerButton
+    messageRequired?: boolean
+    // Confirmation dialog even without a message, with what happens
+    confirmation?: boolean
+    confirmationText?: string
     cssClass: string
+    params?: Map<string, string>
     visibilityCondition?: boolean
     doActionOnClick?: () => void
+    // An action of one bridgehead: called with that bridgehead, and shown if that bridgehead's permissions allow it
+    // (docs/bridgehead-context.md). Without it, the page's context and permissions.
+    bridgehead?: Bridgehead
+}
+
+export interface FormFieldGroup {
+    group: string
+    displayName: string
+    description: string
+    shortDescription?: string
+}
+
+export interface FormFieldValue {
+    label: string
+    displayName: string
+    description?: string
+    shortDescription?: string
+}
+
+export enum FormDataType {
+    // These values are defined in the backend and come from the backend. Therefore, we suppress the warning:
+    // noinspection JSUnusedGlobalSymbols
+    INTEGER = "INTEGER",
+    DOUBLE = "DOUBLE",
+    BOOLEAN = "BOOLEAN",
+    STRING = "STRING",
+    LONG_STRING = "LONG_STRING",
+    DATE = "DATE",
+    TIMESTAMP = "TIMESTAMP",
+    LOCAL_DATE_TIME = "LOCAL_DATE_TIME",
+    ENUM = "ENUM"
+}
+
+// DYNAMIC is the backward-compatible default and represents a normal form
+// field whose value is handled by the dynamic form-field flow. FIXED is a
+// metadata-only reference to a field implemented by the frontend; it can
+// override that native field's display metadata, order, KEEP_FIXED_FIELD_ORDER
+// placement and active state. A condition is evaluated by the backend and is
+// represented as active=false when it does not match.
+export enum FormFieldType {
+    DYNAMIC = "DYNAMIC",
+    FIXED = "FIXED"
+}
+
+// Frontend-recognized FormField.properties values. Unknown property strings
+// remain safe to transport and are ignored by the frontend.
+export enum FormFieldProperty {
+    // Render an ENUM as a single-choice radio group instead of a dropdown.
+    RADIO_BUTTON = "RADIO_BUTTON",
+    // Render a multiple ENUM as one checkbox list.
+    CHECK_BOX = "CHECK_BOX",
+    // Layout markers for two related fields rendered in one row. The root
+    // row assigns the configured proportions; the field itself fills its
+    // assigned column. CSS_ENUM is intended for the selector part of an
+    // enum-plus-text pair, while CSS_ENUM_VALUE is intended for its free-text
+    // continuation (for example, an "Other" explanation).
+    CSS_UNIT_VALUE = "CSS_UNIT_VALUE",
+    CSS_UNIT = "CSS_UNIT",
+    CSS_ENUM = "CSS_ENUM",
+    CSS_ENUM_VALUE = "CSS_ENUM_VALUE",
+    CSS_CHECKBOX = "CSS_CHECKBOX",
+    // Apply FIXED display metadata/active state while retaining the native
+    // fixed-group position and dialog step.
+    KEEP_FIXED_FIELD_ORDER = "KEEP_FIXED_FIELD_ORDER"
+}
+
+// Stable frontend-owned identifiers accepted as labels of FIXED configuration
+// entries. They are deliberately separate from the visible/translatable field
+// captions used by ProjectField.fieldKey.
+export enum FixedFormFieldKey {
+    PROJECT_TITLE = "PROJECT_TITLE",
+    PROJECT_DESCRIPTION = "PROJECT_DESCRIPTION",
+    DESCRIPTION_UPLOAD = "DESCRIPTION_UPLOAD",
+    QUERIED_SITES = "QUERIED_SITES",
+    PROJECT_CONFIGURATION = "PROJECT_CONFIGURATION",
+    SELECTED_COHORT = "SELECTED_COHORT",
+    QUERY_FORMAT = "QUERY_FORMAT",
+    ADDITIONAL_FILTER_CRITERIA = "ADDITIONAL_FILTER_CRITERIA",
+    PROJECT_TYPE = "PROJECT_TYPE",
+    OUTPUT_FORMAT = "OUTPUT_FORMAT",
+    TEMPLATE_ID = "TEMPLATE_ID",
+    ENVIRONMENT_VARIABLES = "ENVIRONMENT_VARIABLES",
+    ETHICS_VOTE = "ETHICS_VOTE",
+    ETHICS_VOTE_FOR_ALL_SITES = "ETHICS_VOTE_FOR_ALL_SITES"
+}
+
+export interface FormTitle {
+    title: string;
+    titleDisplayName?: string;
+    titleDescription?: string;
+    titleShortDescription?: string;
+    titlePreInfo?: string;
+    titlePostInfo?: string;
+}
+
+export interface FormField extends FormTitle {
+    label: string;
+    // Missing means DYNAMIC for compatibility with older backend responses.
+    fieldType?: FormFieldType;
+    // The backend sends this only as false for an inactive FIXED entry.
+    // Missing means active/default and is not relevant for DYNAMIC fields.
+    active?: boolean;
+    labelDisplayName?: string;
+    labelDescription?: string;
+    labelShortDescription?: string;
+    labelPreInfo?: string;
+    labelPostInfo?: string;
+    placeholder?: string;
+    groups?: FormFieldGroup[];
+    type?: FormDataType;
+    displayFormat?: DisplayFormatKey;
+    allowedValues?: FormFieldValue[];
+    mandatory?: boolean;
+    // Whether this field can hold several values of its own data type,
+    // independently of any block-level "multiple" (multipleBlock below).
+    // Ignored for BOOLEAN fields.
+    multiple?: boolean;
+    asFile?: boolean;
+    block?: string,
+    blockInstance?: number,
+    // Index of the value instance for a field whose multiple is true. Scoped
+    // WITHIN blockInstance, not globally per label - a multiple field inside
+    // a multiple block restarts its numbering at 1 for every block instance.
+    // Undefined when multiple is false.
+    fieldInstance?: number,
+    multipleBlock?: boolean,
+    minBlockInstances?: number,
+    blockDisplayName?: string,
+    blockDescription?: string,
+    blockShortDescription?: string,
+    blockPreInfo?: string,
+    blockPostInfo?: string,
+    order?: number;
+    value?: string;
+    properties?: string[]
+}
+
+export interface FormFieldLayoutRow {
+    fields: string[];
+}
+
+export interface FormFieldLayout {
+    rows: FormFieldLayoutRow[];
+}
+
+export interface ProjectAndForms {
+    project?: Project;
+    forms?: FormTitle[];
+    formFields: FormField[];
+}
+
+export interface FormTemplate {
+    template: string
+    displayName: string
 }
 
 function getActionFromString(value: string): Action | undefined {
@@ -294,16 +680,42 @@ function getActionFromString(value: string): Action | undefined {
 
 export enum HttpMethod {
     GET,
-    POST
+    POST,
+    PUT,
+    DELETE
 }
 
 export type ActionMetadata = {
     path: string;
     method: HttpMethod;
     params: string [];
-    explanation: string;
-    priority: number;
+    explanation?: string;
+    successMessage?: string;
+    errorMessage?: string;
+    priority?: number;
+    /** The endpoint needs a bridgehead: it cannot be called in a context without one (a project without bridgeheads). */
+    bridgeheadRequired?: boolean;
+    /** Who gets an email when the action succeeds, known before it runs (the backend's @EmailSender). */
+    emailRecipients: EmailRecipientType[];
 }
+
+// The backend's EmailRecipientType, without SESSION_USER (the user performing the action is never listed).
+// noinspection JSUnusedGlobalSymbols
+export enum EmailRecipientType {
+    EMAIL_ANNOTATION = "EMAIL_ANNOTATION",
+    CREATOR = "CREATOR",
+    PROJECT_MANAGER_ADMIN = "PROJECT_MANAGER_ADMIN",
+    ALL_DEVELOPERS = "ALL_DEVELOPERS",
+    ALL_PILOTS = "ALL_PILOTS",
+    ALL_FINALS = "ALL_FINALS",
+    ALL_BRIDGEHEAD_ADMINS = "ALL_BRIDGEHEAD_ADMINS",
+    BRIDGEHEAD_ADMIN = "BRIDGEHEAD_ADMIN",
+    BRIDGEHEAD_APPROVAL_CONTACTS = "BRIDGEHEAD_APPROVAL_CONTACTS",
+    BRIDGEHEAD_ADMINS_WHO_HAVE_NOT_ACCEPTED_NOR_REJECTED_THE_PROJECT = "BRIDGEHEAD_ADMINS_WHO_HAVE_NOT_ACCEPTED_NOR_REJECTED_THE_PROJECT",
+    PROJECT_ALL = "PROJECT_ALL"
+}
+
+export type ActionFeedbackMessages = Pick<ActionMetadata, 'successMessage' | 'errorMessage'>;
 
 export type Explanations = Map<string, { number: number, message: string }>
 
@@ -317,7 +729,8 @@ function jsonToActionMetadata(json: any): ActionMetadata | undefined {
     const methodMapping: Record<string, HttpMethod> = {
         'GET': HttpMethod.GET,
         'POST': HttpMethod.POST,
-        // Add more mappings if necessary
+        'PUT': HttpMethod.PUT,
+        'DELETE': HttpMethod.DELETE
     };
     const method: HttpMethod | undefined = methodMapping[json.method];
     if (method === undefined) {
@@ -328,7 +741,12 @@ function jsonToActionMetadata(json: any): ActionMetadata | undefined {
         method: method,
         params: json.params || [],  // assuming params is an array, provide a default value if it's optional
         explanation: json.explanation,
-        priority: json.priority
+        successMessage: json.successMessage,
+        errorMessage: json.errorMessage,
+        priority: json.priority,
+        bridgeheadRequired: json.bridgeheadRequired === true,
+        // An older backend does not send it: no recipients rather than a wrong list.
+        emailRecipients: Array.isArray(json.emailRecipients) ? json.emailRecipients : []
     };
 }
 
@@ -343,8 +761,6 @@ export class ProjectManagerContext {
 
 }
 
-export const UPLOAD_DOCUMENT_PARAM = 'document';
-export const UPLOAD_DOCUMENT_URL_PARAM = 'document-url';
 
 // Variable to hold the backend URL once loaded
 let projectManagerBackendUrl: string | null = null;
@@ -352,7 +768,7 @@ let projectManagerBackendUrl: string | null = null;
 // Initialize configuration on first load
 const initializeConfig = async () => {
     const config = await getConfig();
-    projectManagerBackendUrl = config.VUE_APP_PROJECT_MANAGER_BACKEND_URL;
+    projectManagerBackendUrl = config.VUE_APP_BACKEND_URL;
 };
 
 // Ensure configuration is initialized at module load
@@ -379,39 +795,91 @@ const createAxiosInstance = async (): Promise<AxiosInstance> => {
 };
 
 
+/**
+ * The bridgeheads of the project the user may see, called directly (not through the actions): the project view loads
+ * them first and then the actions of these bridgeheads, in one request (docs/bridgehead-context.md).
+ */
+export async function fetchVisibleBridgeheads(projectCode: string): Promise<Bridgehead[]> {
+    const axiosInstance = await createAxiosInstance();
+    const token = await AuthService.getToken();
+    const response = await axiosInstance.get(visibleBridgeheadsPath, {
+        params: {[PmRequestParameter.PROJECT_CODE]: projectCode},
+        headers: {Authorization: `Bearer ${token}`},
+        withCredentials: true
+    });
+    return response.data ?? [];
+}
+
 export class ProjectManagerBackendService {
     private axiosInstance?: AxiosInstance;
+    // The actions allowed in the context the service was created with
     private activeModuleActionsMetadata?: Map<Module, Map<Action, ActionMetadata>> | undefined;
+    // The actions allowed at each of the bridgeheads the service was created with, by bridgehead id: the bridgehead
+    // roles count only for their bridgehead, so a call with a bridgehead is checked against that bridgehead's actions
+    // (docs/bridgehead-context.md)
+    private bridgeheadActionsMetadata = new Map<string, Map<Module, Map<Action, ActionMetadata>>>();
     private activeModuleActionsMetadataWithExplanation?: Map<Module, Map<Action, ActionMetadata>> | undefined;
-    private initializedPromise: Promise<void> | undefined;
+    private readonly initializedPromise: Promise<void> | undefined;
 
-    constructor(context: ProjectManagerContext, site: Site) {
-        this.initializedPromise = this.initialize(context, site);
+    /**
+     * bridgeheads: the ids of the bridgeheads whose actions are loaded too, all in the same request (or their coming
+     * load: the actions are loaded once they are known). A call with one of these bridgeheads in its context is then
+     * checked against that bridgehead's actions; any other call against the context's.
+     */
+    constructor(context: ProjectManagerContext, site: Site, bridgeheads: string[] | Promise<string[]> = []) {
+        this.initializedPromise = this.initialize(context, site, bridgeheads);
     }
 
-    private async initialize(context: ProjectManagerContext, site: Site): Promise<void> {
+    private async initialize(context: ProjectManagerContext, site: Site,
+                             bridgeheads: string[] | Promise<string[]>): Promise<void> {
         try {
             this.axiosInstance = await createAxiosInstance();
-            await this.fetchActiveModuleActions(context, site);
+            await this.fetchActiveModuleActions(context, site, await bridgeheads);
         } catch (error) {
             console.error("Initialization failed:", error);
             throw error;
         }
     }
 
-    private async fetchActiveModuleActions(context: ProjectManagerContext, site: Site): Promise<void> {
+    private async fetchActiveModuleActions(context: ProjectManagerContext, site: Site, bridgeheads: string[]): Promise<void> {
+        // The actions without a bridgehead, and those of each given bridgehead: the context's bridgehead is one of them
+        // if needed
         const params = new Map<string, string>();
-        this.addContextToMap(params, context);
-        params.set(siteParam, site);
+        if (context.projectCode) params.set(PmRequestParameter.PROJECT_CODE, context.projectCode);
+        params.set(PmRequestParameter.SITE, site);
+        if (bridgeheads.length > 0) params.set(PmRequestParameter.BRIDGEHEADS, bridgeheads.join(','));
 
         try {
+            // One action package per bridgehead id, and the one without a bridgehead under ""
             const response = await this.doHttpRequest(HttpMethod.GET, actionsPath, params);
-            this.activeModuleActionsMetadata = this.parseModuleActions(response.data);
-            this.activeModuleActionsMetadataWithExplanation = this.filterModuleActionsWithExplanations(this.activeModuleActionsMetadata);
+            this.activeModuleActionsMetadata = this.parseModuleActions(response.data?.[''] ?? {});
+            this.bridgeheadActionsMetadata = new Map(bridgeheads.filter(id => response.data?.[id])
+                .map(id => [id, this.parseModuleActions(response.data[id])]));
+            this.activeModuleActionsMetadataWithExplanation =
+                this.filterModuleActionsWithExplanations(this.mergeModuleActions(this.allModuleActions()));
         } catch (error) {
             console.error("Error fetching active module actions:", error);
             throw error;
         }
+    }
+
+    // The actions without a bridgehead first, then each bridgehead's
+    private allModuleActions(): Map<Module, Map<Action, ActionMetadata>>[] {
+        return [...(this.activeModuleActionsMetadata ? [this.activeModuleActionsMetadata] : []),
+            ...this.bridgeheadActionsMetadata.values()];
+    }
+
+    // Every action allowed anywhere, each once (its first metadata)
+    private mergeModuleActions(packages: Map<Module, Map<Action, ActionMetadata>>[]): Map<Module, Map<Action, ActionMetadata>> {
+        const result = new Map<Module, Map<Action, ActionMetadata>>();
+        packages.forEach(actions => actions.forEach((actionMap, module) => {
+            const merged = result.get(module) ?? new Map<Action, ActionMetadata>();
+            actionMap.forEach((metadata, action) => {
+                if (!merged.has(action)) merged.set(action, metadata);
+            });
+            result.set(module, merged);
+        }));
+        return result;
     }
 
     private filterModuleActionsWithExplanations(actions: Map<Module, Map<Action, ActionMetadata>>):
@@ -423,7 +891,7 @@ export class ProjectManagerBackendService {
             const filteredActionMap = new Map<Action, ActionMetadata>();
 
             for (const [action, metadata] of actionMap) {
-                // Only include actions where explanation is not null or undefined
+                // Only include actions where the explanation is not null or undefined
                 if (metadata.explanation) {
                     filteredActionMap.set(action, metadata);
                 }
@@ -478,18 +946,94 @@ export class ProjectManagerBackendService {
         return resultMap;
     }
 
-    public async isModuleActionActive(module: Module, action: Action): Promise<boolean> {
+    /**
+     * The action can be used in this context: it is allowed for the user and project, and if its endpoint needs a
+     * bridgehead, the context has one (not the case for a project without bridgeheads). Use this one by default.
+     */
+    public async isModuleActionActive(module: Module, action: Action, context: ProjectManagerContext): Promise<boolean> {
         await this.initializedPromise;
-        return this.getActionMetadata(module, action) !== undefined;
+        const call = this.resolveCall(module, action, context);
+        return call !== undefined && (!call.metadata.bridgeheadRequired || call.context.bridgehead !== undefined);
     }
 
-    private getActionMetadata(module: Module, action: Action): ActionMetadata | undefined {
-        return this.activeModuleActionsMetadata?.get(module)?.get(action);
+    /**
+     * Only whether the action is allowed for the user and project, regardless of the context it would be called with.
+     * For decisions made before a bridgehead exists, e.g. whether feasibility can be shown at all.
+     */
+    public async isModuleActionAllowed(module: Module, action: Action): Promise<boolean> {
+        await this.initializedPromise;
+        return this.findActionMetadata(module, action) !== undefined;
+    }
+
+    public async getActionFeedbackMessages(module: Module, action: Action): Promise<ActionFeedbackMessages> {
+        await this.initializedPromise;
+        const metadata = this.findActionMetadata(module, action);
+        return {
+            successMessage: metadata?.successMessage,
+            errorMessage: metadata?.errorMessage,
+        };
+    }
+
+    /** Who gets an email when the action succeeds; empty when it sends none or it is not active. */
+    public async getActionEmailRecipients(module: Module, action: Action): Promise<EmailRecipientType[]> {
+        await this.initializedPromise;
+        return this.findActionMetadata(module, action)?.emailRecipients ?? [];
+    }
+
+    /** Messages of an action given only by its name (e.g. from a URL), in whichever module of this site it is. */
+    public async getActionFeedbackMessagesOfAction(action: string): Promise<ActionFeedbackMessages> {
+        await this.initializedPromise;
+        for (const actions of this.mergeModuleActions(this.allModuleActions()).values()) {
+            const metadata = actions.get(action as Action);
+            if (metadata) {
+                return {successMessage: metadata.successMessage, errorMessage: metadata.errorMessage};
+            }
+        }
+        return {};
+    }
+
+    public async getDefaultErrorMessageForUserActions(): Promise<string | undefined> {
+        const config = await getConfig();
+        // This fallback is intentionally used only by user-action components;
+        // ordinary fetchData calls do not create feedback side effects.
+        return config.DEFAULT_ERROR_MESSAGE_FOR_USER_ACTIONS;
+    }
+
+    // The action as allowed in this context: at its bridgehead, if the service has that bridgehead's actions
+    private getActionMetadata(module: Module, action: Action, context?: ProjectManagerContext): ActionMetadata | undefined {
+        const bridgehead = context?.bridgehead?.bridgehead;
+        const actions = (bridgehead && this.bridgeheadActionsMetadata.get(bridgehead)) || this.activeModuleActionsMetadata;
+        return actions?.get(module)?.get(action);
+    }
+
+    /**
+     * The action and the context it is sent with. A call without a bridgehead is for the project as a whole. If the
+     * action is allowed there only through a bridgehead role (the backend counts bridgehead roles only for the
+     * bridgehead sent, see docs/bridgehead-context.md), it is sent with the first bridgehead where it is allowed: for
+     * these actions the bridgehead only tells the backend the user's role. Not for actions that need a bridgehead: they
+     * act on it, so it must be chosen.
+     */
+    private resolveCall(module: Module, action: Action, context: ProjectManagerContext):
+        { metadata: ActionMetadata, context: ProjectManagerContext } | undefined {
+        const metadata = this.getActionMetadata(module, action, context);
+        if (metadata || context.bridgehead) return metadata && {metadata, context};
+        for (const [bridgehead, actions] of this.bridgeheadActionsMetadata) {
+            const bridgeheadMetadata = actions.get(module)?.get(action);
+            if (bridgeheadMetadata && !bridgeheadMetadata.bridgeheadRequired) {
+                return {metadata: bridgeheadMetadata, context: new ProjectManagerContext(context.projectCode, {bridgehead})};
+            }
+        }
+        return undefined;
+    }
+
+    // The action wherever it is allowed (without a bridgehead or at any bridgehead), for what does not depend on the context
+    private findActionMetadata(module: Module, action: Action): ActionMetadata | undefined {
+        return this.allModuleActions().map(actions => actions.get(module)?.get(action)).find(Boolean);
     }
 
     public addContextToMap(map: Map<string, unknown>, context: ProjectManagerContext): void {
-        if (context.projectCode) map.set(projectCodeParam, context.projectCode);
-        if (context.bridgehead) map.set(bridgeheadParam, context.bridgehead.bridgehead);
+        if (context.projectCode) map.set(PmRequestParameter.PROJECT_CODE, context.projectCode);
+        if (context.bridgehead) map.set(PmRequestParameter.BRIDGEHEAD, context.bridgehead.bridgehead);
     }
 
     public async downloadFile(
@@ -519,39 +1063,85 @@ export class ProjectManagerBackendService {
         }
     }
 
+    /**
+     * Calls a backend action. Empty values in params are not sent, unless sendEmptyStrings is true:
+     * then an empty string is sent as a value (e.g. an intentionally empty query).
+     */
     public async fetchData(
         module: Module,
         action: Action,
         context: ProjectManagerContext,
-        params: Map<string, unknown>
+        params: Map<string, unknown>,
+        sendEmptyStrings = false
     ) {
-        return (await this.fetchHttpResponse(module, action, context, params)).data;
+        return (await this.fetchHttpResponse(module, action, context, params, sendEmptyStrings)).data;
+    }
+
+    /**
+     * Calls several read actions (GET endpoints) in one request. Every entry is answered on its own: with the
+     * response of its endpoint, or with the error the endpoint would have answered with.
+     * Entries whose action is not active for the user and their context are not sent and have no result, like
+     * isModuleActionActive followed by fetchData. Use runBatchLoads to load a page with it.
+     */
+    public async fetchBatch(
+        entries: BatchEntry<Module, Action, ProjectManagerContext>[],
+        defaultContext: ProjectManagerContext
+    ): Promise<Map<string, BatchResult>> {
+        await this.initializedPromise;
+        const requests: Record<string, { action: Action, params: Record<string, unknown> }> = {};
+        for (const entry of entries) {
+            const call = this.resolveCall(entry.module, entry.action, entry.context ?? defaultContext);
+            if (!call || (call.metadata.bridgeheadRequired && !call.context.bridgehead)) continue;
+            const {metadata: actionMetadata, context} = call;
+            if (actionMetadata.method !== HttpMethod.GET) {
+                throw new Error(`Action ${entry.action} for module ${entry.module} is not a read action`);
+            }
+            requests[entry.id] = {
+                action: entry.action,
+                params: Object.fromEntries(this.buildHttpParams(context, entry.params, actionMetadata))
+            };
+        }
+        if (Object.keys(requests).length === 0) return new Map();
+        // The batch is a frontend action itself: path and method come from the backend like for any other action
+        const batchMetadata = this.findActionMetadata(Module.ACTIONS_MODULE, Action.FETCH_ACTIONS_BATCH_ACTION);
+        if (!batchMetadata) {
+            throw new Error(`Action ${Action.FETCH_ACTIONS_BATCH_ACTION} for module ${Module.ACTIONS_MODULE} is not active`);
+        }
+        const response = await this.doHttpRequest(batchMetadata.method, batchMetadata.path,
+            new Map<string, unknown>([[PmRequestParameter.ACTIONS_BATCH_REQUESTS, requests]]));
+        return new Map(Object.entries((response.data?.results ?? {}) as Record<string, BatchResult>));
     }
 
     public async fetchHttpResponse(
         module: Module,
         action: Action,
         context: ProjectManagerContext,
-        params: Map<string, unknown>
-    ): Promise<AxiosResponse<any, any>> {
+        params: Map<string, unknown>,
+        sendEmptyStrings = false
+    ): Promise<AxiosResponse> {
         await this.initializedPromise;
-        const actionMetadata = this.getActionMetadata(module, action);
-        if (!actionMetadata) {
+        const call = this.resolveCall(module, action, context);
+        if (!call) {
             throw new Error(`Action ${action} for module ${module} is not active`);
         }
-        return this.doHttpRequest(actionMetadata.method, actionMetadata.path, this.buildHttpParams(context, params, actionMetadata));
+        if (call.metadata.bridgeheadRequired && !call.context.bridgehead) {
+            throw new Error(`Action ${action} for module ${module} needs a bridgehead`);
+        }
+        return this.doHttpRequest(call.metadata.method, call.metadata.path,
+            this.buildHttpParams(call.context, params, call.metadata, sendEmptyStrings));
     }
 
     private buildHttpParams(
         context: ProjectManagerContext,
         params: Map<string, unknown>,
-        actionMetadata: ActionMetadata
+        actionMetadata: ActionMetadata,
+        sendEmptyStrings = false
     ): Map<string, unknown> {
         const httpParams = new Map<string, unknown>();
         this.addContextToMap(httpParams, context);
         for (const param of actionMetadata.params) {
             const value = params.get(param);
-            if (value) httpParams.set(param, value);
+            if (value || (sendEmptyStrings && value === '')) httpParams.set(param, value);
         }
         return httpParams;
     }
@@ -560,47 +1150,74 @@ export class ProjectManagerBackendService {
         httpMethod: HttpMethod,
         endpoint: string,
         params: Map<string, unknown>
-    ): Promise<AxiosResponse<any, any>> {
+    ): Promise<AxiosResponse> {
         if (!this.axiosInstance) throw new Error("Axios instance not initialized");
 
+        const token = await AuthService.getToken();
         const config: AxiosRequestConfig = {
             headers: {
-                Authorization: `Bearer ${KeyCloakService.getToken()}`,
+                Authorization: `Bearer ${token}`,
             },
-            params: this.convertToUrlSearchParams(params),
             withCredentials: true,
         };
 
-        if (endpoint.includes('download')) config.responseType = 'blob';
+        // If this is a download, expect blob
+        if (endpoint.includes('download')) {
+            config.responseType = 'blob';
+        }
 
+        // If this is an upload, send it as multipart/form-data
         if (endpoint.includes('upload')) {
             config.headers!["Content-Type"] = 'multipart/form-data';
-            const uploadFile = params.get(UPLOAD_DOCUMENT_PARAM);
+            const uploadFile = params.get(PmRequestParameter.DOCUMENT);
             if (!uploadFile) throw new Error("Upload file not provided");
-            params.delete(UPLOAD_DOCUMENT_PARAM);
+            params.delete(PmRequestParameter.DOCUMENT);
+
             const data = new FormData();
-            data.append('document', uploadFile as File);
+            data.append(PmRequestParameter.DOCUMENT, uploadFile as File);
+
+            // Append all other params to FormData
+            for (const [key, value] of params) {
+                if (value !== undefined && value !== null) {
+                    data.append(key, String(value));
+                }
+            }
+
             return this.axiosInstance.post(endpoint, data, config);
         }
 
+        // Retry configuration for normal requests
         axiosRetry(this.axiosInstance, {retries: 2, retryDelay: axiosRetry.exponentialDelay});
+
+        // Convert Map params to a plain object
+        const plainParams: Record<string, unknown> = {};
+        for (const [key, value] of params) {
+            plainParams[key] = value;
+        }
 
         switch (httpMethod) {
             case HttpMethod.GET:
-                return this.axiosInstance.get(endpoint, config);
+            case HttpMethod.DELETE:
+                // Variables as query parameters
+                config.params = plainParams;
+                if (httpMethod === HttpMethod.GET) {
+                    return this.axiosInstance.get(endpoint, config);
+                } else {
+                    return this.axiosInstance.delete(endpoint, config);
+                }
+
             case HttpMethod.POST:
-                return this.axiosInstance.post(endpoint, {}, config);
+            case HttpMethod.PUT:
+                // Variables as JSON body
+                if (httpMethod === HttpMethod.POST) {
+                    return this.axiosInstance.post(endpoint, plainParams, config);
+                } else {
+                    return this.axiosInstance.put(endpoint, plainParams, config);
+                }
+
             default:
                 throw new Error(`Unsupported HTTP method: ${httpMethod}`);
         }
-    }
-
-    private convertToUrlSearchParams(map: Map<string, unknown>): URLSearchParams {
-        const result = new URLSearchParams();
-        for (const [key, value] of map) {
-            result.append(key, String(value));
-        }
-        return result;
     }
 
 }

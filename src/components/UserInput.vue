@@ -1,120 +1,172 @@
 <script lang="ts">
-
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
+import '@/assets/styles/table.css'
+import {Project, ProjectState} from "@/services/projectManagerBackendService";
 import {
   Action,
   Bridgehead,
-  Explanations,
   Module,
-  Project,
+  PmRequestParameter,
   ProjectManagerBackendService,
   ProjectManagerContext,
   User
 } from "@/services/projectManagerBackendService";
-import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
+import StatusDot from "@/components/StatusDot.vue";
+import ActionDialog from "@/components/ActionDialog.vue";
+import {describeEmailRecipients} from "@/services/emailRecipients";
+import {PropType, watch} from "vue";
 
+// The People card's content: who takes part in the current phase and, for those who may, "Invite user",
+// which opens a dialog (site, email) instead of an always-open form.
 @Options({
   name: "UserInput",
-  components: {UserAndEmail},
-  computed: {
-    Action() {
-      return Action
-    }
+  components: {UserAndEmail, StatusDot, ActionDialog},
+  props: {
+    callRefreshContext: {type: Function as unknown as () => () => void, required: true},
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
+    project: {type: Object as PropType<Project>, required: true},
+    bridgeheads: {type: Array as PropType<Bridgehead[]>, required: true},
+    currentUsers: {type: Array as PropType<User[]>, required: true}
   }
 })
 export default class UserInput extends Vue {
-  @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly project!: Project;
-  @Prop() readonly bridgeheads!: Bridgehead[];
-  @Prop() readonly currentUsers!: User[];
-  @Prop() readonly todos?: Explanations;
+  readonly callRefreshContext!: () => void;
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly context!: ProjectManagerContext;
+  readonly project!: Project;
+  readonly bridgeheads!: Bridgehead[];
+  readonly currentUsers!: User[];
 
-
-  partialEmail = '';
+  isActive = false;
+  // The bridgeheads where the user may invite (docs/bridgehead-context.md: each bridgehead with its own permissions)
+  inviteBridgeheads: Bridgehead[] = [];
+  // Invite dialog
+  email = '';
   selectedBridgehead: Bridgehead | undefined = undefined;
   suggestions: User[] = [];
-  isActive = false;
-  canInvite = true;
-  showSuggestions = false;
-  isValidEmail = false;
+  recipientsText = '';
+  dialogError = '';
+  isPending = false;
 
-
-  @Watch('projectManagerBackendService', {immediate: true, deep: true})
-  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
-    this.selectedBridgehead = this.bridgeheads[0];
-    this.updateIsActive()
+  mounted() {
+    watch(
+        () => this.projectManagerBackendService,
+        () => this.updateIsActive(),
+        {immediate: true, deep: true}
+    );
+    // The invite action depends on the phase, and after a phase change the
+    // backend service is replaced before the project is fetched again.
+    watch(() => this.project?.state, () => this.updateIsActive());
+    watch(() => this.bridgeheads, () => this.updateIsActive());
   }
 
   created() {
-    this.selectedBridgehead = this.bridgeheads[0];
     this.updateIsActive();
   }
 
-  updateIsActive() {
-    this.projectManagerBackendService.isModuleActionActive(Module.USER_MODULE, this.fetchAction()).then(isActive => {
-      this.isActive = isActive;
-    });
-  }
-
-  handleInput(event: Event): void {
-    this.partialEmail = (event.target as HTMLInputElement).value;
-    this.canInvite = true;
-    for (let user of this.currentUsers) {
-      if (user.email === this.partialEmail) {
-        this.canInvite = false;
-      }
+  async updateIsActive() {
+    const action = this.fetchAction();
+    const allowed = await Promise.all(this.bridgeheads.map(bridgehead => this.projectManagerBackendService
+        .isModuleActionActive(Module.USER_MODULE, action, this.createContext(bridgehead))));
+    this.inviteBridgeheads = this.bridgeheads.filter((_bridgehead, index) => allowed[index]);
+    this.isActive = this.inviteBridgeheads.length > 0;
+    if (!this.inviteBridgeheads.some(bridgehead => bridgehead.bridgehead === this.selectedBridgehead?.bridgehead)) {
+      this.selectedBridgehead = this.inviteBridgeheads[0];
     }
-    this.isValidEmail = this.isEmailValid(this.partialEmail);
-    this.autocomplete(this.partialEmail);
   }
 
   fetchAction(): Action {
     let action: Action = Action.SET_DEVELOPER_USER_ACTION;
-    if (this.project.state === 'PILOT') {
+    if (this.project.state === ProjectState.PILOT) {
       action = Action.SET_PILOT_USER_ACTION;
-    } else if (this.project.state === 'FINAL') {
+    } else if (this.project.state === ProjectState.FINAL) {
       action = Action.SET_FINAL_USER_ACTION;
     }
     return action;
   }
 
-  handleSave(): void {
+  // "develop", "pilot", "final"
+  get phaseName(): string {
+    return (this.project?.state ?? '').toLowerCase();
+  }
+
+  get datalistId(): string {
+    return `invite-suggestions-${this.$.uid}`;
+  }
+
+  get dialog(): InstanceType<typeof ActionDialog> {
+    return this.$refs.dialog as InstanceType<typeof ActionDialog>;
+  }
+
+  async openInviteDialog() {
+    this.email = '';
+    this.suggestions = [];
+    this.dialogError = '';
+    this.selectedBridgehead = this.selectedBridgehead ?? this.inviteBridgeheads[0];
+    this.recipientsText = describeEmailRecipients(
+        await this.projectManagerBackendService.getActionEmailRecipients(Module.USER_MODULE, this.fetchAction()));
+    this.dialog.open();
+    this.$nextTick(() => (this.$refs.emailInput as HTMLInputElement | undefined)?.focus());
+  }
+
+  onEmailInput() {
+    this.dialogError = '';
+    this.autocomplete(this.email);
+  }
+
+  async invite() {
+    const email = this.email.trim();
+    if (!this.isEmailValid(email)) {
+      this.dialogError = 'Please enter a valid email address.';
+      return;
+    }
+    if (this.currentUsers.some(user => user.email === email &&
+        (!this.selectedBridgehead || user.bridgehead === this.selectedBridgehead.bridgehead))) {
+      this.dialogError = 'This user already takes part in this phase.';
+      return;
+    }
     const params = new Map<string, string>();
-    params.set('email', this.partialEmail);
-    const context = (this.selectedBridgehead) ? this.createContext(this.selectedBridgehead) : this.context;
-    this.projectManagerBackendService.fetchData(Module.USER_MODULE, this.fetchAction(), context, params).then(result => {
-      this.partialEmail = '';
-      this.callRefrehContext();
-    });
+    params.set(PmRequestParameter.EMAIL, email);
+    this.isPending = true;
+    try {
+      await this.projectManagerBackendService.fetchData(Module.USER_MODULE, this.fetchAction(),
+          this.createContext(this.selectedBridgehead), params);
+    } catch (error) {
+      console.error('Error inviting the user:', error);
+      this.dialogError = (await this.projectManagerBackendService.getActionFeedbackMessages(Module.USER_MODULE, this.fetchAction())).errorMessage
+          || 'The user could not be invited.';
+      this.isPending = false;
+      return;
+    }
+    this.dialog.close();
+    try {
+      await this.callRefreshContext();
+    } finally {
+      this.isPending = false;
+    }
   }
 
   autocomplete(partialEmail: string) {
-    const params = new Map<string, string>();
-    if (partialEmail && partialEmail.length > 0) {
-      params.set('partial-email', partialEmail);
-      this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_ACTION, this.createContext(this.selectedBridgehead), params).then(users => {
-        this.suggestions = users;
-        this.showSuggestions = true;
-      });
-    } else {
+    if (!partialEmail) {
       this.suggestions = [];
-      this.showSuggestions = false;
+      return;
     }
+    const params = new Map<string, string>();
+    params.set(PmRequestParameter.PARTIAL_EMAIL, partialEmail);
+    this.projectManagerBackendService.fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_ACTION,
+        this.createContext(this.selectedBridgehead), params).then(users => {
+      this.suggestions = users ?? [];
+    });
   }
 
   createContext(bridgehead: Bridgehead | undefined) {
     return (bridgehead) ? new ProjectManagerContext(this.context.projectCode, bridgehead) : this.context;
   }
 
-  selectSuggestion(suggestion: User) {
-    this.partialEmail = suggestion.email;
-    this.isValidEmail = true;
-    this.suggestions = this.suggestions.filter(item => item != suggestion);
-    this.showSuggestions = false;
+  suggestionLabel(user: User): string {
+    return [user.firstName, user.lastName].filter(Boolean).join(' ');
   }
 
   private isEmailValid(email: string): boolean {
@@ -122,157 +174,104 @@ export default class UserInput extends Vue {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   }
-
 }
 </script>
 
 <template>
-  <div v-if="isActive" class="button-group-box">
-    <div class="button-group-label">
-      Invite the user to this phase:
-      <span style="display: flex;flex-direction: row-reverse">
-          <span v-if="todos?.get(Action.SET_DEVELOPER_USER_ACTION)"
-                class="todo-circle-small">#{{ todos?.get(Action.SET_DEVELOPER_USER_ACTION)?.number }}</span>
-        </span>
-    </div>
+  <div class="people-toolbar">
+    <span class="people-caption">
+      {{ currentUsers.length > 0 ? `Users taking part in the ${phaseName} phase` : `Nobody has been invited to the ${phaseName} phase yet.` }}
+    </span>
+    <button v-if="isActive" type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog"
+            @click="openInviteDialog">
+      <i class="bi bi-person-plus" aria-hidden="true"></i> Invite user
+    </button>
+  </div>
 
-    <div class="user-input-container">
-      <select v-model="selectedBridgehead" class="form-select">
-        <option v-for="bridgehead in bridgeheads" :key="bridgehead.bridgehead" :value="bridgehead"
-                :selected="bridgehead === selectedBridgehead">{{ bridgehead.humanReadable }}
-        </option>
-      </select>
-      <div>
-        <input class="user-input" type="text" v-model="partialEmail" @input="handleInput" @keyup.enter="handleSave"
-               placeholder="user email"/>
-        <ul class="suggestions" v-if="suggestions.length > 0 && showSuggestions">
-          <li v-for="(suggestion, index) in suggestions" :key="index" @click="selectSuggestion(suggestion)">
-            {{ suggestion.email }}
-          </li>
-        </ul>&nbsp;
-        <button @click="handleSave" v-if="partialEmail.length > 0 && canInvite && isValidEmail">Invite</button>
-        <p v-if="partialEmail.length > 0 && canInvite && !isValidEmail" class="error-message">Please enter a valid email address.</p>
+  <div v-if="currentUsers.length > 0" class="table-scroll">
+    <table class="pm-table">
+      <thead>
+      <tr>
+        <th>User</th>
+        <th v-if="bridgeheads.length > 0">Site</th>
+        <th>Results Acceptance</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr v-for="(user, index) in currentUsers" :key="index">
+        <td>
+          <UserAndEmail
+              :first-name="user.firstName"
+              :last-name="user.lastName"
+              :email="user.email"
+          />
+        </td>
+        <td v-if="bridgeheads.length > 0">{{ user.humanReadableBridgehead }}</td>
+        <td>
+          <div class="states-circle-container">
+            <StatusDot :state="user?.projectState" :title="user?.projectState"/>
+          </div>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <Teleport to="body">
+    <ActionDialog v-if="isActive" ref="dialog"
+                  :title="`Invite a user to the ${phaseName} phase`" confirm-text="Invite"
+                  description="The user can then work on this request at the chosen site."
+                  :recipients="recipientsText" :pending="isPending" :error-message="dialogError"
+                  @confirm="invite">
+      <div class="invite-field">
+        <template v-if="inviteBridgeheads.length > 1">
+          <label :for="`${datalistId}-site`" class="invite-label">Site</label>
+          <select :id="`${datalistId}-site`" v-model="selectedBridgehead" class="form-select">
+            <option v-for="bridgehead in inviteBridgeheads" :key="bridgehead.bridgehead" :value="bridgehead">
+              {{ bridgehead.humanReadable }}
+            </option>
+          </select>
+        </template>
+        <template v-else>
+          <span class="invite-label">Site</span>
+          <div class="invite-site">{{ selectedBridgehead?.humanReadable }}</div>
+        </template>
       </div>
-    </div>
-  </div>
-
-  <div v-if="currentUsers.length > 0" class="button-group-box">
-    <div class="button-group-label">Current users involved in this stage:</div>
-    <div style="margin: 10px 20px 10px 0">
-      <table class="user-table">
-        <thead>
-        <tr>
-          <th>User</th>
-          <th v-if="bridgeheads.length > 0">Site</th>
-          <th>Results Acceptance</th> <!-- New column for user state -->
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="(user, index) in currentUsers" :key="index">
-          <td>
-            <UserAndEmail
-                :first-name="user.firstName"
-                :last-name="user.lastName"
-                :email="user.email"
-            />
-          </td>
-          <td v-if="bridgeheads.length > 0">{{ user.humanReadableBridgehead }}</td>
-          <!-- Display user's state in the second column -->
-          <td>
-            <div class="states-circle-container">
-              <div class="state_circle" :class="user?.projectState.toLowerCase()"/>
-            </div>
-          </td>
-        </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+      <div class="invite-field">
+        <label :for="`${datalistId}-email`" class="invite-label">Email<span aria-hidden="true">&nbsp;*</span></label>
+        <input :id="`${datalistId}-email`" ref="emailInput" v-model="email" type="email" class="form-control"
+               autocomplete="off" aria-required="true" :list="datalistId" @input="onEmailInput"/>
+        <datalist :id="datalistId">
+          <option v-for="user in suggestions" :key="user.email" :value="user.email">{{ suggestionLabel(user) }}</option>
+        </datalist>
+      </div>
+    </ActionDialog>
+  </Teleport>
 </template>
 
 <style scoped>
-
-.user-input-container {
-  position: relative;
+.people-toolbar {
   display: flex;
-  margin: 10px 14px 20px 0;
-}
-
-.form-select {
-  width: 300px;
-  margin-right: 20px;
-}
-
-.user-input {
-  width: 300px; /* Adjust width as needed */
-  height: 38px;
-  border: 1px solid #dee2e6;
-  border-radius: 5px;
-}
-
-.suggestions {
-  list-style-type: none; /* Removes bullets */
-  position: absolute;
-  width: 300px; /* Adjust width to match the input field */
-  padding: 5px;
-  margin: 0;
-  border: 1px solid #ccc; /* Add border for the rectangle appearance */
-  background-color: #fff; /* Add background color */
-  border-radius: 5px; /* Optional: Add border-radius for rounded corners */
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* Optional: Add box shadow for a raised effect */
-}
-
-.user-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.user-table th, .user-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
-}
-
-.user-table th {
-  background-color: #f2f2f2;
-}
-
-.button-group-box {
-  border: 1px solid lightgrey;
-  border-radius: 5px;
-  padding: 0 0 18px 18px;
-  width: fit-content;
-  display: inline-block;
-  margin-right: 2%;
-  margin-top: 1%;
-}
-
-.button-group-label {
-  border: 1px solid lightgrey;
-  border-radius: 5px;
-  width: fit-content;
-  padding: 4px 10px;
-  position: relative;
-  top: -18px;
-  background-color: #95c8dc;
-  font-weight: bold;
-  margin-right: 15px;
-  display: flex;
-}
-
-.todo-circle-small {
-  min-width: 22px;
-  height: 22px;
-  background-color: gold;
-  color: #000;
-  border: 1px solid black;
-  border-radius: 50%;
-  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  margin-left: 10px;
-  font-weight: bold;
-  font-size: 9pt;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) 0 var(--space-3);
+}
+
+.people-caption {
+  font-size: 14px;
+  color: #5b6b7c;
+}
+
+.people-toolbar .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.table-scroll {
+  overflow-x: auto;
 }
 
 .states-circle-container {
@@ -280,14 +279,19 @@ export default class UserInput extends Vue {
   justify-content: center;
 }
 
-.state_circle {
-  width: 20px;
-  height: 20px;
+/* Fields of the invite dialog (rendered inside ActionDialog) */
+.invite-field {
+  margin-top: var(--space-4);
 }
 
-.error-message {
-  color: red;
-  font-size: 0.9em;
+.invite-label {
+  display: block;
+  font-weight: 600;
+  color: #00489cf2;
+  margin-bottom: var(--space-1);
 }
 
+.invite-site {
+  font-size: 14px;
+}
 </style>

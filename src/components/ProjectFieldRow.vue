@@ -1,53 +1,216 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
 import {
-  Action, Bridgehead,
+  Action,
+  Bridgehead,
   configLabel,
-  EditProjectParam,
+  PmRequestParameter,
   Explanations,
+  FormDataType,
+  FormFieldProperty,
   Module,
-  Project,
+  ProjectAndForms,
+  ProjectConfigurationSelectionType,
   ProjectManagerBackendService,
-  ProjectManagerContext
+  ProjectManagerContext,
+  ProjectDocument,
+  ProjectRole,
+  ProjectState,
+  ProjectType,
+  NOT_SELECTED_PROJECT_CONFIGURATION
 } from "@/services/projectManagerBackendService";
 import DownloadButton from "@/components/DownloadButton.vue";
 import UploadButton from "@/components/UploadButton.vue";
-import {DialogStep} from "@/services/dialogStep";
+import BridgeheadVotes from "@/components/BridgeheadVotes.vue";
+import ContextInfoBox from "@/components/ContextInfoBox.vue";
+import MandatoryFieldMarker from "@/components/MandatoryFieldMarker.vue";
+import type {DialogStep} from "@/services/fixedDialogStep";
+import {FixedDialogStep} from "@/services/fixedDialogStep";
+import type {Block, BridgeheadsProjectField, ProjectFieldInstance} from "@/services/utils";
+import {ActionFunction, Section, Utils} from "@/services/utils";
+import {DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES} from "@/services/configLoader";
+import type {DisplayFormatKey} from "@/services/configLoader";
+import {
+  formatDisplayDate,
+  formatDisplayNumber,
+  getDefaultDateDisplayFormat,
+  getDefaultTimestampDisplayFormat
+} from "@/services/displayFormatService";
+import {isCanonicalTimestampValue, toFormControlValue} from "@/services/formValueCodec";
+import {handleError, PropType, watch} from "vue";
+import "@samply/lens";
+import {QueryItem, setOptions, setQueryStore} from "@samply/lens";
+
+// The URL parameters of the Explorer (Lens), where "Edit in Explorer" redirects to: an external interface
+enum ExplorerUrlParameter {
+  QUERY = "query",
+  DATA_REQUESTS = "datarequests"
+}
 
 @Options({
   name: "ProjectFieldRow",
+  methods: {handleError},
   computed: {
     configLabel() {
-      return configLabel
+      return configLabel;
     }
   },
-  components: {DownloadButton, UploadButton}
+  components: {ContextInfoBox, DownloadButton, MandatoryFieldMarker, BridgeheadVotes, UploadButton},
+  props: {
+    fieldKey: {type: String, required: true},
+    editProjectParam: {type: Array as PropType<PmRequestParameter[]>, required: false, default: []},
+    fieldValue: {type: Array as PropType<string[]>, required: true},
+    fieldDescription: {type: String, required: false},
+    fieldShortDescription: {type: String, required: false},
+    descriptionCollapsedLines: {
+      type: Number,
+      required: false,
+      default: DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES
+    },
+    placeholder: {type: String, required: false},
+    fieldPreInfo: {type: String, required: false},
+    fieldPostInfo: {type: String, required: false},
+    bridgeheads: {type: Object as PropType<BridgeheadsProjectField>, required: false},
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true},
+    context: {type: Object as PropType<ProjectManagerContext>, required: true},
+    redirectUrl: {type: String, required: false},
+    module: {type: String as PropType<Module>, default: Module.PROJECT_EDITION_MODULE},
+    action: {
+      type: [String, Object] as unknown as PropType<Action | ActionFunction>,
+      default: Action.EDIT_PROJECT_ACTION
+    },
+    possibleValues: {type: Array as PropType<string[]>, required: false},
+    displayPossibleValue: {
+      type: Function as unknown as () => (input: string) => {name: string, description: string, shortDescription?: string},
+      default: (input: string) => input
+    },
+    configurations: {type: Object as PropType<Map<string, ProjectAndForms>>, required: false},
+    configurationSelectionType: {
+      type: String as PropType<ProjectConfigurationSelectionType>,
+      default: ProjectConfigurationSelectionType.SINGLE
+    },
+    isEditable: {type: Boolean, required: true},
+    editMode: {type: Boolean, required: true},
+    callRefreshContext: {type: Function as unknown as () => () => void, required: true},
+    callRefreshBridgeheads: {type: Function as unknown as () => () => void, required: true},
+    callQueryChanged: {type: Function as unknown as () => (query?: string) => void, required: true},
+    projectState: {type: String as PropType<ProjectState>, required: false},
+    uploadAction: {type: String as PropType<Action>, required: false},
+    downloadAction: {type: String as PropType<Action>, required: false},
+    downloadModule: {type: String as PropType<Module>, required: false},
+    deleteAction: {type: String as PropType<Action>, required: false},
+    deleteModule: {type: String as PropType<Module>, required: false},
+    todos: {type: Object as PropType<Explanations>, required: false},
+    existsFile: {type: Boolean, required: false},
+    projectDocument: {type: Object as PropType<ProjectDocument>, required: false},
+    mandatory: {type: Boolean, required: true, default: false},
+    type: {type: String as PropType<FormDataType>, required: false},
+    displayFormat: {type: String as PropType<DisplayFormatKey>, required: false},
+    draftDialogCurrentStep: {type: Object as PropType<DialogStep>, required: false},
+    // The user already left this draft step once: an empty mandatory field is an error now.
+    highlightMissing: {type: Boolean, default: false},
+    visibleBridgeheads: {type: Array as PropType<Bridgehead[]>, required: true},
+    section: {type: Object as PropType<Section>, required: false},
+    block: {type: Object as PropType<Block>, required: false},
+    transformForSending: {
+      type: Function as unknown as () => (input: string) => string,
+      default: (input: string) => input
+    },
+    extraParams: {type: Object as PropType<Map<string, string>>, required: false},
+    properties: {type: Array as PropType<string[]>, required: false},
+    projectRoles: {type: Array as PropType<ProjectRole[]>, required: false},
+    // "multiple" rendering: multiple/instances/buildInstanceTransform come
+    // from the parent (see ProjectField in utils.ts); headless is set only
+    // by THIS component itself, when it recurses into itself to render one
+    // instance's value editor - a headless instance skips its own label/
+    // description chrome (the parent already rendered that once) and shows
+    // just the value editor + a per-instance remove button.
+    multiple: {type: Boolean, required: false, default: false},
+    instances: {type: Array as PropType<ProjectFieldInstance[]>, required: false},
+    buildInstanceTransform: {
+      type: Function as unknown as () => (fieldInstance: number) => (input: string) => unknown,
+      required: false
+    },
+    headless: {type: Boolean, required: false, default: false},
+  }
 })
 export default class ProjectFieldRow extends Vue {
-  @Prop() readonly fieldKey!: string;
-  // The index of editProjectParam, fieldValue, editedValue and tempFieldValue is the same
-  @Prop() readonly editProjectParam!: EditProjectParam[];
-  @Prop() readonly fieldValue!: string[];
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
-  @Prop() readonly context!: ProjectManagerContext;
-  @Prop() readonly redirectUrl?: string;
-  @Prop() readonly possibleValues!: string[];
-  @Prop() readonly configurations?: Map<string, Project>;
-  @Prop() readonly isEditable!: boolean;
-  @Prop({type: Function, required: true}) readonly callRefrehContext!: () => void;
-  @Prop() readonly uploadAction!: Action;
-  @Prop() readonly downloadAction!: Action;
-  @Prop() readonly downloadModule!: Module;
-  @Prop() readonly todos?: Explanations;
-  @Prop() readonly existsFile!: boolean;
-  @Prop() readonly draftDialogCurrentStep!: DialogStep;
-  @Prop() readonly visibleBridgeheads!: Bridgehead[];
-  @Prop({
-    type: Function,
-    default: (input: string): string => input
-  }) readonly transformForSending!: (input: string) => string;
+  // Props
+  readonly fieldKey!: string;
+  readonly editProjectParam!: PmRequestParameter[];
+  readonly fieldValue!: string[];
+  readonly projectDocument?: ProjectDocument;
 
+  readonly bridgeheads?: BridgeheadsProjectField;
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
+  readonly context!: ProjectManagerContext;
+  readonly redirectUrl?: string;
+  readonly module!: Module;
+  readonly action!: Action | ActionFunction;
+  readonly possibleValues?: string[];
+  readonly properties?: string[];
+  // noinspection JSUnusedGlobalSymbols
+  readonly displayPossibleValue!: (input: string) => {name: string, description: string, shortDescription: string};
+  // noinspection JSUnusedGlobalSymbols
+  readonly isEditable!: boolean;
+  readonly callRefreshContext!: () => void;
+  readonly callRefreshBridgeheads!: () => void;
+  readonly callQueryChanged!: (query?: string) => void;
+  readonly projectState?: ProjectState;
+
+  // For template:
+
+  // noinspection JSUnusedGlobalSymbols
+  readonly editMode!: boolean;
+  // noinspection JSUnusedGlobalSymbols
+  readonly fieldDescription?: string;
+  // noinspection JSUnusedGlobalSymbols
+  readonly fieldShortDescription?: string;
+  readonly descriptionCollapsedLines!: number;
+  readonly placeholder?: string;
+  readonly displayFormat?: DisplayFormatKey;
+  // Context information brackets this complete logical field. Recursive
+  // headless rows for multiple values deliberately receive neither prop.
+  readonly fieldPreInfo?: string;
+  readonly fieldPostInfo?: string;
+  // noinspection JSUnusedGlobalSymbols
+  readonly configurations?: Map<string, ProjectAndForms>;
+  readonly configurationSelectionType!: ProjectConfigurationSelectionType;
+  // noinspection JSUnusedGlobalSymbols
+  readonly downloadModule?: Module;
+  // noinspection JSUnusedGlobalSymbols
+  readonly deleteAction?: Action;
+  // noinspection JSUnusedGlobalSymbols
+  readonly deleteModule?: Module;
+  // noinspection JSUnusedGlobalSymbols
+  readonly todos?: Explanations;
+  // noinspection JSUnusedGlobalSymbols
+  readonly existsFile?: boolean;
+  // noinspection JSUnusedGlobalSymbols
+  readonly mandatory!: boolean;
+  // noinspection JSUnusedGlobalSymbols
+  readonly draftDialogCurrentStep?: DialogStep;
+  readonly highlightMissing!: boolean;
+  // noinspection JSUnusedGlobalSymbols
+  readonly visibleBridgeheads!: Bridgehead[];
+  // noinspection JSUnusedGlobalSymbols
+  readonly projectRoles?: ProjectRole[];
+  // noinspection JSUnusedGlobalSymbols
+  readonly section?: Section;
+  // noinspection JSUnusedGlobalSymbols
+  readonly block?: Block;
+  uploadAction?: Action;
+  // noinspection JSUnusedGlobalSymbols
+  downloadAction?: Action;
+  readonly type!: FormDataType;
+  readonly transformForSending!: (input: string) => string;
+  readonly extraParams?: Map<string, string>;
+  // noinspection JSUnusedGlobalSymbols
+  readonly multiple!: boolean;
+  readonly instances?: ProjectFieldInstance[];
+  readonly buildInstanceTransform?: (fieldInstance: number) => (input: string) => unknown;
+  // noinspection JSUnusedGlobalSymbols
+  readonly headless!: boolean;
 
   editing = false;
   editedValue: string[] = [];
@@ -58,148 +221,357 @@ export default class ProjectFieldRow extends Vue {
   showInputs = false;
   newValue = "";
   newKey = "";
-  toggleHumanReadable = true;
   showDetails: boolean[] = [];
   copiedToClipboard = false;
+  editingBridgeheads: Bridgehead[] = [];
+  FormDataType = FormDataType
+  // Unique per component instance, so radio inputs from two different
+  // ENUM+RADIO_BUTTON fields (or two different instances of the same
+  // multiple field) never end up sharing a browser-level radio group just
+  // because they'd otherwise share the same name (e.g. the same fieldKey).
+  radioGroupName = Math.random().toString(36).slice(2);
+  showPseudocode: boolean = false
+  queryView: "pseudocode" | "query" = "pseudocode";
+  descriptionExpanded = false;
+  descriptionOverflows = false;
+  descriptionResizeObserver?: ResizeObserver;
+  observedDescription?: HTMLElement;
 
-  @Watch("projectManagerBackendService", {immediate: true, deep: true})
-  onProjetManagerBackendServiceChange(
-      newValue: ProjectManagerBackendService,
-      oldValue: ProjectManagerBackendService
-  ) {
-    this.resetIsActionEnabled();
+  mounted() {
+    if (typeof ResizeObserver !== "undefined") {
+      this.descriptionResizeObserver = new ResizeObserver(() => this.refreshDescriptionOverflow());
+    }
+    watch(
+        () => this.projectManagerBackendService,
+        () => {
+          this.resetIsActionEnabled();
+        },
+        {immediate: true, deep: true}
+    );
+    watch(
+        () => this.fieldValue,
+        (newValue: string[]) => {
+          this.tempFieldValue = newValue.map(value => toFormControlValue(value, this.type));
+        },
+        {immediate: true, deep: true}
+    );
+    watch(
+        () => this.bridgeheads,
+        (newValue: BridgeheadsProjectField | undefined) => {
+          if (newValue) {
+            this.editingBridgeheads = [...newValue.selected];
+          } else {
+            this.editingBridgeheads = [];
+          }
+        },
+        {immediate: true, deep: true}
+    );
+    watch(
+        () => [
+          this.displayedFieldDescription,
+          this.descriptionCollapsedLines,
+          this.shouldCollapseFieldDescription
+        ],
+        () => {
+          this.descriptionExpanded = false;
+          this.$nextTick(() => this.observeDescription());
+        },
+        {immediate: true}
+    );
   }
 
-  @Watch("fieldValue", {immediate: true, deep: true})
-  onFieldValueChange(newValue: string[], oldValue: string[]) {
-    this.tempFieldValue = newValue;
+  beforeUnmount() {
+    this.descriptionResizeObserver?.disconnect();
   }
 
-  get dialogStep(){
-    return DialogStep;
+  get dialogStep() {
+    return FixedDialogStep;
+  }
+
+  // configLabel used in {{ configLabel[key] }}
+  // noinspection JSUnusedGlobalSymbols
+  get configLabel(): Record<string, string> {
+    return configLabel;
   }
 
   created() {
-    this.tempFieldValue = this.fieldValue.slice(); // Copy fieldValue to tempFieldValue
-    this.editedValue = this.fieldValue.slice(); // Copy fieldValue to editedValue
+    this.editingBridgeheads = this.bridgeheads
+        ? [...this.bridgeheads.selected]
+        : [];
+
+    this.tempFieldValue = this.fieldValue.map(value => toFormControlValue(value, this.type));
+    this.editedValue = this.tempFieldValue.slice();
     this.resetIsActionEnabled();
 
-    this.possibleValues?.forEach((value) => {
-      this.showDetails.push(false)
-    })
+    this.possibleValues?.forEach(() => {
+      this.showDetails.push(false);
+    });
+
+    if(this.isQuery()) {
+      setOptions({autoUpdateQueryInUrl:false})
+      setQueryStore(this.getQueryDetails())
+    }
   }
 
+
   resetIsActionEnabled() {
-    const action = (this.uploadAction) ? this.uploadAction : Action.EDIT_PROJECT_ACTION;
-    const module = (this.uploadAction) ? Module.PROJECT_DOCUMENTS_MODULE : Module.PROJECT_EDITION_MODULE;
+    const action = this.fetchAction();
+    const module = this.uploadAction ? Module.PROJECT_DOCUMENTS_MODULE : this.module;
     this.projectManagerBackendService
-        .isModuleActionActive(module, action)
+        .isModuleActionActive(module, action, this.context)
         .then((isActive) => (this.isActionEnabled = isActive));
   }
 
-  editField() {
-    this.editing = true;
-    // Copy tempFieldValue to editedValue when editing starts
-    this.editedValue = this.tempFieldValue.slice();
+  private fetchAction(): Action {
+    let action = this.uploadAction ? this.uploadAction : this.action;
+    if (action instanceof ActionFunction) {
+      action = action.fetchAction(this.editedValue);
+    }
+    return action;
   }
 
-  isFieldValueEditable() {
-    return !this.editing && this.isEditable && this.isActionEnabled;
-  }
-
-  saveField() {
-    this.showInputs = false;
-    this.editing = false;
-    this.tempFieldValue = this.editedValue.slice(); // Copy editedValue back to tempFieldValue
+  deleteField() {
     const params = new Map<string, string>();
+    if (this.editProjectParam && this.editProjectParam.length > 0 && this.deleteModule && this.deleteAction) {
 
-    if (this.editProjectParam && this.editProjectParam.length > 0) {
-      //TODO: Please remove hardcoded output format and template id. These values only make sense for DKTK and not always
-      if (this.includesEditProjectParam(EditProjectParam.PROJECT_TYPE) && this.tempFieldValue[0] === "DATASHIELD") {
-        params.set("output-format", "OPAL");
-        params.set("template-id", "opal-ccp");
-      }
       for (let i = 0; i < this.editProjectParam.length; i++) {
         if (i < this.editedValue.length) {
           params.set(this.editProjectParam[i], this.applyTransformToSend(this.editedValue[i]));
         }
       }
-      if (this.includesEditProjectParam(EditProjectParam.PROJECT_CONFIGURATION)) {
-        this.projectManagerBackendService
-            .fetchData(Module.PROJECT_EDITION_MODULE, Action.SET_PROJECT_CONFIGURATION_ACTION, this.context, params)
-            .then((result) => this.callRefrehContext());
-      } else {
-        this.projectManagerBackendService
-            .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params)
-            .then((result) => this.callRefrehContext());
-      }
-    }
 
+      if (this.extraParams) {
+        this.extraParams.forEach((value, key) => {
+          params.set(key, value);
+        })
+      }
+
+      this.projectManagerBackendService
+          .fetchData(this.deleteModule, this.deleteAction, this.context, params)
+          .then(() => this.callRefreshContext());
+    }
+  }
+
+  // Removes this one value instance (the headless "-" button). Not
+  // deleteField above: deleteField sends an array-shaped payload under the
+  // plural editProjectParam entries - built for the save endpoint's
+  // contract - but removeProjectFormFieldValue expects a single FormField
+  // under the singular PmRequestParameter.FORM_FIELD, exactly like
+  // ProjectView.vue's own deleteBlockInstance. transformForSending(...)
+  // always returns an array (also built for the save contract), so it's
+  // unwrapped to its one element here.
+  deleteInstance() {
+    if (!this.deleteAction || !this.deleteModule) {
+      return;
+    }
+    const formField = (this.transformForSending(this.editedValue[0]) as unknown as any[])[0];
+    const params = new Map<string, unknown>();
+    params.set(PmRequestParameter.FORM_FIELD, JSON.stringify(formField));
+
+    this.projectManagerBackendService
+        .fetchData(this.deleteModule, this.deleteAction, this.context, params)
+        .then(() => this.callRefreshContext());
+  }
+
+  // Adds a new value instance to a multiple field: next fieldInstance =
+  // max(existing) + 1 - mirrors how ProjectView.vue's addFormFieldBlockInstance
+  // adds a new block instance (clone with the next instance number, POST),
+  // just one level deeper. With no value (the "+" button case), it's blank,
+  // same as a block's blank new instance; the CHECK_BOX case calls this with
+  // the checked value instead, so the instance is created pre-filled.
+  addInstance(value?: string) {
+    if (!this.instances || !this.buildInstanceTransform || !this.editProjectParam || this.editProjectParam.length === 0) {
+      return;
+    }
+    const nextFieldInstance = Math.max(0, ...this.instances.map(instance => instance.fieldInstance)) + 1;
+    const transform = this.buildInstanceTransform(nextFieldInstance);
+    const params = new Map<string, unknown>();
+    // undefined (not ""), so transform drops the "value" key entirely when
+    // there's no initial value, same as a block's blank new instance.
+    params.set(this.editProjectParam[0], transform(value ?? (undefined as unknown as string)));
+
+    this.projectManagerBackendService
+        .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_FORM_FIELDS_ACTION, this.context, params)
+        .then(() => this.callRefreshContext());
+  }
+
+  // The CHECK_BOX counterpart to addInstance: removes whichever instance
+  // currently holds this value (used when a checkbox is unchecked). Unlike
+  // deleteField, this isn't tied to one headless child's own editedValue -
+  // the multiple wrapper itself doesn't have deleteAction/deleteModule set,
+  // so it calls DELETE_FORM_FIELD_VALUE_ACTION directly here instead.
+  //
+  // The delete/remove endpoints (removeProjectFormFieldValue and, mirroring
+  // it, removeProjectFormFieldBlock) expect a SINGLE FormField under the
+  // singular PmRequestParameter.FORM_FIELD - unlike the save endpoint, which
+  // takes a FormField[] under the plural FORM_FIELDS. transform(...) always
+  // returns an array (built for the save contract), so it's unwrapped to
+  // its one element here, matching how ProjectView.vue's own
+  // deleteBlockInstance builds its payload for the same reason.
+  removeInstanceByValue(value: string) {
+    const instance = this.instances?.find(candidate => candidate.value === value);
+    if (!instance || !this.buildInstanceTransform) {
+      return;
+    }
+    const formField = (this.buildInstanceTransform(instance.fieldInstance)(value) as any[])[0];
+    const params = new Map<string, unknown>();
+    params.set(PmRequestParameter.FORM_FIELD, JSON.stringify(formField));
+
+    this.projectManagerBackendService
+        .fetchData(Module.PROJECT_EDITION_MODULE, Action.DELETE_FORM_FIELD_VALUE_ACTION, this.context, params)
+        .then(() => this.callRefreshContext());
+  }
+
+  toggleCheckboxValue(value: string, checked: boolean) {
+    if (checked) {
+      this.addInstance(value);
+    } else {
+      this.removeInstanceByValue(value);
+    }
+  }
+
+  saveField() {
+    this.showInputs = false;
+    this.editing = false;
+    this.tempFieldValue = this.editedValue.slice();
+    const params = new Map<string, string>();
+
+    if (this.editProjectParam && this.editProjectParam.length > 0) {
+      if (this.includesPmRequestParameter(PmRequestParameter.PROJECT_TYPE) && this.tempFieldValue[0] === ProjectType.DATASHIELD) {
+        params.set(PmRequestParameter.OUTPUT_FORMAT, "OPAL");
+        params.set(PmRequestParameter.TEMPLATE_ID, "opal-ccp");
+      }
+
+      if (this.isBridgeheads() && this.bridgeheads) {
+        const ids = this.editingBridgeheads.map(b => b.bridgehead).join(',');
+        params.set(this.editProjectParam[0], ids);
+      } else {
+        if (this.isConfiguration()) {
+          params.set(this.editProjectParam[0], this.editedValue.join(','));
+        } else {
+          for (let i = 0; i < this.editProjectParam.length; i++) {
+            if (i < this.editedValue.length) {
+              params.set(this.editProjectParam[i], this.applyTransformToSend(this.editedValue[i]));
+            }
+          }
+        }
+      }
+
+      if (this.extraParams) {
+        this.extraParams.forEach((value, key) => {
+          params.set(key, value);
+        })
+      }
+
+      // Sites are sent even when empty: removing the last site sends an empty list
+      this.projectManagerBackendService
+          .fetchData(this.module, this.fetchAction(), this.context, params, this.isBridgeheads())
+          .then(() => this.isBridgeheads()
+              ? this.callRefreshBridgeheads()
+              : this.callRefreshContext());
+    }
   }
 
   applyTransformToSend(editedValue: any): any {
-    if (editedValue) {
-      return (Array.isArray(editedValue)) ? editedValue.map(input => this.transformForSending(input)) : this.transformForSending(editedValue);
+    if (editedValue === undefined || editedValue === null) {
+      return ""
     }
-    return "";
+    return Array.isArray(editedValue)
+        ? editedValue.map(input => this.transformForSending(input))
+        : this.transformForSending(editedValue);
   }
 
-  includesEditProjectParam(param: EditProjectParam): boolean {
+  includesPmRequestParameter(param: PmRequestParameter): boolean {
     return this.editProjectParam && this.editProjectParam.includes(param);
   }
 
   cancelEdit() {
     this.editing = false;
     this.showInputs = false;
-
+    this.editingBridgeheads = this.bridgeheads
+        ? [...this.bridgeheads.selected]
+        : [];
   }
+
 
   redirectToURL() {
-    if (this.redirectUrl) {
-      window.location.href = this.redirectUrl;
-    }
+    if (!this.redirectUrl) return;
+
+    const url = new URL(this.redirectUrl);
+    const bridgeheads = this.bridgeheads?.selected?.map(bridgehead => bridgehead.bridgehead) ?? [];
+    const query = this.toLensUrlQuery(this.editedValue[2])
+        ?? this.toLensUrlQuery(url.searchParams.get(ExplorerUrlParameter.QUERY));
+    // An unparseable query would only make the Explorer show an error.
+    if (query) url.searchParams.set(ExplorerUrlParameter.QUERY, query);
+    else url.searchParams.delete(ExplorerUrlParameter.QUERY);
+    url.searchParams.set(ExplorerUrlParameter.DATA_REQUESTS, Utils.encodeBase64(JSON.stringify(bridgeheads)));
+    window.location.href = url.toString();
   }
 
+  // Lens (since 0.6.8) reads the "query" URL parameter as plain JSON, while the
+  // query details are stored base64-encoded (and older explorers also put base64
+  // into the explorer URL). Accepts both and returns the JSON, or undefined if
+  // the value is neither.
+  toLensUrlQuery(value?: string | null): string | undefined {
+    if (!value) return undefined;
+    const asJson = (candidate: string) => {
+      try {
+        JSON.parse(candidate);
+        return candidate;
+      } catch {
+        return undefined;
+      }
+    };
+    const json = asJson(value);
+    if (json) return json;
+    try {
+      return asJson(Utils.decodeBase64(value));
+    } catch {
+      return undefined;
+    }
+  }
 
   showInputFields() {
     this.showInputs = true;
   }
 
-  addFieldValue() {
-    if (this.newValue) {
-      if (Array.isArray(this.tempFieldValue) && this.tempFieldValue.length > 0 && Array.isArray(this.tempFieldValue[0])) {
-        const targetArray = this.tempFieldValue[0];
-        targetArray.push(this.newValue);
-        this.tempFieldValue[0] = targetArray;
-      }
-      this.newValue = '';
+  /** BRIDGEHEADS METHODS **/
+  addBridgehead(newBridgeheadId: string) {
+    if (!this.bridgeheads) return;
+
+    const bridgehead = this.bridgeheads.available.find(
+        b => b.bridgehead === newBridgeheadId
+    );
+
+    if (bridgehead) {
+      this.editingBridgeheads.push(bridgehead);
+      this.newValue = "";
+    }
+    this.saveField()
+  }
+
+
+  removeBridgehead(index: number) {
+    if (index >= 0 && index < this.editingBridgeheads.length) {
+      this.editingBridgeheads.splice(index, 1);
+      this.saveField()
     }
   }
+
+
+  fetchOtherAvailableBridgeheadsToAdd(): Bridgehead[] {
+    if (!this.bridgeheads) return [];
+
+    const selectedIds = this.editingBridgeheads.map(b => b.bridgehead);
+
+    return this.bridgeheads.available.filter(
+        b => !selectedIds.includes(b.bridgehead)
+    );
+  }
+
 
   areThereMoreBridgeheadsAvailableToAdd(): boolean {
-    return (this.fieldValue !== null && this.fieldValue.length >= 2
-        && this.fieldValue[0] !== null && this.fieldValue[1] !== null
-        && Array.isArray(this.fieldValue[0]) && Array.isArray(this.fieldValue[1])
-        && (this.fieldValue[0] as string[]).length < (this.fieldValue[1] as string[]).length);
-  }
-
-  fetchOtherAvailableBridgeheadsToAdd(): string[] {
-    return (this.fieldValue !== null && this.fieldValue.length >= 2
-        && this.fieldValue[0] !== null && this.fieldValue[1] !== null
-        && Array.isArray(this.fieldValue[0]) && Array.isArray(this.fieldValue[1])) ?
-        (this.fieldValue[1] as string[]).filter((element: string) => !this.fieldValue[0].includes(element)) : [];
-
-
-  }
-
-  removeBridgehead(index: any) {
-    if (Array.isArray(this.tempFieldValue) && this.tempFieldValue.length > 0 && Array.isArray(this.tempFieldValue[0])) {
-      const targetArray = this.tempFieldValue[0]; // Direkt auf das Ziel-Array zugreifen
-      if (index >= 0 && index < targetArray.length) {
-        targetArray.splice(index, 1);
-        this.tempFieldValue[0] = targetArray;
-      }
-    }
+    return this.fetchOtherAvailableBridgeheadsToAdd().length > 0;
   }
 
 
@@ -209,6 +581,7 @@ export default class ProjectFieldRow extends Vue {
       this.editedValue[0] += this.newKey + '=' + this.newValue;
       this.newKey = '';
       this.newValue = '';
+      this.saveField()
     }
   }
 
@@ -217,88 +590,382 @@ export default class ProjectFieldRow extends Vue {
       const pairs = this.editedValue[0].split(';');
       pairs.splice(index, 1);
       this.editedValue[0] = pairs.join(';');
+      this.saveField()
     }
   }
 
   exitAndCallRefreshContext() {
     this.cancelEdit();
-    this.callRefrehContext();
+    this.callRefreshContext();
+  }
+
+  isActiveStep(step: string): boolean {
+    return this.editedValue.includes(step)
+  }
+  setActiveSteps(step: string): void {
+    if (this.isConfiguration()) {
+      if (!this.isMultipleConfigurationSelection()) {
+        this.editedValue = [step];
+      } else if (step === 'CUSTOM') {
+        this.editedValue = [step];
+      } else if (this.editedValue.includes(step)) {
+        const remainingValues = this.editedValue.filter(item => item !== step);
+        this.editedValue = remainingValues.length > 0
+            ? remainingValues
+            : [NOT_SELECTED_PROJECT_CONFIGURATION];
+      } else {
+        this.editedValue = [
+          ...this.editedValue.filter(item => item !== 'CUSTOM' && item !== NOT_SELECTED_PROJECT_CONFIGURATION),
+          step
+        ];
+      }
+      return;
+    }
+
+    if(this.editedValue.includes(step)) {
+      this.editedValue = this.editedValue.filter(item => item !== step)
+    } else {
+      this.editedValue.push(step)
+      if (this.editedValue.length > 1) {
+        this.editedValue = this.editedValue.filter(item => item !== 'CUSTOM')
+      }
+    }
   }
 
   isQuery(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.HUMAN_READABLE);
+    return this.includesPmRequestParameter(PmRequestParameter.HUMAN_READABLE);
   }
 
+  canEditRealQuery(): boolean {
+    return this.isQuery() === true && (
+        (this.isProjectManagerAdmin() === true && this.projectState === ProjectState.REVIEW) ||
+        // A query without explorer (e.g. a request created from the dashboard) can only be defined here
+        (this.isCreator() && !this.redirectUrl && this.isDraft()));
+  }
+
+  // Admins edit in edit mode; the creator of a draft edits while filling in the form (not in the summary)
+  isRealQueryEditable(): boolean {
+    return this.editMode || (this.isDraft() && !this.isSummaryStep());
+  }
+
+  saveRealQuery(): void {
+    if (!this.isRealQueryEditable() || this.editedValue[1] === this.tempFieldValue[1]) return;
+
+    const params = new Map<string, string>();
+    params.set(PmRequestParameter.QUERY, this.editedValue[1] ?? "");
+    this.projectManagerBackendService
+        .fetchData(Module.PROJECT_EDITION_MODULE, Action.EDIT_PROJECT_ACTION, this.context, params)
+        .then(() => {
+          this.tempFieldValue[1] = this.editedValue[1];
+          this.callQueryChanged(this.editedValue[1]);
+        });
+  }
+  isCohortDefinition(): boolean {
+    return this.includesPmRequestParameter(PmRequestParameter.COHORT_DEFINITION)
+  }
   isDescription(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.DESCRIPTION);
+    return this.includesPmRequestParameter(PmRequestParameter.DESCRIPTION);
+  }
+  isBridgeheadVote(): boolean {
+    return this.uploadAction === Action.UPLOAD_VOTUM_ACTION;
+  }
+  isDescriptionUpload(): boolean {
+    return this.fieldKey === "DescriptionUpload";
+  }
+  isBridgeheads(): boolean {
+    return this.includesPmRequestParameter(PmRequestParameter.BRIDGEHEADS);
   }
 
-  isBridgeheads(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.BRIDGEHEADS);
-  }
   isConfiguration(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.PROJECT_CONFIGURATION);
+    return this.includesPmRequestParameter(PmRequestParameter.PROJECT_CONFIGURATION);
   }
+
+  isMultipleConfigurationSelection(): boolean {
+    return this.configurationSelectionType === ProjectConfigurationSelectionType.MULTIPLE;
+  }
+
   isConfigType(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.PROJECT_TYPE) && this.fieldKey === 'Type';
+    return this.includesPmRequestParameter(PmRequestParameter.PROJECT_TYPE) && this.fieldKey === 'Type';
   }
+
   isEnvironmentVariables(): boolean {
-    return this.includesEditProjectParam(EditProjectParam.QUERY_CONTEXT);
+    return this.includesPmRequestParameter(PmRequestParameter.QUERY_CONTEXT);
   }
 
   isSelection(): boolean {
-    return this.possibleValues && this.possibleValues.length > 0;
+    return (this.possibleValues?.length ?? 0) > 0;
   }
 
-  isApplicationForm(): boolean {
-    return this.uploadAction === Action.UPLOAD_APPLICATION_FORM_ACTION;
+  // RADIO_BUTTON is a display-mode override for a single-choice ENUM
+  // (dropdown -> radio group) - independent of multiple, since picking
+  // exactly one value is the same semantics either way.
+  isRadioButton(): boolean {
+    return this.properties?.includes(FormFieldProperty.RADIO_BUTTON) ?? false;
+  }
+  isReadOnlyCssEnumLayout(): boolean {
+    return this.isReadOnlyView() &&
+        (this.properties?.includes(FormFieldProperty.CSS_ENUM) ?? false);
   }
 
+  // CHECK_BOX only really makes sense paired with multiple: true (see the
+  // "multiple" template branch, which renders it as one checkbox list
+  // directly manipulating the instance set, instead of repeated single
+  // widgets). Ignored otherwise, same as this file already ignores
+  // properties it doesn't recognize.
+  isCheckBox(): boolean {
+    return (this.properties?.includes(FormFieldProperty.CHECK_BOX) ?? false) && this.multiple;
+  }
+
+  // Whether at least one allowed value of this field carries a description.
+  // When none of them do, option names render as plain text (no bold/title
+  // styling) instead of implying there's a subtitle underneath that never
+  // comes - see the option-title/option-title-plain CSS classes.
+  get hasAnyOptionDescription(): boolean {
+    return (this.possibleValues ?? []).some(value =>
+        !!(this.displayPossibleValue(value).shortDescription ?? this.displayPossibleValue(value).description));
+  }
+
+  isComments(): boolean {
+    return this.includesPmRequestParameter(PmRequestParameter.FORM_FIELDS) && this.fieldKey === 'Comments';
+  }
+  isDraft(): boolean {
+    return this.draftDialogCurrentStep  !== undefined
+  }
+  isSummaryStep(): boolean {
+    return this.draftDialogCurrentStep?.id === this.dialogStep.SUMMARY
+  }
+
+  // Read-only summaries previously reused empty controls or rendered only
+  // persisted instances, leaving unanswered fields as unexplained blank space
+  // (and making an unset optional boolean look like an explicit "No"). Keep
+  // irrelevant fields hidden, but render every relevant unanswered field with
+  // a clear, type-specific empty state; required answers use one shared error
+  // message. The helpers below centralize that policy for all rendering branches.
+  isReadOnlyView(): boolean {
+    return (!this.isDraft() || this.isSummaryStep()) && !this.editMode;
+  }
+  hasMeaningfulValue(value?: string): boolean {
+    return typeof value === "string" && value.trim().length > 0;
+  }
+  get nonEmptyInstances(): ProjectFieldInstance[] {
+    return (this.instances ?? []).filter(instance => this.hasMeaningfulValue(instance.value));
+  }
+  // A stored value that is not one of the allowed values (e.g. the config
+  // changed, or a condition chose another instance of the field). It is kept
+  // and shown as invalid until the user picks another one; ProjectView blocks
+  // creating the request meanwhile. Only in a draft: once submitted, the value
+  // was accepted. Only form fields: the fixed fields' options come from
+  // elsewhere, and ProjectView checks only form fields.
+  isNotAllowedValue(value?: string): boolean {
+    return this.isDraft() && this.includesPmRequestParameter(PmRequestParameter.FORM_FIELDS) &&
+        this.isSelection() &&
+        this.hasMeaningfulValue(value) && !(this.possibleValues ?? []).includes(value!);
+  }
+  get notAllowedInstanceValues(): string[] {
+    return this.nonEmptyInstances.map(instance => instance.value!).filter(value => this.isNotAllowedValue(value));
+  }
+  getNotAllowedValueMessage(values: string[]): string {
+    const quoted = values.map(value => `"${value}"`).join(", ");
+    return values.length > 1
+        ? `${quoted} are not valid values. Please choose different ones.`
+        : `${quoted} is not a valid value. Please choose a different one.`;
+  }
+  getEmptySummaryValue(emptyCollectionText = "Not provided"): string {
+    return this.mandatory ? "Missing — required" : emptyCollectionText;
+  }
+  getFormFieldSummaryValue(value?: string): string {
+    if (!this.hasMeaningfulValue(value)) {
+      return this.getEmptySummaryValue();
+    }
+
+    if (this.isInputType(FormDataType.INTEGER) || this.isInputType(FormDataType.DOUBLE)) {
+      return formatDisplayNumber(value);
+    }
+
+    // DATE values are persisted independently of presentation configuration
+    // in the canonical ISO shape. Unknown legacy shapes remain visible as-is.
+    if (this.isInputType(FormDataType.DATE) && /^\d{4}-\d{2}-\d{2}$/.test(value!)) {
+      return formatDisplayDate(value, this.displayFormat ?? getDefaultDateDisplayFormat()) || value!;
+    }
+    if (this.isInputType(FormDataType.TIMESTAMP)) {
+      const canonicalValue = this.fieldValue[0];
+      return canonicalValue && isCanonicalTimestampValue(canonicalValue)
+          ? formatDisplayDate(canonicalValue, this.displayFormat ?? getDefaultTimestampDisplayFormat()) || canonicalValue
+          : value!;
+    }
+    if (this.isInputType(FormDataType.LOCAL_DATE_TIME)
+        && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value!)) {
+      return formatDisplayDate(value, this.displayFormat ?? getDefaultTimestampDisplayFormat()) || value!;
+    }
+    return value!;
+  }
+  // Read-only summary rows for the Configuration field's option-list rendering.
+  // Keeps the raw key (needed as a stable :key and to look up the description
+  // alongside the label) rather than just the resolved label string.
+  get configurationSummaryEntries(): {key: string, label: string, description?: string}[] {
+    return this.editedValue
+        .filter(value => this.hasMeaningfulValue(value) && value !== NOT_SELECTED_PROJECT_CONFIGURATION)
+        .map(value => ({
+          key: value,
+          label: this.configurations?.get(value)?.project?.label ?? value,
+          description: this.configurations?.get(value)?.project?.description
+        }));
+  }
+
+  // Same intent as hasAnyOptionDescription, but for Configuration: its options
+  // come from the configurations map (project.description), not from
+  // displayPossibleValue - which Configuration never sets and which isSelection()
+  // based branches skip for it via their own "&& !isConfiguration()" guards.
+  get hasAnyConfigurationOptionDescription(): boolean {
+    return (this.possibleValues ?? []).some(value => !!this.configurations?.get(value)?.project?.description);
+  }
+  getQuerySummaryFallback(): string {
+    return this.hasMeaningfulValue(this.editedValue[0])
+        ? this.editedValue[0]
+        : this.getEmptySummaryValue("No cohort selected");
+  }
+  getFileSummaryValue(): string {
+    if (!this.existsFile) {
+      // The description upload has no title of its own: say which file.
+      return this.getEmptySummaryValue(this.isDescriptionUpload() ? "No description file uploaded" : "No file uploaded");
+    }
+    return this.hasMeaningfulValue(this.fieldValue[1]) ? this.fieldValue[1] : "File uploaded";
+  }
+  isBlock(): boolean {
+    return !!this.block
+  }
+  isProjectManagerAdmin(){
+    return this.projectRoles?.includes(ProjectRole.PROJECT_MANAGER_ADMIN);
+  }
+  isCreator(): boolean {
+    return this.projectRoles?.includes(ProjectRole.CREATOR) === true;
+  }
+  get displayedFieldDescription(): string | undefined {
+    return !this.isDraft() || this.isSummaryStep() || this.isBlock()
+      ? this.fieldShortDescription ?? this.fieldDescription
+      : this.fieldDescription;
+  }
+  // A whitespace-only title/description counts as absent, same as an empty one.
+  get hasFieldTitle(): boolean {
+    return !!this.fieldKey?.trim();
+  }
+  get hasDisplayedFieldDescription(): boolean {
+    return !!this.displayedFieldDescription?.trim();
+  }
+  // Read-only view of a field without title or description (e.g. declaration
+  // checkboxes whose option text is the whole statement): the header column
+  // would render as empty space, so the value takes the whole row instead.
+  // Layout (CSS_*) fields are excluded - they are paired side by side, and
+  // dropping one header would misalign its value with its partner's.
+  // Todo badges also live in the header, so a field showing one keeps it.
+  isHeaderlessReadOnlyView(): boolean {
+    return this.isReadOnlyView() &&
+        !this.hasFieldTitle &&
+        !this.hasDisplayedFieldDescription &&
+        !this.getCssProperty() &&
+        !(this.uploadAction && this.todos?.get(this.uploadAction)) &&
+        !(this.downloadAction && this.todos?.get(this.downloadAction) && this.existsFile);
+  }
+  isInstanceSelected(value: string): boolean {
+    return this.instances?.some(instance => instance.value === value) ?? false;
+  }
+  get shouldCollapseFieldDescription(): boolean {
+    const valueIsBesideDescription = !this.isDraft() || this.isSummaryStep() || this.isBlock();
+    const isUsingNormalDescription = this.fieldShortDescription == null && !!this.fieldDescription;
+    return valueIsBesideDescription && isUsingNormalDescription;
+  }
+  get descriptionClampStyle(): Record<string, string> {
+    return {
+      "--form-field-description-collapsed-lines": String(this.descriptionCollapsedLines)
+    };
+  }
+  observeDescription(): void {
+    const description = this.$refs.fieldDescription as HTMLElement | undefined;
+    if (description !== this.observedDescription) {
+      this.descriptionResizeObserver?.disconnect();
+      this.observedDescription = description;
+      if (description) this.descriptionResizeObserver?.observe(description);
+    }
+    this.refreshDescriptionOverflow();
+  }
+  refreshDescriptionOverflow(): void {
+    if (!this.shouldCollapseFieldDescription || this.descriptionExpanded) return;
+    const description = this.$refs.fieldDescription as HTMLElement | undefined;
+    this.descriptionOverflows = !!description && description.scrollHeight > description.clientHeight + 1;
+  }
+  toggleDescription(): void {
+    this.descriptionExpanded = !this.descriptionExpanded;
+    if (!this.descriptionExpanded) {
+      this.$nextTick(() => this.refreshDescriptionOverflow());
+    }
+  }
+  // The header (title + description) sits above the value while filling in
+  // the draft, and beside it everywhere else. Only the stacked layout needs
+  // a gap between the two - the same gap whether or not a description is
+  // shown and whatever the control is.
+  hasValueBelowHeader(): boolean {
+    return this.isDraft() && !this.isSummaryStep() && !this.isBlock() &&
+      !this.isOptionalBooleanInHeader() && !this.isDescriptionUpload() &&
+      (this.hasFieldTitle || this.hasDisplayedFieldDescription);
+  }
+  // An optional BOOLEAN being filled in is a checkbox inside its own header,
+  // with no value column: a single checkbox line.
+  isOptionalBooleanInHeader(): boolean {
+    return this.isInputType(FormDataType.BOOLEAN) && !this.mandatory && !this.isBlock() && !this.isReadOnlyView();
+  }
+  getInputType(): string {
+    if (this.type === FormDataType.INTEGER) return 'number'
+    if (this.type === FormDataType.DATE) return 'date'
+    if (this.type === FormDataType.TIMESTAMP) return 'datetime-local'
+    if (this.type === FormDataType.LOCAL_DATE_TIME) return 'datetime-local'
+    if (this.type === FormDataType.STRING) return 'text'
+    if (this.type === FormDataType.LONG_STRING) return 'longtext'
+    return 'text'
+  }
+  isInputType(type: FormDataType): boolean {
+    return this.type === type
+  }
   getEditFieldCssClass() {
-    if (this.isQuery()) {
-      return 'query-edit-field';
-    }
-    if (this.isDescription()) {
-      return 'description-edit-field';
-    }
-    if (this.isBridgeheads()) {
-      return 'bridgeheads-edit-field';
-    }
-    if (this.isEnvironmentVariables()) {
-      return 'environment-variables-edit-field';
-    }
-    if (this.isSelection()) {
-      return 'selection-edit-fields';
-    }
-    if (this.uploadAction) {
-      return 'upload-edit-field'
-    }
-    return 'other-edit-fields';
+    let sidewise = "";
+    if(!this.isDraft() || this.isSummaryStep()) sidewise = " sidewise"
+    if (this.isQuery()) return 'query-edit-field' + sidewise;
+    if (this.isDescription()) return 'description-edit-field' + sidewise;
+    if (this.isBridgeheads()) return 'bridgeheads-edit-field' + sidewise;
+    if (this.isEnvironmentVariables()) return 'environment-variables-edit-field' + sidewise;
+    if (this.isSelection()) return 'selection-edit-fields' + sidewise;
+    if (this.uploadAction) return 'upload-edit-field' + sidewise;
+    return 'other-edit-fields' + sidewise;
   }
 
-  getButtonContainerCssClass() {
-    if (this.isQuery()) {
-      return 'query-button-container';
-    }
-    if (this.isSelection()) {
-      return 'selection-button-container';
-    }
-    if (this.isDescription()) {
-      return 'description-button-container';
-    }
-    if (this.isBridgeheads()) {
-      return 'bridgeheads-button-container';
-    }
-    if (this.isEnvironmentVariables()) {
-      return 'environment-variables-button-container';
-    }
-    if (this.isApplicationForm()) {
-      return 'application-form-button-container';
-    }
-    if (this.uploadAction) {
-      return 'upload-button-container';
-    }
-    return 'other-button-container';
+  getQueryDetails(): QueryItem[][] {
+    if (this.editedValue[2]) {
+      return JSON.parse(Utils.decodeBase64(this.editedValue[2])) as QueryItem[][]}
+    return [[{id: "", key: "", name: "", type: "", values: []}]]
+  }
+
+  getBooleanValue(): string {
+    if (this.editedValue[0] === "true") {return "Yes"}
+    if (this.editedValue[0] === "false") {return "No"}
+    return this.getEmptySummaryValue();
+  }
+  hasSection(): boolean {
+    const groups = this.section?.fetchGroups();
+    return !!(groups && groups.length > 0);
+  }
+
+  // Title beside the value (summary, review, blocks): the narrow title column,
+  // so every value starts on the same line - optional BOOLEANs included.
+  hasShortTitle(): boolean {
+    return !this.isDraft() || this.isSummaryStep() || this.isBlock()
+  }
+  onBooleanValueChange(_event: Event) {
+    const input = _event.target as HTMLInputElement;
+    this.editedValue[0] = input.checked ? 'true': 'false';
+    this.saveField()
+  }
+
+  onInputChange(_event: Event) {
+    this.saveField()
   }
 
   async copyToClipboard(text: string) {
@@ -306,249 +973,890 @@ export default class ProjectFieldRow extends Vue {
       await navigator.clipboard.writeText(text);
       this.copiedToClipboard = true;
     } catch ($e) {
-      console.log($e)
+      console.log($e);
     }
   }
 
+  getFirstLevelCriteria(queryBase64: string): any[] {
+    if(queryBase64?.length > 0) {
+      const query = JSON.parse(atob(queryBase64))
+      if (query?.lang === "ast") {
+        const payload = JSON.parse(atob(query.payload))
+        return payload.ast?.children[0]?.children;
+      }
+    }
+    return []
+  }
+
+  getCriteriaDetails(criteria: any): string {
+    let label = ""
+    if (criteria?.children[0]?.type !== undefined) {
+      label = criteria?.children[0]?.key + " = ";
+      criteria?.children?.forEach((child: any, index: number) => {
+        if (child?.type === "EQUALS") {
+          label += child?.value
+          if(index < criteria?.children?.length - 1) {
+            label += ", "
+          }
+        }
+        if (child?.type === "BETWEEN") {
+          label += child?.value?.min + " - " + child?.value?.max
+        }
+      })
+    }
+    else {
+      criteria.children.forEach((child: any, index: number) => {
+        label += child?.key
+        if(index < criteria?.children?.length - 1) {
+          label += ", "
+        }
+      })
+    }
+    return label
+  }
+
+  getCriterium(crit: any): QueryItem | undefined {
+    return this.getQueryDetails()[0].find((element) => element.key === crit.key)
+  }
+
+  getCssProperty(): string {
+    // Configuration properties are uniform uppercase enum values. Translate
+    // them to the existing lowercase CSS class names only at the rendering
+    // boundary so the styling contract remains unchanged.
+    const cssClassByProperty = new Map<FormFieldProperty, string>([
+      [FormFieldProperty.CSS_UNIT_VALUE, "css-unit-value"],
+      [FormFieldProperty.CSS_UNIT, "css-unit"],
+      [FormFieldProperty.CSS_ENUM, "css-enum"],
+      [FormFieldProperty.CSS_ENUM_VALUE, "css-enum-value"],
+      [FormFieldProperty.CSS_CHECKBOX, "css-checkbox"]
+    ]);
+    const cssClasses = Array.from(cssClassByProperty.entries())
+        .filter(([property]) => this.properties?.includes(property))
+        .map(([, cssClass]) => cssClass);
+    return cssClasses && cssClasses?.length > 0 ? cssClasses.join(",")+' layout' : "";
+  }
+  getWidth(): string {
+    // Title and description stacked above the value (draft): as wide as the
+    // value, so a description wraps at the input's right edge, not earlier.
+    let width = "100%"
+    if (this.getCssProperty().includes("layout")) {
+      if (this.properties?.includes(FormFieldProperty.CSS_UNIT)) {
+        width = "30%"
+      }
+      if (this.properties?.includes(FormFieldProperty.CSS_UNIT_VALUE)) {
+        width = "54%"
+      }
+      if (this.properties?.includes(FormFieldProperty.CSS_ENUM)) {
+        // The parent row owns the 40% column width; this wrapper must fill it
+        // rather than applying a second percentage inside that column.
+        width = "100%"
+      }
+      if (this.properties?.includes(FormFieldProperty.CSS_ENUM_VALUE)) {
+        // The parent row owns the 60% column width; this wrapper fills the
+        // remaining column for the accompanying free-text value.
+        width = "100%"
+      }
+      if (this.properties?.includes(FormFieldProperty.CSS_CHECKBOX)) {
+        width = "100%"
+      }
+    } else {
+      if (this.hasShortTitle()) {
+        if (this.hasSection()) {
+          // A section's fields are indented 10px (.input-field.section), so
+          // their title column is 30% of a 10px narrower row: 7px less keeps
+          // the value column on the same line as everywhere else.
+          width = "calc(30% - 7px)"
+        } else {
+          width = "30%"
+        }
+      }
+    }
+    return width
+  }
+  getHeaderWidth(): string {
+    const isSummaryLayout = !this.isDraft() || this.isSummaryStep();
+    // Both members of an enum-plus-text pair are separate rows in the summary
+    // (ProjectView.isStackedPairRow): the ordinary 30% title column.
+    return isSummaryLayout && (this.properties?.includes(FormFieldProperty.CSS_ENUM) ||
+        this.properties?.includes(FormFieldProperty.CSS_ENUM_VALUE))
+        ? "30%"
+        : this.getWidth();
+  }
 }
+
 </script>
 
 <template>
-  <tr v-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep === dialogStep.SERVICES" class="config-box-row">
-    <td colspan="3">
-      <div style="display: flex;padding-left:0;margin:20px 0">
-        <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
-             :class="{ 'active': editedValue[0] === step }">
-          <button class="config-button"
-                  @click="editedValue[0]=step;saveField()"
-                  style="background: none; border:none; color: black; padding:0; height:100%;min-width: fit-content">
-            <div style="height:100%; display: flex; flex-direction: column;">
-              <div class="config-box-header">{{ configurations?.get(step)?.label }}</div>
-              <div class="config-box-body">
-                <div v-if="configurations" style="display: flex;flex-direction: column">
-                  <div style="margin-bottom:2%;text-align:left;min-height:200px">{{ configurations?.get(step)?.description }}</div>
-                  <div v-if="!configurations?.get(step)?.customConfig" style="text-align: right;margin-bottom:2%">
-                    <button @click.stop="showDetails[index]=!showDetails[index]" style="background: none; border:none; color: #007bff;">
-                      <span v-if="!showDetails[index]">show details</span>
-                      <span v-if="showDetails[index]">hide details</span>
-                    </button>
-                  </div>
-                  <table v-if="showDetails[index]" style="text-align: left">
-                    <tr v-for="(param, key) in configurations?.get(step)" :key="key">
-                      <!--<template v-if="key as string !== 'customConfig'">-->
-                      <template v-if="!['customConfig', 'label', 'description'].includes(key.toString())">
-                        <td style="font-weight: bold">{{configLabel[key]}}:</td>
-                        <td class="truncate-15" data-toggle="tooltip" data-placement="top" :title="param.toString()">{{param}}</td>
-                      </template>
-                    </tr>
-                  </table>
+  <!--
+    Headless: this component recursing into itself to render ONE value
+    instance of a multiple field (see the "multiple" branch below). The
+    parent already rendered the label/description chrome once, so this just
+    shows the value editor for the data types multiple fields actually use,
+    plus a "remove this value" button when deleteAction/deleteModule are set.
+  -->
+  <div v-if="headless" style="display:flex; align-items:center; gap:0.5rem; width:100%">
+    <div style="flex:1; min-width:0;">
+      <div v-if="isSelection() && isRadioButton() && ((isDraft() && !isSummaryStep()) || editMode)" class="option-list" style="display:flex; flex-direction:column; gap:0.25rem;">
+        <div v-for="value in possibleValues" :key="value" class="form-check option-row">
+          <input class="form-check-input" type="radio" style="margin:0;"
+                 :name="radioGroupName" :id="`${radioGroupName}-${value}`" :value="value"
+                 v-model="editedValue[0]" @change="onInputChange">
+          <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
+            <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'"
+                  v-html="displayPossibleValue(value).name"></span>
+            <span v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
+                  class="option-description"
+                  v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></span>
+          </label>
+        </div>
+      </div>
+      <select v-else-if="isSelection() && ((isDraft() && !isSummaryStep()) || editMode)"
+              :aria-required="mandatory ? 'true' : undefined"
+              v-model="editedValue[0]" @change="onInputChange" class="form-select">
+        <option v-if="isNotAllowedValue(editedValue[0])" :value="editedValue[0]" disabled>
+          {{ editedValue[0] }} (not allowed)
+        </option>
+        <option v-for="value in possibleValues" :key="value" :value="value">
+          {{ displayPossibleValue(value).name }}
+        </option>
+      </select>
+      <div v-else-if="isSelection()" style="padding: 0 0.75rem">
+        <div>{{ displayPossibleValue(editedValue[0]).name }}</div>
+        <div style="font-size: 12px">{{ displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description }}</div>
+      </div>
+      <div v-else-if="isInputType(FormDataType.LONG_STRING)" class="grow-wrap" style="width:100%" :data-replicated-value="editedValue[0]">
+        <textarea
+            :aria-required="mandatory ? 'true' : undefined"
+            v-model="editedValue[0]"
+            @change="onInputChange"
+            class="form-control auto-textarea"
+            :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
+            :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+            :placeholder="placeholder"
+        ></textarea>
+      </div>
+      <div v-else-if="isReadOnlyView()" class="summary-value">
+        {{ getFormFieldSummaryValue(editedValue[0]) }}
+      </div>
+      <input
+          :aria-required="mandatory ? 'true' : undefined"
+          v-else
+          :type="getInputType()"
+          v-model="editedValue[0]"
+          @change="onInputChange"
+          class="form-control"
+          :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
+          :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+          style="width:100%"
+      >
+      <div v-if="isNotAllowedValue(editedValue[0])" class="not-allowed-value">
+        {{ getNotAllowedValueMessage([editedValue[0]]) }}
+      </div>
+    </div>
+    <button v-if="deleteAction && deleteModule && ((isDraft() && !isSummaryStep()) || editMode)"
+            type="button" class="btn btn-sm dktk-darkblue" style="padding: 0 6px; flex-shrink:0;" title="Remove this value"
+            @click="deleteInstance">
+      <i class="bi bi-dash" style="color: white; font-size: 18px"></i>
+    </button>
+  </div>
+
+  <!--
+    Multiple: renders the label/description chrome once, then one headless
+    recursive instance per value (see above) plus a button to add another.
+  -->
+  <div v-else-if="multiple" :class="getCssProperty()">
+    <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo" attach="next"/>
+    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'read-only-css-enum': isReadOnlyCssEnumLayout(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep() }">
+      <div v-if="!isHeaderlessReadOnlyView()" style="display:flex" :style="{width: getHeaderWidth()}">
+        <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'with-value-below': hasValueBelowHeader() }">
+          <!-- No title (e.g. a declaration checkbox): no empty line holding only
+               the mandatory marker - the marker moves to the option text. -->
+          <div v-if="hasFieldTitle" style="display: flex;">
+            <span class="input-field-title"
+                  :class="{ 'field-missing': highlightMissing && mandatory && !instances?.some(instance => instance.value) }">
+              <span v-html="fieldKey"></span>
+              <MandatoryFieldMarker :mandatory="mandatory"/>
+            </span>
+          </div>
+          <div
+              v-if="hasDisplayedFieldDescription"
+              ref="fieldDescription"
+              class="field-description"
+              :class="{ 'field-description-collapsed': shouldCollapseFieldDescription && !descriptionExpanded }"
+              :style="descriptionClampStyle"
+              v-html="displayedFieldDescription"
+          ></div>
+          <button
+              v-if="shouldCollapseFieldDescription && (descriptionOverflows || descriptionExpanded)"
+              type="button"
+              class="field-description-toggle"
+              :aria-expanded="descriptionExpanded"
+              @click="toggleDescription"
+          >{{ descriptionExpanded ? 'Show less' : 'Show more' }}</button>
+        </div>
+      </div>
+      <div :class="[getEditFieldCssClass(), { 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'full-row': isHeaderlessReadOnlyView() }]"
+           style="flex-direction: column; align-items: stretch; gap: 0.25rem;">
+        <!--
+          CHECK_BOX: one checkbox list directly manipulating the instance
+          set (checking/unchecking adds/removes a value) - fundamentally a
+          different widget from "repeated single-value rows", not just a
+          different rendering of the same one, so it's handled here rather
+          than inside the headless recursion below.
+        -->
+        <template v-if="isSelection() && isCheckBox()">
+          <!--
+            Editable: every allowed option, with its description, as a
+            clickable checkbox row.
+          -->
+          <template v-if="(isDraft() && !isSummaryStep()) || editMode">
+            <div class="option-list">
+              <div v-for="value in possibleValues" :key="value" class="form-check option-row">
+                <input class="form-check-input" type="checkbox" style="margin:0;"
+                       :id="`${radioGroupName}-${value}`"
+                       :checked="instances?.some(instance => instance.value === value)"
+                       @change="toggleCheckboxValue(value, ($event.target as HTMLInputElement).checked)">
+                <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
+                  <span>
+                    <span :class="[hasAnyOptionDescription ? 'option-title' : 'option-title-plain',
+                                   { 'field-missing': !hasFieldTitle && highlightMissing && mandatory && !instances?.some(instance => instance.value) }]"
+                          v-html="displayPossibleValue(value).name"></span>
+                    <MandatoryFieldMarker
+                        v-if="!hasFieldTitle"
+                        :mandatory="mandatory"
+                    />
+                  </span>
+                  <span v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
+                        class="option-description"
+                        v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></span>
+                </label>
+              </div>
+              <!-- Stored values that are not allowed: unchecking removes them. -->
+              <div v-for="value in notAllowedInstanceValues" :key="`not-allowed-${value}`" class="form-check option-row">
+                <input class="form-check-input" type="checkbox" style="margin:0;" checked
+                       :id="`${radioGroupName}-not-allowed-${value}`"
+                       @change="toggleCheckboxValue(value, ($event.target as HTMLInputElement).checked)">
+                <label class="form-check-label option-label not-allowed-value" :for="`${radioGroupName}-not-allowed-${value}`">
+                  {{ value }} (not allowed)
+                </label>
+              </div>
+            </div>
+          </template>
+          <!--
+            Read-only/Summary without a field title: the option texts are the
+            only thing identifying the field (e.g. declaration checkboxes), so
+            every option is listed with its checked state - otherwise an
+            unchecked one would just read "No options selected" with nothing
+            saying what wasn't confirmed.
+          -->
+          <template v-else-if="!hasFieldTitle">
+            <div class="option-list">
+              <div v-for="value in possibleValues" :key="value" class="option-readonly option-status-row">
+                <i v-if="isInstanceSelected(value)" class="bi bi-check-lg option-status-checked"
+                   role="img" aria-label="Selected"></i>
+                <i v-else class="bi bi-x-lg option-status-unchecked" :class="{ 'summary-missing': mandatory }"
+                   role="img" aria-label="Not selected"></i>
+                <div>
+                  <div :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'"
+                       v-html="displayPossibleValue(value).name"></div>
+                  <div v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
+                       class="option-description"
+                       v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></div>
                 </div>
               </div>
             </div>
+          </template>
+          <!--
+            Read-only/Summary: only the selected options, matching the
+            single-value RADIO_BUTTON read-only branch below - no disabled
+            checkboxes for unselected choices.
+          -->
+          <template v-else>
+            <div class="option-list">
+              <div v-if="nonEmptyInstances.length === 0"
+                   class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                {{ getEmptySummaryValue("No options selected") }}
+              </div>
+              <div v-for="instance in nonEmptyInstances" :key="instance.fieldInstance" class="option-readonly">
+                <div :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'"
+                     v-html="displayPossibleValue(instance.value ?? '').name"></div>
+                <div v-if="displayPossibleValue(instance.value ?? '').shortDescription ?? displayPossibleValue(instance.value ?? '').description"
+                     class="option-description"
+                     v-html="displayPossibleValue(instance.value ?? '').shortDescription ?? displayPossibleValue(instance.value ?? '').description"></div>
+              </div>
+            </div>
+          </template>
+          <div v-if="notAllowedInstanceValues.length > 0" class="not-allowed-value">
+            {{ getNotAllowedValueMessage(notAllowedInstanceValues) }}
+          </div>
+        </template>
+        <template v-else>
+          <div v-if="isReadOnlyView() && nonEmptyInstances.length === 0"
+               class="summary-empty" :class="{ 'summary-missing': mandatory }">
+            {{ getEmptySummaryValue("No values provided") }}
+          </div>
+          <div v-for="instance in (isReadOnlyView() ? nonEmptyInstances : instances)" :key="instance.fieldInstance">
+            <ProjectFieldRow
+                headless
+                :field-key="fieldKey"
+                :field-value="[instance.value ?? '']"
+                :placeholder="placeholder"
+                :project-manager-backend-service="projectManagerBackendService"
+                :context="context"
+                :is-editable="isEditable"
+                :edit-mode="editMode"
+                :call-refresh-context="callRefreshContext"
+                :call-refresh-bridgeheads="callRefreshBridgeheads"
+                :call-query-changed="callQueryChanged"
+                :project-state="projectState"
+                :action="action"
+                :module="module"
+                :delete-action="Action.DELETE_FORM_FIELD_VALUE_ACTION"
+                :delete-module="Module.PROJECT_EDITION_MODULE"
+                :mandatory="false"
+                :type="type"
+                :display-format="displayFormat"
+                :possible-values="possibleValues"
+                :display-possible-value="displayPossibleValue"
+                :visible-bridgeheads="visibleBridgeheads"
+                :edit-project-param="editProjectParam"
+                :draft-dialog-current-step="draftDialogCurrentStep"
+                :highlight-missing="highlightMissing"
+                :properties="properties"
+                :transform-for-sending="buildInstanceTransform!(instance.fieldInstance)"
+            />
+          </div>
+          <button v-if="(isDraft() && !isSummaryStep()) || editMode"
+                  type="button" class="btn btn-secondary" style="align-self: flex-start;" @click="addInstance()">
+            <i class="bi bi-plus"></i>
           </button>
+        </template>
+      </div>
+    </div>
+    <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo" attach="previous"/>
+  </div>
+
+  <tr v-else-if="isConfiguration() && !isConfigType() && draftDialogCurrentStep && draftDialogCurrentStep.id === dialogStep.SERVICES"
+      class="config-box-row">
+    <td colspan="3" style="display: block;width:100%">
+      <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo" attach="next"/>
+      <div>
+        <div v-for="(step, index) in possibleValues" :key="index" class="config-box"
+             :class="{ 'active': isActiveStep(step) }">
+          <div class="config-button"
+               role="button"
+               tabindex="0"
+               @click="setActiveSteps(step); saveField()"
+               @keydown.enter="setActiveSteps(step); saveField()"
+               style="cursor: pointer; height:100%; min-width: fit-content;">
+            <div style="display: flex;flex-direction: row;">
+              <div class="form-check">
+                <input class="form-check-input"
+                       :type="isMultipleConfigurationSelection() ? 'checkbox' : 'radio'"
+                       name="project-configuration"
+                       value=""
+                       :checked="isActiveStep(step)">
+              </div>
+              <div style="height:100%; display: flex; flex-direction: column;width:100%">
+                <div class="config-box-header">{{ configurations?.get(step)?.project?.label }}</div>
+                <div class="config-box-body">
+                  <div v-if="configurations" style="display: flex;flex-direction: column;width:100%">
+                    <div style="text-align:left;">
+                      {{ configurations?.get(step)?.project?.description }}
+                    </div>
+                    <div v-if="!configurations?.get(step)?.project?.isCustomConfigSelected"
+                         style="text-align: right">
+                      <!--<button @click.stop="showDetails[index]=!showDetails[index]"
+                              style="background: none; border:none; color: #007bff;">
+                        <span v-if="!showDetails[index]">show details</span>
+                        <span v-if="showDetails[index]">hide details</span>
+                      </button>-->
+                    </div>
+                    <table v-if="showDetails[index]" style="text-align: left">
+                      <tr v-for="(param, key) in configurations?.get(step)?.project?.outputs?.[0]" :key="key">
+                        <!--<template v-if="!['customConfig', 'label', 'description'].includes(key.toString())">-->
+                          <td style="width: 20%">{{ configLabel[key] }}:</td>
+                          <td class="truncate-15" data-toggle="tooltip" data-placement="top" :title="param?.toString()">
+                            {{ param }}
+                          </td>
+                        <!--</template>-->
+                      </tr>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+      <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo" attach="previous"/>
     </td>
   </tr>
-  <tr v-else>
-    <!-- FIRST COLUMN: HEADERS -->
-    <td class="bold-text thinner-column" style="background-color: #f2f2f2; max-width: 170px;">
-      <div style="display: flex;">
-        <span>{{ fieldKey }}</span>
-        <span v-if="todos?.get(this.uploadAction)" class="todo-circle-small">#{{todos?.get(this.uploadAction)?.number}}</span>
-        <span v-if="todos?.get(this.downloadAction) && this.existsFile" class="todo-circle-small">#{{todos?.get(this.downloadAction)?.number}}</span>
-      </div>
-    </td>
 
-    <!-- SECOND COLUMN: CONTENT -->
-    <td style="width:80%">
-      <div class="user-input-container">
-        <!-- If editing -->
-        <div v-if="editing" style="width:100%">
-          <div :class="getEditFieldCssClass()">
-            <div v-if="uploadAction" style="width:75%"> <!-- If uploading a file -->
-              <div v-if="uploadAction === Action.UPLOAD_APPLICATION_FORM_ACTION">
-                <DownloadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                                :module="Module.PROJECT_DOCUMENTS_MODULE"
-                                :action="Action.DOWNLOAD_APPLICATION_FORM_TEMPLATE_ACTION"
-                                text="Download application form template"/>
-                <br/>
+
+  <div v-else :class="[getCssProperty(), { 'optional-boolean-field': isOptionalBooleanInHeader() }]">
+
+    <ContextInfoBox v-if="fieldPreInfo" :content="fieldPreInfo" attach="next" :is-block="isBlock()"/>
+    <div class="input-field" :class="{ 'sidewise': !isDraft() || isSummaryStep(), 'read-only-css-enum': isReadOnlyCssEnumLayout(), 'block': isBlock(), 'section': hasSection(), 'wide': isSummaryStep(), 'description-upload': isDescriptionUpload() }" :style="isDescription() ? 'margin-bottom:0px!important' : ''">
+      <div v-if="!isHeaderlessReadOnlyView()" style="display:flex" :style="{width: getHeaderWidth()}">
+        <input
+            v-if="isInputType(FormDataType.BOOLEAN) && !this.mandatory && !isBlock() && !isReadOnlyView()"
+            type="checkbox"
+            class="optional-boolean-checkbox"
+            :checked="editedValue[0] === 'true'"
+            @change="onBooleanValueChange"
+            :disabled=" (isDraft() && isSummaryStep()) || (!isDraft() && !editMode)"
+        />
+        <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'with-value-below': hasValueBelowHeader() }">
+          <div v-if="!isDescriptionUpload()" style="display: flex;">
+            <span class="input-field-title"
+                  :class="{ 'field-missing': highlightMissing && mandatory && ((!isBridgeheads() && !editedValue[0]) || (isBridgeheads() && editingBridgeheads.length === 0)) }">
+              <span v-html="fieldKey"></span>
+              <MandatoryFieldMarker :mandatory="mandatory"/>
+            </span>
+
+            <span v-if="this.uploadAction && todos?.get(this.uploadAction)"
+                  class="todo-circle-small">#{{ todos?.get(this.uploadAction)?.number }}</span>
+            <span v-if="this.downloadAction && todos?.get(this.downloadAction) && this.existsFile"
+                  class="todo-circle-small">#{{ todos?.get(this.downloadAction)?.number }}</span>
+          </div>
+          <div
+              v-if="hasDisplayedFieldDescription"
+              ref="fieldDescription"
+              class="field-description"
+              :class="{ 'field-description-collapsed': shouldCollapseFieldDescription && !descriptionExpanded }"
+              :style="descriptionClampStyle"
+              v-html="displayedFieldDescription"
+          ></div>
+          <button
+              v-if="shouldCollapseFieldDescription && (descriptionOverflows || descriptionExpanded)"
+              type="button"
+              class="field-description-toggle"
+              :aria-expanded="descriptionExpanded"
+              @click="toggleDescription"
+          >{{ descriptionExpanded ? 'Show less' : 'Show more' }}</button>
+        </div>
+      </div>
+      <div v-if="!(isInputType(FormDataType.BOOLEAN) && !this.mandatory) || isBlock() || isReadOnlyView()" :class="[getEditFieldCssClass(),{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'full-row': isHeaderlessReadOnlyView() }]">
+        <!-- The ethics vote of one bridgehead: a row per bridgehead, each with its own bridgehead
+             (docs/bridgehead-context.md). -->
+        <div v-if="isBridgeheadVote()" style="width:100%;min-width:0">
+          <BridgeheadVotes :context="context" :project-manager-backend-service="projectManagerBackendService"
+                     :bridgeheads="visibleBridgeheads" :editable="!isReadOnlyView()" :mandatory="mandatory"
+                     :project-manager-admin="isProjectManagerAdmin()" :call-refresh-context="exitAndCallRefreshContext"/>
+        </div>
+        <div v-else-if="uploadAction && !isDescriptionUpload()" style="width:100%;min-width:0">
+          <div v-if="isReadOnlyView()" style="display:flex; align-items:center; gap:0.5rem"
+               :class="{ 'summary-empty': !existsFile, 'summary-missing': mandatory && !existsFile }">
+            <span>{{ getFileSummaryValue() }}</span>
+            <DownloadButton v-if="existsFile && downloadAction"
+                            :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="downloadModule ?? Module.PROJECT_DOCUMENTS_MODULE" :action="downloadAction"
+                            icon-class="bi bi-download" :filename="fieldValue[1]"/>
+          </div>
+          <UploadButton v-else :context="context" :project-manager-backend-service="projectManagerBackendService"
+                        :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
+                        :download-action="downloadAction"
+                        :text="fieldKey?.trim() ? 'Upload ' + fieldKey : ''" :call-refresh-context="exitAndCallRefreshContext"
+                        :project-manager-admin="isProjectManagerAdmin()"
+                        :is-file="true" :toggle-input="fieldKey.startsWith('Ethic vote')" :file-name="fieldValue[1]" :exists-file="existsFile" :project-document="projectDocument"/>
+        </div>
+        <div v-else style="width:100%">
+          <div>
+            <div v-if="isInputType(FormDataType.BOOLEAN)" style="width: 70%;">
+              <input
+                  v-if="!this.mandatory && isBlock() && !isReadOnlyView()"
+                  type="checkbox"
+                  :checked="editedValue[0] === 'true'"
+                  @change="onBooleanValueChange"
+                  :disabled="(isDraft() && isSummaryStep()) || (!isDraft() && !editMode)"
+              />
+              <select v-if="((isDraft() && !isSummaryStep()) || editMode) && mandatory" v-model="editedValue[0]" @change="saveField()" class="form-select" style="width: fit-content;">
+                <option value=true>Yes</option>
+                <option value=false>No</option>
+              </select>
+              <div v-if="isReadOnlyView()">
+                <div style="padding: 0 0.75rem"
+                     :class="{ 'summary-empty': !hasMeaningfulValue(editedValue[0]), 'summary-missing': mandatory && !hasMeaningfulValue(editedValue[0]) }">
+                  {{getBooleanValue()}}
+                </div>
               </div>
-              <UploadButton :context="context" :project-manager-backend-service="projectManagerBackendService"
-                            :module="Module.PROJECT_DOCUMENTS_MODULE" :action="uploadAction"
-                            :visible-bridgeheads="visibleBridgeheads" :use-bridgehead-chooser="fieldKey === 'Votum'"
-                            :text="'Upload '+ fieldKey" :call-refreh-context="exitAndCallRefreshContext"
-                            :is-file="true"/>
             </div>
-            <div v-else style="width:75%"> <!-- If not uploading a file -->
-              <div>
-                <div v-if="isQuery()" style="width: 70%;">
-                  <span><strong>Human readable</strong></span>
-                  <input type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;"><br/>
-                  <span><strong>Query</strong></span>
-                  <input type="text" v-model="editedValue[1]" class="form-control" style="width: 100%;">
+            <div v-else-if="isQuery()">
+              <div  v-if="editedValue[2]" class="query-search-bar">
+                <lens-search-bar
+                    placeholderText=""
+                    readOnly="true"
+                    style="width: 100%"
+                />
+                <lens-query-explain-button
+                    noQueryMessage="Empty Search."
+                ></lens-query-explain-button>
+              </div>
+              <div v-else-if="isReadOnlyView()" class="summary-value query-search-bar"
+                   :class="{ 'summary-empty': !hasMeaningfulValue(editedValue[0]), 'summary-missing': mandatory && !hasMeaningfulValue(editedValue[0]) }">
+                {{ getQuerySummaryFallback() }}
+              </div>
+
+              <!--<div style="display: flex;flex-wrap: wrap">
+                  <span v-for="box in getFirstLevelCriteria(editedValue[1])"
+                      class="btn btn-primary dktk-darkblue"
+                      style="margin-right: 2%; margin-bottom: 0.5%;width:max-content">
+                    {{getCriteriaDetails(box)}}
+                  </span>
+                  <lens-query-explain-button
+                      v-if="editedValue[2]"
+                      noQueryMessage="Empty Search."
+                  ></lens-query-explain-button>
+              </div>-->
+              <template v-if="canEditRealQuery()">
+                <div class="query-view-switch" role="group" aria-label="Query representation">
+                  <button type="button"
+                          class="query-view-option"
+                          :class="{ active: queryView === 'pseudocode' }"
+                          :aria-pressed="queryView === 'pseudocode'"
+                          @click="queryView = 'pseudocode'">
+                    Pseudocode
+                  </button>
+                  <button type="button"
+                          class="query-view-option"
+                          :class="{ active: queryView === 'query' }"
+                          :aria-pressed="queryView === 'query'"
+                          @click="queryView = 'query'">
+                    Query
+                  </button>
                 </div>
-                <div v-else-if="isDescription()" style="width:70%">
-                  <textarea type="text" v-model="editedValue[0]" class="form-control"></textarea>
+
+                <div v-if="queryView === 'pseudocode'"
+                     class="grow-wrap query-view-content"
+                     :data-replicated-value="editedValue[0]">
+                  <textarea
+                      :aria-required="mandatory ? 'true' : undefined"
+                      v-model="editedValue[0]"
+                      @change="onInputChange"
+                      class="form-control auto-textarea"
+                      :class="isRealQueryEditable() ? 'white' : 'grey'"
+                      :disabled="!isRealQueryEditable()"
+                      aria-label="Pseudocode"
+                  ></textarea>
                 </div>
-                <div v-else-if="isBridgeheads()" style="width: 75%">
-                  <span v-if="tempFieldValue && tempFieldValue[0]">
-                    <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary"
-                          style="margin-right: 2%; margin-bottom: 0.5%">
-                         <span>{{ bridgehead }}</span>
-                      <button @click="removeBridgehead(index)" class="btn btn-sm" style="padding: 0px"><i
-                          style="color: white; font-size: 18px" class="bi bi-x"></i></button>
+
+                <div v-else class="query-view-content">
+                  <div class="query-controls query-view-actions">
+                    <span v-if="editedValue[1]"
+                          class="query-link-button"
+                          data-toggle="tooltip"
+                          data-placement="top"
+                          title="Copy Query to Clipboard"
+                          @click="copyToClipboard(editedValue[1])">
+                      <i :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"></i>
+                      <span style="font-size: small; padding: 2px 0 0 5px">Copy Query to Clipboard</span>
                     </span>
-                  </span>
-                  <span v-if="areThereMoreBridgeheadsAvailableToAdd()">
-                    <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
-                    <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
-                      <select class="form-select" v-model="newValue" placeholder="Bridgehead">
-                        <option
-                            v-for="(value, index) in fetchOtherAvailableBridgeheadsToAdd()"
-                            :key="index" :value="value">{{ value }}
-                        </option>
-                      </select>
-                      <button class="btn btn-primary" @click="addFieldValue"><i style="font-size: 18px"
-                                                                                class="bi bi-check"></i>
-                      </button>
-                    </div>
-                  </span>
+                  </div>
+                  <div class="grow-wrap" :data-replicated-value="editedValue[1]">
+                    <textarea
+                        v-model="editedValue[1]"
+                        @change="saveRealQuery"
+                        class="form-control auto-textarea"
+                        :class="isRealQueryEditable() ? 'white' : 'grey'"
+                        :disabled="!isRealQueryEditable()"
+                        aria-label="Query"
+                    ></textarea>
+                  </div>
                 </div>
-                <div v-else-if="isEnvironmentVariables()" style="width:75%;">
-                  <span v-if="editedValue && editedValue.length > 0 && editedValue[0] " style="width: 75%">
-                    <span v-for="(pair, index) in editedValue[0].split(';')" :key="index"
-                          style="margin-right: 2%;  display: inline;" class="btn btn-primary">
-                      <span style="display: inline; margin-bottom: 2%">{{ pair }}</span>
-                      <button @click="removeEnvVariable(index)" class="btn btn-sm" style="padding: 0px"><i
-                          style="color: white; font-size: 18px" class="bi bi-x"></i></button>
+                <div v-if="editMode && redirectUrl"
+                     class="query-explorer-option query-view-content">
+                  <span>Or edit the query in Explorer:</span>
+                  <button type="button"
+                          class="btn btn-query-link"
+                          data-toggle="tooltip"
+                          data-placement="top"
+                          title="Return to the DKTK Explorer to edit the request."
+                          @click="redirectToURL">
+                    <i class="bi bi-arrow-right-circle"></i>
+                    <span>Edit in Explorer</span>
+                  </button>
+                </div>
+              </template>
+
+              <template v-else>
+                <div style="display: flex; justify-content: space-between">
+                  <div class="query-controls" :style="showPseudocode ? 'margin-bottom: var(--space-3)' : ''">
+                    <span v-if="isProjectManagerAdmin()" class="query-link-button"
+                            data-toggle="tooltip"
+                            data-placement="top" :title='showPseudocode ? "Hide Pseudocode": "Show Pseudocode"'
+                            @click="showPseudocode = !showPseudocode"
+                      ><i :class="showPseudocode ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                      <span style="font-size: small; padding: 2px 0 0 5px">{{showPseudocode ? "Hide Pseudocode": "Show Pseudocode"}}</span>
                     </span>
-                  </span>
-                  <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
-                  <div v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%; width:80%">
-                    <input type="text" class="form-control" v-model="newKey" placeholder="Key">
-                    <input type="text" class="form-control" v-model="newValue" placeholder="Value">
-                    <button class="btn btn-primary" @click="addEnvVariable"><i style="font-size: 18px"
-                                                                               class="bi bi-check"></i>
+                    <span v-if="isProjectManagerAdmin() && fieldValue[0]" class="query-link-button"
+                            data-toggle="tooltip"
+                            data-placement="top" title="Copy Query to Clipboard"
+                            @click="copyToClipboard(editedValue[1])"
+                      ><i :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"></i>
+                      <span style="font-size: small; padding: 2px 0 0 5px">Copy Query to Clipboard</span>
+                    </span>
+                    <button v-if="((isDraft() && !isSummaryStep()) || editMode) && redirectUrl"
+                            class="btn btn-query-link"
+                            data-toggle="tooltip"
+                            data-placement="top" title="Return to the DKTK Explorer to edit the request."
+                            @click="redirectToURL">
+                      <i class="bi bi-arrow-right-circle"></i>
+                      <span>Edit in Explorer</span>
                     </button>
                   </div>
                 </div>
-                <div v-else-if="isSelection()" style="width: 70%;">
-                  <select v-model="editedValue[0]" class="form-select" style="width: 100%;">
-                    <option v-for="value in possibleValues" :key="value" :value="value">{{ value }}</option>
-                  </select>
+                <Transition name="expand">
+                  <div v-if="showPseudocode" class="grow-wrap" :data-replicated-value="editedValue[0]">
+                    <textarea
+                        :aria-required="mandatory ? 'true' : undefined"
+                        v-model="editedValue[0]"
+                        @change="onInputChange"
+                        class="form-control"
+                        :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
+                        :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+                    ></textarea>
+                  </div>
+                </Transition>
+              </template>
+            </div>
+
+            <div v-else-if="isDescriptionUpload()" :style="isReadOnlyView() ? '' : 'margin-left:1rem'">
+              <div v-if="isReadOnlyView()" style="display:flex; align-items:center; gap:0.5rem"
+                   :class="{ 'summary-empty': !existsFile, 'summary-missing': mandatory && !existsFile }">
+                <span>{{ getFileSummaryValue() }}</span>
+                <DownloadButton v-if="existsFile && downloadAction"
+                                :context="context" :project-manager-backend-service="projectManagerBackendService"
+                                :module="downloadModule ?? Module.PROJECT_DOCUMENTS_MODULE" :action="downloadAction"
+                                icon-class="bi bi-download" :filename="fieldValue[1]"/>
+              </div>
+              <UploadButton v-else :context="context" :project-manager-backend-service="projectManagerBackendService"
+                            :module="Module.PROJECT_DOCUMENTS_MODULE" :upload-action="uploadAction"
+                            :download-action="downloadAction"
+                            text="Upload project description" :call-refresh-context="exitAndCallRefreshContext" :is-file="true" :exists-file="existsFile"
+                            :file-name="fieldValue[1]" :toggle-input="true"/>
+            </div>
+
+            <div v-else-if="isBridgeheads()" style="width: 100%;padding: 0 0.75rem">
+                    <span v-if="editingBridgeheads && editingBridgeheads.length > 0">
+                      <span v-for="(bridgehead, index) in editingBridgeheads" :key="index" class="btn btn-primary dktk-darkblue"
+                            style="margin-right: 2%; margin-bottom: 0.5%;">
+                           <span>{{ bridgehead.humanReadable ?? bridgehead.bridgehead }}</span>
+                        <button @click="removeBridgehead(index)" class="btn btn-sm dktk-darkblue" style="padding: 0 0 0 10px;height: 28px;margin-top:-3px"
+                                v-if="(isDraft() && !isSummaryStep()) || editMode">
+                          <i style="color: white; font-size: 18px;" class="bi bi-x dktk-darkblue"></i>
+                        </button>
+                      </span>
+                    </span>
+              <span v-if="isReadOnlyView() && editingBridgeheads.length === 0"
+                    class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                {{ getEmptySummaryValue("No sites selected") }}
+              </span>
+              <span v-if="areThereMoreBridgeheadsAvailableToAdd() && ((isDraft() && !isSummaryStep()) || editMode)">
+                      <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
+                      <span v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
+                        <select class="form-select" v-model="newValue" >
+                          <option disabled value="">Site</option>
+                          <option v-for="b in fetchOtherAvailableBridgeheadsToAdd()"
+                                  :key="b.bridgehead"
+                                  :value="b.bridgehead">
+                              {{ b.humanReadable ?? b.bridgehead }}
+                          </option>
+                        </select>
+                        <button class="btn btn-primary" @click="addBridgehead(newValue)">
+                          <i style="font-size: 18px" class="bi bi-check"></i>
+                        </button>
+                        <button class="btn btn-primary" @click="showInputs=false">
+                          <i style="font-size: 18px" class="bi bi-x"></i>
+                        </button>
+                      </span>
+                    </span>
+            </div>
+            <div v-else-if="isEnvironmentVariables()" style="width:100%;">
+                    <span v-if="editedValue && editedValue.length > 0 && editedValue[0]" style="width: 100%">
+                      <span v-for="(pair, index) in editedValue[0].split(';')" :key="index"
+                            style="margin-right: 2%;  display: inline;" class="btn btn-primary dktk-darkblue">
+                        <span style="display: inline; margin-bottom: 2%">{{ pair }}</span>
+                        <button @click="removeEnvVariable(index)" class="btn btn-sm dktk-darkblue" style="padding: 0"><i v-if="isDraft() && !isSummaryStep()"
+                            style="color: white; font-size: 18px" class="bi bi-x dktk-darkblue"></i></button>
+                      </span>
+                    </span>
+              <span v-if="isReadOnlyView() && !hasMeaningfulValue(editedValue[0])"
+                    class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                {{ getEmptySummaryValue("No environment variables configured") }}
+              </span>
+              <button v-if="isDraft() && !isSummaryStep()" @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
+              <div v-if="showInputs && isDraft() && !isSummaryStep()" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%; width:80%">
+                <input type="text" class="form-control" v-model="newKey" placeholder="Key">
+                <input type="text" class="form-control" v-model="newValue" placeholder="Value">
+                <button class="btn btn-primary" @click="addEnvVariable"><i style="font-size: 18px"
+                                                                           class="bi bi-check"></i>
+                </button>
+              </div>
+            </div>
+            <!--
+              Configuration outside the wizard's Services step (that step keeps
+              its own dedicated card UI, see the config-box <tr> above): a plain
+              option list, same visual family as CHECK_BOX/RADIO_BUTTON fixed
+              fields. Selection semantics stay exactly as before - clicking an
+              option calls setActiveSteps()+saveField(), same as the config-box
+              cards, NOT the multiple-field addInstance/removeInstanceByValue
+              flow (Configuration sends its value as a single, comma-joined
+              editProjectParam, not per-instance FormFields).
+            -->
+            <div v-else-if="isConfiguration()" style="width: 100%;">
+              <div v-if="!isReadOnlyView()" class="option-list" style="padding: 0 0.75rem; display:flex; flex-direction:column; gap:0.25rem;">
+                <div v-for="value in possibleValues" :key="value" class="form-check option-row">
+                  <input class="form-check-input" style="margin:0;"
+                         :type="isMultipleConfigurationSelection() ? 'checkbox' : 'radio'"
+                         :name="radioGroupName" :id="`${radioGroupName}-${value}`"
+                         :checked="isActiveStep(value)"
+                         @change="setActiveSteps(value); saveField()">
+                  <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
+                    <span :class="hasAnyConfigurationOptionDescription ? 'option-title' : 'option-title-plain'">{{ configurations?.get(value)?.project?.label ?? value }}</span>
+                    <span v-if="configurations?.get(value)?.project?.description"
+                          class="option-description"
+                          v-html="configurations?.get(value)?.project?.description"></span>
+                  </label>
                 </div>
-                <div v-else style="width: 70%;">
-                  <!-- Normal case -->
-                  <input type="text" v-model="editedValue[0]" class="form-control" style="width: 100%;">
+              </div>
+              <div v-else class="option-list option-readonly" style="padding: 0 0.75rem">
+                <div v-if="configurationSummaryEntries.length === 0"
+                     class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                  {{ getEmptySummaryValue("No configuration selected") }}
+                </div>
+                <div v-for="entry in configurationSummaryEntries" :key="entry.key">
+                  <div :class="hasAnyConfigurationOptionDescription ? 'option-title' : 'option-title-plain'">{{ entry.label }}</div>
+                  <div v-if="entry.description" class="option-description" v-html="entry.description"></div>
                 </div>
               </div>
             </div>
-            <div class="button-container" :class="getButtonContainerCssClass()">
-              <button @click="cancelEdit" class="btn btn-outline-secondary"
-                      style="padding:4px 15px 4px 15px;margin-left: auto">Cancel
-              </button>
-              <button v-if="!uploadAction" @click="saveField" class="btn btn-outline-primary"
-                      style="padding:4px 20px 4px 20px;">Save
-              </button>
+            <div v-else-if="isSelection() && isRadioButton() && !isConfiguration()" style="width: 100%;">
+              <div v-if="(isDraft() && !isSummaryStep()) || editMode" class="option-list" style="display:flex; flex-direction:column; gap:0.25rem;">
+                <div v-for="value in possibleValues" :key="value" class="form-check option-row">
+                  <input class="form-check-input" type="radio" style="margin:0;"
+                         :name="radioGroupName" :id="`${radioGroupName}-${value}`" :value="value"
+                         v-model="editedValue[0]" @change="onInputChange">
+                  <label class="form-check-label option-label" :for="`${radioGroupName}-${value}`">
+                    <span :class="hasAnyOptionDescription ? 'option-title' : 'option-title-plain'"
+                          v-html="displayPossibleValue(value).name"></span>
+                    <span v-if="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"
+                          class="option-description"
+                          v-html="displayPossibleValue(value).shortDescription ?? displayPossibleValue(value).description"></span>
+                  </label>
+                </div>
+              </div>
+              <div v-if="(!isDraft() || isSummaryStep()) && !editMode"
+                   :class="hasMeaningfulValue(editedValue[0]) && hasAnyOptionDescription ? 'option-list option-readonly' : ''"
+                   :style="hasMeaningfulValue(editedValue[0]) && hasAnyOptionDescription ? 'padding: 0 0.75rem' : ''">
+                <template v-if="hasMeaningfulValue(editedValue[0])">
+                  <div :class="hasAnyOptionDescription ? 'option-title' : 'summary-value'"
+                       v-html="displayPossibleValue(editedValue[0]).name"></div>
+                  <div v-if="displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description"
+                       class="option-description"
+                       v-html="displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description"></div>
+                </template>
+                <div v-else class="summary-value summary-empty" :class="{ 'summary-missing': mandatory }">
+                  {{ getEmptySummaryValue() }}
+                </div>
+              </div>
+              <div v-if="isNotAllowedValue(editedValue[0])" class="not-allowed-value">
+                {{ getNotAllowedValueMessage([editedValue[0]]) }}
+              </div>
             </div>
-          </div>
-        </div>
-        <!-- If not editing -->
-        <div v-else style="display:flex; width:100%">
-          <div v-if="isBridgeheads()" style="width:100%">
-            <div v-if="tempFieldValue" class="field-value">
-               <span v-for="(bridgehead, index) in tempFieldValue[0]" :key="index" class="btn btn-primary"
-                     style="margin-right: 2%; margin-bottom: 0.5%">
-                   <span>{{ bridgehead }}</span>
-               </span>
+            <div v-else-if="isSelection() && !isConfiguration()" style="width: 100%;">
+              <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onInputChange" class="form-select" :aria-required="mandatory ? 'true' : undefined">
+                <option v-if="isNotAllowedValue(editedValue[0])" :value="editedValue[0]" disabled>
+                  {{ editedValue[0] }} (not allowed)
+                </option>
+                <option v-for="value in possibleValues" :key="value" :value="value">
+                  {{ displayPossibleValue(value).name }}
+                  <!--<span style="font-size: smaller"> {{displayPossibleValue(value).description}}</span>-->
+                </option>
+              </select>
+              <div v-if="(!isDraft() || isSummaryStep()) && !editMode" :style="hasMeaningfulValue(editedValue[0]) ? 'padding: 0 0.75rem' : ''">
+                <template v-if="hasMeaningfulValue(editedValue[0])">
+                  <div>{{displayPossibleValue(editedValue[0]).name}}</div>
+                  <div style="font-size: 12px">{{displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description}}</div>
+                </template>
+                <div v-else class="summary-empty" :class="{ 'summary-missing': mandatory }">
+                  {{ getEmptySummaryValue() }}
+                </div>
+              </div>
+              <div v-if="isNotAllowedValue(editedValue[0])" class="not-allowed-value">
+                {{ getNotAllowedValueMessage([editedValue[0]]) }}
+              </div>
             </div>
-          </div>
-          <div v-else-if="tempFieldValue && tempFieldValue.length > 0 && tempFieldValue[0] && isEnvironmentVariables()"
-              style="display:flex; width:100%">
-            <div v-for="(pair, index) in tempFieldValue[0].split(';').filter(Boolean)" :key="index"
-                 style="margin-right: 2%;  display: inline;" class="btn btn-primary">
-              <span style="display: inline; margin-bottom: 1%">{{ pair }}</span>
+            <div v-else-if="isInputType(FormDataType.LONG_STRING)" style="width:100%">
+              <div v-if="isReadOnlyView()" class="summary-value"
+                   :class="{ 'summary-empty': !hasMeaningfulValue(editedValue[0]), 'summary-missing': mandatory && !hasMeaningfulValue(editedValue[0]) }">
+                {{ hasMeaningfulValue(editedValue[0]) ? editedValue[0] : getEmptySummaryValue() }}
+              </div>
+              <div v-else class="grow-wrap" :data-replicated-value="editedValue[0]">
+                <textarea
+                    :aria-required="mandatory ? 'true' : undefined"
+                    type="text"
+                    v-model="editedValue[0]"
+                    @change="onInputChange"
+                    class="form-control auto-textarea"
+                    :placeholder="placeholder"
+                    :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
+                    :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+                ></textarea>
+              </div>
             </div>
-          </div>
-          <div v-else-if="tempFieldValue && tempFieldValue.length > 0" style="width:70%">
-            <template v-if="isQuery()">
-              <div class="field-value clickable" :class="{ 'truncate-60': toggleHumanReadable }"
-                   @click="toggleHumanReadable = !toggleHumanReadable" data-toggle="tooltip" data-placement="top" :title="tempFieldValue[0]">{{ tempFieldValue[0] }}</div>
-            </template>
-            <template v-else-if="uploadAction">
-                <span v-if="tempFieldValue[0]?.length > 0" class="truncate-60">{{ tempFieldValue[0] }}</span>
-                <span v-if="!(tempFieldValue[0]?.length > 0) && tempFieldValue[1]?.length > 0" class="truncate-60">{{ tempFieldValue[1] }}</span>
-              </template>
-            <template v-else>
-              <div class="field-value truncate-60">{{ tempFieldValue[0] }}</div>
-            </template>
+            <div v-else style="width:100%">
+              <div v-if="isReadOnlyView()" class="summary-value"
+                   :class="{ 'summary-empty': !hasMeaningfulValue(editedValue[0]), 'summary-missing': mandatory && !hasMeaningfulValue(editedValue[0]) }">
+                {{ getFormFieldSummaryValue(editedValue[0]) }}
+              </div>
+              <input
+                  :aria-required="mandatory ? 'true' : undefined"
+                  v-else
+                  :type="getInputType()"
+                  v-model="editedValue[0]"
+                  @change="onInputChange"
+                  class="form-control"
+                  :placeholder="isInputType(FormDataType.STRING) ? placeholder : undefined"
+                  :class="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration() ? 'grey' : 'white'"
+                  :style="{width: getInputType()==='number' ? '100%' : '100%'}"
+                  :disabled="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration()"
+              >
+            </div>
           </div>
         </div>
       </div>
-    </td>
 
-    <!-- THIRD COLUMN: ACTIONS -->
-    <td style="min-width: 50px;vertical-align: middle">
-      <span style="display:flex; flex-flow:row; align-items: baseline">
-          <div style="display:inline-flex; flex-flow:row; align-items: baseline">
-            <button v-if="isFieldValueEditable() && (redirectUrl === null || redirectUrl === undefined || isBridgeheads() || isQuery())" class="btn btn-primary"
-                    data-toggle="tooltip"
-                    data-placement="top" title="Edit"
-                    style="background:none; border:none; color:black"><i class="bi bi-pencil me-2" @click="editField"></i>
-            </button>
-            <DownloadButton v-if="existsFile && downloadAction" :context="context"
-                            :project-manager-backend-service="projectManagerBackendService"
-                            :module="downloadModule" :action="downloadAction"/>
-        </div>
-        <button v-if="isFieldValueEditable() && redirectUrl !== null && redirectUrl !== undefined" class="btn btn-primary"
-                data-toggle="tooltip"
-                data-placement="top" title="CCP Explorer"
-                style="background:none; border:none; color:black"><i class="bi bi-arrow-right-circle" @click="redirectToURL"></i>
-        </button>
-        <button v-if="isQuery() && fieldValue[0]" class="btn btn-primary"
-                data-toggle="tooltip"
-                data-placement="top" title="Copy Query to Clipboard"
-                style="background:none; border:none; color:black"><i :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'" @click="copyToClipboard(editedValue[1])"></i>
-        </button>
-      </span>
-    </td>
-  </tr>
+    </div>
+    <ContextInfoBox v-if="fieldPostInfo" :content="fieldPostInfo" attach="previous" :is-block="isBlock()"/>
+  </div>
+
+
 </template>
 
 <style scoped>
-.bold-text {
-  font-weight: bold;
+
+.summary-value,
+.summary-empty {
+  padding: 0 0.75rem;
+  white-space: pre-wrap;
 }
 
-.user-input-container {
-  display: flex;
-  align-items: center;
+.summary-empty {
+  color: #5f6368;
+  font-style: italic;
 }
 
-.button-container {
-  margin-left: auto; /* Push buttons to the right */
+.summary-missing {
+  color: #b42318;
+  font-weight: 600;
 }
 
-.field-value {
-  flex-grow: 1; /* Allow fieldValue to grow and occupy available space */
-}
-
-.bi-pencil {
-  width: 100%; /* Make bi-pencil icon occupy all available space */
-  text-align: center; /* Center the icon */
-}
-
-.progress-container {
-  width: 100%;
-  height: 5px;
-  background-color: #ddd;
-  margin-top: 5px;
-}
-
-.progress {
-  height: 100%;
-  background-color: #4caf50;
+/* A stored value that is not one of the field's allowed values (draft only). */
+.not-allowed-value {
+  color: var(--status-danger-color);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
 }
 
 .truncate-15 {
@@ -557,6 +1865,7 @@ export default class ProjectFieldRow extends Vue {
   text-overflow: ellipsis;
   max-width: calc(15 * 1ch); /* 1ch is the width of one character */
 }
+/*noinspection CssUnusedSymbol*/
 .truncate-60 {
   white-space: nowrap;
   overflow: hidden;
@@ -564,51 +1873,87 @@ export default class ProjectFieldRow extends Vue {
   max-width: calc(60 * 1ch); /* 1ch is the width of one character */
 }
 
+/*noinspection CssUnusedSymbol*/
 .query-edit-field {
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
 }
+/*noinspection CssUnusedSymbol*/
+.query-edit-field.sidewise {
+  width: 70%;
+}
 
+/*noinspection CssUnusedSymbol*/
 .description-edit-field {
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
 }
-
+/*noinspection CssUnusedSymbol*/
+.description-edit-field.sidewise {
+  width: 70%;
+}
+/* Beside its header (summary, review), a value starts on the title's line
+ * instead of being centred against a tall title + description. */
+.query-edit-field.sidewise,
+.description-edit-field.sidewise,
+.selection-edit-fields.sidewise {
+  align-items: flex-start;
+}
+/*noinspection CssUnusedSymbol*/
 .bridgeheads-edit-field {
   display: flex;
   flex-flow: row;
   width: 100%;
 }
-
+/*noinspection CssUnusedSymbol*/
+.bridgeheads-edit-field.sidewise {
+  width: 70%;
+}
+/*noinspection CssUnusedSymbol*/
 .environment-variables-edit-field {
   display: flex;
   width: 100%;
 }
-
+/*noinspection CssUnusedSymbol*/
+.environment-variables-edit-field.sidewise {
+  width: 70%;
+}
+/*noinspection CssUnusedSymbol*/
 .selection-edit-fields {
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
 }
-
+/*noinspection CssUnusedSymbol*/
+.selection-edit-fields.sidewise {
+  width: 70%;
+}
+/*noinspection CssUnusedSymbol*/
 .upload-edit-field {
   display: flex;
   flex-flow: row;
   width: 100%;
+  min-width: 0;
 }
-
+.upload-edit-field.sidewise {
+  width: 70%;
+}
+/*noinspection CssUnusedSymbol*/
 .other-edit-fields {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   width: 100%;
 }
-
+/*noinspection CssUnusedSymbol*/
+.other-edit-fields.sidewise {
+  width: 70%;
+}
+/*noinspection CssUnusedSymbol*/
 .other-button-container,
 .query-button-container,
 .selection-button-container,
@@ -618,23 +1963,25 @@ export default class ProjectFieldRow extends Vue {
   gap: 5%;
 }
 
+/*noinspection CssUnusedSymbol*/
 .bridgeheads-button-container,
-.environment-variables-button-container,
-.application-form-button-container {
+.environment-variables-button-container {
   width: 25%;
   display: flex;
   height: 20%;
   gap: 3%;
 }
 
+/*noinspection CssUnusedSymbol*/
 .upload-button-container {
   width: 25%;
   gap: 3%;
 }
+
 .todo-circle-small {
   min-width: 22px;
   height: 22px;
-  background-color:gold;
+  background-color: gold;
   color: #000;
   border: 1px solid black;
   border-radius: 50%;
@@ -645,62 +1992,505 @@ export default class ProjectFieldRow extends Vue {
   font-weight: bold;
   font-size: 9pt;
 }
-.clickable {
-  cursor: pointer;
-}
+
 .config-box {
-  width: fit-content;
-  text-align: center;
-  margin: 10px;
-  border: 1px solid #0000001E;
+  /*width: fit-content;
+  /*text-align: center;*/
+  /* One resource per card, spaced like the options of one question but
+   * with room for the card outline. Same type sizes as field titles and
+   * option descriptions. */
+  margin: 0 var(--form-inset) var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  /*border: 1px solid #0000001E;*/
   border-radius: 10px;
   min-width: 250px;
-  font-size: 20px;
+  font-size: 14px;
 }
+.config-box:last-child {
+  margin-bottom: 0;
+}
+.config-box .form-check {
+  margin: 0.15rem var(--space-3) 0 0;
+}
+
 .config-box.active, .config-box:hover {
-  box-shadow: 0px 2px 1px -1px rgba(149, 200, 220, 0.8),0px 1px 1px 0px rgba(149, 200, 220, 0.5),0px 1px 3px 0px rgba(149, 200, 220, 0.3);
+  box-shadow: 0 2px 1px -1px rgba(149, 200, 220, 0.8),
+  0 0 1px 0 rgba(149, 200, 220, 0.5),
+  0 0 3px 0 rgba(149, 200, 220, 0.3);
 }
+
 .config-box-header {
-  background-color: #95c8dc;
-  padding: 10px 15px;
+  /*background-color: #95c8dc;*/
+  color: #00489c;
+  font-size: 16px;
   border-radius: 10px 10px 0 0;
-  display: flex;
+  /*display: flex;
   justify-content: center;
   align-items: center;
-  min-height:68px;
+  min-height: 68px;*/
 }
+
 .config-box.active .config-box-header {
-  color: white;
-  background-color: #007bff;
+  color: #00489c;
+  /*background-color: #007bff;*/
   font-weight: bold;
-  font-size: 19px;
 }
+
 .config-box:hover .config-box-header {
-  color: white;
-  background-color: #007bff;
+  color: #00489c;
+  /*background-color: #007bff;*/
 }
+
 .config-box-body {
-  padding: 10px;
-  height:100%;
+  padding: var(--space-1) 0 0;
+  height: 100%;
   display: flex;
-  justify-content: center;
-  /*align-items: center;*/
+  /*justify-content: center;
+  align-items: center;*/
   background-color: white;
   border-radius: 0 0 10px 10px;
-  font-size: 0.7vw;
+  font-size: 13px;
 }
 
 .config-box-row {
-  border-top: 1px solid white;
-  border-left: 1px solid white;
-  border-right: 1px solid white;
+  border: 1px solid white;
   background-color: white;
 }
+.config-box-row > td {
+  padding: calc(var(--field-gap) / 2) 0;
+}
+
 .config-box-row:hover > * {
   --bs-table-bg-state: white;
 }
+
 .config-button {
   color: black;
   width: 100%;
 }
+
+.field-description {
+  font-size: 12px;
+  font-weight: normal;
+}
+
+/* Half a field gap on each side: two neighbouring fields add up to one gap. */
+.input-field {
+  padding: calc(var(--field-gap) / 2) var(--form-inset);
+  border-radius: 10px;
+}
+
+.input-field-title {
+  font-weight: bold;
+  color: #00489cf2;
+}
+
+/* An empty mandatory field in a draft step the user already left once. The
+ * star keeps the label colour, so it turns red with it. */
+.input-field-title.field-missing,
+.field-missing {
+  color: var(--status-danger-color);
+}
+
+/* Header stacked above its value (draft): one gap between them, whether the
+ * header ends with the title or the description and whatever the control. */
+.input-field-header.with-value-below {
+  padding-bottom: var(--header-gap);
+}
+
+.input-field .form-control.white {
+  border-color: #c2c6ca;
+}
+.input-field .form-control.grey {
+  background-color: #fbfbfb;
+  border-color: #fff;
+  resize: none;
+}
+.form-check {
+  display: flex;
+  margin: 10px;
+}
+.form-check-input {
+  border-color: #9e9e9e;
+}
+
+/*
+ * One clickable option row inside a CHECK_BOX or RADIO_BUTTON ENUM list:
+ * an option-title (matching input-field-title, at a smaller size) with an
+ * optional option-description below it (matching field-description, at a
+ * slightly smaller size). The checkbox/radio input aligns with the title's
+ * line rather than centering against a multi-line description. Declared
+ * after .form-check so its margin overrides that shared rule for the same
+ * tied specificity.
+ */
+/*
+ * Wraps every CHECK_BOX/RADIO_BUTTON option list (and the single-value
+ * RADIO_BUTTON read-only row). No vertical margin: the gap to the header
+ * comes from .with-value-below, the gap to the next field from .input-field.
+ */
+.option-list {
+  padding: 0 0.75rem
+}
+.option-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 var(--option-gap) 0;
+  padding: 0;
+}
+.option-row:last-child {
+  margin-bottom: 0;
+}
+/* The list already insets its content; an empty-value text inside it must
+ * not add its own inset on top. */
+.option-list > .summary-empty {
+  padding-left: 0;
+  padding-right: 0;
+}
+.option-row .form-check-input {
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+.option-label {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+.option-title {
+  font-weight: bold;
+  color: #00489cf2;
+  font-size: 14px;
+}
+/*
+ * Used instead of .option-title when NONE of the field's allowed values
+ * have a description: bolding/coloring the name like a subtitle-bearing
+ * title would misleadingly promise a description that never follows, so
+ * it renders as plain text at the same size as a title instead.
+ */
+.option-title-plain {
+  font-weight: normal;
+  font-size: 14px;
+}
+.option-description {
+  font-size: 11px;
+  font-weight: normal;
+  margin-top: 1px;
+}
+.option-readonly {
+  margin-bottom: var(--option-gap);
+}
+.option-readonly:last-child {
+  margin-bottom: 0;
+}
+.option-status-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.option-status-checked {
+  color: #00489c;
+}
+.option-status-unchecked {
+  color: #5f6368;
+}
+.option-status-unchecked.summary-missing {
+  color: #b42318;
+}
+/* No header column rendered (see isHeaderlessReadOnlyView): the value takes
+ * the whole row instead of the 70% sidewise column. Three classes so it
+ * outranks every "*-edit-field(s).sidewise" width rule. */
+.input-field > .full-row.sidewise {
+  width: 100%;
+}
+.input-field.sidewise {
+   display: flex;
+   padding: calc(var(--field-gap-summary) / 2) var(--form-inset);
+   /*width: 85%;*/
+}
+.layout > .input-field.read-only-css-enum {
+  padding-right: var(--form-inset);
+}
+.layout > .input-field.read-only-css-enum .selection-edit-fields.sidewise {
+  align-items: flex-start;
+}
+.layout > .input-field {
+  padding: calc(var(--field-gap) / 2) 0.5rem calc(var(--field-gap) / 2) var(--form-inset);
+}
+.layout > .input-field.sidewise {
+  padding-top: calc(var(--field-gap-summary) / 2);
+  padding-bottom: calc(var(--field-gap-summary) / 2);
+}
+/* Keep the outer form margins while bringing the two paired fields close
+ * together at their shared boundary. */
+.project-field-grid > .css-enum > .input-field {
+  padding-left: var(--form-inset);
+  padding-right: 0.5rem;
+}
+.project-field-grid > .css-enum-value > .input-field {
+  padding-left: 0.5rem;
+  padding-right: var(--form-inset);
+}
+.input-field.sidewise.section {
+  /*width:80%;*/
+  margin-left: 10px;
+}
+.input-field.sidewise.wide {
+  width: 98%;
+}
+.input-field.section {
+  margin-left: 10px;
+}
+/* The project description's upload belongs to the description field above
+ * it: no gap of its own on that side. */
+.input-field.description-upload {
+  padding-top: 0;
+}
+/* Checkbox of an optional BOOLEAN: lined up with the title's first line and
+ * as close to it as the checkbox of an option row. */
+.optional-boolean-checkbox {
+  align-self: flex-start;
+  flex-shrink: 0;
+  margin: 0.3rem 0.5rem 0 0;
+}
+.input-field.block {
+  display: flex;
+  padding: calc(var(--field-gap-summary) / 2) var(--space-4);
+}
+ .input-field-header.sidewise {
+   width: 100%;
+   margin-right: 1%;
+   display: flex;
+   flex-direction: column;
+   padding-top: 2px;
+ }
+ textarea.form-control {
+   /*resize: both;*/
+   /*height: 200px;*/
+  max-height: 300px;
+ }
+ .dktk-darkblue {
+   background-color: #00529c!important;
+   border-color: #00529c!important;
+ }
+.form-check-input:checked {
+  background-color: #00489c;
+  border-color: #00489c;
+}
+.field-description-collapsed {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--form-field-description-collapsed-lines);
+  overflow: hidden;
+}
+.field-description-toggle {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #00489c;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.query-link-button {
+  background:none;
+  border:none;
+  color:black;
+  cursor: pointer;
+  margin-right: 20px;
+}
+.query-link-button:hover {
+  color: #00489c;
+  background: none;
+}
+.query-link-button:hover span {
+  text-decoration: underline;
+}
+.query-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.query-view-switch {
+  width: fit-content;
+  display: flex;
+  padding: 3px;
+  margin-bottom: var(--space-3);
+  border: 1px solid #c2c6ca;
+  border-radius: 6px;
+  background-color: #f1f3f5;
+}
+.query-view-option {
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 600;
+}
+.query-view-option.active {
+  background-color: #fff;
+  color: #00489c;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+.query-view-option:focus-visible {
+  outline: 2px solid #00489c;
+  outline-offset: 1px;
+}
+.query-view-actions {
+  min-height: 40px;
+  margin-bottom: var(--space-3);
+}
+/* What stands above the Pseudocode/Query switch: the read-only lens search
+ * bar or the summary fallback text. */
+.query-search-bar {
+  display: flex;
+  margin-bottom: var(--space-4);
+}
+.summary-value.query-search-bar {
+  display: block;
+}
+.query-view-content {
+  width: calc(100% - 0.75rem);
+  min-width: 0;
+}
+.query-view-content .grow-wrap,
+.query-view-content textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.query-view-content .grow-wrap::after {
+  overflow-wrap: anywhere;
+}
+.query-explorer-option {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: var(--space-3);
+  color: #495057;
+  font-size: 14px;
+}
+.btn-query-link {
+  background: #2655a2;
+  border: none;
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(38, 85, 162, 0.28);
+}
+
+.btn-query-link:hover {
+  background: #1e4491;
+  box-shadow: 0 2px 6px rgba(38, 85, 162, 0.38);
+  color: white;
+}
+.btn-query-link:disabled {
+  background: #adb5bd;
+  border-color: #adb5bd;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.grow-wrap {
+  /* easy way to plop the elements on top of each other and have them both sized based on the tallest one's height */
+  display: grid;
+  min-height: 150px;
+  max-height: 300px;
+}
+.grow-wrap::after {
+  /* Note the weird space! Needed to prevent jumpy behavior */
+  content: attr(data-replicated-value) " ";
+
+  /* This is how textarea text behaves */
+  white-space: pre-wrap;
+
+  /* Hidden from view, clicks, and screen readers */
+  visibility: hidden;
+}
+.grow-wrap > textarea {
+  /* You could leave this, but after a user resizes, then it ruins the auto sizing */
+  resize: none;
+}
+.grow-wrap > textarea,
+.grow-wrap::after {
+  /* Identical styling required!! */
+  border: 1px solid black;
+  padding: 0.5rem;
+  font-size: medium;
+
+  /* Place on top of each other */
+  grid-area: 1 / 1 / 2 / 2;
+}
+.css-unit-value {
+  width:70%;
+}
+.css-unit {
+  width:30%;
+}
+lens-query-explain-button::part(lens-info-button-dialogue),
+lens-search-bar::part(lens-info-button-dialogue)
+{
+  border: 1px solid grey;
+  border-radius: 5px;
+  padding: 8px;
+  background-color: white;
+  color: black;
+}
+lens-query-explain-button::part(lens-query-explain-button) {
+  padding: 8px;
+}
+
+lens-search-bar::part(lens-searchbar) {
+  border: solid 1px lightgray;
+  border-radius: 5px;
+  padding: 5px 10px;
+}
+lens-search-bar::part(lens-searchbar-input) {
+  padding: 10px;
+}
+lens-search-bar::part(lens-searchbar-chips) {
+  gap: 10px;
+  padding-right: 10px;
+}
+lens-search-bar::part(lens-searchbar-chip) {
+  background-color: #00529c;
+  color: white;
+  border-radius: 5px;
+  padding: 5px 10px;
+  gap: 10px;
+  user-select: none;
+}
+lens-search-bar::part(lens-searchbar-chip-item) {
+  gap: 5px;
+}
+lens-search-bar::part(lens-info-button) {
+  color: white;
+  margin-left: 5px;
+}
+
+  .expand-enter-active,
+  .expand-leave-active {
+    transition: all 0.4s ease;
+    overflow: hidden;
+  }
+
+  .expand-enter-from,
+  .expand-leave-to {
+    max-height: 0;
+    opacity: 0;
+  }
+
+  .expand-enter-to,
+  .expand-leave-from {
+    max-height: 500px;
+    opacity: 1;
+  }
 </style>

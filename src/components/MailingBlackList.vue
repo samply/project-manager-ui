@@ -1,19 +1,24 @@
 <script lang="ts">
 import {Options, Vue} from "vue-class-component";
-import {Prop, Watch} from "vue-property-decorator";
 import {
   Action,
   Module,
   ProjectManagerBackendService,
+  PmRequestParameter,
   ProjectManagerContext,
   User
 } from "@/services/projectManagerBackendService";
+import {PropType, watch} from "vue";
 
 @Options({
-  name: "MailingBlackList"
+  name: "MailingBlackList",
+  props: {
+    projectManagerBackendService: {type: Object as PropType<ProjectManagerBackendService>, required: true}
+  }
 })
 export default class MailingBlackList extends Vue {
-  @Prop() readonly projectManagerBackendService!: ProjectManagerBackendService;
+
+  readonly projectManagerBackendService!: ProjectManagerBackendService;
 
   isActive = false;
   mailingBlackList: User[] = [];
@@ -21,14 +26,19 @@ export default class MailingBlackList extends Vue {
   showSuggestions = false;
   inputEmail = '';
 
-  @Watch('projectManagerBackendService', { immediate: true, deep: true })
-  onContextChange(newValue: ProjectManagerBackendService, oldValue: ProjectManagerBackendService) {
-    this.updateIsActive();
+  mounted() {
+    watch(
+        () => this.projectManagerBackendService,
+        () => {
+          this.updateIsActive();
+        },
+        {immediate: true, deep: true}
+    );
   }
 
   updateIsActive() {
     this.projectManagerBackendService
-        .isModuleActionActive(Module.USER_MODULE, Action.FETCH_MAILING_BLACK_LIST_ACTION)
+        .isModuleActionActive(Module.USER_MODULE, Action.FETCH_MAILING_BLACK_LIST_ACTION, this.createContext())
         .then(isActive => {
           this.isActive = isActive;
           if (isActive) {
@@ -52,7 +62,7 @@ export default class MailingBlackList extends Vue {
     }
 
     this.projectManagerBackendService
-        .fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([['email', this.inputEmail.trim()]]))
+        .fetchData(Module.USER_MODULE, Action.FETCH_USERS_FOR_AUTOCOMPLETE_IN_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([[PmRequestParameter.EMAIL, this.inputEmail.trim()]]))
         .then(users => {
           this.suggestions = users;
           this.showSuggestions = users.length > 0;
@@ -67,7 +77,7 @@ export default class MailingBlackList extends Vue {
   addUserToMailingBlackList(email: string) {
     this.inputEmail = "";
     this.projectManagerBackendService
-        .fetchData(Module.USER_MODULE, Action.ADD_USER_TO_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([['email', email]]))
+        .fetchData(Module.USER_MODULE, Action.ADD_USER_TO_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([[PmRequestParameter.EMAIL, email]]))
         .then(() => {
           this.updateMailingBlackList();
           this.initializeSuggestions();
@@ -77,7 +87,7 @@ export default class MailingBlackList extends Vue {
   removeUserFromMailingBlackList(email: string) {
     this.inputEmail = "";
     this.projectManagerBackendService
-        .fetchData(Module.USER_MODULE, Action.REMOVE_USER_FROM_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([['email', email]]))
+        .fetchData(Module.USER_MODULE, Action.REMOVE_USER_FROM_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([[PmRequestParameter.EMAIL, email]]))
         .then(() => {
           this.updateMailingBlackList();
         });
@@ -100,7 +110,8 @@ export default class MailingBlackList extends Vue {
     <ul v-if="mailingBlackList.length">
       <li v-for="user in mailingBlackList" :key="user.email">
         - {{ user.firstName || 'N/A' }} {{ user.lastName || 'N/A' }} ( {{ user.email }} )
-        <button class="btn btn-danger btn-secondary mr-2" @click="removeUserFromMailingBlackList(user.email)">Remove</button>
+        <button class="btn btn-danger btn-secondary mr-2" @click="removeUserFromMailingBlackList(user.email)">Remove
+        </button>
       </li>
     </ul>
     <p v-else>No users in the mailing blacklist.</p>

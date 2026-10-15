@@ -3,3 +3,5 @@
 .gitignore
 dist
 node_modules
+plans
+tmp

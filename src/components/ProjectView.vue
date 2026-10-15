@@ -10,7 +10,7 @@
             :aria-label="`${unreadNotificationsCount} unread`">{{ unreadNotificationsCount }}</span>
     </div>
   </div>
-  <div class="main-container">
+  <div class="main-container" :class="{ 'fits-window': currentMenuStep === MenuStep.REQUEST && project }">
 
 
     <div class="right-container" :class="{ 'with-draft-stepper': showsDraftStepper }">
@@ -267,9 +267,10 @@
         </div>
         <div v-if="currentMenuStep === MenuStep.REQUEST" class="data-container mt-12"
              :class="{ 'non-draft': !existsDraftDialog }">
-          <div v-if="project" style="height:100%">
+          <!-- A column: the "Request" header of the request view takes its height, the card row the rest. -->
+          <div v-if="project" class="request-tab-column">
             <div v-if="!existsDraftDialog" class="box-header"><span>Request</span></div>
-            <div class="draft-layout-row" style="height:100%">
+            <div class="draft-layout-row">
 
               <aside v-if="existsDraftDialog" class="vertical-stepper-box">
                 <div class="vertical-stepper2">
@@ -1383,6 +1384,9 @@ export default defineComponent({
 
       if (!scrollBox) return
       scrollBox.scrollTop = 0
+      // In a short window the page scrolls instead of the box (.fits-window media query): show the card's top.
+      const card = scrollBox.closest('.draft-form-card')
+      if (card && card.getBoundingClientRect().top < 0) card.scrollIntoView({block: 'start'})
     },
     existsScript() {
       this.extendedExplanations = this.fetchExtendedExplanations();
@@ -4229,12 +4233,37 @@ export default defineComponent({
   font-variant-numeric: tabular-nums;
 }
 
+/* Fills the window below the header and tabs (App.vue, .app-shell) and grows with longer content. */
 .main-container {
   display: flex;
   flex-flow: row;
   position: relative;
   width: 100%;
-  min-height: 88vh;
+  flex: 1 0 auto;
+}
+
+/* Request tab (draft dialog, summary, request view): exactly the rest of the window, so the card fits it and only the
+ * card's content scrolls (.draft-dialog-content). */
+.main-container.fits-window {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* A window too short for the card (min-height 580px below header and tabs): one scroll bar, the window's. The card
+ * takes its content's height, its content does not scroll on its own, and the buttons follow the last field. */
+@media (max-height: 800px) {
+  .main-container.fits-window {
+    flex: 1 0 auto;
+  }
+  .main-container.fits-window .draft-form-card {
+    height: auto;
+  }
+  .main-container.fits-window .request-tab-column > .draft-layout-row {
+    flex: 0 0 auto;
+  }
+  .main-container.fits-window .draft-dialog-content {
+    overflow-y: visible;
+  }
 }
 
 /* PM-Admin phase stepper: beside the content column, as wide as its labels
@@ -4311,6 +4340,17 @@ export default defineComponent({
 }
 
 /* Draft form layout */
+.request-tab-column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.request-tab-column > .draft-layout-row {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 .draft-layout-row {
   display: flex;
   flex-flow: row;
@@ -4344,8 +4384,9 @@ export default defineComponent({
 
 .draft-dialog-content {
   flex: 1;
+  /* The card gives it the height left between its header and buttons (no guessed max-height). */
+  min-height: 0;
   overflow-y: auto;
-  max-height: calc(100vh - 260px);
   /* With the first/last element's own half gap: one field gap to the card edge. */
   padding: calc(var(--field-gap) / 2) 0;
 }

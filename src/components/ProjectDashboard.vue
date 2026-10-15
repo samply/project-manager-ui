@@ -11,7 +11,7 @@
       </div>
     </template>
   </div>
-  <div style="display: flex; min-height: 100vh;">
+  <div style="display: flex; flex: 1 0 auto;">
     <div v-show="currentTab === DashboardTab.REQUESTS" class="container custom-width-projects">
       <div class="box-header">
         <span>Requests</span>

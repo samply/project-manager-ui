@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-15
+### Fixed
+- Space between the file upload and the table of the uploaded file (e.g. ethics vote)
+
 ## [1.0.0] - 2026-10-13
 First release. Until now the deployments ran `develop`; this version is what they run today.
 

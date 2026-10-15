@@ -207,6 +207,7 @@ export default class UploadButton extends Vue {
           </div>
           <DocumentsTable
               v-if="projectDocument && existsFile"
+              class="uploaded-document-table"
               :context="context"
               :project-manager-backend-service="projectManagerBackendService"
               :download-action="downloadAction"
@@ -267,6 +268,11 @@ export default class UploadButton extends Vue {
   font-size: small;
   padding: .5rem .75rem;
   margin-right: 3%;
+}
+
+/* Space between the upload row and the table of the uploaded file. */
+.uploaded-document-table {
+  margin-top: var(--space-3);
 }
 
 .upload-bridgehead {

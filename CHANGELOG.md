@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-16
+### Added
+- Release workflow: when a new version section of `CHANGELOG.md` reaches `main`, the tag `vX.Y.Z`, the GitHub
+  release (notes = that section) and the version images are created automatically
+### Changed
+- CI: pull requests are only built (no `pr-N` images on Docker Hub any more); release tags `v*.*.*`; manual start
+  (`workflow_dispatch`)
+### Fixed
+- Two scroll bars (window and request card): the page fits the window below the header and tabs, however tall they are; only the card's content scrolls. In a window too short for the card, only the window scrolls
+
 ## [1.0.1] - 2026-10-15
 ### Fixed
 - Space between the file upload and the table of the uploaded file (e.g. ethics vote)

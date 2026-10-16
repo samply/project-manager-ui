@@ -1,5 +1,5 @@
 <template>
-  <div id="app" :lang="locale">
+  <div id="app" class="app-shell" :lang="locale">
     <NavBar/>
     <ActionFeedbackToast/>
     <router-view></router-view>
@@ -28,6 +28,17 @@ export default defineComponent({
 #app {
   background-color: #EEEEEE;
   font-family: Open Sans, sans-serif;
+}
+
+/* The app is exactly as tall as the window: the header and tabs take what they need (however many lines they wrap
+ * into) and the page below gets the rest (flex: 1 in the pages). A page whose content is longer overflows and the
+ * window scrolls; a page with its own scroll area (the request card) fits the rest exactly, so the window does not
+ * scroll as well. No height is guessed from vh percentages. */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
 }
 @font-face {
   font-family: 'Open Sans';

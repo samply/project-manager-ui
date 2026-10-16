@@ -1,13 +1,20 @@
 name: Docker CI
 
+# Images on Docker Hub (samply/project-manager-ui):
+#   develop -> :develop  (every merge into develop)
+#   main    -> :main     (every merge into main, and every night)
+#   vX.Y.Z  -> :X.Y.Z, :X.Y, :X, :latest  (a release; the tag is created by release.yml)
+# Pull requests are only built (nothing is pushed).
+
 on:
   push:
     branches:
       - main
       - develop
-    # Build then a new version is tagged
+    # A release: release.yml creates the tag and starts this workflow for it (workflow_dispatch); a tag pushed by hand
+    # starts it directly.
     tags:
-      - '*.*.*'
+      - 'v*.*.*'
   pull_request:
     branches:
       - main
@@ -15,12 +22,14 @@ on:
   schedule:
     # Build every night at 1am
     - cron: '0 1 * * *'
+  workflow_dispatch:
+
 jobs:
   build:
     uses: samply/github-workflows/.github/workflows/docker-ci.yml@main
     with:
       image-name: "samply/project-manager-ui"
-      push-to: docker.io
+      push-to: ${{ github.event_name == 'pull_request' && 'none' || 'auto' }}
       ghcr-retention-policy: keep
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}

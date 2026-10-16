@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased]
+
+## [1.0.2] - 2026-10-16
 ### Fixed
 - Two scroll bars (window and request card): the page fits the window below the header and tabs, however tall they are; only the card's content scrolls. In a window too short for the card, only the window scrolls
 

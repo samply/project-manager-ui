@@ -122,6 +122,8 @@ export interface FrontendConfig {
      * Any other value or absent: a missing local approval is shown as "not provided".
      */
     LOCAL_APPROVAL_REQUIRED?: string;
+    /** Name of the central approval committee shown to the users (CCE: "CCE Central Committee"); default "Central Approval Committee". */
+    CENTRAL_APPROVAL_COMMITTEE_NAME?: string;
     [key: string]: unknown;
 }
 
@@ -199,4 +201,15 @@ export const getDisplayFormatsConfig = async (): Promise<DisplayFormatsConfig> =
         throw new Error('Display-format configuration loading failed');
     }
     return displayFormatsConfig;
+};
+
+export const DEFAULT_CENTRAL_APPROVAL_COMMITTEE_NAME = 'Central Approval Committee';
+
+// The committee's name differs per deployment (frontend variable CENTRAL_APPROVAL_COMMITTEE_NAME)
+export const getCentralApprovalCommitteeName = async (): Promise<string> => {
+    try {
+        return (await getConfig()).CENTRAL_APPROVAL_COMMITTEE_NAME?.trim() || DEFAULT_CENTRAL_APPROVAL_COMMITTEE_NAME;
+    } catch {
+        return DEFAULT_CENTRAL_APPROVAL_COMMITTEE_NAME;
+    }
 };

@@ -811,7 +811,7 @@ import {
 
 // The actions of the "Next step" card (fetchButtons): their explanations are not repeated in the TODO panel.
 const NEXT_STEP_ACTIONS: Action[] = [
-  Action.ACCEPT_PROJECT_ACTION, Action.START_LOCAL_APPROVAL_STAGE_ACTION, Action.START_DEVELOP_STAGE_ACTION, Action.START_PILOT_STAGE_ACTION,
+  Action.ACCEPT_PROJECT_ACTION, Action.REQUEST_CHANGES_IN_APPROVAL_ACTION, Action.START_LOCAL_APPROVAL_STAGE_ACTION, Action.START_DEVELOP_STAGE_ACTION, Action.START_PILOT_STAGE_ACTION,
   Action.START_FINAL_STAGE_ACTION, Action.FINISH_PROJECT_ACTION,
   Action.ACCEPT_SCRIPT_ACTION, Action.REQUEST_SCRIPT_CHANGES_ACTION, Action.REJECT_SCRIPT_ACTION,
   Action.ACCEPT_PROJECT_ANALYSIS_ACTION, Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
@@ -3428,6 +3428,18 @@ export default defineComponent({
       };
     },
 
+    // Request changes (project manager admin, committee): in REVIEW and CENTRAL_APPROVAL, each in the "Next step" group
+    // of that state. The message is required: it goes into the email and is kept in the notifications.
+    requestChangesInApprovalButton(state: ProjectState, confirmationText: string): ActionButton {
+      return {
+        module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_APPROVAL_ACTION,
+        refreshContextCallFunction: this.refreshContext as () => void,
+        text: "Request changes",
+        confirmationText, messageRequired: true, withMessage: true, cssClass: "btn btn-outline-primary",
+        visibilityCondition: this.project?.state === state
+      };
+    },
+
     fetchButtons(): void {
       // Bridgehead operations: once per bridgehead where the user has a bridgehead role, each with that bridgehead and
       // its permissions (docs/bridgehead-context.md). The first send of the query and authorizing access are the
@@ -3469,13 +3481,6 @@ export default defineComponent({
           visibilityCondition: this.skipsLocalApproval && !this.localApprovalRequired
         },
         {
-          module: Module.PROJECT_STATE_MODULE, action: Action.BACK_TO_REVIEW_ACTION,
-          refreshContextCallFunction: this.refreshContext as () => void,
-          text: "Back to review",
-          confirmation: true, confirmationText: "The request goes back to review, e.g. for a change before its approval.",
-          withMessage: false, cssClass: "menu-item"
-        },
-        {
           module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION,
           refreshContextCallFunction: this.refreshContext as () => void,
           text: "Archive request",
@@ -3501,19 +3506,21 @@ export default defineComponent({
       this.nextStepGroups = [
         {
           label: "Review the request",
-          description: "Check the application form. If everything is in order, accept the request; to reject or archive it, use More actions.",
+          description: "Check the application form. If everything is in order, accept the request; if the applicant has to change something, request changes; to reject or archive it, use More actions.",
           button: [
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
               text: "Accept request",
               confirmation: true, confirmationText: "The request moves on to the central approval phase.", withMessage: false, cssClass: "btn btn-primary"
-            }
+            },
+            this.requestChangesInApprovalButton(ProjectState.REVIEW,
+                "The request stays in review: the applicant can change it and sees your message.")
           ] as ActionButton[]
         },
         {
           label: "Start the next phase",
-          description: "Move the request on to its next phase.",
+          description: "Move the request on to its next phase. If the applicant has to change something first, request changes.",
           button: [
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_LOCAL_APPROVAL_STAGE_ACTION,
@@ -3542,7 +3549,9 @@ export default defineComponent({
               text: "Start final phase",
               confirmation: true, confirmationText: "The request moves to the final phase.", withMessage: false, cssClass: "btn btn-primary",
               visibilityCondition: !this.skipsDevelopAndPilot && !this.skipsLocalApproval
-            }
+            },
+            this.requestChangesInApprovalButton(ProjectState.CENTRAL_APPROVAL,
+                "The request goes back to review: the applicant can change it and sees your message.")
           ] as ActionButton[]
         },
         {

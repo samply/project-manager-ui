@@ -10,7 +10,8 @@ const compiled = ts.transpileModule(source, {compilerOptions: {module: ts.Module
 // The module imports the ProjectRole enum from the backend service, which needs the whole app (axios, config):
 // give it the enum alone. Its values are the role names, as sent by the backend.
 const ProjectRole = Object.fromEntries(
-    ['CREATOR', 'DEVELOPER', 'PILOT', 'FINAL', 'BRIDGEHEAD_ADMIN', 'PROJECT_MANAGER_ADMIN'].map(role => [role, role]));
+    ['CREATOR', 'DEVELOPER', 'PILOT', 'FINAL', 'BRIDGEHEAD_ADMIN', 'PROJECT_MANAGER_ADMIN', 'CENTRAL_APPROVAL_COMMITTEE']
+        .map(role => [role, role]));
 const requireStub = path => {
     if (path === '@/services/projectManagerBackendService') return {ProjectRole};
     throw new Error(`Unexpected import: ${path}`);
@@ -41,6 +42,7 @@ test('toBridgeheadRoles keeps only the roles of a bridgehead', () => {
 test('the creator and the project manager admin may act for the whole project', () => {
     assert.equal(canActForWholeProject(['CREATOR']), true);
     assert.equal(canActForWholeProject(['PROJECT_MANAGER_ADMIN']), true);
+    assert.equal(canActForWholeProject(['CENTRAL_APPROVAL_COMMITTEE']), true);
     assert.equal(canActForWholeProject(['BRIDGEHEAD_ADMIN', 'FINAL']), false);
 });
 
@@ -64,4 +66,9 @@ test('only the allowed roles count', () => {
     const bridgeheadRoles = toBridgeheadRoles(new Map([['tum', ['FINAL']], ['lmu', ['BRIDGEHEAD_ADMIN']]]));
     assert.deepEqual(ids(actingBridgeheads(BRIDGEHEADS, bridgeheadRoles, [], ['BRIDGEHEAD_ADMIN'])), ['lmu']);
     assert.deepEqual(ids(actingBridgeheads(BRIDGEHEADS, bridgeheadRoles, [], ['DEVELOPER', 'PILOT', 'FINAL'])), ['tum']);
+});
+
+// The committee acts for the whole request (accept, request changes), never in the name of a bridgehead
+test('the committee does not act for the bridgeheads', () => {
+    assert.deepEqual(ids(actingBridgeheads(BRIDGEHEADS, toBridgeheadRoles(new Map()), ['CENTRAL_APPROVAL_COMMITTEE'])), []);
 });

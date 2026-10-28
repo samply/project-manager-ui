@@ -1,7 +1,8 @@
 import {EmailRecipientType} from "@/services/projectManagerBackendService";
+import {DEFAULT_CENTRAL_APPROVAL_COMMITTEE_NAME} from "@/services/configLoader";
 
-// How each backend recipient type is named in "An email is sent to …".
-const RECIPIENT_TEXTS: Record<EmailRecipientType, string> = {
+// How each backend recipient type is named in "An email is sent to …"; the committee by its configured name.
+const RECIPIENT_TEXTS: Record<Exclude<EmailRecipientType, EmailRecipientType.CENTRAL_APPROVAL_COMMITTEE>, string> = {
     [EmailRecipientType.EMAIL_ANNOTATION]: "the invited user",
     [EmailRecipientType.CREATOR]: "the requester",
     [EmailRecipientType.PROJECT_MANAGER_ADMIN]: "the project managers",
@@ -17,10 +18,12 @@ const RECIPIENT_TEXTS: Record<EmailRecipientType, string> = {
 };
 
 /** "the requester and the admins of all sites"; empty when nobody gets an email. */
-export function describeEmailRecipients(recipients: EmailRecipientType[]): string {
+export function describeEmailRecipients(recipients: EmailRecipientType[],
+                                        committeeName = DEFAULT_CENTRAL_APPROVAL_COMMITTEE_NAME): string {
     // PROJECT_ALL already covers everyone else.
     const types = recipients.includes(EmailRecipientType.PROJECT_ALL) ? [EmailRecipientType.PROJECT_ALL] : recipients;
-    const texts = [...new Set(types.map(type => RECIPIENT_TEXTS[type]).filter(Boolean))];
+    const texts = [...new Set(types.map(type => type === EmailRecipientType.CENTRAL_APPROVAL_COMMITTEE
+        ? `the ${committeeName}` : RECIPIENT_TEXTS[type]).filter(Boolean))];
     if (texts.length <= 1) return texts[0] ?? '';
     return `${texts.slice(0, -1).join(', ')} and ${texts[texts.length - 1]}`;
 }

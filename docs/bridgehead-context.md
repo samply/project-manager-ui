@@ -30,7 +30,7 @@ The bridgehead of a call does two things:
 
 1. **Roles.** The bridgehead roles - BRIDGEHEAD_ADMIN, DEVELOPER, PILOT, FINAL - count only for the bridgehead sent
    with the call (`UserRoles.containsRole`). Without a bridgehead, a bridgehead admin is not a bridgehead admin.
-   CREATOR and PROJECT_MANAGER_ADMIN do not depend on a bridgehead.
+   CREATOR, PROJECT_MANAGER_ADMIN and CENTRAL_APPROVAL_COMMITTEE do not depend on a bridgehead.
 2. **Target.** For some actions the bridgehead is what the action acts on, or what a file is stored for.
 
 Two facts make this more than a detail:
@@ -46,10 +46,12 @@ The same rule for documents and for every other action with a bridgehead:
 |---|---|
 | CREATOR | the whole project (no bridgehead) |
 | PROJECT_MANAGER_ADMIN | the whole project, or in the name of any bridgehead |
+| CENTRAL_APPROVAL_COMMITTEE | the whole project (accept, request changes; reads everything), never in the name of a bridgehead |
 | BRIDGEHEAD_ADMIN | only the bridgeheads they administrate - one or several; not the whole project |
 | DEVELOPER, PILOT, FINAL | only the bridgehead they are assigned to, with that bridgehead's permissions |
 
-Roles add up: the choices for an action are "whole project" if the user is CREATOR or PROJECT_MANAGER_ADMIN, every
+Roles add up: the choices for an action are "whole project" if the user is CREATOR, PROJECT_MANAGER_ADMIN or
+CENTRAL_APPROVAL_COMMITTEE, every
 bridgehead if PROJECT_MANAGER_ADMIN, and every bridgehead where the user has a bridgehead role that allows the action.
 A creator who is also the admin of TUM may act for the whole project and for TUM, not for the other bridgeheads.
 

@@ -3,7 +3,7 @@
 import {ProjectRole} from "@/services/projectManagerBackendService";
 
 // The roles that belong to one bridgehead. The backend counts them only for the bridgehead sent with a call
-// (UserRoles.containsRole); CREATOR and PROJECT_MANAGER_ADMIN do not depend on a bridgehead.
+// (UserRoles.containsRole); CREATOR, PROJECT_MANAGER_ADMIN and CENTRAL_APPROVAL_COMMITTEE do not depend on a bridgehead.
 export const BRIDGEHEAD_ROLES: readonly ProjectRole[] =
     [ProjectRole.BRIDGEHEAD_ADMIN, ProjectRole.DEVELOPER, ProjectRole.PILOT, ProjectRole.FINAL];
 
@@ -20,9 +20,10 @@ export function toBridgeheadRoles(rolesByBridgehead: Map<string, ProjectRole[] |
         [bridgehead, new Set((roles ?? []).filter(role => BRIDGEHEAD_ROLES.includes(role)))]));
 }
 
-/** The creator and the project manager admin may act for the whole project, without a bridgehead. */
+/** The creator, the project manager admin and the committee may act for the whole project, without a bridgehead. */
 export function canActForWholeProject(projectRoles: ProjectRole[]): boolean {
-    return projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN);
+    return projectRoles.includes(ProjectRole.CREATOR) || projectRoles.includes(ProjectRole.PROJECT_MANAGER_ADMIN)
+        || projectRoles.includes(ProjectRole.CENTRAL_APPROVAL_COMMITTEE);
 }
 
 /**

@@ -1,5 +1,14 @@
 <template>
   <div class="container custom-width-projects">
+    <!-- The email lists of the roles (docs/user-lists.md in the backend) -->
+    <div v-for="list in roleLists" :key="list.title" class="mailing-blacklist">
+      <div class="box-header">{{ list.title }}</div>
+      <div style="padding: 2%">
+        <RoleUserList :project-manager-backend-service="projectManagerBackendService" :role-name="list.roleName"
+                      :fetch-action="list.fetchAction" :add-action="list.addAction" :remove-action="list.removeAction"
+                      :with-bridgehead="list.withBridgehead"/>
+      </div>
+    </div>
     <div class="mailing-blacklist">
       <div class="box-header">Mailing Blacklist</div>
       <div style="padding: 2%">
@@ -20,19 +29,45 @@ import {
   Site
 } from "@/services/projectManagerBackendService";
 import MailingBlackList from "@/components/MailingBlackList.vue";
+import RoleUserList from "@/components/RoleUserList.vue";
+import {DEFAULT_CENTRAL_APPROVAL_COMMITTEE_NAME, getCentralApprovalCommitteeName} from "@/services/configLoader";
 
 export default defineComponent({
-  components: {MailingBlackList},
+  components: {MailingBlackList, RoleUserList},
 
   data() {
     return {
+      committeeName: DEFAULT_CENTRAL_APPROVAL_COMMITTEE_NAME,
       site: Site.CONFIGURATION_SITE,
       context: new ProjectManagerContext(undefined, undefined),
       projectManagerBackendService: new ProjectManagerBackendService(new ProjectManagerContext(undefined, undefined), Site.CONFIGURATION_SITE)
     };
   },
+  computed: {
+    roleLists() {
+      return [
+        {
+          title: "Project Managers", roleName: "project managers", withBridgehead: false,
+          fetchAction: Action.FETCH_PROJECT_MANAGER_ADMINS_ACTION, addAction: Action.ADD_PROJECT_MANAGER_ADMIN_ACTION,
+          removeAction: Action.REMOVE_PROJECT_MANAGER_ADMIN_ACTION
+        },
+        {
+          title: this.committeeName, roleName: this.committeeName, withBridgehead: false,
+          fetchAction: Action.FETCH_CENTRAL_APPROVAL_COMMITTEE_MEMBERS_ACTION,
+          addAction: Action.ADD_CENTRAL_APPROVAL_COMMITTEE_MEMBER_ACTION,
+          removeAction: Action.REMOVE_CENTRAL_APPROVAL_COMMITTEE_MEMBER_ACTION
+        },
+        {
+          title: "Site Admins", roleName: "site admins", withBridgehead: true,
+          fetchAction: Action.FETCH_BRIDGEHEAD_ADMINS_ACTION, addAction: Action.ADD_BRIDGEHEAD_ADMIN_ACTION,
+          removeAction: Action.REMOVE_BRIDGEHEAD_ADMIN_ACTION
+        }
+      ];
+    }
+  },
   watch: {},
   mounted() {
+    getCentralApprovalCommitteeName().then(name => this.committeeName = name);
     this.fetchProjectRoles()
   },
   methods: {

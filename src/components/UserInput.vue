@@ -15,6 +15,7 @@ import UserAndEmail from "@/components/UserAndEmail.vue";
 import StatusDot from "@/components/StatusDot.vue";
 import ActionDialog from "@/components/ActionDialog.vue";
 import {describeEmailRecipients} from "@/services/emailRecipients";
+import {getCentralApprovalCommitteeName} from "@/services/configLoader";
 import {PropType, watch} from "vue";
 
 // The People card's content: who takes part in the current phase and, for those who may, "Invite user",
@@ -106,7 +107,8 @@ export default class UserInput extends Vue {
     this.dialogError = '';
     this.selectedBridgehead = this.selectedBridgehead ?? this.inviteBridgeheads[0];
     this.recipientsText = describeEmailRecipients(
-        await this.projectManagerBackendService.getActionEmailRecipients(Module.USER_MODULE, this.fetchAction()));
+        await this.projectManagerBackendService.getActionEmailRecipients(Module.USER_MODULE, this.fetchAction()),
+        await getCentralApprovalCommitteeName());
     this.dialog.open();
     this.$nextTick(() => (this.$refs.emailInput as HTMLInputElement | undefined)?.focus());
   }

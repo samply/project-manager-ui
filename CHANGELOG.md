@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased]
+Needs the backend with the central approval committee (branch `feat/central-approval-committee`): release together.
+### Added
+- Role central approval committee (`CENTRAL_APPROVAL_COMMITTEE`): acts for the whole request (accept, request
+  changes, reads everything), never in the name of a site; its name comes from the frontend variable
+  `CENTRAL_APPROVAL_COMMITTEE_NAME` (default "Central Approval Committee"), also in "An email is sent to ..."
+- "Request changes" (project managers and committee, message required) in the "Next step" card: in review the request
+  stays there, in central approval it goes back to review
+- Configuration page: email lists of project managers, committee members and site admins (list, add, remove), with
+  the note that the lists give emails, not the role (that needs the group in the login); entries set in the
+  configuration are marked and cannot be removed here
+### Changed
+- Notifications: a message (reject, request changes, ...) keeps its line breaks
+### Removed
+- "Back to review" (More actions): replaced by "Request changes", which needs a message
 
 ## [1.0.2] - 2026-10-16
 ### Added

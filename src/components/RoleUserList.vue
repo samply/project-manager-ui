@@ -129,14 +129,17 @@ export default class RoleUserList extends Vue {
       <tbody>
       <tr v-for="user in users" :key="(user.bridgehead ?? '') + user.email">
         <td v-if="withBridgehead" class="nowrap">{{ user.humanReadableBridgehead || user.bridgehead }}</td>
-        <td>{{ userName(user) }}</td>
+        <td class="name-cell">{{ userName(user) }}</td>
         <td>{{ user.email }}</td>
         <td class="action-cell">
           <span v-if="user.configured" class="configured"
                 title="Set in the configuration of this deployment: it can only be removed there">
             <i class="bi bi-lock" aria-hidden="true"></i> In the configuration
           </span>
-          <button v-else class="btn btn-outline-danger btn-sm" @click="removeUser(user)">Remove</button>
+          <button v-else type="button" class="btn btn-link remove-button" :title="'Remove ' + user.email"
+                  :aria-label="'Remove ' + user.email" @click="removeUser(user)">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
         </td>
       </tr>
       </tbody>
@@ -177,6 +180,21 @@ export default class RoleUserList extends Vue {
 
 .action-cell {
   text-align: right;
+}
+
+/* Same width in every list of the configuration page, so that the addresses line up */
+.name-cell {
+  width: 14rem;
+}
+
+/* The x used to remove things elsewhere (feasibility table, documents) */
+.remove-button {
+  color: #64748b;
+  padding: 0 0 0 0.75rem;
+}
+
+.remove-button:hover {
+  color: var(--status-danger-color);
 }
 
 .nowrap {

@@ -96,69 +96,90 @@ export default class MailingBlackList extends Vue {
   createContext() {
     return new ProjectManagerContext(undefined, undefined);
   }
+
+  // One "N/A" when the name is unknown (the user has never logged in), not one per missing part
+  userName(user: User): string {
+    return [user.firstName, user.lastName].filter(Boolean).join(' ') || 'N/A';
+  }
 }
 </script>
 
+<!-- Same layout as the role lists (RoleUserList.vue) on the configuration page -->
 <template>
   <div v-if="isActive" class="mailing-blacklist">
-    <!-- Explanation -->
     <p class="explanation">
       Users added to the mailing blacklist will not receive any automatic emails.
       These users can be added or removed from the blacklist at any time.
     </p>
-    <!-- Mailing Blacklist -->
-    <ul v-if="mailingBlackList.length">
-      <li v-for="user in mailingBlackList" :key="user.email">
-        - {{ user.firstName || 'N/A' }} {{ user.lastName || 'N/A' }} ( {{ user.email }} )
-        <button class="btn btn-danger btn-secondary mr-2" @click="removeUserFromMailingBlackList(user.email)">Remove
-        </button>
-      </li>
-    </ul>
+
+    <table v-if="mailingBlackList.length" class="table table-sm">
+      <tbody>
+      <tr v-for="user in mailingBlackList" :key="user.email">
+        <td class="name-cell">{{ userName(user) }}</td>
+        <td>{{ user.email }}</td>
+        <td class="action-cell">
+          <button type="button" class="btn btn-link remove-button" :title="'Remove ' + user.email"
+                  :aria-label="'Remove ' + user.email" @click="removeUserFromMailingBlackList(user.email)">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
     <p v-else>No users in the mailing blacklist.</p>
 
-    <!-- Add User -->
-    <div>
-      <input
-          v-model="inputEmail"
-          type="text"
-          placeholder="Enter email to add"
-          @input="updateSuggestions"
-      />
-      <ul v-if="showSuggestions" style="padding:10px 20px">
-        <li v-for="user in suggestions" :key="user.email">
-          {{ user.email }}
-          <button class="btn btn-primary mr-2" @click="addUserToMailingBlackList(user.email)">Add</button>
-        </li>
-      </ul>
+    <!-- Only users known to the project manager can be added: the suggestions come from them -->
+    <div class="add-row">
+      <input v-model="inputEmail" type="text" class="form-control form-control-sm"
+             placeholder="Email address of a user" aria-label="Email address of a user" @input="updateSuggestions"/>
     </div>
+    <table v-if="showSuggestions" class="table table-sm suggestions">
+      <tbody>
+      <tr v-for="user in suggestions" :key="user.email">
+        <td>{{ user.email }}</td>
+        <td class="action-cell">
+          <button type="button" class="btn btn-primary btn-sm" @click="addUserToMailingBlackList(user.email)">Add</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
 <style scoped>
-.mailing-blacklist {
-  border-radius: 8px;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-button {
-  margin-left: 1rem;
-}
-
 .explanation {
   font-size: 0.9rem;
   color: #555;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
+.action-cell {
+  text-align: right;
+}
+
+/* Same width as in the role lists (RoleUserList.vue), so that the addresses line up */
+.name-cell {
+  width: 14rem;
+}
+
+/* The x used to remove things elsewhere (feasibility table, documents) */
+.remove-button {
+  color: #64748b;
+  padding: 0 0 0 0.75rem;
+}
+
+.remove-button:hover {
+  color: var(--status-danger-color);
+}
+
+.add-row {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 40rem;
+}
+
+.suggestions {
+  max-width: 40rem;
+  margin-top: 0.5rem;
+}
 </style>

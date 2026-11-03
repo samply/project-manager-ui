@@ -21,6 +21,8 @@ Needs the backend with the central approval committee (branch `feat/central-appr
 - Mailing blacklist: same layout as the other lists of the configuration page (the x to remove, one "N/A" without a
   name); an "Add" button for any address, with known users still suggested while typing; entries of the blacklist
   file are marked "In the configuration" and cannot be removed here
+- Archive confirmation: "A project manager or the <committee> can accept it again later" when the deployment names
+  its committee (`CENTRAL_APPROVAL_COMMITTEE_NAME`); unchanged without a name
 - Configuration page: the role lists also show "N/A" for someone whose name is unknown (never logged in)
 - "An email is sent to the applicant" instead of "the requester"; default name in the navigation bar "Samply Data
   Request" instead of the old "Samply.Requester"

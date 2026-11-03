@@ -1340,6 +1340,9 @@ export default defineComponent({
       isScriptTabAvailable: false,
       isDocumentsTabAvailable: false,
       isNotificationsTabAvailable: false,
+      // Only the name the deployment configures (CENTRAL_APPROVAL_COMMITTEE_NAME): without one, the committee is not
+      // mentioned in the texts (e.g. DKTK, which has none)
+      configuredCommitteeName: '',
       groupedMissingFields: {} as Record<string, string[]>,
       currentMenuStep: ProjectViewMenuStep.STATUS,
       editMode: false,
@@ -1424,6 +1427,7 @@ export default defineComponent({
     this.fetchFeasibilityConfig();
     this.fetchFormFieldDescriptionCollapsedLines();
     this.fetchSummarySpacing();
+    this.fetchConfiguredCommitteeName();
     this.fetchCreatedAtDisplayFormat();
     // Backstop alongside the ResizeObserver above: a plain window resize
     // (dragging the browser narrower/wider) always changes the row's width
@@ -2046,6 +2050,10 @@ export default defineComponent({
       this.formFieldDescriptionCollapsedLines = Number.isInteger(configuredLines) && configuredLines > 0
           ? configuredLines
           : DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES;
+    },
+
+    async fetchConfiguredCommitteeName() {
+      this.configuredCommitteeName = (await getConfig()).CENTRAL_APPROVAL_COMMITTEE_NAME?.trim() ?? '';
     },
 
     async fetchSummarySpacing() {
@@ -3496,7 +3504,10 @@ export default defineComponent({
           module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION,
           refreshContextCallFunction: this.refreshContext as () => void,
           text: "Archive request",
-          confirmationText: "The request is archived. A project manager can accept it again later.",
+          // The committee can reactivate an archived request too
+          confirmationText: this.configuredCommitteeName
+              ? `The request is archived. A project manager or the ${this.configuredCommitteeName} can accept it again later.`
+              : "The request is archived. A project manager can accept it again later.",
           withMessage: true, cssClass: "menu-item"
         },
         {

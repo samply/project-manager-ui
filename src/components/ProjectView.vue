@@ -1339,6 +1339,7 @@ export default defineComponent({
       projectFields: [] as ProjectField[],
       isScriptTabAvailable: false,
       isDocumentsTabAvailable: false,
+      isNotificationsTabAvailable: false,
       groupedMissingFields: {} as Record<string, string[]>,
       currentMenuStep: ProjectViewMenuStep.STATUS,
       editMode: false,
@@ -2323,6 +2324,7 @@ export default defineComponent({
         await Promise.all([
           this.initializeScriptTabAvailability(),
           this.initializeDocumentsTabAvailability(),
+          this.initializeNotificationsTabAvailability(),
           runBatchLoads(this.projectRelatedLoads(),
               entries => this.projectManagerBackendService.fetchBatch(entries, this.context))
         ]);
@@ -2551,6 +2553,16 @@ export default defineComponent({
         this.currentMenuStep = this.project?.state === ProjectState.DRAFT
             ? ProjectViewMenuStep.REQUEST
             : ProjectViewMenuStep.STATUS;
+      }
+    },
+
+    // The backend decides who reads a request's notifications (project manager admins and the central approval
+    // committee); the tab follows that instead of naming the roles here.
+    async initializeNotificationsTabAvailability(): Promise<void> {
+      this.isNotificationsTabAvailable = await this.projectManagerBackendService.isModuleActionActive(
+          Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, this.context);
+      if (!this.isNotificationsTabAvailable && this.currentMenuStep === ProjectViewMenuStep.NOTIFICATIONS) {
+        this.currentMenuStep = ProjectViewMenuStep.STATUS;
       }
     },
 
@@ -3763,7 +3775,7 @@ export default defineComponent({
       if (isNonDraft && this.isDocumentsTabAvailable) {
         steps.push(ProjectViewMenuStep.DOCUMENTS);
       }
-      if (isNonDraft && this.isProjectManagerAdmin()) {
+      if (isNonDraft && this.isNotificationsTabAvailable) {
         steps.push(ProjectViewMenuStep.NOTIFICATIONS);
       }
       return steps;

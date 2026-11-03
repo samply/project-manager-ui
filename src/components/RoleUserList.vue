@@ -102,8 +102,9 @@ export default class RoleUserList extends Vue {
     return bridgehead.humanReadable || bridgehead.bridgehead;
   }
 
+  // As in the mailing blacklist: one "N/A" while the name is unknown (the person has never logged in)
   userName(user: User): string {
-    return [user.firstName, user.lastName].filter(Boolean).join(' ');
+    return [user.firstName, user.lastName].filter(Boolean).join(' ') || 'N/A';
   }
 
   createContext() {

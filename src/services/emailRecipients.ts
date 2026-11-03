@@ -4,7 +4,7 @@ import {DEFAULT_CENTRAL_APPROVAL_COMMITTEE_NAME} from "@/services/configLoader";
 // How each backend recipient type is named in "An email is sent to …"; the committee by its configured name.
 const RECIPIENT_TEXTS: Record<Exclude<EmailRecipientType, EmailRecipientType.CENTRAL_APPROVAL_COMMITTEE>, string> = {
     [EmailRecipientType.EMAIL_ANNOTATION]: "the invited user",
-    [EmailRecipientType.CREATOR]: "the requester",
+    [EmailRecipientType.CREATOR]: "the applicant",
     [EmailRecipientType.PROJECT_MANAGER_ADMIN]: "the project managers",
     [EmailRecipientType.ALL_DEVELOPERS]: "the developers of this request",
     [EmailRecipientType.ALL_PILOTS]: "the pilot users of this request",
@@ -17,7 +17,7 @@ const RECIPIENT_TEXTS: Record<Exclude<EmailRecipientType, EmailRecipientType.CEN
     [EmailRecipientType.PROJECT_ALL]: "everyone involved in this request",
 };
 
-/** "the requester and the admins of all sites"; empty when nobody gets an email. */
+/** "the applicant and the admins of all sites"; empty when nobody gets an email. */
 export function describeEmailRecipients(recipients: EmailRecipientType[],
                                         committeeName = DEFAULT_CENTRAL_APPROVAL_COMMITTEE_NAME): string {
     // PROJECT_ALL already covers everyone else.

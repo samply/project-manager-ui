@@ -18,6 +18,11 @@ Needs the backend with the central approval committee (branch `feat/central-appr
   configuration are marked and cannot be removed here
 ### Changed
 - Notifications: a message (reject, request changes, ...) keeps its line breaks
+- Mailing blacklist: same layout as the other lists of the configuration page (the x to remove, one "N/A" without a
+  name); an "Add" button for any address, with known users still suggested while typing; entries of the blacklist
+  file are marked "In the configuration" and cannot be removed here
+- "An email is sent to the applicant" instead of "the requester"; default name in the navigation bar "Samply Data
+  Request" instead of the old "Samply.Requester"
 ### Removed
 - "Back to review" (More actions): replaced by "Request changes", which needs a message
 

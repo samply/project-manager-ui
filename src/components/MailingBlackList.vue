@@ -25,6 +25,7 @@ export default class MailingBlackList extends Vue {
   suggestions: User[] = [];
   showSuggestions = false;
   inputEmail = '';
+  error = '';
 
   mounted() {
     watch(
@@ -74,23 +75,29 @@ export default class MailingBlackList extends Vue {
     this.showSuggestions = false;
   }
 
+  // Any address, also of someone who has never logged in; the suggestions only help to find known users
   addUserToMailingBlackList(email: string) {
-    this.inputEmail = "";
-    this.projectManagerBackendService
-        .fetchData(Module.USER_MODULE, Action.ADD_USER_TO_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([[PmRequestParameter.EMAIL, email]]))
-        .then(() => {
-          this.updateMailingBlackList();
+    this.change(Action.ADD_USER_TO_MAILING_BLACK_LIST_ACTION, email.trim(),
+        'Could not add the address: please check it.', () => {
+          this.inputEmail = '';
           this.initializeSuggestions();
         });
   }
 
   removeUserFromMailingBlackList(email: string) {
-    this.inputEmail = "";
+    this.change(Action.REMOVE_USER_FROM_MAILING_BLACK_LIST_ACTION, email, 'Could not remove the address.',
+        () => undefined);
+  }
+
+  change(action: Action, email: string, errorMessage: string, onSuccess: () => void) {
+    this.error = '';
     this.projectManagerBackendService
-        .fetchData(Module.USER_MODULE, Action.REMOVE_USER_FROM_MAILING_BLACK_LIST_ACTION, this.createContext(), new Map([[PmRequestParameter.EMAIL, email]]))
+        .fetchData(Module.USER_MODULE, action, this.createContext(), new Map([[PmRequestParameter.EMAIL, email]]))
         .then(() => {
+          onSuccess();
           this.updateMailingBlackList();
-        });
+        })
+        .catch(() => this.error = errorMessage);
   }
 
   createContext() {
@@ -118,7 +125,11 @@ export default class MailingBlackList extends Vue {
         <td class="name-cell">{{ userName(user) }}</td>
         <td>{{ user.email }}</td>
         <td class="action-cell">
-          <button type="button" class="btn btn-link remove-button" :title="'Remove ' + user.email"
+          <span v-if="user.configured" class="configured"
+                title="Set in the configuration of this deployment: it can only be removed there">
+            <i class="bi bi-lock" aria-hidden="true"></i> In the configuration
+          </span>
+          <button v-else type="button" class="btn btn-link remove-button" :title="'Remove ' + user.email"
                   :aria-label="'Remove ' + user.email" @click="removeUserFromMailingBlackList(user.email)">
             <i class="bi bi-x-lg" aria-hidden="true"></i>
           </button>
@@ -128,11 +139,12 @@ export default class MailingBlackList extends Vue {
     </table>
     <p v-else>No users in the mailing blacklist.</p>
 
-    <!-- Only users known to the project manager can be added: the suggestions come from them -->
-    <div class="add-row">
-      <input v-model="inputEmail" type="text" class="form-control form-control-sm"
-             placeholder="Email address of a user" aria-label="Email address of a user" @input="updateSuggestions"/>
-    </div>
+    <!-- Any address can be added; while typing, known users are suggested -->
+    <form class="add-row" @submit.prevent="addUserToMailingBlackList(inputEmail)">
+      <input v-model="inputEmail" type="email" class="form-control form-control-sm" placeholder="Email address"
+             aria-label="Email address" @input="updateSuggestions"/>
+      <button type="submit" class="btn btn-primary btn-sm" :disabled="!inputEmail.trim()">Add</button>
+    </form>
     <table v-if="showSuggestions" class="table table-sm suggestions">
       <tbody>
       <tr v-for="user in suggestions" :key="user.email">
@@ -143,6 +155,7 @@ export default class MailingBlackList extends Vue {
       </tr>
       </tbody>
     </table>
+    <p v-if="error" class="error">{{ error }}</p>
   </div>
 </template>
 
@@ -170,6 +183,18 @@ export default class MailingBlackList extends Vue {
 
 .remove-button:hover {
   color: var(--status-danger-color);
+}
+
+.configured {
+  font-size: 0.85rem;
+  color: #5b6b7c;
+  white-space: nowrap;
+}
+
+.error {
+  color: #b42318;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
 }
 
 .add-row {

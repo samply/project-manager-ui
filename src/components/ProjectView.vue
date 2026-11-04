@@ -312,7 +312,7 @@
                   </div>
                 <div id="draft-dialog-box" class="draft-dialog-content"
                      :class="{ 'summary-layout': (!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY)) && !editMode, 'edit-layout': editMode }">
-                  <div v-if="!existsDraftDialog" class="form-switch-box">
+                  <div v-if="!existsDraftDialog && canEditAnyField" class="form-switch-box">
                     <div class="form-check form-switch">
                       <input class="form-check-input" type="checkbox" role="switch"
                              id="flexSwitchCheckDefault"
@@ -780,7 +780,7 @@ import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
-import {ActionFunction, Block, ProjectField, Section} from "@/services/utils";
+import {ActionFunction, Block, ProjectField, resolveFieldEditCall, Section} from "@/services/utils";
 import {
   buildFixedProjectFields,
   buildVotumProjectFields,
@@ -1346,6 +1346,8 @@ export default defineComponent({
       groupedMissingFields: {} as Record<string, string[]>,
       currentMenuStep: ProjectViewMenuStep.STATUS,
       editMode: false,
+      // "Edit Fields" is offered only when at least one visible field can be saved (updateCanEditAnyField)
+      canEditAnyField: false,
       blockCollapse: new Map<string, boolean>()
     };
   },
@@ -2648,9 +2650,24 @@ export default defineComponent({
       return true;
     },
 
+    // Not tied to a phase: the backend decides per action (phase, role, site) whether a field can be saved
+    async updateCanEditAnyField(): Promise<void> {
+      const fields = (this.projectFields as ProjectField[])
+          .filter(field => field.visibilityCondition && field.isEditable);
+      const active = await Promise.all(fields.map(field => {
+        const {module, action} = resolveFieldEditCall(field, field.fieldValue);
+        return this.projectManagerBackendService.isModuleActionActive(module, action, this.context);
+      }));
+      this.canEditAnyField = active.some(Boolean);
+      if (!this.canEditAnyField) {
+        this.editMode = false;
+      }
+    },
+
     updateProjectFields() {
       if (this.project) {
         this.projectFields = this.fetchProjectFields();
+        void this.updateCanEditAnyField();
         this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
         this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
       }

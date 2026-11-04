@@ -17,6 +17,8 @@ Needs the backend with the central approval committee (branch `feat/central-appr
   the note that the lists give emails, not the role (that needs the group in the login); entries set in the
   configuration are marked and cannot be removed here
 ### Changed
+- "Edit Fields" is shown only when at least one field can be saved (the backend decides by phase, role and site),
+  and in edit mode a field shows its inputs only when its own save action is allowed
 - Notifications: a message (reject, request changes, ...) keeps its line breaks
 - Mailing blacklist: same layout as the other lists of the configuration page (the x to remove, one "N/A" without a
   name); an "Add" button for any address, with known users still suggested while typing; entries of the blacklist

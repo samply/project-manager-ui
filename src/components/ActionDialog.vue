@@ -13,7 +13,7 @@ export default defineComponent({
     title: {type: String, required: true},
     confirmText: {type: String, default: ''},
     description: {type: String, default: ''},
-    // "the requester and the admins of all sites"; empty = no email line
+    // "the applicant and the admins of all sites"; empty = no email line
     recipients: {type: String, default: ''},
     reasonMode: {type: String as PropType<ReasonMode>, default: 'none'},
     danger: {type: Boolean, default: false},

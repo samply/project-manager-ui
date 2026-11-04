@@ -409,7 +409,9 @@ export default class NotificationBox extends Vue {
           </td>
           <td>
             <div class="event-label">{{ operationLabel(notification.operationType) }}</div>
-            <div v-if="notification.details" class="event-details">{{ notification.details }}</div>
+            <!-- MESSAGE: the message of an action (reject, request changes, ...), written by the user in the User column -->
+            <div v-if="notification.details" class="event-details"
+                 :class="{ 'event-message': notification.operationType === 'MESSAGE' }">{{ notification.details }}</div>
             <div v-if="notification.error" class="event-error">
               <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
               {{ notification.httpStatus ? `Error ${notification.httpStatus}: ` : 'Error: ' }}{{ notification.error }}
@@ -579,6 +581,10 @@ export default class NotificationBox extends Vue {
   font-size: 13px;
   line-height: 1.45;
   overflow-wrap: anywhere;
+}
+
+.event-message {
+  white-space: pre-line;
 }
 
 .event-error {

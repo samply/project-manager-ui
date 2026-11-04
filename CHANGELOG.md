@@ -6,6 +6,30 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased]
+Needs the backend with the central approval committee (branch `feat/central-approval-committee`): release together.
+### Added
+- Role central approval committee (`CENTRAL_APPROVAL_COMMITTEE`): acts for the whole request (accept, request
+  changes, reads everything), never in the name of a site; its name comes from the frontend variable
+  `CENTRAL_APPROVAL_COMMITTEE_NAME` (default "Central Approval Committee"), also in "An email is sent to ..."
+- "Request changes" (project managers and committee, message required) in the "Next step" card: in review the request
+  stays there, in central approval it goes back to review
+- Configuration page: email lists of project managers, committee members and site admins (list, add, remove), with
+  the note that the lists give emails, not the role (that needs the group in the login); entries set in the
+  configuration are marked and cannot be removed here
+### Changed
+- "Edit Fields" is shown only when at least one field can be saved (the backend decides by phase, role and site),
+  and in edit mode a field shows its inputs only when its own save action is allowed
+- Notifications: a message (reject, request changes, ...) keeps its line breaks
+- Mailing blacklist: same layout as the other lists of the configuration page (the x to remove, one "N/A" without a
+  name); an "Add" button for any address, with known users still suggested while typing; entries of the blacklist
+  file are marked "In the configuration" and cannot be removed here
+- Archive confirmation: "A project manager or the <committee> can accept it again later" when the deployment names
+  its committee (`CENTRAL_APPROVAL_COMMITTEE_NAME`); unchanged without a name
+- Configuration page: the role lists also show "N/A" for someone whose name is unknown (never logged in)
+- "An email is sent to the applicant" instead of "the requester"; default name in the navigation bar "Samply Data
+  Request" instead of the old "Samply.Requester"
+### Removed
+- "Back to review" (More actions): replaced by "Request changes", which needs a message
 
 ## [1.0.2] - 2026-10-16
 ### Added

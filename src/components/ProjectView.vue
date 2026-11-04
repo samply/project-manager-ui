@@ -312,7 +312,7 @@
                   </div>
                 <div id="draft-dialog-box" class="draft-dialog-content"
                      :class="{ 'summary-layout': (!existsDraftDialog || isCurrentStep(DialogStep.SUMMARY)) && !editMode, 'edit-layout': editMode }">
-                  <div v-if="!existsDraftDialog" class="form-switch-box">
+                  <div v-if="!existsDraftDialog && canEditAnyField" class="form-switch-box">
                     <div class="form-check form-switch">
                       <input class="form-check-input" type="checkbox" role="switch"
                              id="flexSwitchCheckDefault"
@@ -780,7 +780,7 @@ import '@/assets/styles/state-circle.css'
 import UserAndEmail from "@/components/UserAndEmail.vue";
 import DownloadButton from "@/components/DownloadButton.vue";
 import {AuthService} from "@/services/auth";
-import {ActionFunction, Block, ProjectField, Section} from "@/services/utils";
+import {ActionFunction, Block, ProjectField, resolveFieldEditCall, Section} from "@/services/utils";
 import {
   buildFixedProjectFields,
   buildVotumProjectFields,
@@ -811,7 +811,7 @@ import {
 
 // The actions of the "Next step" card (fetchButtons): their explanations are not repeated in the TODO panel.
 const NEXT_STEP_ACTIONS: Action[] = [
-  Action.ACCEPT_PROJECT_ACTION, Action.START_LOCAL_APPROVAL_STAGE_ACTION, Action.START_DEVELOP_STAGE_ACTION, Action.START_PILOT_STAGE_ACTION,
+  Action.ACCEPT_PROJECT_ACTION, Action.REQUEST_CHANGES_IN_APPROVAL_ACTION, Action.START_LOCAL_APPROVAL_STAGE_ACTION, Action.START_DEVELOP_STAGE_ACTION, Action.START_PILOT_STAGE_ACTION,
   Action.START_FINAL_STAGE_ACTION, Action.FINISH_PROJECT_ACTION,
   Action.ACCEPT_SCRIPT_ACTION, Action.REQUEST_SCRIPT_CHANGES_ACTION, Action.REJECT_SCRIPT_ACTION,
   Action.ACCEPT_PROJECT_ANALYSIS_ACTION, Action.REQUEST_CHANGES_IN_PROJECT_ANALYSIS_ACTION,
@@ -1339,9 +1339,15 @@ export default defineComponent({
       projectFields: [] as ProjectField[],
       isScriptTabAvailable: false,
       isDocumentsTabAvailable: false,
+      isNotificationsTabAvailable: false,
+      // Only the name the deployment configures (CENTRAL_APPROVAL_COMMITTEE_NAME): without one, the committee is not
+      // mentioned in the texts (e.g. DKTK, which has none)
+      configuredCommitteeName: '',
       groupedMissingFields: {} as Record<string, string[]>,
       currentMenuStep: ProjectViewMenuStep.STATUS,
       editMode: false,
+      // "Edit Fields" is offered only when at least one visible field can be saved (updateCanEditAnyField)
+      canEditAnyField: false,
       blockCollapse: new Map<string, boolean>()
     };
   },
@@ -1423,6 +1429,7 @@ export default defineComponent({
     this.fetchFeasibilityConfig();
     this.fetchFormFieldDescriptionCollapsedLines();
     this.fetchSummarySpacing();
+    this.fetchConfiguredCommitteeName();
     this.fetchCreatedAtDisplayFormat();
     // Backstop alongside the ResizeObserver above: a plain window resize
     // (dragging the browser narrower/wider) always changes the row's width
@@ -2047,6 +2054,10 @@ export default defineComponent({
           : DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES;
     },
 
+    async fetchConfiguredCommitteeName() {
+      this.configuredCommitteeName = (await getConfig()).CENTRAL_APPROVAL_COMMITTEE_NAME?.trim() ?? '';
+    },
+
     async fetchSummarySpacing() {
       this.summaryCompact = (await getConfig()).SUMMARY_SPACING === SummarySpacing.COMPACT;
     },
@@ -2323,6 +2334,7 @@ export default defineComponent({
         await Promise.all([
           this.initializeScriptTabAvailability(),
           this.initializeDocumentsTabAvailability(),
+          this.initializeNotificationsTabAvailability(),
           runBatchLoads(this.projectRelatedLoads(),
               entries => this.projectManagerBackendService.fetchBatch(entries, this.context))
         ]);
@@ -2554,6 +2566,16 @@ export default defineComponent({
       }
     },
 
+    // The backend decides who reads a request's notifications (project manager admins and the central approval
+    // committee); the tab follows that instead of naming the roles here.
+    async initializeNotificationsTabAvailability(): Promise<void> {
+      this.isNotificationsTabAvailable = await this.projectManagerBackendService.isModuleActionActive(
+          Module.NOTIFICATIONS_MODULE, Action.FETCH_NOTIFICATIONS_ACTION, this.context);
+      if (!this.isNotificationsTabAvailable && this.currentMenuStep === ProjectViewMenuStep.NOTIFICATIONS) {
+        this.currentMenuStep = ProjectViewMenuStep.STATUS;
+      }
+    },
+
     getFormFieldLayout(formTitle: string, formFieldLabel: string): FormFieldLayout | undefined {
       return this.layouts[formTitle]?.find(layout =>
           layout.rows.some(row => row.fields.includes(formFieldLabel))
@@ -2628,9 +2650,24 @@ export default defineComponent({
       return true;
     },
 
+    // Not tied to a phase: the backend decides per action (phase, role, site) whether a field can be saved
+    async updateCanEditAnyField(): Promise<void> {
+      const fields = (this.projectFields as ProjectField[])
+          .filter(field => field.visibilityCondition && field.isEditable);
+      const active = await Promise.all(fields.map(field => {
+        const {module, action} = resolveFieldEditCall(field, field.fieldValue);
+        return this.projectManagerBackendService.isModuleActionActive(module, action, this.context);
+      }));
+      this.canEditAnyField = active.some(Boolean);
+      if (!this.canEditAnyField) {
+        this.editMode = false;
+      }
+    },
+
     updateProjectFields() {
       if (this.project) {
         this.projectFields = this.fetchProjectFields();
+        void this.updateCanEditAnyField();
         this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
         this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
       }
@@ -3428,6 +3465,18 @@ export default defineComponent({
       };
     },
 
+    // Request changes (project manager admin, committee): in REVIEW and CENTRAL_APPROVAL, each in the "Next step" group
+    // of that state. The message is required: it goes into the email and is kept in the notifications.
+    requestChangesInApprovalButton(state: ProjectState, confirmationText: string): ActionButton {
+      return {
+        module: Module.PROJECT_STATE_MODULE, action: Action.REQUEST_CHANGES_IN_APPROVAL_ACTION,
+        refreshContextCallFunction: this.refreshContext as () => void,
+        text: "Request changes",
+        confirmationText, messageRequired: true, withMessage: true, cssClass: "btn btn-outline-primary",
+        visibilityCondition: this.project?.state === state
+      };
+    },
+
     fetchButtons(): void {
       // Bridgehead operations: once per bridgehead where the user has a bridgehead role, each with that bridgehead and
       // its permissions (docs/bridgehead-context.md). The first send of the query and authorizing access are the
@@ -3469,17 +3518,13 @@ export default defineComponent({
           visibilityCondition: this.skipsLocalApproval && !this.localApprovalRequired
         },
         {
-          module: Module.PROJECT_STATE_MODULE, action: Action.BACK_TO_REVIEW_ACTION,
-          refreshContextCallFunction: this.refreshContext as () => void,
-          text: "Back to review",
-          confirmation: true, confirmationText: "The request goes back to review, e.g. for a change before its approval.",
-          withMessage: false, cssClass: "menu-item"
-        },
-        {
           module: Module.PROJECT_STATE_MODULE, action: Action.ARCHIVE_PROJECT_ACTION,
           refreshContextCallFunction: this.refreshContext as () => void,
           text: "Archive request",
-          confirmationText: "The request is archived. A project manager can accept it again later.",
+          // The committee can reactivate an archived request too
+          confirmationText: this.configuredCommitteeName
+              ? `The request is archived. A project manager or the ${this.configuredCommitteeName} can accept it again later.`
+              : "The request is archived. A project manager can accept it again later.",
           withMessage: true, cssClass: "menu-item"
         },
         {
@@ -3501,19 +3546,21 @@ export default defineComponent({
       this.nextStepGroups = [
         {
           label: "Review the request",
-          description: "Check the application form. If everything is in order, accept the request; to reject or archive it, use More actions.",
+          description: "Check the application form. If everything is in order, accept the request; if the applicant has to change something, request changes; to reject or archive it, use More actions.",
           button: [
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.ACCEPT_PROJECT_ACTION,
               refreshContextCallFunction: this.refreshContext as () => void,
               text: "Accept request",
               confirmation: true, confirmationText: "The request moves on to the central approval phase.", withMessage: false, cssClass: "btn btn-primary"
-            }
+            },
+            this.requestChangesInApprovalButton(ProjectState.REVIEW,
+                "The request stays in review: the applicant can change it and sees your message.")
           ] as ActionButton[]
         },
         {
           label: "Start the next phase",
-          description: "Move the request on to its next phase.",
+          description: "Move the request on to its next phase. If the applicant has to change something first, request changes.",
           button: [
             {
               module: Module.PROJECT_STATE_MODULE, action: Action.START_LOCAL_APPROVAL_STAGE_ACTION,
@@ -3542,7 +3589,9 @@ export default defineComponent({
               text: "Start final phase",
               confirmation: true, confirmationText: "The request moves to the final phase.", withMessage: false, cssClass: "btn btn-primary",
               visibilityCondition: !this.skipsDevelopAndPilot && !this.skipsLocalApproval
-            }
+            },
+            this.requestChangesInApprovalButton(ProjectState.CENTRAL_APPROVAL,
+                "The request goes back to review: the applicant can change it and sees your message.")
           ] as ActionButton[]
         },
         {
@@ -3754,7 +3803,7 @@ export default defineComponent({
       if (isNonDraft && this.isDocumentsTabAvailable) {
         steps.push(ProjectViewMenuStep.DOCUMENTS);
       }
-      if (isNonDraft && this.isProjectManagerAdmin()) {
+      if (isNonDraft && this.isNotificationsTabAvailable) {
         steps.push(ProjectViewMenuStep.NOTIFICATIONS);
       }
       return steps;

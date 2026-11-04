@@ -244,6 +244,24 @@ export class ActionFunction {
     }
 
 }
+
+/**
+ * The call that saves a field: its upload for document fields, else its own action (default: EDIT_PROJECT of the
+ * project edition module). Shared by the field row and by the project view, which shows "Edit Fields" only when at
+ * least one field can be saved.
+ */
+export function resolveFieldEditCall(
+    field: { module?: Module, action?: Action | ActionFunction, uploadAction?: Action },
+    value: string[]): { module: Module, action: Action } {
+    if (field.uploadAction) {
+        return {module: Module.PROJECT_DOCUMENTS_MODULE, action: field.uploadAction};
+    }
+    const action = field.action ?? Action.EDIT_PROJECT_ACTION;
+    return {
+        module: field.module ?? Module.PROJECT_EDITION_MODULE,
+        action: action instanceof ActionFunction ? action.fetchAction(value) : action
+    };
+}
 export class Utils {
     static decodeBase64(base64: string): string {
         const binary = atob(base64);

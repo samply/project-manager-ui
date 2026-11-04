@@ -51,7 +51,7 @@ export default defineComponent({
   data() {
     return {
       isProjectManagerAdmin: false,
-      frontendName: '<b>Samply</b>.Requester',
+      frontendName: '<b>Samply</b> Data Request',
       logoUrl: "",
       logoText: "",
       logoHtml: "",

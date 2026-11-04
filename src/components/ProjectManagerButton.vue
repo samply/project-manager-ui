@@ -12,6 +12,7 @@ import {PropType, watch} from "vue";
 import store, {ActionFeedbackType} from '@/services/store';
 import ActionDialog, {ReasonMode} from "@/components/ActionDialog.vue";
 import {describeEmailRecipients} from "@/services/emailRecipients";
+import {getCentralApprovalCommitteeName} from "@/services/configLoader";
 
 @Options({
   name: "ProjectManagerButton",
@@ -130,7 +131,8 @@ export default class ProjectManagerButton extends Vue {
     } else if (this.needsDialog) {
       this.dialogError = '';
       this.recipientsText = describeEmailRecipients(
-          await this.projectManagerBackendService.getActionEmailRecipients(this.module, this.actionToUse));
+          await this.projectManagerBackendService.getActionEmailRecipients(this.module, this.actionToUse),
+          await getCentralApprovalCommitteeName());
       this.dialog.open();
     } else {
       await this.runAction('');

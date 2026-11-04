@@ -27,7 +27,7 @@ import MandatoryFieldMarker from "@/components/MandatoryFieldMarker.vue";
 import type {DialogStep} from "@/services/fixedDialogStep";
 import {FixedDialogStep} from "@/services/fixedDialogStep";
 import type {Block, BridgeheadsProjectField, ProjectFieldInstance} from "@/services/utils";
-import {ActionFunction, Section, Utils} from "@/services/utils";
+import {ActionFunction, resolveFieldEditCall, Section, Utils} from "@/services/utils";
 import {DEFAULT_FORM_FIELD_DESCRIPTION_COLLAPSED_LINES} from "@/services/configLoader";
 import type {DisplayFormatKey} from "@/services/configLoader";
 import {
@@ -242,7 +242,7 @@ export default class ProjectFieldRow extends Vue {
       this.descriptionResizeObserver = new ResizeObserver(() => this.refreshDescriptionOverflow());
     }
     watch(
-        () => this.projectManagerBackendService,
+        () => [this.projectManagerBackendService, this.context],
         () => {
           this.resetIsActionEnabled();
         },
@@ -315,19 +315,19 @@ export default class ProjectFieldRow extends Vue {
 
 
   resetIsActionEnabled() {
-    const action = this.fetchAction();
-    const module = this.uploadAction ? Module.PROJECT_DOCUMENTS_MODULE : this.module;
+    const {module, action} = resolveFieldEditCall(this, this.editedValue);
     this.projectManagerBackendService
         .isModuleActionActive(module, action, this.context)
         .then((isActive) => (this.isActionEnabled = isActive));
   }
 
   private fetchAction(): Action {
-    let action = this.uploadAction ? this.uploadAction : this.action;
-    if (action instanceof ActionFunction) {
-      action = action.fetchAction(this.editedValue);
-    }
-    return action;
+    return resolveFieldEditCall(this, this.editedValue).action;
+  }
+
+  // "Edit Fields" only turns on the inputs of a field whose save action is allowed (phase, role, site)
+  get editModeActive(): boolean {
+    return this.editMode && this.isActionEnabled;
   }
 
   deleteField() {
@@ -645,7 +645,7 @@ export default class ProjectFieldRow extends Vue {
 
   // Admins edit in edit mode; the creator of a draft edits while filling in the form (not in the summary)
   isRealQueryEditable(): boolean {
-    return this.editMode || (this.isDraft() && !this.isSummaryStep());
+    return this.editModeActive || (this.isDraft() && !this.isSummaryStep());
   }
 
   saveRealQuery(): void {
@@ -742,7 +742,7 @@ export default class ProjectFieldRow extends Vue {
   // a clear, type-specific empty state; required answers use one shared error
   // message. The helpers below centralize that policy for all rendering branches.
   isReadOnlyView(): boolean {
-    return (!this.isDraft() || this.isSummaryStep()) && !this.editMode;
+    return (!this.isDraft() || this.isSummaryStep()) && !this.editModeActive;
   }
   hasMeaningfulValue(value?: string): boolean {
     return typeof value === "string" && value.trim().length > 0;
@@ -1096,7 +1096,7 @@ export default class ProjectFieldRow extends Vue {
   -->
   <div v-if="headless" style="display:flex; align-items:center; gap:0.5rem; width:100%">
     <div style="flex:1; min-width:0;">
-      <div v-if="isSelection() && isRadioButton() && ((isDraft() && !isSummaryStep()) || editMode)" class="option-list" style="display:flex; flex-direction:column; gap:0.25rem;">
+      <div v-if="isSelection() && isRadioButton() && ((isDraft() && !isSummaryStep()) || editModeActive)" class="option-list" style="display:flex; flex-direction:column; gap:0.25rem;">
         <div v-for="value in possibleValues" :key="value" class="form-check option-row">
           <input class="form-check-input" type="radio" style="margin:0;"
                  :name="radioGroupName" :id="`${radioGroupName}-${value}`" :value="value"
@@ -1110,7 +1110,7 @@ export default class ProjectFieldRow extends Vue {
           </label>
         </div>
       </div>
-      <select v-else-if="isSelection() && ((isDraft() && !isSummaryStep()) || editMode)"
+      <select v-else-if="isSelection() && ((isDraft() && !isSummaryStep()) || editModeActive)"
               :aria-required="mandatory ? 'true' : undefined"
               v-model="editedValue[0]" @change="onInputChange" class="form-select">
         <option v-if="isNotAllowedValue(editedValue[0])" :value="editedValue[0]" disabled>
@@ -1130,8 +1130,8 @@ export default class ProjectFieldRow extends Vue {
             v-model="editedValue[0]"
             @change="onInputChange"
             class="form-control auto-textarea"
-            :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
-            :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+            :class="(!isDraft() || isSummaryStep()) && !editModeActive ? 'grey' : 'white'"
+            :disabled="(!isDraft() || isSummaryStep()) && !editModeActive"
             :placeholder="placeholder"
         ></textarea>
       </div>
@@ -1145,15 +1145,15 @@ export default class ProjectFieldRow extends Vue {
           v-model="editedValue[0]"
           @change="onInputChange"
           class="form-control"
-          :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
-          :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+          :class="(!isDraft() || isSummaryStep()) && !editModeActive ? 'grey' : 'white'"
+          :disabled="(!isDraft() || isSummaryStep()) && !editModeActive"
           style="width:100%"
       >
       <div v-if="isNotAllowedValue(editedValue[0])" class="not-allowed-value">
         {{ getNotAllowedValueMessage([editedValue[0]]) }}
       </div>
     </div>
-    <button v-if="deleteAction && deleteModule && ((isDraft() && !isSummaryStep()) || editMode)"
+    <button v-if="deleteAction && deleteModule && ((isDraft() && !isSummaryStep()) || editModeActive)"
             type="button" class="btn btn-sm dktk-darkblue" style="padding: 0 6px; flex-shrink:0;" title="Remove this value"
             @click="deleteInstance">
       <i class="bi bi-dash" style="color: white; font-size: 18px"></i>
@@ -1209,7 +1209,7 @@ export default class ProjectFieldRow extends Vue {
             Editable: every allowed option, with its description, as a
             clickable checkbox row.
           -->
-          <template v-if="(isDraft() && !isSummaryStep()) || editMode">
+          <template v-if="(isDraft() && !isSummaryStep()) || editModeActive">
             <div class="option-list">
               <div v-for="value in possibleValues" :key="value" class="form-check option-row">
                 <input class="form-check-input" type="checkbox" style="margin:0;"
@@ -1304,7 +1304,7 @@ export default class ProjectFieldRow extends Vue {
                 :project-manager-backend-service="projectManagerBackendService"
                 :context="context"
                 :is-editable="isEditable"
-                :edit-mode="editMode"
+                :edit-mode="editModeActive"
                 :call-refresh-context="callRefreshContext"
                 :call-refresh-bridgeheads="callRefreshBridgeheads"
                 :call-query-changed="callQueryChanged"
@@ -1326,7 +1326,7 @@ export default class ProjectFieldRow extends Vue {
                 :transform-for-sending="buildInstanceTransform!(instance.fieldInstance)"
             />
           </div>
-          <button v-if="(isDraft() && !isSummaryStep()) || editMode"
+          <button v-if="(isDraft() && !isSummaryStep()) || editModeActive"
                   type="button" class="btn btn-secondary" style="align-self: flex-start;" @click="addInstance()">
             <i class="bi bi-plus"></i>
           </button>
@@ -1405,7 +1405,7 @@ export default class ProjectFieldRow extends Vue {
             class="optional-boolean-checkbox"
             :checked="editedValue[0] === 'true'"
             @change="onBooleanValueChange"
-            :disabled=" (isDraft() && isSummaryStep()) || (!isDraft() && !editMode)"
+            :disabled=" (isDraft() && isSummaryStep()) || (!isDraft() && !editModeActive)"
         />
         <div class="input-field-header" :class="{ 'sidewise': !isDraft() || isSummaryStep() || isBlock(), 'with-value-below': hasValueBelowHeader() }">
           <div v-if="!isDescriptionUpload()" style="display: flex;">
@@ -1469,9 +1469,9 @@ export default class ProjectFieldRow extends Vue {
                   type="checkbox"
                   :checked="editedValue[0] === 'true'"
                   @change="onBooleanValueChange"
-                  :disabled="(isDraft() && isSummaryStep()) || (!isDraft() && !editMode)"
+                  :disabled="(isDraft() && isSummaryStep()) || (!isDraft() && !editModeActive)"
               />
-              <select v-if="((isDraft() && !isSummaryStep()) || editMode) && mandatory" v-model="editedValue[0]" @change="saveField()" class="form-select" style="width: fit-content;">
+              <select v-if="((isDraft() && !isSummaryStep()) || editModeActive) && mandatory" v-model="editedValue[0]" @change="saveField()" class="form-select" style="width: fit-content;">
                 <option value=true>Yes</option>
                 <option value=false>No</option>
               </select>
@@ -1564,7 +1564,7 @@ export default class ProjectFieldRow extends Vue {
                     ></textarea>
                   </div>
                 </div>
-                <div v-if="editMode && redirectUrl"
+                <div v-if="editModeActive && redirectUrl"
                      class="query-explorer-option query-view-content">
                   <span>Or edit the query in Explorer:</span>
                   <button type="button"
@@ -1596,7 +1596,7 @@ export default class ProjectFieldRow extends Vue {
                       ><i :class="copiedToClipboard ? 'bi bi-clipboard-check' : 'bi bi-copy'"></i>
                       <span style="font-size: small; padding: 2px 0 0 5px">Copy Query to Clipboard</span>
                     </span>
-                    <button v-if="((isDraft() && !isSummaryStep()) || editMode) && redirectUrl"
+                    <button v-if="((isDraft() && !isSummaryStep()) || editModeActive) && redirectUrl"
                             class="btn btn-query-link"
                             data-toggle="tooltip"
                             data-placement="top" title="Return to the DKTK Explorer to edit the request."
@@ -1613,8 +1613,8 @@ export default class ProjectFieldRow extends Vue {
                         v-model="editedValue[0]"
                         @change="onInputChange"
                         class="form-control"
-                        :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
-                        :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+                        :class="(!isDraft() || isSummaryStep()) && !editModeActive ? 'grey' : 'white'"
+                        :disabled="(!isDraft() || isSummaryStep()) && !editModeActive"
                     ></textarea>
                   </div>
                 </Transition>
@@ -1643,7 +1643,7 @@ export default class ProjectFieldRow extends Vue {
                             style="margin-right: 2%; margin-bottom: 0.5%;">
                            <span>{{ bridgehead.humanReadable ?? bridgehead.bridgehead }}</span>
                         <button @click="removeBridgehead(index)" class="btn btn-sm dktk-darkblue" style="padding: 0 0 0 10px;height: 28px;margin-top:-3px"
-                                v-if="(isDraft() && !isSummaryStep()) || editMode">
+                                v-if="(isDraft() && !isSummaryStep()) || editModeActive">
                           <i style="color: white; font-size: 18px;" class="bi bi-x dktk-darkblue"></i>
                         </button>
                       </span>
@@ -1652,7 +1652,7 @@ export default class ProjectFieldRow extends Vue {
                     class="summary-empty" :class="{ 'summary-missing': mandatory }">
                 {{ getEmptySummaryValue("No sites selected") }}
               </span>
-              <span v-if="areThereMoreBridgeheadsAvailableToAdd() && ((isDraft() && !isSummaryStep()) || editMode)">
+              <span v-if="areThereMoreBridgeheadsAvailableToAdd() && ((isDraft() && !isSummaryStep()) || editModeActive)">
                       <button @click="showInputFields" class="btn btn-secondary"><i class="bi bi-plus"></i></button>
                       <span v-if="showInputs" style="display: flex; flex-flow: row; gap: 2%; padding-top: 2%">
                         <select class="form-select" v-model="newValue" >
@@ -1732,7 +1732,7 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else-if="isSelection() && isRadioButton() && !isConfiguration()" style="width: 100%;">
-              <div v-if="(isDraft() && !isSummaryStep()) || editMode" class="option-list" style="display:flex; flex-direction:column; gap:0.25rem;">
+              <div v-if="(isDraft() && !isSummaryStep()) || editModeActive" class="option-list" style="display:flex; flex-direction:column; gap:0.25rem;">
                 <div v-for="value in possibleValues" :key="value" class="form-check option-row">
                   <input class="form-check-input" type="radio" style="margin:0;"
                          :name="radioGroupName" :id="`${radioGroupName}-${value}`" :value="value"
@@ -1746,7 +1746,7 @@ export default class ProjectFieldRow extends Vue {
                   </label>
                 </div>
               </div>
-              <div v-if="(!isDraft() || isSummaryStep()) && !editMode"
+              <div v-if="(!isDraft() || isSummaryStep()) && !editModeActive"
                    :class="hasMeaningfulValue(editedValue[0]) && hasAnyOptionDescription ? 'option-list option-readonly' : ''"
                    :style="hasMeaningfulValue(editedValue[0]) && hasAnyOptionDescription ? 'padding: 0 0.75rem' : ''">
                 <template v-if="hasMeaningfulValue(editedValue[0])">
@@ -1765,7 +1765,7 @@ export default class ProjectFieldRow extends Vue {
               </div>
             </div>
             <div v-else-if="isSelection() && !isConfiguration()" style="width: 100%;">
-              <select v-if="(isDraft() && !isSummaryStep()) || editMode" v-model="editedValue[0]" @change="onInputChange" class="form-select" :aria-required="mandatory ? 'true' : undefined">
+              <select v-if="(isDraft() && !isSummaryStep()) || editModeActive" v-model="editedValue[0]" @change="onInputChange" class="form-select" :aria-required="mandatory ? 'true' : undefined">
                 <option v-if="isNotAllowedValue(editedValue[0])" :value="editedValue[0]" disabled>
                   {{ editedValue[0] }} (not allowed)
                 </option>
@@ -1774,7 +1774,7 @@ export default class ProjectFieldRow extends Vue {
                   <!--<span style="font-size: smaller"> {{displayPossibleValue(value).description}}</span>-->
                 </option>
               </select>
-              <div v-if="(!isDraft() || isSummaryStep()) && !editMode" :style="hasMeaningfulValue(editedValue[0]) ? 'padding: 0 0.75rem' : ''">
+              <div v-if="(!isDraft() || isSummaryStep()) && !editModeActive" :style="hasMeaningfulValue(editedValue[0]) ? 'padding: 0 0.75rem' : ''">
                 <template v-if="hasMeaningfulValue(editedValue[0])">
                   <div>{{displayPossibleValue(editedValue[0]).name}}</div>
                   <div style="font-size: 12px">{{displayPossibleValue(editedValue[0]).shortDescription ?? displayPossibleValue(editedValue[0]).description}}</div>
@@ -1800,8 +1800,8 @@ export default class ProjectFieldRow extends Vue {
                     @change="onInputChange"
                     class="form-control auto-textarea"
                     :placeholder="placeholder"
-                    :class="(!isDraft() || isSummaryStep()) && !editMode ? 'grey' : 'white'"
-                    :disabled="(!isDraft() || isSummaryStep()) && !editMode"
+                    :class="(!isDraft() || isSummaryStep()) && !editModeActive ? 'grey' : 'white'"
+                    :disabled="(!isDraft() || isSummaryStep()) && !editModeActive"
                 ></textarea>
               </div>
             </div>
@@ -1818,9 +1818,9 @@ export default class ProjectFieldRow extends Vue {
                   @change="onInputChange"
                   class="form-control"
                   :placeholder="isInputType(FormDataType.STRING) ? placeholder : undefined"
-                  :class="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration() ? 'grey' : 'white'"
+                  :class="((!isDraft() || isSummaryStep()) && !editModeActive) || isConfiguration() ? 'grey' : 'white'"
                   :style="{width: getInputType()==='number' ? '100%' : '100%'}"
-                  :disabled="((!isDraft() || isSummaryStep()) && !editMode) || isConfiguration()"
+                  :disabled="((!isDraft() || isSummaryStep()) && !editModeActive) || isConfiguration()"
               >
             </div>
           </div>

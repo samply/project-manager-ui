@@ -388,6 +388,7 @@ export default class NotificationBox extends Vue {
       <table class="pm-table notifications-table">
         <thead>
         <tr>
+          <th scope="col">Title</th>
           <th scope="col">Time</th>
           <th v-if="showProject" scope="col">Request</th>
           <th scope="col">Event</th>
@@ -398,14 +399,16 @@ export default class NotificationBox extends Vue {
         </thead>
         <tbody>
         <tr v-for="notification in pagedNotifications" :key="notification.id" :class="{ read: notification.read }">
-          <td class="time-cell">
+          <td class="request-label-cell">
             <span v-if="!notification.read" class="unread-dot" title="Unread"></span>
+            {{ notification.projectLabel }}
+          </td>
+          <td class="time-cell">
             {{ notification.timestamp ? convertDate(notification.timestamp) : '' }}
           </td>
           <td v-if="showProject">
             <router-link :to="{ name: 'ProjectView', query: { [ProjectViewQueryParameter.PROJECT_CODE]: notification.projectCode } }"
                          class="label-link">{{ notification.projectCode }}</router-link>
-            <div v-if="notification.projectLabel" class="event-details">{{ notification.projectLabel }}</div>
           </td>
           <td>
             <div class="event-label">{{ operationLabel(notification.operationType) }}</div>
@@ -428,7 +431,7 @@ export default class NotificationBox extends Vue {
           </td>
         </tr>
         <tr v-if="pagedNotifications.length === 0" class="empty-row">
-          <td :colspan="showProject ? 6 : 5">
+          <td :colspan="showProject ? 7 : 6">
             {{ emptyMessage }}
           </td>
         </tr>
@@ -560,6 +563,15 @@ export default class NotificationBox extends Vue {
   font-variant-numeric: tabular-nums;
   color: #5b6b7c;
   font-size: 13px;
+}
+
+.request-label-cell {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+tr.read .request-label-cell {
+  font-weight: 400;
 }
 
 .unread-dot {

@@ -214,6 +214,7 @@ Development history before the first release (never released as a version).
 - Local approval per site: step in the bridgehead overview and the single-bridgehead status (download), "Local approval" card in Documents (applicant and project manager for every site, bridgehead admin for their sites), approval contacts next to the site contacts
 - Frontend variable LOCAL_APPROVAL_REQUIRED: the request cannot skip the local approval, a missing one is red, and the bridgehead admin is not offered to send the query without it ("Wait for the local approval")
 - Upload buttons with a choice of sites check the action for the chosen site (an action that needs a site was never shown); the next step explains only shown buttons; the phase list shows CENTRAL APPROVAL without underscore; "An email is sent to" names the local approval contacts
+- Form fields: values are checked against their data type (EMAIL, INTEGER, DOUBLE, DATE, TIMESTAMP, LOCAL_DATE_TIME); an invalid value is shown with its reason, not saved, and blocks creating the request; surrounding whitespace is ignored; an unreadable number or incomplete date or date and time no longer clears the stored value; a value rejected by the backend is shown with its reason; DOUBLE accepts a decimal comma (1,5 as 1.5, not 1,500); a step, tab or the page is not left while an entered value is not valid and therefore not saved
 
 ### Changed
 - Display feasibility results based only on non-empty backend results

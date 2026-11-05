@@ -3,7 +3,7 @@
     <router-link :to="{ name: 'ProjectDashboard' }" class="menu-item menu-back">
       <i class="bi bi-arrow-left"></i> Requests
     </router-link>
-    <div v-for="step in getMenuSteps()" class="menu-item" @click="currentMenuStep=step"
+    <div v-for="step in getMenuSteps()" class="menu-item" @click="selectMenuStep(step)"
          :class="{ 'active': currentMenuStep===step }">
       {{ step }}
       <span v-if="step === MenuStep.NOTIFICATIONS && unreadNotificationsCount > 0" class="menu-count"
@@ -145,7 +145,7 @@
                   <div class="at-a-glance-strip">
                     <div class="glance-cell">
                       <span class="glance-label">Title</span>
-                      <a class="glance-title clickable" @click="currentMenuStep = MenuStep.REQUEST">{{ project ? project.label : '' }}</a>
+                      <a class="glance-title clickable" @click="selectMenuStep(MenuStep.REQUEST)">{{ project ? project.label : '' }}</a>
                     </div>
                     <div class="glance-cell">
                       <span class="glance-label">Request ID</span>
@@ -281,7 +281,7 @@
                     <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0;">
                       <div :class="['step-circle', 'step-circle--' + draftStepState(step, index)]"
                            :title="step.displayName"
-                           @click="draftDialogStepper.setCurrentStep(step.id)">
+                           @click="goToDraftStep(step.id)">
                         <span>{{ draftStepState(step, index) === 'done' ? '✓' :
                             draftStepState(step, index) === 'missing' ? '!' : index + 1 }}</span>
                       </div>
@@ -290,7 +290,7 @@
                       </div>
                     </div>
                     <div class="stepper-step-textbox"
-                         @click="draftDialogStepper.setCurrentStep(step.id)"
+                         @click="goToDraftStep(step.id)"
                          style="padding-top: 4px;">
                       <div class="stepper-step-header">{{ step.displayName }}</div>
                       <div class="stepper-step-desc">{{ step.shortDescription ?? step.description }}</div>
@@ -488,6 +488,7 @@
                                 :multiple="item.multiple"
                                 :instances="item.instances"
                                 :build-instance-transform="item.buildInstanceTransform"
+                                :call-invalid-value-change="onInvalidValueChange"
                                 :project-manager-backend-service="projectManagerBackendService"/>
                             </template>
                             </div>
@@ -537,10 +538,13 @@
 
                   <!-- Right: step counter + navigation -->
                   <div class="button-nav-right">
+                    <span v-if="leaveBlockedMessage" class="leave-blocked-message" role="alert">
+                      {{ leaveBlockedMessage }}
+                    </span>
                     <span class="step-counter">
                       Step {{ draftDialogStepper.currentSteps.indexOf(draftDialogStepper.currentStep ?? draftDialogStepper.currentSteps[0]) + 1 }} of {{ draftDialogStepper.currentSteps.length }}
                     </span>
-                    <button class="btn btn-nav-back" @click="draftDialogStepper.previousStep()"
+                    <button class="btn btn-nav-back" @click="previousDraftDialogStep()"
                             :disabled="!draftDialogStepper.hasPreviousStep">
                       <i class="bi bi-chevron-left"></i> Back
                     </button>
@@ -749,6 +753,7 @@ import {
   UserProjectState
 } from "@/services/projectManagerBackendService";
 import {fromFormControlValue} from "@/services/formValueCodec";
+import {isValidFormValue} from "@/services/formValueValidation";
 import {ACTION_FEEDBACK_PARAM, fetchVisibleBridgeheads} from "@/services/projectManagerBackendService";
 import store, {ActionFeedbackType} from "@/services/store";
 import ProjectManagerButton from "@/components/ProjectManagerButton.vue";
@@ -1344,6 +1349,11 @@ export default defineComponent({
       // mentioned in the texts (e.g. DKTK, which has none)
       configuredCommitteeName: '',
       groupedMissingFields: {} as Record<string, string[]>,
+      // Entered values that do not match their data type and were therefore
+      // not saved, by ProjectFieldRow id: the label of their field.
+      invalidValueFields: {} as Record<string, string>,
+      // Why the step or tab was not left (an invalid value would be lost), or ''.
+      leaveBlockedMessage: '',
       currentMenuStep: ProjectViewMenuStep.STATUS,
       editMode: false,
       // "Edit Fields" is offered only when at least one visible field can be saved (updateCanEditAnyField)
@@ -1436,12 +1446,21 @@ export default defineComponent({
     // too, so this re-measures independently of whether the observer is
     // currently attached to anything.
     window.addEventListener('resize', this.updatePipelineRowWidth);
+    window.addEventListener('beforeunload', this.warnAboutUnsavedInvalidValues);
   },
 
   beforeUnmount() {
     this.pollingService?.stop();
     this.pipelineResizeObserver?.disconnect();
     window.removeEventListener('resize', this.updatePipelineRowWidth);
+    window.removeEventListener('beforeunload', this.warnAboutUnsavedInvalidValues);
+  },
+
+  // Leaving the page (e.g. back to the requests) would lose an entered value
+  // that is not valid and therefore not saved.
+  beforeRouteLeave(_to, _from, next) {
+    next(!this.hasUnsavedInvalidValues() || window.confirm(
+        'A value that is not valid was not saved and will be lost. Leave anyway?'));
   },
 
   methods: {
@@ -2090,7 +2109,20 @@ export default defineComponent({
           .every(field => this.hasMeaningfulValue(field.value));
 
       return baseFieldsValid && mandatoryFormFieldsValid &&
-          !this.formFields?.some(field => this.hasNotAllowedValue(field));
+          !this.formFields?.some(field => this.hasNotAllowedValue(field) || this.hasInvalidValue(field)) &&
+          !this.hasUnsavedInvalidValues();
+    },
+
+    onInvalidValueChange(id: string, label?: string) {
+      if (this.invalidValueFields[id] === label) return;
+      if (label === undefined) {
+        delete this.invalidValueFields[id];
+      } else {
+        this.invalidValueFields[id] = label;
+      }
+      if (!this.hasUnsavedInvalidValues()) this.leaveBlockedMessage = '';
+      this.hasProjectAllMandatoryFields = this.fetchIfProjectHasAllMandatoryFields();
+      this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
     },
 
     isMandatoryFixedProjectFieldValid(key: FixedFormFieldKey, value: unknown): boolean {
@@ -2118,6 +2150,12 @@ export default defineComponent({
           (field.allowedValues?.length ?? 0) > 0 &&
           this.hasMeaningfulValue(field.value) &&
           !field.allowedValues!.some(allowedValue => allowedValue.label === field.value);
+    },
+
+    // A stored value that does not match the field's data type (e.g. EMAIL),
+    // saved before the type was checked or the config changed the type.
+    hasInvalidValue(field: FormField): boolean {
+      return this.isApplicableFormField(field) && !isValidFormValue(field.value, field.type);
     },
 
     hasMeaningfulValue(value: unknown): boolean {
@@ -2155,11 +2193,12 @@ export default defineComponent({
         // 👇 group missing mandatory form fields
         this.groupedMissingFields = this.formFields
             ?.filter(field => (this.isApplicableMandatoryFormField(field) && !this.hasMeaningfulValue(field.value)) ||
-                this.hasNotAllowedValue(field))
+                this.hasNotAllowedValue(field) || this.hasInvalidValue(field))
             .reduce((acc, field) => {
               const title = field.titleDisplayName ?? field.title;
               const label = (field.labelDisplayName ?? field.label) +
-                  (this.hasNotAllowedValue(field) ? ' (value not allowed)' : '');
+                  (this.hasNotAllowedValue(field) ? ' (value not allowed)' : '') +
+                  (this.hasInvalidValue(field) ? ' (value not valid)' : '');
 
               if (!acc[title]) acc[title] = [];
               acc[title].push(label);
@@ -2172,6 +2211,11 @@ export default defineComponent({
         );
 
         // If there are blocks, append them with two line-breaks between
+        // Entered but not saved: they belong to no stored field of a form.
+        if (this.hasUnsavedInvalidValues()) {
+          blocks.push(`<strong>Values not valid</strong>: ${this.invalidValueLabels().join(', ')}`);
+        }
+
         if (blocks.length > 0) {
           result += (result.length > 0 ? '<br><br>' : '') + blocks.join('<br><br>');
         }
@@ -2296,8 +2340,51 @@ export default defineComponent({
     },
 
     nextDraftDialogStep(): void {
+      if (!this.canLeaveCurrentView()) return;
       this.tooltipTextForCreateButton = this.fetchTooltipTextForCreateButton();
       this.draftDialogStepper.nextStep();
+    },
+
+    previousDraftDialogStep(): void {
+      if (!this.canLeaveCurrentView()) return;
+      this.draftDialogStepper.previousStep();
+    },
+
+    goToDraftStep(stepId: string): void {
+      if (stepId !== this.draftDialogStepper.currentStep?.id && !this.canLeaveCurrentView()) return;
+      this.draftDialogStepper.setCurrentStep(stepId);
+    },
+
+    selectMenuStep(step: ProjectViewMenuStep): void {
+      if (step !== this.currentMenuStep && !this.canLeaveCurrentView()) return;
+      this.currentMenuStep = step;
+    },
+
+    hasUnsavedInvalidValues(): boolean {
+      return Object.keys(this.invalidValueFields).length > 0;
+    },
+
+    // The fields with such a value, each once (a multiple field can have several)
+    invalidValueLabels(): string[] {
+      return [...new Set(Object.values(this.invalidValueFields))];
+    },
+
+    // The fields of another step or tab are not rendered: an entered value
+    // that is not valid (and therefore not saved) would be lost without a
+    // word. So it is corrected or cleared first, and shown to the user.
+    canLeaveCurrentView(): boolean {
+      if (!this.hasUnsavedInvalidValues()) return true;
+      this.leaveBlockedMessage =
+          `Please correct or clear the value that is not valid first: ${this.invalidValueLabels().join(', ')}`;
+      this.$nextTick(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+      return false;
+    },
+
+    warnAboutUnsavedInvalidValues(event: BeforeUnloadEvent) {
+      if (!this.hasUnsavedInvalidValues()) return;
+      event.preventDefault();
+      // Older browsers show the dialog only with a returnValue
+      event.returnValue = '';
     },
 
     addMissingField(result: string, field: string, value: any): string {
@@ -4654,6 +4741,11 @@ export default defineComponent({
   border-top: 1px solid #e5e7eb;
   background: #f8fafc;
   flex-shrink: 0;
+}
+
+.leave-blocked-message {
+  color: var(--status-danger-color);
+  font-size: 0.875rem;
 }
 
 .button-nav-right {
